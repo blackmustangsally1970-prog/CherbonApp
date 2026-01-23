@@ -1,0 +1,47 @@
+<p><a href="{{ url_for('index') }}">← Back to main menu</a></p>
+
+
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Manage Teacher Times</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h2 { margin-top: 24px; }
+    .weekday-block { margin-left: 20px; margin-bottom: 12px; }
+    .time-row { margin-left: 20px; }
+    form.inline { display: inline; margin: 0; }
+    input.time-input { width: 80px; }
+  </style>
+</head>
+<body>
+  <h1>Manage Teacher Times</h1>
+
+  {% for teacher in teacher_keys %}
+    <h2>{{ teacher }}</h2>
+    {% for weekday in range(7) %}
+      <div class="weekday-block">
+        <strong>{{ weekday }} ({{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][weekday] }})</strong><br>
+        {% for r in grouped.get(teacher, {}).get(weekday, []) %}
+          <div class="time-row">
+            {{ r.time }}
+            <form class="inline" method="post" action="{{ url_for('delete_teacher_time', row_id=r.id) }}">
+              <button type="submit">Delete</button>
+            </form>
+          </div>
+        {% endfor %}
+        <form method="post" action="{{ url_for('add_teacher_time') }}">
+          <input type="hidden" name="teacher_key" value="{{ teacher }}">
+          <input type="hidden" name="weekday" value="{{ weekday }}">
+          <input type="text" name="time" placeholder="HH:MM" class="time-input" required>
+          <button type="submit">Add</button>
+        </form>
+      </div>
+    {% endfor %}
+  {% endfor %}
+
+  <p><a href="{{ url_for('lessons_by_date') }}">Back to lessons</a></p>
+</body>
+</html>

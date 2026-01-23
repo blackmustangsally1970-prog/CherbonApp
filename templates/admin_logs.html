@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Logs</title>
+  <style>
+    pre { background:#f9f9f9; padding:10px; border:1px solid #ccc; }
+    h2 { margin-top:20px; }
+  </style>
+</head>
+<body>
+  <h1>Admin Action Logs</h1>
+  <a href="{{ url_for('debug_page') }}">← Back to Debug</a>
+  {% for fname, content in logs %}
+    <h2>{{ fname }}</h2>
+    <pre>{{ content }}</pre>
+  {% endfor %}
+</body>
+</html>

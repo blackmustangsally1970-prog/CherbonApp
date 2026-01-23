@@ -1,0 +1,2780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lessons by Date</title>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+
+
+<style>
+
+/* Save TXT button glow */
+#save-txt-btn.glow {
+    background-color: #7CFC00 !important; /* light green */
+    box-shadow: 0 0 12px 4px rgba(124, 252, 0, 0.9);
+    font-weight: bold;
+}
+
+.client-history-tip {
+  position: absolute;
+  background: rgba(0,0,0,0.88);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 2000;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, visibility .12s ease;
+}
+
+
+/* Spinner */
+#save-txt-spinner {
+    display: none;
+    margin-left: 6px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2a7;
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Toast */
+#export-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #2a7;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    opacity: 0;
+    transform: translateY(-10px);
+    z-index: 3000;
+    font-size: 13px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#export-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* teacher column body: force top-aligned stack */
+.teacher-col-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+#teacher-print-block td.teacher-col {
+  vertical-align: top;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+
+
+.lesson-popup {
+  max-width: 420px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  background: #fff;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.lesson-popup label {
+  display: block;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.lesson-popup input,
+.lesson-popup select {
+  width: 100%;
+  margin-top: 2px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+}
+
+.lesson-popup .popup-close {
+  background: #eee;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Force radios and text to align baseline */
+.lesson-popup .client-mode-row label {
+  display: inline-flex;
+  align-items: center;   /* center radio + text vertically */
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.lesson-popup .client-mode-row input[type="radio"] {
+  margin: 0;
+  width: 14px;           /* normalize radio size */
+  height: 14px;          /* normalize radio size */
+  position: relative;
+  top: 2px;              /* nudge down to match text baseline */
+}
+
+
+
+
+.lesson-header-token {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body {
+    background-color: #cfe8ff !important;
+}
+
+/* Freeze the top controls bar */
+#top-controls {
+  position: sticky;
+  top: 0;
+  z-index: 5000;
+  background: #cfe8ff; /* match your page background */
+  padding: 6px 0;
+}
+
+/* Freeze the date navigation bar under it */
+#date-nav-form {
+  position: sticky;
+  top: 36px; /* height of top-controls */
+  z-index: 4990;
+  background: #cfe8ff;
+}
+
+#top-controls {
+  border-bottom: none !important;
+}
+
+#date-nav-form {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+
+
+
+/* --- Collapsed lesson block --- */
+.lesson-block.collapsed .group-header {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.select2-container {
+  z-index: 4000 !important;
+}
+
+.select2-results__options {
+  max-height: calc(100vh - 40px) !important; /* full viewport minus a little breathing room */
+  overflow-y: auto !important;
+}
+
+.lesson-block .lesson-table {
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+
+.lesson-block.collapsed .lesson-table {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Screen styles --- */
+body {
+  font-family: sans-serif;
+  font-size: 12px;
+  margin: 16px;
+}
+
+.main-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+form.date-form {
+  margin-left: 1.5em;
+  margin-bottom: 8px;
+}
+
+table {
+  width: 95%;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 2px 4px;
+  border: 1px solid #bbb;
+  vertical-align: middle;
+  font-size: 11px;
+  box-sizing: border-box;
+  line-height: 1.1;
+}
+
+th {
+  background: #e8f4e8;
+  color: #2a7;
+}
+
+#teacher-print-block {
+  display: none;
+}
+
+body.show-teachers #teacher-print-block {
+  display: block !important;
+}
+
+
+
+
+.group-header {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 11px;
+  color: #000;
+  font-weight: bold;
+}
+
+.group-header .header-text {
+  flex: 0 0 300px;
+  margin-right: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-header .tag-box {
+  flex: 0 0 200px;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.horse-cell {
+  position: relative;
+  width: 160px;
+}
+
+.horse-print-only {
+  display: none;
+}
+
+select.compact-horse {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.compact-small {
+  width: 48px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.notes-input {
+  width: 320px;
+  box-sizing: border-box;
+  font-size: 11px;
+}
+
+.compact-money {
+  width: 85px;
+  box-sizing: border-box;
+}
+
+.negative-balance,
+input.negative-balance {
+  background: #ffdddd;
+  color: #8b0000;
+  font-weight: 600;
+}
+
+.flag-client {
+  color: #b00;
+  font-weight: bold;
+}
+
+.tooltip-box {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+  background: rgba(0,0,0,0.88);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1200;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, visibility .12s ease;
+  max-width: 360px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tooltip-box strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.flashes .success {
+  background: #e0ffe0;
+  color: #2a7;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #2a7;
+  border-radius: 4px;
+}
+
+select.teacher-dropdown {
+  width: 140px;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+
+.flash-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #2a7;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateY(-10px);
+  z-index: 2000;
+  font-size: 13px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.flash-message.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- FINAL FIX: Force column widths to apply in Lessons table --- */
+
+/* 1. Force the table to obey fixed column widths */
+.lesson-table table {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+/* 2. Remove internal width constraints that were overriding column widths */
+.lesson-table td *:not(.tooltip-box),
+.lesson-table th *:not(.tooltip-box) {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* 2b. Exclude tooltip from forced width rules */
+.lesson-table .tooltip-box {
+    width: auto !important;
+    max-width: 360px !important;
+    height: auto !important;
+    display: block !important;
+    position: absolute !important;
+}
+
+/* 3. Override specific elements that were breaking layout */
+.lesson-table .horse-cell,
+.lesson-table .horse-cell select {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.lesson-table .notes-input {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.lesson-table .compact-horse {
+  width: 100% !important;
+}
+
+.lesson-table .compact-money {
+  width: 100% !important;
+}
+
+.lesson-table input[type="text"],
+.lesson-table select {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 4. Now apply your actual column widths */
+.lesson-table table th:nth-child(1),
+.lesson-table table td:nth-child(1) { width: 120px !important; }  /* Horse */
+
+.lesson-table table th:nth-child(2),
+.lesson-table table td:nth-child(2) { width: 180px !important; }  /* Client */
+
+.lesson-table table th:nth-child(3),
+.lesson-table table td:nth-child(3) { width: 50px !important; }   /* Age */
+
+.lesson-table table th:nth-child(4),
+.lesson-table table td:nth-child(4) { width: 120px !important; }  /* Guardian */
+
+.lesson-table table th:nth-child(5),
+.lesson-table table td:nth-child(5) { width: 90px !important; }  /* Mobile */
+
+.lesson-table table th:nth-child(6),
+.lesson-table table td:nth-child(6) { width: 40px !important; text-align:center; } /* Weight */
+
+.lesson-table table th:nth-child(7),
+.lesson-table table td:nth-child(7) { width: 40px !important; text-align:center; } /* Height */
+
+.lesson-table table th:nth-child(8),
+.lesson-table table td:nth-child(8) { width: 40px !important; text-align:center; } /* ATT */
+
+.lesson-table table th:nth-child(9),
+.lesson-table table td:nth-child(9) { width: 90px !important; }   /* Payment */
+
+.lesson-table table th:nth-child(10),
+.lesson-table table td:nth-child(10) { width: 90px !important; }  /* Price */
+
+.lesson-table table th:nth-child(11),
+.lesson-table table td:nth-child(11) { width: 70px !important; }  /* Balance */
+
+.lesson-table table th:nth-child(12),
+.lesson-table table td:nth-child(12) { width: 390px !important; } /* Notes */
+
+/* Kill the Select2 arrow that is drawing the ghost line */
+.lesson-table .select2-selection__arrow {
+    display: none !important;
+}
+
+.lesson-table .select2-selection__arrow b {
+    display: none !important;
+}
+
+
+
+/* --- Print styles (clean, no column widths) --- */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 297mm !important;
+    font-family: serif;
+    font-size: 11pt;
+  }
+
+  table {
+    width: 100% !important;
+    margin: 0 auto !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  th, td {
+    padding: 2px 4px !important;
+    font-size: 11px !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+
+  /* Remove all column width overrides — let screen CSS win */
+  /* No nth-child width rules here */
+
+  /* Teacher table stays fixed-width */
+  .teacher-table th,
+  .teacher-table td {
+    width: 140px !important;
+    max-width: 140px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .tooltip-box,
+  .no-print {
+    display: none !important;
+  }
+
+  .lesson-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    max-height: 180mm !important;
+    overflow: hidden !important;
+  }
+
+  .print-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
+    display: block !important;
+    width: 100% !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+.header-link:focus .header-text-inner,
+.header-link:target .header-text-inner { outline: 2px solid rgba(0,123,255,0.25); border-radius:3px; }
+
+/* Default state */
+#save-button {
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+#save-button.glow {
+    background-color: #7CFC00 !important; /* light green */
+    box-shadow: 0 0 12px 4px rgba(124, 252, 0, 0.9);
+    font-weight: bold;
+}
+
+/* Shake animation */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+
+#save-button.shake {
+  animation: shake 0.4s ease;
+}
+
+/* Saved message */
+#saved-message {
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  font-weight: bold;
+  color: green;
+  margin-left: 10px;
+}
+
+#saved-message.show {
+  opacity: 1;
+}
+
+.select2-search--dropdown {
+  display: block !important;
+}
+
+
+
+
+</style>
+
+
+</head>
+
+<body>
+
+{% if session.pop('show_flash', None) %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div id="flash-container">
+        {% for category, message in messages %}
+          <div class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+{% endif %}
+
+
+
+<div style="margin-bottom:0; display:flex; gap:12px; align-items:center;" class="no-print" id="top-controls">
+  <div style="white-space:nowrap;">
+    <a href="{{ url_for('index') }}">← Main Menu</a> 
+    <a href="/client_view">Client View</a>
+  </div>
+
+
+  <label style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+    <input type="checkbox" id="toggle-all-lessons" checked>
+    <span style="font-size:13px;">Show all lesson details</span>
+  </label>
+  <button id="toggle-teacher-btn" type="button" style="margin-left:8px; padding:6px 10px; font-size:12px;">
+    Show teachers
+  </button>
+<label style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+    <input type="checkbox" id="toggle-horse-history">
+    <span style="font-size:13px;">Show client horse history</span>
+</label>
+
+
+
+
+</div>
+<span id="saved-message">Saved!</span>
+<form method="POST" action="/lessons_by_date" id="date-nav-form" style="display:flex; gap:8px; align-items:center;">
+  <button type="button" id="prev-day">←</button>
+  <input type="date" name="date" id="date-picker" required>
+  <button type="button" id="next-day">→</button>
+  <button type="submit" style="margin-left:12px;">View</button>
+<!-- <button type="submit" form="update-lessons-form" style="margin-left:8px;">Save</button> -->
+
+<button id="save-button" type="submit" class="save-btn" form="update-lessons-form">
+    Save
+</button>
+  <button type="button" id="print-page" style="margin-left:8px;">Print</button>
+<button type="button" id="save-txt-btn" style="margin-left:8px;">Save TXT</button>
+<div id="save-txt-spinner"></div>
+
+
+</form>
+
+<form method="POST" action="{{ url_for('update_lessons') }}" id="update-lessons-form">
+  <input type="hidden" name="selected_date" value="{{ selected_date }}">
+
+  <!-- Teacher dropdowns row -->
+  <div id="teacher-print-block" style="margin: 12px 0; display: none;">
+    <table class="teacher-table" style="width:95%; margin:0 auto; border-collapse:collapse; table-layout:fixed;">
+      <thead>
+        <tr>
+          <th style="text-align:center;">Teacher 1</th>
+          <th style="text-align:center;">Teacher 2</th>
+          <th style="text-align:center;">Teacher 3</th>
+          <th style="text-align:center;">Teacher 4</th>
+          <th style="text-align:center;">Teacher 5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for i in range(5) %}
+          <td>
+            <select name="teacher_select_{{ i+1 }}" class="teacher-dropdown">
+              <option value=""></option>
+              {% for name in teacher_names %}
+                <option value="{{ name }}">{{ name }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          {% endfor %}
+        </tr>
+        <tr>
+          {% for i in range(5) %}
+          <td id="teacher_col_{{ i+1 }}" class="teacher-col" data-teacher-index="{{ i+1 }}"
+              style="border:1px solid #ccc; padding:6px; min-height:32px; background:#f9f9f9;">
+            <div class="teacher-col-body">
+              {% set key = 'Teacher ' ~ (i+1) %}
+              {% set set_times = teacher_times.get(key, {}).get(weekday_int|string, []) %}
+              {% set lesson_blocks = [] %}
+              {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
+              {% set block_key = norm_timerange_key(timerange) %}
+              {# detect whether a saved row exists for this block (even if it's explicitly empty) #}
+              {% set has_saved = block_key in block_tag_lookup %}
+              {% set saved_tags = block_tag_lookup.get(block_key, []) %}
+
+                {% if 'T' ~ (i+1) in saved_tags %}
+                  {% set _ = lesson_blocks.append({
+                      'time': timerange.split('-')[0].strip(),
+                      'end':  timerange.split('-')[1].strip(),
+                      'label': timerange ~ ' ' ~ lesson_type ~ ' ' ~ group_priv ~ ' (' ~ (lesson_group|length) ~ ')',
+                      'is_lesson': True,
+                      'block_key': block_key,
+                      'lesson_type': lesson_type,
+                      'group_priv': group_priv
+                  }) %}
+                {% endif %}
+              {% endfor %}
+
+              {# merge set times + lesson blocks #}
+              {% set all_items = [] %}
+              {% for t in set_times %}
+                {% set _ = all_items.append({
+                    'time': t,
+                    'label': t,
+                    'is_lesson': False,
+                    'block_key': 'set_' ~ t
+                }) %}
+              {% endfor %}
+              {% for l in lesson_blocks %}
+                {% set _ = all_items.append(l) %}
+              {% endfor %}
+
+              {# sort and render #}
+              {% for item in all_items|sort(attribute='time') %}
+{% if item.is_lesson %}
+<a href="#{{ item.block_key }}"
+   class="teacher-slot"
+   data-block-key="{{ item.block_key }}"
+   style="display:block; font-size:12px; margin-bottom:4px; font-weight:bold; color:#000;">
+   📘 {{ item.label }}
+</a>
+
+<!-- Popup box hidden by default -->
+<div class="lesson-popup" data-block-key="{{ item.block_key }}" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:9000;">
+  <form method="POST" action="/new_lesson" class="sms-invite-form">
+
+    <input type="hidden" name="date" value="{{ selected_date }}">
+    <input type="hidden" name="start" value="{{ item.time }}">
+
+
+
+<label>Lesson Time</label>
+<select name="end" class="popup-end-select searchable-dropdown" style="min-width:200px;">
+  {% for t in times %}
+    {% set t_clean = t|trim %}
+    {% set start_time = t_clean.split(' - ')[0] %}
+    {% set end_time = t_clean.split(' - ')[1] %}
+    {% set full_frame = item.time ~ ' - ' ~ item.end %}
+    <option value="{{ end_time }}" {% if t_clean == full_frame %}selected{% endif %}>
+      {{ start_time }} - {{ end_time }}
+    </option>
+  {% endfor %}
+</select>
+
+    <label>Price (PL)</label>
+    <input type="text"
+           name="price_pl"
+           value="{{ item.price_pl or '$0.00' }}"
+           class="compact-money">
+
+    <label>Lesson Type</label>
+    <select name="lesson_type">
+      {% for opt in ['Arena','Roundyard','Trail Ride','Go Gallop','Gym Go Gal'] %}
+        <option value="{{ opt }}" {% if item.lesson_type == opt %}selected{% endif %}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Group Priv</label>
+    <select name="group_priv">
+      {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+        <option value="{{ opt }}" {% if item.group_priv == opt %}selected{% endif %}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Frequency</label>
+    <select name="freq">
+      <option {% if item.freq == 'S' %}selected{% endif %}>S</option>
+      <option {% if item.freq == 'W' %}selected{% endif %}>W</option>
+      <option {% if item.freq == 'F' %}selected{% endif %}>F</option>
+    </select>
+
+    <label>Respect Blockouts?</label>
+<select name="respect_blockouts">
+  <option value="yes" {% if item.respect_blockouts == 'yes' %}selected{% endif %}>Yes</option>
+  <option value="no" {% if item.respect_blockouts != 'yes' %}selected{% endif %}>No (default)</option>
+</select>
+
+
+    <hr>
+
+    <label>Client</label>
+    <select name="client_id" class="searchable-dropdown" style="min-width:200px;">
+      <option value=""></option>
+      {% for c in clients %}
+        <option value="{{ c.client_id }}" {% if c.client_id == item.client_id %}selected{% endif %}>{{ c.full_name }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Horse</label>
+    <select name="horse" class="searchable-dropdown" style="min-width:200px;">
+      <option value=""></option>
+      {% for horse in horse_list %}
+        <option value="{{ horse }}" {% if horse == item.horse %}selected{% endif %}>{{ horse }}</option>
+      {% endfor %}
+    </select>
+
+    <div style="margin-top:8px; display:flex; gap:10px;">
+      <button type="submit" class="save-lesson-btn">Save</button>
+      <button type="button" class="popup-close">× Close</button>
+    </div>
+
+  </form>
+</div>
+{% else %}
+<a class="teacher-slot set-time-server" data-server="1" data-time="{{ item.label }}"
+   data-block-key="{{ item.block_key }}"
+   style="display:block; font-size:12px; margin-bottom:4px; background:#eef; color:#000; padding:2px 4px;" href="#">
+   ⏰ Available: {{ item.label }}
+</a>
+
+<!-- Popup box hidden by default -->
+<div class="lesson-popup" data-block-key="{{ item.block_key }}" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:9000;">
+  <form method="POST" action="/new_lesson" class="sms-invite-form">
+
+    <input type="hidden" name="date" value="{{ selected_date }}">
+    <input type="hidden" name="start" value="{{ item.time }}">
+
+
+
+
+<label class="popup-end-label">Lesson Time</label>
+<select name="end" class="popup-end-select searchable-dropdown" style="min-width:200px;">
+  <option value=""></option>
+  {% for t in times %}
+    <option value="{{ t }}">{{ t }}</option>
+  {% endfor %}
+</select>
+
+    <label>Price (PL)</label>
+    <input type="text" name="price_pl" value="$0.00" class="compact-money">
+
+    <label>Lesson Type</label>
+    <select name="lesson_type">
+      <option>Arena</option>
+      <option>Roundyard</option>
+      <option>Trail Ride</option>
+      <option>Go Gallop</option>
+    </select>
+
+    <label>Group Priv</label>
+    <select name="group_priv">
+      {% for opt in ['CC','CT','G','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+        <option>{{ opt }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Frequency</label>
+    <select name="freq">
+      <option>S</option>
+      <option>W</option>
+      <option>F</option>
+    </select>
+
+    <label>Respect Blockouts?</label>
+    <select name="respect_blockouts">
+      <option value="yes" selected>Yes (default)</option>
+      <option value="no">No (ignore blockouts)</option>
+    </select>
+
+
+    <!-- Client selection -->
+    <hr>
+<div class="client-mode-row">
+  <label>
+    <input type="radio" name="client_mode" value="existing" checked>
+    <div>Existing</div>
+  </label>
+  <label>
+    <input type="radio" name="client_mode" value="new">
+    <div>New</div>
+  </label>
+</div>
+
+    <div class="client-existing">
+      <label>Client</label>
+      <select name="client_id" class="searchable-dropdown" style="min-width:200px;">
+        <option value=""></option>
+        {% for c in clients %}
+          <option value="{{ c.client_id }}">{{ c.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="client-new" style="display:none;">
+      <label>New Client Name</label>
+      <input type="text" name="client_name" placeholder="Full name">
+      <label>Phone</label>
+      <input type="text" name="client_phone" placeholder="Mobile">
+    </div>
+
+    <label>Horse</label>
+    <select name="horse" class="searchable-dropdown" style="min-width:200px;">
+      <option value=""></option>
+      {% for horse in horse_list %}
+        <option value="{{ horse }}">{{ horse }}</option>
+      {% endfor %}
+    </select>
+
+
+<!-- INVITE MODE (hidden until Send SMS Invite is clicked) -->
+<div class="invite-mode" 
+     style="display:none; margin-top:12px; padding:12px; background:#eef7ff; border-radius:6px;">
+
+    <h4 style="margin:0 0 10px 0; color:#2a7; font-size:13px;">
+        SMS Invite Details
+    </h4>
+
+    <label>Mobile Number (for SMS)</label>
+    <input type="text" name="invite_mobile" class="invite-mobile-field" placeholder="04xxxxxxxx">
+
+    <label>Number of Riders (SMS)</label>
+    <select name="invite_riders" class="invite-riders-field">
+        {% for i in range(1, 10+1) %}
+            <option value="{{ i }}">{{ i }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Cost Per Rider (SMS only)</label>
+    <input type="text" name="invite_cost" class="invite-cost-field" placeholder="e.g. 80">
+
+
+    <!-- Hidden fields required by /send_invite -->
+<input type="hidden" name="invite_date" value="{{ selected_date }}">
+<input type="hidden" name="invite_lesson_id" value="{{ lesson_id if lesson_id is defined else 'settime_' ~ item.block_key }}">
+<input type="hidden" name="start" value="{{ item.label.split(' ')[0] }}">
+<input type="hidden" name="invite_time" value="{{ item.label.split(' ')[0] }}">
+<input type="hidden" name="invite_time_frame" value="">
+
+<input type="hidden" name="invite_duration" value="">
+<input type="hidden" name="invite_end" value="">
+<input type="hidden" name="invite_lesson_type" value="{{ item.lesson_type or '' }}">
+    <button type="submit" class="submit-invite-btn"
+            style="margin-top:12px; background:#2a7; color:white; padding:6px 12px; border-radius:4px;">
+        Send SMS Invite Now
+    </button>
+</div>
+
+
+<div style="margin-top:8px; display:flex; gap:10px;">
+  <button type="submit" class="save-lesson-btn">Save</button>
+
+  <button type="button" class="send-invite-btn"
+          style="background:#2a7; color:white; padding:4px 10px; border-radius:4px;">
+      Send SMS Invite
+  </button>
+
+  <button type="button" class="popup-close">× Close</button>
+</div>
+  </form>
+</div>
+
+
+
+                {% endif %}
+              {% endfor %}
+
+            </div>
+          </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+{% if grouped_lessons %}
+  {% set arena_keys = grouped_lessons.items() | selectattr('0.1', 'equalto', 'Arena') | list %}
+  {% set last_arena_key = arena_keys[-1][0] if arena_keys else None %}
+  {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
+    {% set block_key = norm_timerange_key(timerange) %}
+    {% set has_saved = block_key in block_tag_lookup %}
+    {% set saved_tags = block_tag_lookup.get(block_key, []) %}
+    {% set check_t1 = lesson_type.strip().lower() in ['arena', 'gym go gall'] %}
+    {% set active_count = lesson_group | selectattr('0.attendance', '!=', 'C') | list | length %}
+    {% set is_last_arena = (lesson_type == 'Arena' and (timerange, lesson_type, group_priv) == last_arena_key) %}
+    {% set show_arena_break = is_last_arena %}
+
+    <div class="lesson-block{% if lesson_type == 'Arena' %} arena-block{% endif %}"
+         data-block-key="{{ block_key }}"
+         data-block-header="{{ timerange }} {{ lesson_type }} {{ group_priv }} ({{ active_count }})"
+         data-saved-tags="{{ saved_tags|join(',') }}">
+
+      <div class="group-header"
+           style="display:flex; align-items:center; gap:14px; margin:10px 0; flex-wrap:nowrap;">
+
+        <div class="header-text{% if (saved_tags|length) != 0 %} header-assigned{% endif %}"
+             style="white-space:nowrap;">
+          {{ timerange }} {{ lesson_type }} {{ group_priv }} ({{ active_count }})
+        </div>
+
+        <div class="tag-box" style="display:flex; gap:6px; white-space:nowrap;">
+          <input type="hidden" name="teacher_tag_{{ block_key }}" value="">
+          {% for i in range(1, 6) %}
+            {% set tag_name = 'T' ~ i %}
+            {% set saved_tags = block_tag_lookup.get(block_key) or [] %}
+            {% set default_checked = (i == 1 and check_t1) or (i == 2 and not check_t1) %}
+            {% set checked = tag_name in saved_tags or (not has_saved and default_checked) %}
+
+            <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">
+              {{ tag_name }}
+              <input type="checkbox"
+                     name="teacher_tag_{{ block_key }}"
+                     value="{{ tag_name }}"
+                     {% if checked %}checked{% endif %}>
+            </label>
+          {% endfor %}
+        </div>
+
+      </div>
+
+      <div class="lesson-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Horse</th>
+              <th>Client</th>
+              <th>Age</th>
+              <th>Guardian</th>
+              <th>Mobile</th>
+              <th>Weight</th>
+              <th>Height</th>
+              <th>ATT</th>
+              <th>Payment</th>
+              <th>Price</th>
+              <th>Balance</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+<tbody>
+{% set rendered_clients = [] %}
+{% for lesson, client in lesson_group %}
+<tr data-lesson-id="{{ lesson.lesson_id }}" data-time="{{ lesson.time_frame }}" data-att="{{ lesson.attendance or '' }}">
+
+    <!-- Hidden fields for SMS Invite -->
+    <input type="hidden" class="sms-rider-count" value="{{ lesson_group|length }}">
+    <input type="hidden" class="sms-mobile" value="{{ client.mobile if client else '' }}">
+    <input type="hidden" class="sms-cost" value="{{ lesson.price_pl if lesson.price_pl else '' }}">
+
+    <input type="hidden" name="carry_fwd_{{ lesson.lesson_id }}" value="{{ lesson.carry_fwd or 0 }}">
+
+    <td class="horse-cell">
+      <span class="horse-print-only">{{ lesson.horse }}</span>
+      <select name="horse_{{ lesson.lesson_id }}" class="compact-horse searchable-dropdown">
+        <option value="" {% if not lesson.horse %}selected{% endif %}></option>
+        {% for horse in horse_list %}
+          <option value="{{ horse }}" {% if horse == lesson.horse %}selected{% endif %}>{{ horse }}</option>
+        {% endfor %}
+      </select>
+      <div class="tooltip-box" aria-hidden="true"></div>
+    </td>
+
+{% set display_name = client.full_name if client else (lesson.client or '') %}
+{% set client_key = (display_name or '')|lower|replace(' ', '') %}
+{% set horses = client_horse_history.get(client_key) %}
+
+<td class="client-cell" data-client="{{ client_key }}">
+  <input type="text"
+         value="{{ display_name }}"
+         readonly
+         class="{% if client and (client.disclaimer is none or client.disclaimer|int <= 30000) %}flag-client{% endif %}"
+         style="border:none;background:transparent;width:100%;"
+         {% if horses %}
+         title="{{ horses|join(', ') }}"
+         {% endif %}>
+</td>
+
+    <td>
+      {{ client.age if client else '' }}
+    </td>
+
+<td>
+  {{ client.guardian_name if client else '' }}
+</td>
+
+<td>
+  {{ client.mobile if client else '' }}
+</td>
+
+<td>
+  {{ client.weight_kg if client else '' }}
+</td>
+
+<td>
+  {{ client.height_cm if client else '' }}
+</td>
+
+
+    <td>
+      <select name="attendance_{{ lesson.lesson_id }}" data-client-id="{{ client.client_id if client else '' }}" class="compact-small attendance-field">
+        <option value="" {% if not lesson.attendance %}selected{% endif %}></option>
+        <option value="Y" {% if lesson.attendance == 'Y' %}selected{% endif %}>Y</option>
+        <option value="C" {% if lesson.attendance == 'C' %}selected{% endif %}>C</option>
+        <option value="N" {% if lesson.attendance == 'N' %}selected{% endif %}>N</option>
+      </select>
+    </td>
+
+    <td>
+      {% set pay_val = parse_money(lesson.payment) %}
+      {% set bal_val = lesson.balance or 0 %}
+      {% set price_val = parse_money(lesson.price_pl) %}
+      {% set show_red = ((price_val or 0) > (bal_val or 0) and not pay_val) %}
+      <input type="text"
+             name="payment_{{ lesson.lesson_id }}"
+             value="{% if pay_val and pay_val > 0.001 %}${{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
+             class="compact-money{% if show_red %} negative-balance{% endif %}"
+             autocomplete="off" inputmode="decimal"
+             oninput="recalculateBalance({{ lesson.lesson_id }})">
+    </td>
+
+    <td>
+      <input type="text"
+             name="price_pl_{{ lesson.lesson_id }}"
+             value="{{ '$%.2f'|format(lesson.price_pl or 0) }}"
+             class="compact-money"
+             oninput="recalculateBalance({{ lesson.lesson_id }})">
+    </td>
+
+    <td id="balance_display_{{ lesson.lesson_id }}">
+      {{ '$%.2f'|format(lesson.balance or 0) }}
+    </td>
+
+    <td>
+    {% set cid = client.client_id if client else None %}
+    {% if cid and cid not in rendered_clients %}
+      <input type="text" name="notes_{{ cid }}" value="{{ client.notes or '' }}" class="notes-input">
+      {% set _ = rendered_clients.append(cid) %}
+    {% else %}
+      <input type="text" value="{{ client.notes or '' }}" readonly class="notes-input" style="background:#f9f9f9;">
+    {% endif %}
+
+
+    {% if config.DEBUG %}
+       <td style="display:none;">
+        ID: {{ client.client_id }}<br>
+        Name: {{ client.full_name }}
+      </td>
+    {% endif %}
+
+    <td></td>
+  </tr>
+  {% endfor %}
+</tbody>
+        </table>
+      </div>
+    </div> {# close .lesson-block #}
+    {% if show_arena_break %}
+      <div class="print-break-after"></div>
+    {% endif %}
+  {% endfor %}
+</form> {# close update-lessons-form #}
+{% else %}
+  <p style="text-align:center;">No lessons found for {{ selected_date }}</p>
+{% endif %}
+<div id="export-toast">TXT + Excel saved. Notepad++ opened.</div>
+
+<script>
+  window.teacherTimes = {{ teacher_times|tojson }};
+  window.horseSchedule = {{ horse_schedule|tojson }};
+  window.teacherHorseUsage = {{ teacher_horse_usage|tojson }};
+  window.invoiceClients = new Set({{ invoice_clients | tojson }});
+
+  // Merge teacherHorseUsage into horseSchedule
+  for (const [horse, times] of Object.entries(window.teacherHorseUsage || {})) {
+    if (!window.horseSchedule[horse]) {
+      window.horseSchedule[horse] = [];
+    }
+    for (const t of times) {
+      if (!window.horseSchedule[horse].includes(t)) {
+        window.horseSchedule[horse].push(t);
+      }
+    }
+    window.horseSchedule[horse].sort();
+  }
+</script>
+
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('blur', function(e) {
+  if (e.target.matches('.compact-money')) {
+    let raw = e.target.value.replace(/[^0-9.]/g, '');
+    let parsed = parseFloat(raw);
+    if (!raw || isNaN(parsed) || parsed < 0.001) {
+      e.target.value = '';
+    } else {
+      e.target.value = '$' + parsed.toFixed(2);
+    }
+  }
+}, true);
+</script>
+
+<script>
+  // --- Toggle client mode inside popup ---
+  $(document).on('change', '.lesson-popup input[name="client_mode"]', function () {
+    const $popup = $(this).closest('.lesson-popup');
+    if (this.value === 'existing') {
+      $popup.find('.client-existing').show();
+      $popup.find('.client-new').hide();
+    } else {
+      $popup.find('.client-existing').hide();
+      $popup.find('.client-new').show();
+    }
+  });
+
+  // --- Close popup via button ---
+  $(document).on('click', '.popup-close', function () {
+    $(this).closest('.lesson-popup').hide();
+  });
+
+// Close popup when clicking outside (but not when clicking a slot, a row, or inside Select2)
+$(document).on('click', function (e) {
+  const $target = $(e.target);
+  const $popup = $target.closest('.lesson-popup');
+
+  // NEW: treat clicks inside Select2 container/dropdown as inside the popup
+  const isInsideSelect2 =
+    $target.closest('.select2-container').length ||
+    $target.closest('.select2-dropdown').length;
+
+  const isSlotOrRow =
+    $target.closest('.teacher-slot').length ||
+    $target.closest('tr[data-lesson-id]').length;
+
+  if (!$popup.length && !isSlotOrRow && !isInsideSelect2) {
+    $('.lesson-popup').each(function () {
+      this.style.removeProperty('display');
+      $(this).hide();
+    });
+  }
+});
+</script>
+
+
+
+
+<script>
+// --- HORSE TOOLTIP LOGIC ---
+(function () {
+  function canon(s) { return (s || '').trim().toLowerCase(); }
+
+  function parseMins(slot) {
+    try {
+      const t = (slot || '').split('-')[0].trim();
+      const parts = t.split(':').map(x => parseInt(x, 10));
+      if (parts.length === 2 && Number.isInteger(parts[0]) && Number.isInteger(parts[1])) {
+        return parts[0] * 60 + parts[1];
+      }
+    } catch (e) {}
+    return 0;
+  }
+
+  function aggregateTimesForHorse(horseName) {
+    const key = canon(horseName);
+    const set = new Set();
+    if (!key) return [];
+
+    Object.keys(window.horseSchedule || {}).forEach(k => {
+      if (canon(k) === key) {
+        (window.horseSchedule[k] || []).forEach(t => {
+          if (t && String(t).trim()) set.add(String(t).trim());
+        });
+      }
+    });
+
+    document.querySelectorAll('tbody tr').forEach(row => {
+      const horseSel = row.querySelector('select[name^="horse_"], input[name^="horse_"]');
+      const timeAttr = (row.getAttribute('data-time') || '').trim();
+      const rowHorse = horseSel ? (horseSel.value || '').trim() : '';
+      const rowAtt = (row.getAttribute('data-att') || '').trim().toUpperCase();
+
+      if (rowHorse && canon(rowHorse) === key && rowAtt !== 'C' && timeAttr) {
+        set.add(timeAttr);
+      }
+    });
+
+    const out = Array.from(set);
+    out.sort((a, b) => parseMins(a) - parseMins(b));
+    return out;
+  }
+
+  function refreshTooltipForElement(el) {
+    const $el = $(el);
+    const $td = $el.closest('td.horse-cell');
+    const $tip = $td.find('.tooltip-box');
+    const $row = $el.closest('tr');
+    const att = ($row.attr('data-att') || '').trim().toUpperCase();
+
+    const horse = ($el.val && $el.val()) || el.value || '';
+
+    if (att === 'C') {
+      $tip.empty().css({visibility:'hidden', opacity:0, pointerEvents:'none'});
+      return;
+    }
+
+    const times = aggregateTimesForHorse(horse);
+    if (!horse || !times.length) {
+      $tip.empty().css({visibility:'hidden', opacity:0, pointerEvents:'none'});
+      return;
+    }
+    const title = $('<div>').text(horse).html();
+    const body = times.map(t => '<div>' + $('<div>').text(t).html() + '</div>').join('');
+    $tip.html('<strong>' + title + '</strong>' + body);
+  }
+
+  function positionAndShow($select) {
+    const $td = $select.closest('td.horse-cell');
+    const $tip = $td.find('.tooltip-box');
+    $tip.css('display','block');
+    refreshTooltipForElement($select[0]);
+    if (!$tip.text().trim()) return;
+    $tip.css({visibility:'hidden', opacity:0, pointerEvents:'none', right:'auto', left:'100%', marginLeft:'8px'});
+    requestAnimationFrame(() => {
+      const tdRect = $td[0].getBoundingClientRect();
+      const tipRect = $tip[0].getBoundingClientRect();
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      if (tdRect.right + tipRect.width + 12 > vw) {
+        $tip.css({left:'auto', right:'100%', marginLeft:0, marginRight:'8px'});
+      } else {
+        $tip.css({left:'100%', right:'auto', marginLeft:'8px', marginRight:0});
+      }
+      $tip.css({visibility:'visible', opacity:1, pointerEvents:'auto'});
+    });
+  }
+
+  function hideTooltip($select) {
+    const $td = $select.closest('td.horse-cell');
+    const $tip = $td.find('.tooltip-box');
+    $tip.css({visibility:'hidden', opacity:0, pointerEvents:'none'});
+  }
+
+  // make handlers idempotent by namespacing and removing previous handlers first
+  $(document).off('.horseTooltip');
+
+  $(document).on('change.horseTooltip', 'select[name^="horse_"], input[name^="horse_"]', function () {
+    const $el = $(this);
+    const oldHorse = $el.data('prev-horse') || '';
+    const newHorse = $el.val() || '';
+    $el.data('prev-horse', newHorse);
+
+    const $row = $el.closest('tr');
+    const time = ($row.attr('data-time') || '').trim();
+    const att = ($row.attr('data-att') || '').trim().toUpperCase();
+
+    if (oldHorse && time) {
+      const kOld = oldHorse.trim().toLowerCase();
+      if (window.horseSchedule && window.horseSchedule[kOld]) {
+        window.horseSchedule[kOld] = window.horseSchedule[kOld].filter(t => t !== time);
+        if (window.horseSchedule[kOld].length === 0) delete window.horseSchedule[kOld];
+      }
+    }
+
+    if (newHorse && time && att !== 'C') {
+      const kNew = newHorse.trim().toLowerCase();
+      window.horseSchedule = window.horseSchedule || {};
+      window.horseSchedule[kNew] = window.horseSchedule[kNew] || [];
+      if (!window.horseSchedule[kNew].includes(time)) {
+        window.horseSchedule[kNew].push(time);
+      }
+    }
+
+    setTimeout(() => {
+      window.horseSchedule = {};
+      $('tbody tr').each(function () {
+        const $r = $(this);
+        const t = ($r.attr('data-time') || '').trim();
+        const a = ($r.attr('data-att') || '').trim().toUpperCase();
+        const h = ($r.find('select[name^="horse_"], input[name^="horse_"]').val() || '').trim();
+        if (h && t && a !== 'C') {
+          const k = h.toLowerCase();
+          window.horseSchedule[k] = window.horseSchedule[k] || [];
+          if (!window.horseSchedule[k].includes(t)) window.horseSchedule[k].push(t);
+        }
+      });
+
+      $('select[name^="horse_"], input[name^="horse_"]').each(function () {
+        refreshTooltipForElement(this);
+      });
+    }, 0);
+  });
+
+  $(document).on('mouseenter.horseTooltip', 'td.horse-cell', function () {
+    const $select = $(this).find('select[name^="horse_"], input[name^="horse_"]');
+    if ($select.length) positionAndShow($select);
+  });
+
+  $(document).on('mouseleave.horseTooltip', 'td.horse-cell', function () {
+    const $select = $(this).find('select[name^="horse_"], input[name^="horse_"]');
+    if ($select.length) hideTooltip($select);
+  });
+
+  $(document).on('select2:open.horseTooltip', 'select.compact-horse', function () {
+    positionAndShow($(this));
+  });
+
+  $(document).on('select2:close.horseTooltip', 'select.compact-horse', function () {
+    hideTooltip($(this));
+  });
+
+  // initial sync and build
+  $(function () {
+    $('tbody tr').each(function () {
+      const $row = $(this);
+      const att = ($row.find('select[name^="attendance_"]').val() || '').trim().toUpperCase();
+      if (att === 'C') $row.attr('data-att', 'C');
+      else $row.removeAttr('data-att');
+    });
+
+    $('select.compact-horse').each(function () {
+      $(this).data('prev-horse', $(this).val() || '');
+      refreshTooltipForElement(this);
+    });
+
+    setTimeout(function () {
+      $('select.compact-horse').each(function () { refreshTooltipForElement(this); });
+    }, 0);
+  });
+})();
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const dateInput = document.getElementById('date-picker');
+  const form = document.getElementById('date-nav-form');
+  const selectedDate = "{{ selected_date }}"; // passed from Flask
+
+  // Set initial date
+  if (dateInput && !selectedDate) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
+  } else if (dateInput && selectedDate) {
+    dateInput.value = selectedDate;
+  }
+
+  // Shift date left/right and submit
+  function shiftDate(days) {
+    const current = new Date(dateInput.value || new Date());
+    current.setDate(current.getDate() + days);
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    const newDate = `${yyyy}-${mm}-${dd}`;
+
+    // update visible picker
+    dateInput.value = newDate;
+
+    // keep hidden selected_date (in update-lessons-form) synchronized if present
+    const hidden = document.querySelector('form#update-lessons-form input[name="selected_date"]');
+    if (hidden) hidden.value = newDate;
+
+    // tiny delay so the DOM value is applied before the form is serialized
+    setTimeout(() => form.submit(), 10);
+  }
+
+  // bind prev/next buttons
+  const prevBtn = document.getElementById('prev-day');
+  const nextBtn = document.getElementById('next-day');
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftDate(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftDate(1));
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const flashes = document.querySelectorAll(".flash-message");
+  flashes.forEach(flash => {
+    // force reflow
+    void flash.offsetWidth;
+    // trigger transition
+    flash.classList.add("active");
+    // remove after 4.2s
+    setTimeout(() => flash.remove(), 4200);
+  });
+});
+</script>
+
+
+
+<script>
+  // Print helper: close open Select2, remove focus, then call print
+  document.getElementById('print-page').addEventListener('click', function () {
+    try {
+      // close any open Select2 dropdowns
+      $('.select2-container--open').each(function () {
+        try { $(this).prev('select').select2('close'); } catch(e) {}
+      });
+    } catch (e) {}
+
+    // remove focus so input outlines don't appear in print
+    try { document.activeElement && document.activeElement.blur(); } catch(e) {}
+
+    // short timeout to let UI settle, then print
+    setTimeout(function () {
+      window.print();
+    }, 120);
+  });
+</script>
+
+
+
+
+
+
+
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  function parseMoney(val) {
+    if (!val) return 0;
+    const cleaned = String(val).replace(/[^0-9.\-]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+function recalculateBalance(lessonId) {
+  const carryFwd = parseFloat(document.querySelector(`[name="carry_fwd_${lessonId}"]`).value) || 0;
+  const payment = parseFloat(document.querySelector(`[name="payment_${lessonId}"]`).value) || 0;
+  const price = parseFloat(document.querySelector(`[name="price_pl_${lessonId}"]`).value) || 0;
+  const attendance = document.querySelector(`[name="attendance_${lessonId}"]`).value.trim().toUpperCase();
+
+  let balance = carryFwd + payment;
+  if (attendance === 'Y' || attendance === 'N') {
+    balance -= price;
+  }
+
+  const balanceField = document.querySelector(`#balance_display_${lessonId}`);
+  if (balanceField) {
+    balanceField.textContent = `$${balance.toFixed(2)}`;
+  }
+}
+
+  function recalcBalance($row) {
+    const att = ($row.find('select[name^="attendance_"]').val() || '').trim().toUpperCase();
+    const pay = parseMoney($row.find('input[name^="payment_"]').val());
+    const price = parseMoney($row.find('input[name^="price_pl_"]').val());
+    const balCell = $row.find('td').eq(5); // 6th column = balance
+
+
+
+    const carry = parseMoney($row.find('input[name^="carry_fwd_"]').val());
+
+    let newBal = carry + pay;
+    if (att === 'Y' || att === 'N') {
+        newBal -= price;
+    }
+
+    const formatted = '$' + newBal.toFixed(2);
+    balCell.text(formatted);
+
+    if (newBal < 0) {
+      balCell.addClass('negative-balance');
+    } else {
+      balCell.removeClass('negative-balance');
+    }
+  }
+
+  // Bind change/blur events
+  $('input[name^="payment_"], input[name^="price_pl_"]').on('blur', function () {
+    const $row = $(this).closest('tr');
+    recalcBalance($row);
+  });
+
+  $('select[name^="attendance_"]').on('change', function () {
+    const $row = $(this).closest('tr');
+    recalcBalance($row);
+  });
+});
+</script>
+
+<script>
+  document.getElementById('print-page').addEventListener('click', function () {
+    window.print();
+  });
+</script>
+
+
+
+<script>
+(function(){
+  function parseSavedTags(s){ return s ? s.split(',').map(x=>x.trim()).filter(Boolean) : []; }
+  function clearTeacherCols(){ document.querySelectorAll('.teacher-col-body').forEach(c => Array.from(c.querySelectorAll('.lesson-header-token[data-generated="1"]')).forEach(n => n.remove())); }
+
+function makeHeaderToken(blockKey, headerText) {
+  // create an anchor that mirrors server anchors (clickable / jump to block)
+  const a = document.createElement('a');
+  a.className = 'lesson-header-token teacher-slot';
+  a.href = '#' + String(blockKey);
+  a.style.display = 'block';
+  a.style.padding = '6px 8px';
+  a.style.marginBottom = '6px';
+  a.style.borderRadius = '4px';
+  a.style.background = '#e0f7fa';
+  a.style.borderLeft = '4px solid #007bff';
+  a.style.fontSize = '12px';
+  a.style.whiteSpace = 'nowrap';
+  a.style.overflow = 'hidden';
+  a.style.textOverflow = 'ellipsis';
+  a.textContent = headerText;
+  a.dataset.generated = '1';
+  return a;
+}
+
+
+
+function parseStartMinutesFromHeader(header) {
+  // expects header like "12:00 - 13:00 Arena G (7)"
+  // extracts the first HH:MM and returns minutes since midnight
+  try {
+    const m = header.match(/(\d{1,2}:\d{2})/);
+    if (!m) return 0;
+    const [h, mm] = m[1].split(':').map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(mm)) return 0;
+    return h * 60 + mm;
+  } catch (e) { return 0; }
+}
+
+function placeHeadersUnderTeachers() {
+  // Helpers
+  function parseStartMinutesFromHeader(header) {
+    try {
+      const m = String(header || '').match(/(\d{1,2}:\d{2})/);
+      if (!m) return 0;
+      const [h, mm] = m[1].split(':').map(Number);
+      if (!Number.isFinite(h) || !Number.isFinite(mm)) return 0;
+      return h * 60 + mm;
+    } catch (e) { return 0; }
+  }
+
+  function makeHeaderToken(blockKey, headerText) {
+    const a = document.createElement('a');
+    a.className = 'lesson-header-token teacher-slot';
+    a.href = '#' + String(blockKey || '');
+    a.style.display = 'block';
+    a.style.padding = '6px 8px';
+    a.style.marginBottom = '6px';
+    a.style.borderRadius = '4px';
+    a.style.background = '#e0f7fa';
+    a.style.borderLeft = '4px solid #007bff';
+    a.style.fontSize = '12px';
+    a.style.whiteSpace = 'nowrap';
+    a.style.overflow = 'hidden';
+    a.style.textOverflow = 'ellipsis';
+    a.textContent = headerText || '';
+    a.dataset.generated = '1';
+    return a;
+  }
+
+  // 1) Collect blocks (header, start minutes, saved tags, block element)
+  const blocks = Array.from(document.querySelectorAll('.lesson-block')).map(block => {
+    const header = block.dataset.blockHeader || '';
+    const start = parseStartMinutesFromHeader(header);
+    // prefer server-saved tags; if empty, fall back to template-inferred defaults
+    const rawSaved = (block.dataset.savedTags || '').trim();
+    const rawDefault = (block.dataset.defaultTags || '').trim();
+    const saved = (rawSaved ? rawSaved : rawDefault).split(',').map(s => s.trim()).filter(Boolean);
+    return { block, header, start, saved: Array.from(new Set(saved)) };
+  });
+
+  // 2) Sort blocks by start then header for stable order
+  blocks.sort((a, b) => a.start - b.start || a.header.localeCompare(b.header));
+
+  // 3) Build teacher -> Set(startMinutes) map for dedupe logic
+  const teacherLessonStarts = {};
+  blocks.forEach(({ start, saved }) => {
+    saved.forEach(tag => {
+      const m = tag.match(/^T([1-5])$/);
+      if (!m) return;
+      const idx = Number(m[1]);
+      const teacherKey = 'Teacher ' + idx;
+      teacherLessonStarts[teacherKey] = teacherLessonStarts[teacherKey] || new Set();
+      teacherLessonStarts[teacherKey].add(start);
+    });
+  });
+
+  // 4) Remove only previously generated tokens
+  document.querySelectorAll('.teacher-col-body').forEach(body => {
+    Array.from(body.querySelectorAll('.lesson-header-token[data-generated="1"]')).forEach(n => n.remove());
+  });
+
+  // 5) For each teacher column rebuild timeline: keep server-set nodes, remove duplicates that collide with lessons,
+  //    then append (in chronological order) server set-times (existing nodes) and generated lesson tokens.
+  for (let idx = 1; idx <= 5; idx++) {
+    const teacherKey = 'Teacher ' + idx;
+    const body = document.querySelector(`#teacher_col_${idx} .teacher-col-body`);
+    if (!body) continue;
+
+    // a) Collect server-provided set-time nodes that are currently in the column
+    let serverSetEls = Array.from(body.querySelectorAll('.set-time-server'));
+
+    // if the server didn't inject nodes but we have window.teacherTimes as fallback, fabricate stable nodes
+    if (!serverSetEls.length && window.teacherTimes && Array.isArray(window.teacherTimes[teacherKey])) {
+      serverSetEls = window.teacherTimes[teacherKey].map(t => {
+        const a = document.createElement('a');
+        a.className = 'teacher-slot set-time-server';
+        a.setAttribute('data-time', t);
+        a.style.display = 'block';
+        a.style.fontSize = '12px';
+        a.style.marginBottom = '4px';
+        a.style.background = '#eef';
+        a.style.color = '#000';
+        a.style.padding = '2px 4px';
+        a.textContent = t;
+        return a;
+      });
+    }
+
+    // b) Remove server set-time nodes that collide with lesson start times for this teacher
+    const lessonStarts = teacherLessonStarts[teacherKey] || new Set();
+    serverSetEls.forEach(el => {
+      const t = (el.getAttribute('data-time') || el.textContent || '').trim();
+      const m = t.match(/^(\d{1,2}):(\d{2})$/);
+      if (m) {
+        const mins = Number(m[1]) * 60 + Number(m[2]);
+        if (lessonStarts.has(mins)) {
+          // duplicate of a lesson start — remove the server-provided node (we'll show lesson token instead)
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }
+      }
+    });
+
+    // c) Re-collect remaining server set-time nodes and parse minutes
+    const remainingSetTimes = Array.from(body.querySelectorAll('.set-time-server')).map(el => {
+      const t = (el.getAttribute('data-time') || el.textContent || '').trim();
+      const parts = (t || '').split(':').map(Number);
+      if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+        return { minutes: parts[0] * 60 + parts[1], label: t, el };
+      }
+      return null;
+    }).filter(Boolean);
+
+    // d) Collect lesson items for this teacher (minutes, header, blockKey)
+    const lessonItems = blocks
+      .filter(b => (b.saved || []).some(tag => tag === ('T' + idx)))
+      .map(li => ({ minutes: li.start, type: 'lesson', header: li.header, blockKey: li.block.dataset.blockKey || '' }));
+
+    // e) Build unified events array
+    const events = [];
+    remainingSetTimes.forEach(s => events.push({ minutes: s.minutes, type: 'set-server', label: s.label, el: s.el }));
+    lessonItems.forEach(l => events.push(l));
+
+    // f) Strict sort: minutes asc; if equal prefer lesson before set-server; tie-break by header/label
+    events.sort((a, b) => {
+      if (a.minutes !== b.minutes) return a.minutes - b.minutes;
+      if (a.type !== b.type) return (a.type === 'lesson' ? -1 : 1);
+      const ta = (a.header || a.label || '').localeCompare(b.header || b.label || '');
+      return ta;
+    });
+
+    // g) Defensive: remove any previously generated tokens remaining in column
+    Array.from(body.querySelectorAll('.lesson-header-token[data-generated="1"]')).forEach(n => n.remove());
+
+    // h) Append events in order. For server set-times reuse existing elements (they've been removed earlier only when colliding).
+    //    For lessons: if a real server anchor (a.teacher-slot href="#blockKey") already exists in this column, prefer it;
+    //    otherwise create a generated token.
+    events.forEach(e => {
+      if (e.type === 'set-server') {
+        // move existing server element to end (preserves original node and attributes)
+        // element might already be a child; appendChild will move it to the correct position
+        body.appendChild(e.el);
+      } else if (e.type === 'lesson') {
+        // prefer existing server anchor for this blockKey in this column
+        let existing = null;
+        if (e.blockKey) {
+          try {
+            existing = body.querySelector(`a.teacher-slot[href="#${CSS && CSS.escape ? CSS.escape(e.blockKey) : e.blockKey}"]`);
+          } catch (err) {
+            // fallback if CSS.escape not available or blockKey contains odd chars
+            try {
+              existing = body.querySelector(`a.teacher-slot[href="#${e.blockKey.replace(/"/g, '\\"')}"]`);
+            } catch (e2) {
+              existing = null;
+            }
+          }
+        }
+        if (existing) {
+          body.appendChild(existing);
+        } else {
+          const token = makeHeaderToken(e.blockKey, e.header);
+          body.appendChild(token);
+        }
+      }
+    });
+  }
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Helpers
+  const qAll = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const closest = (el, sel) => el.closest(sel);
+
+  // 1) Initialize data attributes per lesson-block:
+  //    - data-saved-tags: comma list of currently checked tag checkboxes
+  //    - data-default-tags: comma list of inferred default tags (when server-saved tags absent)
+  qAll('.lesson-block').forEach(block => {
+    const checkboxInputs = qAll('.tag-box input[type="checkbox"]', block);
+    const checkedValues = checkboxInputs.filter(cb => cb.checked).map(cb => cb.value);
+
+    // Server-supplied value (template may render data-saved-tags empty when none saved)
+    const serverSavedRaw = (block.getAttribute('data-saved-tags') || '').trim();
+    const serverSaved = serverSavedRaw ? serverSavedRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    // If the server provided no saved tags (empty attr) we treat the checked boxes as defaults.
+    const defaultTags = serverSaved.length === 0 ? checkedValues.slice() : [];
+
+    // Persist both values on dataset for JS use
+    block.dataset.savedTags = serverSaved.join(',');
+    block.dataset.defaultTags = defaultTags.join(',');
+  });
+
+  // 2) Place headers under teachers immediately (assumes placeHeadersUnderTeachers exists globally)
+if (typeof placeHeadersUnderTeachers === 'function') {
+  // defensive dedupe: remove generated tokens that share a blockKey already present as a server anchor
+  document.querySelectorAll('.lesson-header-token[data-generated="1"]').forEach(tok => {
+    const href = tok.getAttribute('href') || '';
+    if (href && document.querySelector(`a.teacher-slot[href="${CSS && CSS.escape ? CSS.escape(href.slice(1)) : href.slice(1)}"]`)) {
+      tok.remove();
+    }
+  });
+  placeHeadersUnderTeachers();
+}
+
+
+  // 3) Keep data-saved-tags in sync when any tag checkbox changes,
+  //    and re-run header placement to reflect updates immediately.
+  qAll('.group-header .tag-box input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function onTagChange() {
+      const block = closest(this, '.lesson-block');
+      if (!block) return;
+
+      const checked = qAll('.tag-box input[type="checkbox"]', block)
+        .filter(i => i.checked)
+        .map(i => i.value);
+
+      // Update dataset.savedTags to reflect the authoritative "saved" state in the UI
+      block.dataset.savedTags = checked.join(',');
+
+      // If server-saved was previously empty, keep data-default-tags untouched;
+      // otherwise defaultTags was already empty on init.
+      if (typeof placeHeadersUnderTeachers === 'function') {
+        placeHeadersUnderTeachers();
+      }
+    });
+  });
+});
+
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const btn = document.getElementById('toggle-teacher-btn');
+  const block = document.getElementById('teacher-print-block');
+  if (!btn || !block) return;
+
+  // initial label
+  btn.textContent = document.body.classList.contains('show-teachers')
+    ? 'Hide teachers'
+    : 'Show teachers';
+
+  // single deterministic handler
+  btn.addEventListener('click', function () {
+    document.body.classList.toggle('show-teachers');
+    const showing = document.body.classList.contains('show-teachers');
+    btn.textContent = showing ? 'Hide teachers' : 'Show teachers';
+
+    // Ensure inline style won't override CSS control
+    block.style.removeProperty('display');
+  });
+});
+</script>
+
+
+<script>
+function autoSaveLessonField(lessonId, fieldName, value) {
+  const payload = new FormData();
+  payload.append(`${fieldName}_${lessonId}`, value);
+
+  // Include selected_date if present
+  const selectedDateInput = document.querySelector('form#update-lessons-form input[name="selected_date"]');
+  if (selectedDateInput) {
+    payload.append('selected_date', selectedDateInput.value);
+  }
+
+
+
+  fetch('/update_lessons', {
+    method: 'POST',
+    body: payload,
+    keepalive: true  // ✅ allows background send during unload
+  }).then(res => {
+    if (!res.ok) console.warn(`Auto-save failed for ${fieldName}_${lessonId}`);
+  }).catch(err => {
+    console.error(`Auto-save error for ${fieldName}_${lessonId}:`, err);
+  });
+}
+
+// Attach listeners to all editable fields
+document.querySelectorAll('#update-lessons-form input, #update-lessons-form select').forEach(el => {
+  const match = (el.name || '').match(/^(horse|attendance|payment|price_pl|notes|bank_transfer)_(\d+)$/);
+  if (match) {
+    const field = match[1];
+    const lessonId = match[2];
+    el.addEventListener('change', () => {
+      const val = el.value;
+      autoSaveLessonField(lessonId, field, val);
+    });
+  }
+});
+</script>
+<script>
+window.addEventListener('beforeunload', function () {
+  const form = document.getElementById('update-lessons-form');
+  if (!form) return;
+
+  const payload = new FormData(form);
+  navigator.sendBeacon('/update_lessons', new URLSearchParams(payload));
+});
+</script>
+<script>
+const debounceMap = {};  // one timer per field
+
+function debouncedAutoSave(lessonId, fieldName, value) {
+  const key = `${fieldName}_${lessonId}`;
+  clearTimeout(debounceMap[key]);
+
+  debounceMap[key] = setTimeout(() => {
+    const payload = new FormData();
+    payload.append(key, value);
+
+    const selectedDateInput = document.querySelector('form#update-lessons-form input[name="selected_date"]');
+    if (selectedDateInput) {
+      payload.append('selected_date', selectedDateInput.value);
+    }
+
+    fetch('/update_lessons', {
+      method: 'POST',
+      body: payload,
+      keepalive: true
+    }).then(res => {
+      if (!res.ok) console.warn(`Debounced save failed for ${key}`);
+    }).catch(err => {
+      console.error(`Debounced save error for ${key}:`, err);
+    });
+  }, 600); // ✅ 600ms debounce window
+}
+
+document.querySelectorAll('#update-lessons-form input').forEach(el => {
+  const match = (el.name || '').match(/^(notes|payment|price_pl)_(\d+)$/);
+  if (match) {
+    const field = match[1];
+    const lessonId = match[2];
+    console.log(`Debounced save triggered for ${field}_${lessonId}:`, el.value);
+    el.addEventListener('input', () => {
+      debouncedAutoSave(lessonId, field, el.value);
+    });
+    el.addEventListener('change', () => {
+      debouncedAutoSave(lessonId, field, el.value);
+    });
+  }
+});
+
+</script>
+
+<script>
+  
+  document.querySelectorAll('select.attendance-field').forEach(select => {
+    select.addEventListener('change', function () {
+      const val = this.value;
+      const clientId = parseInt(this.dataset.clientId);
+      const lessonId = this.name.split('_')[1];
+
+      if ((val === 'Y' || val === 'N') && invoiceClients.has(clientId)) {
+        setTimeout(() => {
+          if (confirm("Send invoice for this lesson?")) {
+            window.open(`/send_invoice?lesson_id=${lessonId}`, '_blank');
+          }
+        }, 100);
+      }
+    });
+  });
+</script>
+
+<script>
+function placeHeadersUnderTeachers() {
+  function parseStartMinutesFromHeader(header) {
+    try {
+      const m = String(header || '').match(/(\d{1,2}:\d{2})/);
+      if (!m) return 0;
+      const [h, mm] = m[1].split(':').map(Number);
+      return h * 60 + mm;
+    } catch (e) { return 0; }
+  }
+
+  document.querySelectorAll('.lesson-block').forEach(block => {
+    const rawSaved   = (block.dataset.savedTags   || '').trim();
+    const rawDefault = (block.dataset.defaultTags || '').trim();
+
+    const effectiveTags = (
+        block.dataset.savedTags != null && block.dataset.savedTags.trim() !== ""
+          ? rawSaved
+          : rawDefault
+      )
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    // 🔴 Remove ALL anchors for this block before re‑adding
+    document.querySelectorAll(`.teacher-col-body a.teacher-slot[href="#${block.dataset.blockKey}"]`)
+      .forEach(a => a.remove());
+
+    // ✅ Add anchors only for current effective tags
+    effectiveTags.forEach(tag => {
+      const teacherIndex = parseInt(tag.replace('T',''), 10);
+      const body = document.querySelector(`#teacher_col_${teacherIndex} .teacher-col-body`);
+      if (body) {
+        const a = document.createElement('a');
+        a.className = 'lesson-header-token teacher-slot';
+        a.href = '#' + block.dataset.blockKey;
+        a.textContent = '📘 ' + (block.dataset.blockHeader || '');
+
+        const startMins = parseStartMinutesFromHeader(block.dataset.blockHeader);
+        let inserted = false;
+        body.querySelectorAll('a.teacher-slot').forEach(existing => {
+          const existingMins = parseStartMinutesFromHeader(existing.textContent);
+          if (!inserted && existingMins > startMins) {
+            body.insertBefore(a, existing);
+            inserted = true;
+          }
+        });
+        if (!inserted) body.appendChild(a);
+      }
+    });
+  });
+}
+
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('update-lessons-form');
+  if (!form) return;
+
+  form.addEventListener('submit', function (ev) {
+    const empties = [];
+    document.querySelectorAll('.lesson-block').forEach(block => {
+      // find checkboxes for this block
+      const cbs = Array.from(block.querySelectorAll('.tag-box input[type="checkbox"]'));
+      const checked = cbs.filter(cb => cb.checked).map(cb => cb.value);
+      if (checked.length === 0) {
+        empties.push(block.dataset.blockHeader || block.dataset.blockKey || 'Unknown block');
+        const header = block.querySelector('.group-header .header-text');
+        if (header) header.style.outline = '2px solid #c00';
+      }
+    });
+
+    if (empties.length > 0) {
+      ev.preventDefault();
+      alert(
+        "Please select at least one teacher tag for these blocks before saving:\n\n" +
+        empties.map(s => "• " + s).join("\n")
+      );
+      return false;
+    }
+    // otherwise allow submit
+  });
+});
+</script>
+
+<script>
+let teacherEditsMade = false;
+const saveBtn = document.getElementById('save-button');
+const savedMsg = document.getElementById('saved-message');
+
+// Named handler so we can remove it on submit
+function beforeUnloadHandler(e) {
+    if (teacherEditsMade) {
+        // Trigger shake animation
+        saveBtn.classList.add('shake');
+        setTimeout(() => saveBtn.classList.remove('shake'), 500);
+
+        e.preventDefault();
+        e.returnValue = '';
+    }
+}
+
+// Attach leave-warning
+window.addEventListener('beforeunload', beforeUnloadHandler);
+
+// Any teacher checkbox change triggers glow + dirty flag
+document.addEventListener('change', function(e) {
+    if (e.target.name && e.target.name.startsWith('teacher_tag_')) {
+        teacherEditsMade = true;
+        saveBtn.classList.add('glow');
+        savedMsg.classList.remove('show'); // hide old saved message
+    }
+});
+
+// On form submit: disable warning, remove glow, show "Saved!"
+document.addEventListener('submit', function(e) {
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    teacherEditsMade = false;
+
+    saveBtn.classList.remove('glow');
+
+    // Fade in "Saved!"
+    savedMsg.classList.add('show');
+
+    // Fade it out after 1.5 seconds
+    setTimeout(() => {
+        savedMsg.classList.remove('show');
+    }, 1500);
+});
+</script>
+
+<script>
+document.getElementById("save-txt-btn").addEventListener("click", async function () {
+    const btn = document.getElementById("save-txt-btn");
+    const spinner = document.getElementById("save-txt-spinner");
+    const toast = document.getElementById("export-toast");
+    const selectedDate = document.getElementById("date-picker").value;
+
+    // Start spinner + remove glow
+    spinner.style.display = "inline-block";
+    btn.classList.remove("glow");
+
+    // 1. Save all lesson changes first
+    const form = document.getElementById("update-lessons-form");
+    const formData = new FormData(form);
+
+    await fetch("/update_lessons", {
+        method: "POST",
+        body: formData
+    });
+
+    // 2. Now run the export
+    const res = await fetch(`/save_txt?selected_date=${selectedDate}`, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    // Stop spinner
+    spinner.style.display = "none";
+
+    if (data.status) {
+        // Glow effect
+        btn.classList.add("glow");
+        setTimeout(() => btn.classList.remove("glow"), 1500);
+
+        // Toast
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2500);
+    } else {
+        alert("Error: " + data.error);
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  // -------------------------------
+  // HORSE TOOLTIP LOGIC
+  // -------------------------------
+  function setTooltipForElement($container, horseName) {
+    const times = (window.horseSchedule && window.horseSchedule[horseName])
+                  ? window.horseSchedule[horseName]
+                  : [];
+
+    const html = times.length
+      ? '<strong>' + horseName + '</strong>' +
+        times.map(t => '<div>' + t + '</div>').join('')
+      : '';
+
+    const $tooltip = $container.find('.tooltip-box').first();
+    if ($tooltip.length) {
+      $tooltip.html(html);
+
+      $container.off('mouseenter.tooltip mouseleave.tooltip');
+
+      $container.on('mouseenter.tooltip', function () {
+        if (html) {
+          $tooltip.css({ visibility: 'visible', opacity: 1 });
+        }
+      });
+
+      $container.on('mouseleave.tooltip', function () {
+        $tooltip.css({ visibility: 'hidden', opacity: 0 });
+      });
+    }
+  }
+
+  // Apply tooltip wiring to existing horse cells
+  if (window.jQuery) {
+    $('.horse-cell').each(function () {
+      const $c = $(this);
+      const sel = $c.find('select.compact-horse').first();
+      const horseName = sel.length
+        ? sel.val()
+        : $c.find('.horse-print-only').text().trim();
+
+      if (horseName) {
+        setTooltipForElement($c, horseName);
+      }
+
+      sel.on('change', function () {
+        const name = $(this).val();
+        setTooltipForElement($c, name);
+      });
+    });
+  }
+
+  // -------------------------------
+  // TOGGLE "SHOW ALL LESSON DETAILS"
+  // -------------------------------
+  const toggle = document.getElementById('toggle-all-lessons');
+
+  if (toggle) {
+const applyState = function (showDetails) {
+  document.querySelectorAll('.lesson-block').forEach(function (block) {
+    block.classList.toggle('collapsed', !showDetails);
+  });
+};
+
+    // Apply initial state
+    applyState(toggle.checked);
+
+    // Listen for changes
+    toggle.addEventListener('change', function (e) {
+      applyState(e.target.checked);
+    });
+  }
+
+  // Allow clicking a header to toggle that single block
+  document.querySelectorAll('.group-header').forEach(function (header) {
+    header.style.cursor = 'pointer';
+    header.addEventListener('click', function () {
+      const block = header.closest('.lesson-block');
+      if (block) {
+        block.classList.toggle('collapsed');
+      }
+    });
+  });
+
+});
+</script>
+
+<script>
+/* -----------------------------------------------------------
+   1) TIME-FRAME CANONICALISER (runs BEFORE submit)
+----------------------------------------------------------- */
+(function () {
+
+  function addMinutesToTime(hhmm, minutes) {
+    try {
+      const [h, m] = hhmm.split(':').map(Number);
+      const d = new Date(2000,0,1,h,m);
+      d.setMinutes(d.getMinutes() + Number(minutes));
+      return String(d.getHours()).padStart(2,'0') + ":" +
+             String(d.getMinutes()).padStart(2,'0');
+    } catch (e) { return ""; }
+  }
+
+  $(document).on("click", ".submit-invite-btn", function () {
+
+const $popup = $(this).closest(".lesson-popup");
+if (!$popup.length) return;
+
+// ⭐ NEW FIX: If this is an EXISTING lesson popup,
+// and it already has a hidden end time BUT NO visible end selector,
+// then SKIP all time-canonicalisation logic.
+const hasHiddenEnd = $popup.find('input[name="end"]').length > 0;
+const hasVisibleEndSelect = $popup.find('select[name="end"]').length > 0;
+
+if (hasHiddenEnd && !hasVisibleEndSelect) {
+    return;   // ← This prevents the "required time" popup for existing lessons
+}
+
+    // Ensure hidden fields exist
+    ["invite_time_frame","invite_duration","invite_end"]
+      .forEach(n => {
+        if ($popup.find(`input[name="${n}"]`).length === 0)
+          $popup.append(`<input type="hidden" name="${n}" value="">`);
+      });
+
+    const startFull = $popup.find('input[name="start"]').val() || "";
+    const startOnly = (startFull.split(' ')[0] || "").trim();
+
+    const visibleEnd =
+      $popup.find('select[name="end"]').val() ||
+      $popup.find('select.popup-end-select').val() ||
+      $popup.find('select[name="end_time"]').val() ||
+      $popup.find('select.end-select').val() ||
+      "";
+
+    const visibleDuration =
+      $popup.find('select[name="duration"]').val() ||
+      $popup.find('select.duration-select').val() ||
+      $popup.find('.duration-select').val() ||
+      "";
+
+    const $inviteDuration = $popup.find('input[name="invite_duration"]');
+    const $inviteEnd      = $popup.find('input[name="invite_end"]');
+    const $inviteFrame    = $popup.find('input[name="invite_time_frame"]');
+
+    // CASE 1: explicit end time
+    if (visibleEnd) {
+      $inviteEnd.val(visibleEnd);
+
+      if (startOnly) {
+        const [sh, sm] = startOnly.split(':').map(Number);
+        const [eh, em] = visibleEnd.split(':').map(Number);
+        const dur = (eh*60+em) - (sh*60+sm);
+        $inviteDuration.val(String(Math.max(0,dur)));
+      }
+    }
+
+    // CASE 2: duration only
+    else if (visibleDuration) {
+      $inviteDuration.val(visibleDuration);
+      if (startOnly) {
+        const end = addMinutesToTime(startOnly, visibleDuration);
+        $inviteEnd.val(end);
+      }
+    }
+
+    // Build final time frame
+    const finalStart = startOnly;
+    const finalEnd   = $inviteEnd.val() || "";
+
+    if (finalStart && finalEnd)
+      $inviteFrame.val(`${finalStart} - ${finalEnd}`);
+    else if (!$inviteFrame.val())
+      $inviteFrame.val(startFull || finalStart);
+
+  });
+
+})();
+</script>
+
+
+<script>
+/* -----------------------------------------------------------
+   2) OPEN SMS INVITE PANEL
+----------------------------------------------------------- */
+(function () {
+
+  $(document).on("click", ".send-invite-btn", function (e) {
+    e.preventDefault();
+
+    const $popup = $(this).closest(".lesson-popup");
+    if (!$popup.length) return;
+
+    const $inviteMode = $popup.find(".invite-mode");
+    $inviteMode.slideDown(150);
+
+    // Autofill riders/mobile/cost from lesson row if present
+    const blockKey = $popup.data("block-key");
+    const $row = blockKey
+      ? $(`.lesson-block[data-block-key="${blockKey}"] tbody tr[data-lesson-id]`).first()
+      : $();
+
+    if ($row.length) {
+      const riders = $row.find(".sms-rider-count").val() || "";
+      const mobile = $row.find(".sms-mobile").val() || "";
+      const cost   = $row.find(".sms-cost").val() || "";
+
+      if (riders) $popup.find(".invite-riders-field").val(riders);
+      if (mobile) $popup.find(".invite-mobile-field").val(mobile);
+      if (cost)   $popup.find(".invite-cost-field").val(cost);
+    }
+  });
+
+})();
+</script>
+
+
+<script>
+/* -----------------------------------------------------------
+   3) FINAL SUBMIT HANDLER — BUILDS CLEAN POST FORM
+----------------------------------------------------------- */
+(function () {
+
+$(document).on("click", ".submit-invite-btn", function (e) {
+        e.preventDefault();
+
+        const $popup = $(this).closest(".lesson-popup");
+        const $submitBtn = $(this);
+
+        try {
+                const $form = $("<form>", {
+                        method: "POST",
+                        action: "/send_invite"
+                });
+
+                // 🔹 Capture lesson_type into invite_lesson_type
+                const ltVal = $popup.find("select[name='lesson_type']").val() || "";
+                if (ltVal) {
+                        $form.append(
+                                $("<input>", {
+                                        type: "hidden",
+                                        name: "invite_lesson_type"
+                                }).val(ltVal)
+                        );
+                }
+
+                // 🔹 Capture group_priv into invite_group_priv
+                const gpVal = $popup.find("select[name='group_priv']").val() || "";
+                if (gpVal) {
+                        $form.append(
+                                $("<input>", {
+                                        type: "hidden",
+                                        name: "invite_group_priv"
+                                }).val(gpVal)
+                        );
+                }
+
+                // Copy all invite_* fields
+                $popup.find("input[name^='invite_'], select[name^='invite_'], textarea[name^='invite_']")
+                        .each(function () {
+                                const name = $(this).attr("name");
+                                const val  = $(this).val() || "";
+                                $form.append($("<input>", { type:"hidden", name }).val(val));
+                        });
+
+                $submitBtn.prop("disabled", true);
+                $("body").append($form);
+                $form.submit();
+
+                setTimeout(() => {
+                        try { $form.remove(); } catch {}
+                        try { $submitBtn.prop("disabled", false); } catch {}
+                }, 1500);
+
+        } catch (err) {
+                console.error("submit-invite-btn error:", err);
+                try { $submitBtn.prop("disabled", false); } catch {}
+        }
+});
+
+})();
+</script>
+
+<script>
+// -----------------------------------------------------------
+// 4) CLIENT MODE LOGIC — SHOW/HIDE SMS + SWITCH FORM ACTION
+// -----------------------------------------------------------
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Toggle SMS invite visibility based on client mode
+    document.querySelectorAll('input[name="client_mode"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const form = this.closest('form');
+            const inviteMode = form.querySelector('.invite-mode');
+            const sendInviteBtn = form.querySelector('.send-invite-btn');
+
+            if (this.value === 'new') {
+                inviteMode.style.display = 'block';
+                sendInviteBtn.style.display = 'inline-block';
+            } else {
+                inviteMode.style.display = 'none';
+                sendInviteBtn.style.display = 'none';
+                form.action = "/new_lesson";   // reset to normal save
+            }
+        });
+    });
+
+document.querySelectorAll('.send-invite-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const form = this.closest('form');
+        const inviteMode = form.querySelector('.invite-mode');
+
+        // Show SMS invite panel
+        inviteMode.style.display = 'block';
+
+        // Switch form action but DO NOT submit yet
+        form.action = "/send_invite";
+    });
+});
+
+});
+</script>
+
+<script>
+// -----------------------------------------------------------
+// REQUIRE VALID LESSON TIME + FORCE CORRECT FORM ACTION
+// -----------------------------------------------------------
+document.addEventListener("click", function (e) {
+
+    const isSave = e.target.classList.contains("save-lesson-btn");
+    const isFinalInvite = e.target.classList.contains("submit-invite-btn");
+
+    // Only validate on Save or Final Invite
+    if (!isSave && !isFinalInvite) return;
+
+    const form = e.target.closest("form");
+    const popup = e.target.closest(".lesson-popup");
+    if (!form || !popup) return;
+
+    // FORCE SAVE to always use /new_lesson
+    if (isSave) {
+        form.action = "/new_lesson";
+    }
+
+    // Extract start + end
+    const start = popup.querySelector("input[name='start']")?.value?.trim();
+    const end =
+        popup.querySelector("select[name='end']")?.value?.trim() ||
+        popup.querySelector(".popup-end-select")?.value?.trim();
+
+    // Block submit if missing time
+    if (!start || !end) {
+        e.preventDefault();
+        alert("Please select a valid lesson time before continuing.");
+        return false;
+    }
+});
+</script>
+
+<script>
+(function clientHistoryHover() {
+
+  const toggle = document.getElementById('toggle-horse-history');
+  const tip = document.getElementById('client-history-tip');
+
+  // Show tooltip on hover
+  document.addEventListener('mouseover', function(e) {
+    if (!toggle || !toggle.checked) return;
+
+    const cell = e.target.closest('.client-cell');
+    if (!cell) return;
+
+    const client = cell.dataset.client;
+    if (!client) return;
+
+    fetch(`/client_history/${encodeURIComponent(client)}`)
+      .then(r => r.json())
+      .then(list => {
+        tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
+
+        const rect = cell.getBoundingClientRect();
+        tip.style.top = (rect.bottom + window.scrollY + 4) + "px";
+        tip.style.left = (rect.left + window.scrollX) + "px";
+
+        tip.style.visibility = 'visible';
+        tip.style.opacity = '1';
+      });
+  });
+
+  // Hide when leaving the client cell
+  document.addEventListener('mouseout', function(e) {
+    const cell = e.target.closest('.client-cell');
+    if (!cell) return;
+
+    if (cell.contains(e.relatedTarget)) return;
+
+    tip?.style?.visibility = 'hidden';
+    tip.style.opacity = '0';
+  }, true);
+
+})();
+</script>
+
+<div id="client-history-tip" class="client-history-tip" aria-hidden="true"></div>
+
+<script>
+(function clientHistoryHover() {
+
+  const toggle = document.getElementById('toggle-horse-history');
+  const tip = document.getElementById('client-history-tip');
+
+  document.addEventListener('mouseover', function(e) {
+    if (!toggle || !toggle.checked) return;
+
+    const cell = e.target.closest('.client-cell');
+    if (!cell) return;
+
+    const client = cell.dataset.client;
+    if (!client) return;
+
+    fetch(`/client_history/${encodeURIComponent(client)}`)
+      .then(r => r.json())
+      .then(list => {
+        tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
+
+        const rect = cell.getBoundingClientRect();
+        tip.style.top = (rect.bottom + window.scrollY + 4) + "px";
+        tip.style.left = (rect.left + window.scrollX) + "px";
+
+        tip.style.visibility = 'visible';
+        tip.style.opacity = '1';
+      });
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    const cell = e.target.closest('.client-cell');
+    if (!cell) return;
+
+    if (cell.contains(e.relatedTarget)) return;
+
+    tip.style.visibility = 'hidden';
+    tip.style.opacity = '0';
+  }, true);
+
+})();
+</script>
+
+<script>
+// ---------------------------------------------
+// 1. Prefix-only matcher (Trev → Trevor only)
+// ---------------------------------------------
+function select2PrefixMatcher(params, data) {
+    if (!params.term) return data;
+    if (!data.text) return null;
+
+    const term = params.term.toLowerCase().trim();
+    const text = String(data.text).toLowerCase().trim();
+
+    if (text.startsWith(term)) return data;
+
+    const startToken = text.split('-')[0].trim();
+    if (startToken.startsWith(term)) return data;
+
+    const hourOnly = startToken.split(':')[0];
+    if (hourOnly && hourOnly.startsWith(term)) return data;
+
+    return null;
+}
+
+// ---------------------------------------------
+// 2. Auto-focus search field on open
+// ---------------------------------------------
+$(document).on('select2:open', function () {
+    const sf = document.querySelector('.select2-container--open .select2-search__field');
+    if (sf) {
+        sf.focus();
+        try { sf.setSelectionRange(sf.value.length, sf.value.length); } catch (e) {}
+    }
+});
+
+// ---------------------------------------------
+// 3. Show popup when clicking a slot
+// ---------------------------------------------
+$(document).on('click', '.teacher-slot, .set-time-server', function (e) {
+    e.preventDefault();
+
+    const blockKey = $(this).data('block-key');
+    const $popup = $('.lesson-popup[data-block-key="' + blockKey + '"]');
+
+    $('.lesson-popup').hide();
+    $popup.show();
+
+    // After popup is visible, init Select2
+    setTimeout(function () {
+
+        $popup.find('.searchable-dropdown').each(function () {
+            const $s = $(this);
+
+            if ($s.data('select2')) {
+                $s.select2('destroy');
+            }
+
+            $s.select2({
+                width: '100%',
+                allowClear: true,
+                minimumResultsForSearch: 0,
+                matcher: select2PrefixMatcher,
+                dropdownParent: $popup
+            });
+        });
+
+    }, 20);
+});
+
+// ---------------------------------------------
+// 4. Close popup
+// ---------------------------------------------
+$(document).on('click', '.popup-close', function () {
+    $(this).closest('.lesson-popup').hide();
+});
+
+
+// ---------------------------------------------
+// Prevent accidental click-out from closing popups
+// ---------------------------------------------
+$(document).on('click', function (e) {
+    // If the click is inside a popup, ignore
+    if ($(e.target).closest('.lesson-popup').length) return;
+
+    // If the click is on a teacher-slot or set-time-server, ignore (handled by section 3)
+    if ($(e.target).closest('.teacher-slot, .set-time-server').length) return;
+
+    // Otherwise: DO NOTHING (do NOT hide popups)
+    e.stopImmediatePropagation();
+});
+
+
+</script>
+
+<script>
+$(document).ready(function() {
+
+    /* --- FIX #1: 1‑click focus + instant typing --- */
+    $('.searchable-dropdown').select2({
+        minimumResultsForSearch: 0,
+        selectOnClose: true
+    }).on('select2:open', function() {
+        let searchField = $('.select2-container--open .select2-search__field');
+        searchField.focus();
+    });
+
+
+    /* --- FIX #2: Starts‑with matching instead of contains --- */
+    function startsWithMatcher(params, data) {
+        if ($.trim(params.term) === '') {
+            return data;
+        }
+        if (typeof data.text === 'undefined') {
+            return null;
+        }
+
+        let term = params.term.toLowerCase();
+        let text = data.text.toLowerCase();
+
+        if (text.startsWith(term)) {
+            return data;
+        }
+        return null;
+    }
+
+    $('.searchable-dropdown').select2({
+        matcher: startsWithMatcher
+    });
+
+
+    /* --- FIX #3: Open Select2 dropdown on first click --- */
+    $('.searchable-dropdown').on('mousedown', function(e) {
+        e.preventDefault();
+        $(this).select2('open');
+    });
+
+});
+</script>
+</body>
+</html>

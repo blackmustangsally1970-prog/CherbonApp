@@ -1,0 +1,26 @@
+<a href="{{ url_for('index') }}">← Back to Equestrian Menu</a>
+<h2>Single‑Day Blockouts</h2>
+<form method="POST">
+  <label>Date:</label>
+  <input type="date" name="block_date" required>
+  <label>Reason:</label>
+  <input type="text" name="reason" placeholder="Optional reason">
+  <button type="submit">Add Blockout</button>
+</form>
+
+<table>
+  <thead><tr><th>Date</th><th>Reason</th><th>Action</th></tr></thead>
+  <tbody>
+    {% for b in blockouts %}
+    <tr>
+      <td>{{ b.block_date.strftime('%Y-%m-%d') }}</td>
+      <td>{{ b.reason }}</td>
+      <td>
+        <form method="POST" action="{{ url_for('delete_blockout_date', row_id=b.id) }}">
+          <button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

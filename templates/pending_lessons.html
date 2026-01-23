@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Lessons Pending</title>
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { margin-bottom: 20px; }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    .missing { color: #b00; font-weight: bold; }
+    .ok { color: #060; font-weight: bold; }
+
+    a.button {
+      padding: 6px 12px;
+      background: #0645AD;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+
+    a.button:hover {
+      background: #003f8a;
+    }
+  </style>
+</head>
+<body>
+
+<div style="margin-bottom: 20px;">
+  <a href="{{ url_for('index') }}"
+     class="btn btn-primary"
+     style="padding: 10px 20px; font-size: 16px;">
+      ⬅ Back to Main Menu
+  </a>
+</div>
+
+<h1>⏳ Lessons Pending</h1>
+
+<!-- BUTTONS (mirroring disclaimer page) -->
+<p>
+  <a class="button" href="{{ url_for('fetch_invite_submissions') }}">
+      🔄 Fetch Invite Submissions
+  </a>
+</p>
+
+<p>
+  <a class="button" href="{{ url_for('process_all_invites') }}">
+      ⚡ Process All Pending Invites
+  </a>
+</p>
+
+<p>
+  <a class="button" href="{{ url_for('clear_processed_invites') }}">
+      🧹 Clear Processed Invites
+  </a>
+</p>
+
+<table>
+  <tr>
+    <th>Token</th>
+    <th>Date</th>
+    <th>Time</th>
+    <th>Mobile</th>
+    <th>Riders</th>
+    <th>Status</th>
+    <th>Action</th>
+  </tr>
+
+  {% for row in pending %}
+    {% set inv = row.invite %}
+    {% set sub = row.submission %}
+
+    <tr>
+      <td>{{ inv.token }}</td>
+      <td>{{ inv.lesson_date.strftime('%d %b %Y') }}</td>
+      <td>{{ inv.time_frame }}</td>
+      <td>{{ inv.mobile }}</td>
+      <td>{{ inv.riders_requested }}</td>
+
+      {% if sub %}
+        <td class="ok">Form Received</td>
+        <td>
+          <a class="button"
+             href="{{ url_for('process_invite', invite_id=inv.id) }}">
+             Process
+          </a>
+        </td>
+      {% else %}
+        <td class="missing">Waiting</td>
+        <td>—</td>
+      {% endif %}
+    </tr>
+  {% endfor %}
+</table>
+
+</body>
+</html>

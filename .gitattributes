@@ -1,0 +1,32 @@
+# Normalize line endings across Windows, Linux, Azure
+* text=auto eol=lf
+
+# Treat Python files as text
+*.py text
+
+# Ensure templates are normalized
+*.html text
+*.jinja text
+
+# Ensure config files are normalized
+*.cfg text
+*.ini text
+*.env text
+
+# Keep binary files untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+
+# Prevent accidental CRLF issues in shell scripts (if any)
+*.sh text eol=lf
+
+# Improve diff readability for common file types
+*.css text
+*.js text
+*.json text
+*.yml text
+*.yaml text

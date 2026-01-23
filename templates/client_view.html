@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client View</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 8px; margin-bottom: 24px; }
+        th, td { border: 1px solid #ccc; padding: 8px; font-size: 13px; }
+        th { background-color: #f2f2f2; }
+        .nav a { margin-right: 12px; text-decoration: none; color: #0077cc; }
+        .filter-form { margin-bottom: 16px; display: flex; gap: 12px; align-items: center; }
+        .client-details { margin-bottom: 16px; padding: 12px; background: #f9f9f9; border: 1px solid #ccc; }
+        #lesson-loader { text-align: center; margin-top: 24px; }
+        #loading-text { font-size: 14px; color: #666; display: none; }
+
+.flash-today {
+    background-color: #ffeb3b !important; /* bright yellow flash */
+    animation: pulseBorder 1.2s ease-out forwards;
+}
+
+@keyframes pulseBorder {
+    0%   { box-shadow: 0 0 0 4px #ffeb3b; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+
+.client-details-table td {
+    padding: 4px 8px;
+    vertical-align: top;
+}
+
+.client-details-table td:first-child {
+    width: 180px;
+    font-weight: bold;
+}
+
+/* Double-width inputs */
+.client-details-table input[type="text"],
+.client-details-table input[type="number"] {
+    width: 300px;
+}
+
+/* Wide Notes fields */
+.client-details-table textarea {
+    width: 500px;
+    height: 120px;
+    resize: vertical;
+}
+
+
+
+
+
+    </style>
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+</head>
+
+<body>
+
+<div style="margin-bottom:12px;" class="no-print" id="top-controls">
+    <a href="{{ url_for('index') }}">← Main Menu</a>
+    <a href="/lessons_by_date">View Lessons by Date</a>
+</div>
+
+{% if client_obj %}
+<div style="margin:12px 0;">
+    <form action="{{ url_for('recalculate_client') }}" method="post">
+        <input type="hidden" name="client" value="{{ client_obj.full_name }}">
+        <button type="submit" class="btn btn-warning">
+            Recalculate Lessons for {{ client_obj.full_name }}
+        </button>
+    </form>
+</div>
+{% endif %}
+
+
+
+<div style="margin:12px 0;">
+    <form action="{{ url_for('recalculate_all') }}" method="post">
+        <button type="submit" class="btn btn-danger">
+            Recalculate All Lessons
+        </button>
+    </form>
+</div>
+
+{% if client_obj %}
+<div style="margin:12px 0; padding:10px; background:#eef; border:1px solid #99c;">
+    <form action="{{ url_for('change_client_name', client_id=client_obj.client_id) }}" 
+          method="POST" 
+          style="display:flex; gap:10px; align-items:center;">
+        <label for="new_name"><strong>Change Client Name:</strong></label>
+        <input type="text" id="new_name" name="new_name" placeholder="Enter new name" required style="padding:6px; flex:1;">
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+{% endif %}
+
+
+
+
+
+
+    <form method="get" class="filter-form">
+        <div id="client-select-wrapper" style="position: relative;">
+            <select id="client-select" name="client_filter" class="searchable-dropdown">
+                <option value=""></option>
+                {% for cid, name in client_names %}
+                    <option value="{{ cid }}"
+                        {% if client_obj and cid == client_obj.client_id %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <input type="date" name="start_date" value="{{ start_date }}">
+        <input type="date" name="end_date" value="{{ end_date }}">
+        <button type="submit">Filter</button>
+    </form>
+
+
+        <!-- 🔼 START -->
+
+
+{% if client_obj %}
+    <div class="client-details">
+
+        <!-- ========================= -->
+        <!-- CLEAN TWO-COLUMN DETAILS  -->
+        <!-- ========================= -->
+
+        <table class="client-details-table">
+
+            <tr>
+                <td><strong>Client:</strong></td>
+                <td>{{ client_obj.full_name }}</td>
+            </tr>
+
+            <tr>
+                <td><strong>Guardian:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="guardian_name"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.guardian_name or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Mobile:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="mobile"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.mobile or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Age:</strong></td>
+                <td>
+                    <input type="number"
+                           class="client-edit"
+                           data-field="age"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.age or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Weight (kg):</strong></td>
+                <td>
+                    <input type="number"
+                           class="client-edit"
+                           data-field="weight_kg"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.weight_kg or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Height (cm):</strong></td>
+                <td>
+                    <input type="number"
+                           class="client-edit"
+                           data-field="height_cm"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.height_cm or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Disclaimer:</strong></td>
+                <td>{{ client_obj.disclaimer }}</td>
+            </tr>
+
+            <tr>
+                <td><strong>Email Primary:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="email_primary"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.email_primary or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Email Secondary:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="email_secondary"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.email_secondary or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Guardian 2:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="guardian2_name"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.guardian2_name or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Mobile 2:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="mobile2"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.mobile2 or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Email Guardian 2:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="email_guardian2"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.email_guardian2 or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>NDIS Number:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="ndis_number"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.ndis_number or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>NDIS Code:</strong></td>
+                <td>
+                    <input type="text"
+                           class="client-edit"
+                           data-field="ndis_code"
+                           data-id="{{ client_obj.client_id }}"
+                           value="{{ client_obj.ndis_code or '' }}">
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Notes:</strong></td>
+                <td>
+                    <textarea class="client-edit"
+                              data-field="notes"
+                              data-id="{{ client_obj.client_id }}">{{ client_obj.notes or '' }}</textarea>
+                </td>
+            </tr>
+
+            <tr>
+                <td><strong>Notes 2:</strong></td>
+                <td>
+                    <textarea class="client-edit"
+                              data-field="notes2"
+                              data-id="{{ client_obj.client_id }}">{{ client_obj.notes2 or '' }}</textarea>
+                </td>
+            </tr>
+
+        </table>
+
+        <!-- ========================= -->
+        <!-- INVOICE CHECKBOX (UNCHANGED) -->
+        <!-- ========================= -->
+
+        <form action="/update_invoice_flag" method="post" style="margin-top: 12px;">
+            <input type="hidden" name="client_id" value="{{ client_obj.client_id }}">
+            <label>
+                <input type="checkbox" name="invoice_required" value="1"
+                       {% if client_obj.invoice_required %}checked{% endif %}>
+                Requires Invoice After Lesson
+            </label>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+        </form>
+
+        <!-- ========================= -->
+        <!-- DELETE CONTROLS (UNCHANGED) -->
+        <!-- ========================= -->
+
+        <div style="margin-top: 12px;">
+            <!-- Delete ALL future lessons -->
+            <form action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
+                  method="post" style="display:inline-block; margin-right:12px;">
+                <input type="hidden" name="mode" value="all">
+                <label for="cutoff-all">Cutoff Date:</label>
+                <input type="date" id="cutoff-all" name="cutoff_date" value="{{ today }}">
+                <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Delete ALL lessons from cutoff date for {{ client_obj.full_name }}?');">
+                    Delete ALL From Cutoff
+                </button>
+            </form>
+
+            <!-- Delete by group_priv -->
+            <form action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
+                  method="post" style="display:inline-block;">
+                <input type="hidden" name="mode" value="group_priv">
+                <label for="group-priv">Group Priv:</label>
+                <input type="text" name="group_priv" id="group-priv" placeholder="Enter group_priv value">
+                <label for="cutoff-type">Cutoff Date:</label>
+                <input type="date" id="cutoff-type" name="cutoff_date" value="{{ today }}">
+                <button type="submit" class="btn btn-warning btn-sm"
+                        onclick="return confirm('Delete lessons of this group_priv from cutoff date for {{ client_obj.full_name }}?');">
+                    Delete Selected Group Priv From Cutoff
+                </button>
+            </form>
+        </div>
+
+    </div>
+{% endif %}
+
+
+        <!-- 🔼 END DELETE CONTROLS -->
+
+
+
+{% if lessons %}
+<div id="lesson-container">
+<button id="scroll-to-today" style="margin-bottom:10px; padding:6px 12px;">
+    Scroll to Today
+</button>
+
+
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 90px;">Date</th>
+                <th style="width: 90px;">Time</th>
+                <th style="width: 90px;">Horse</th>
+                <th style="width: 36px;">Att</th>
+                <th style="width: 60px;">Adjust</th>
+                <th style="width: 60px;">Carry</th>
+                <th style="width: 60px;">Payment</th>
+                <th style="width: 60px;">Price PL</th>
+                <th style="width: 60px;">Balance</th>
+                <th style="width: 36px;">GP</th>
+                <th>Type</th>
+                <th>Ends</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+
+
+{% set today_str = today %}
+
+{% set most_recent = None %}
+
+{% for l in lessons %}
+    {% if l.lesson_date and l.lesson_date|string <= today_str %}
+        {% set most_recent = l.lesson_date|string %}
+    {% endif %}
+{% endfor %}
+
+        <tbody>
+            {% for lesson in lessons %}
+<tr class="
+    {% if lesson.lesson_date|string == today_str %}
+        highlight-today
+    {% elif lesson.lesson_date|string == most_recent %}
+        highlight-today
+    {% endif %}
+">
+
+<td>
+    {% if lesson.lesson_date %}
+        {% if lesson.lesson_date.__class__.__name__ == 'date' %}
+            {{ lesson.lesson_date.strftime('%d-%m-%Y') }}
+        {% else %}
+            {{ lesson.lesson_date.split('-')[2] }}-{{ lesson.lesson_date.split('-')[1] }}-{{ lesson.lesson_date.split('-')[0] }}
+        {% endif %}
+    {% endif %}
+</td>
+                <td>{{ lesson.time_frame or '' }}</td>
+                <td>{{ lesson.horse or '' }}</td>
+
+                <td>
+                    <select class="lesson-edit"
+                            data-field="attendance"
+                            data-id="{{ lesson.lesson_id }}"
+                            style="width:60px;"
+                            onchange="recalculateBalance({{ lesson.lesson_id }})">
+                        <option value="" {% if not lesson.attendance %}selected{% endif %}></option>
+                        <option value="Y" {% if lesson.attendance == 'Y' %}selected{% endif %}>Y</option>
+                        <option value="C" {% if lesson.attendance == 'C' %}selected{% endif %}>C</option>
+                        <option value="N" {% if lesson.attendance == 'N' %}selected{% endif %}>N</option>
+                    </select>
+                </td>
+
+                <td>
+                    <input type="number"
+                           step="0.01"
+                           class="lesson-edit"
+                           data-field="adjust"
+                           data-id="{{ lesson.lesson_id }}"
+                           value="{{ '%.2f'|format(lesson.adjust or 0) }}"
+                           style="width:70px;"
+                           oninput="recalculateBalance({{ lesson.lesson_id }})">
+                </td>
+                <td>
+                    <input type="number"
+                           step="0.01"
+                           class="lesson-edit"
+                           data-field="carry_fwd"
+                           data-id="{{ lesson.lesson_id }}"
+                           value="{{ '%.2f'|format(lesson.carry_fwd or 0) }}"
+                           style="width:70px;"
+                           oninput="recalculateBalance({{ lesson.lesson_id }})">
+                </td>
+
+                <td>
+                    <input type="number"
+                           step="0.01"
+                           class="lesson-edit"
+                           data-field="payment"
+                           data-id="{{ lesson.lesson_id }}"
+                           value="{{ '%.2f'|format(lesson.payment or 0) }}"
+                           style="width:70px;"
+                           oninput="recalculateBalance({{ lesson.lesson_id }})">
+                </td>
+
+                <td>
+                    <input type="number"
+                           step="0.01"
+                           class="lesson-edit"
+                           data-field="price_pl"
+                           data-id="{{ lesson.lesson_id }}"
+                           value="{{ '%.2f'|format(lesson.price_pl or 0) }}"
+                           style="width:70px;"
+                           oninput="recalculateBalance({{ lesson.lesson_id }})">
+                </td>
+
+                <td id="balance_display_{{ lesson.lesson_id }}">
+                    {{ '$%.2f'|format(lesson.balance or 0) }}
+                </td>
+                <td>{{ lesson.group_priv or '' }}</td>
+                <td>{{ lesson.lesson_type or '' }}</td>
+                <td>{{ lesson.block_ends or '' }}</td>
+                <td>{{ lesson.notes or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endif %}
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    function select2PrefixMatcher(params, data) {
+        if (!params.term || !data.text) return data;
+        const term = params.term.trim().toLowerCase();
+        const text = (data.text || '').toLowerCase();
+        return text.indexOf(term) === 0 ? data : null;
+    }
+
+    $(document).ready(function () {
+
+        // -------------------------------
+        // SELECT2 CLIENT DROPDOWN
+        // -------------------------------
+        const $clientSelect = $('#client-select');
+        const $wrapper = $('#client-select-wrapper');
+
+        $clientSelect.select2({
+            width: 'resolve',
+            allowClear: true,
+            minimumResultsForSearch: 0,
+            matcher: select2PrefixMatcher,
+            dropdownParent: $wrapper
+        });
+
+        // Instant-open behaviour
+        $clientSelect.one('mousedown', function (ev) {
+            ev.preventDefault();
+            setTimeout(function () {
+                $clientSelect.select2('open');
+            }, 12);
+        });
+
+        $clientSelect.on('select2:open', function () {
+            const sf = document.querySelector('.select2-container--open .select2-search__field');
+            if (sf) {
+                sf.focus();
+                try { sf.setSelectionRange(sf.value.length, sf.value.length); } catch(e) {}
+            }
+        });
+
+        $clientSelect.on('change', function () {
+            if ($(this).val()) {
+                this.form.submit();
+            }
+        });
+
+
+        // -------------------------------
+        // SCROLL TO TODAY / MOST RECENT
+        // -------------------------------
+function scrollToToday() {
+    const today = "{{ today_str }}";
+    const mostRecent = "{{ most_recent }}";
+
+    const rows = document.querySelectorAll('#lesson-container table tbody tr');
+    let targetRow = null;
+
+    // Try to find today's row
+    rows.forEach(row => {
+        const dateCell = row.querySelector('td').innerText.trim();
+        if (!dateCell) return;
+
+        const parts = dateCell.split("-");
+        if (parts.length !== 3) return;
+
+        const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+        if (iso === today && !targetRow) {
+            targetRow = row;
+        }
+    });
+
+    // If no today → fallback to most recent
+    if (!targetRow) {
+        rows.forEach(row => {
+            const dateCell = row.querySelector('td').innerText.trim();
+            if (!dateCell) return;
+
+            const parts = dateCell.split("-");
+            if (parts.length !== 3) return;
+
+            const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+            if (iso === mostRecent && !targetRow) {
+                targetRow = row;
+            }
+        });
+    }
+
+    if (targetRow) {
+        // Scroll smoothly to the row
+        targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        // Flash highlight
+        targetRow.classList.add("flash-today");
+        setTimeout(() => {
+            targetRow.classList.remove("flash-today");
+        }, 5000);
+    }
+}
+
+        // Wire the button
+        $('#scroll-to-today').on('click', function () {
+            scrollToToday();
+        });
+
+
+        // -------------------------------
+        // INFINITE SCROLL
+        // -------------------------------
+        let currentPage = {{ page }};
+        const totalPages = {{ (total // per_page) + (1 if total % per_page else 0) }};
+        let isLoading = false;
+
+        function loadNextPage() {
+            if (isLoading || currentPage >= totalPages) return;
+            isLoading = true;
+            $('#loading-text').show();
+
+            const params = new URLSearchParams({
+                client: '{{ client_filter }}',
+                start_date: '{{ start_date }}',
+                end_date: '{{ end_date }}',
+                page: currentPage + 1
+            });
+
+            fetch('/client_view?' + params.toString())
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Get new rows
+                    const newRows = doc.querySelectorAll('#lesson-container table tbody tr');
+
+                    // Append to existing table
+                    const tbody = document.querySelector('#lesson-container table tbody');
+                    newRows.forEach(row => tbody.appendChild(row));
+
+                    currentPage += 1;
+                    isLoading = false;
+                    $('#loading-text').hide();
+                });
+        }
+
+        // Scroll listener
+        window.addEventListener('scroll', () => {
+            const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+            if (nearBottom) loadNextPage();
+        });
+
+    });
+</script>
+
+<script>
+$(document).on('input', '.lesson-edit', function () {
+    const lessonId = $(this).data('id');
+    const field = $(this).data('field');
+    const value = $(this).val();
+
+    fetch('/update_lesson_field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            lesson_id: lessonId,
+            field: field,
+            value: value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert("Update failed: " + data.error);
+        }
+    });
+});
+</script>
+
+<script>
+$(document).on('change', '.client-edit', function () {
+    const clientId = $(this).data('id');
+    const field = $(this).data('field');
+    const value = $(this).val();
+
+    fetch('/update_client_field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            client_id: clientId,
+            field: field,
+            value: value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert("Update failed: " + data.error);
+        }
+    });
+});
+</script>
+
+
+<script>
+function recalculateBalance(lessonId) {
+    const paymentField = document.querySelector(`input[data-field="payment"][data-id="${lessonId}"]`);
+    const priceField   = document.querySelector(`input[data-field="price_pl"][data-id="${lessonId}"]`);
+    const adjustField  = document.querySelector(`input[data-field="adjust"][data-id="${lessonId}"]`);
+    const carryField   = document.querySelector(`input[data-field="carry_fwd"][data-id="${lessonId}"]`);
+    const attField     = document.querySelector(`select[data-field="attendance"][data-id="${lessonId}"]`);
+
+    const payment = parseFloat(paymentField?.value || 0) || 0;
+    let   price   = parseFloat(priceField?.value || 0) || 0;
+    const adjust  = parseFloat(adjustField?.value || 0) || 0;
+    const carry   = parseFloat(carryField?.value || 0) || 0;
+    const att     = attField?.value || "";
+
+    // -------------------------
+    // ATTENDANCE RULES
+    // Y = charge full
+    // C = no charge
+    // N = charge full
+    // blank = no charge
+    // -------------------------
+    if (att === "C" || att === "") {
+        price = 0;
+    }
+
+    // -------------------------
+    // BALANCE FORMULA
+    // -------------------------
+    const balance = carry + payment - price + adjust;
+
+    const display = document.getElementById(`balance_display_${lessonId}`);
+    if (display) {
+        display.textContent = `$${balance.toFixed(2)}`;
+    }
+}
+</script>
+
+
+</body>
+</html>
+

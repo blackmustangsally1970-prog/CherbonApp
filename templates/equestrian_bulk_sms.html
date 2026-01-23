@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>EQ Bulk Personalised SMS</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 16px; }
+        label { font-weight: bold; }
+        textarea { width: 100%; box-sizing: border-box; }
+        #fieldsList { font-size: 0.9em; color: #555; margin-top: 6px; }
+        #previewBox { margin-top: 12px; padding: 10px; border: 1px solid #ccc; background: #fafafa; font-size: 0.9em; white-space: pre-wrap; }
+        #status { margin-top: 12px; font-size: 0.95em; }
+    </style>
+</head>
+<body>
+    <h1>EQ Bulk Personalised SMS</h1>
+
+    <h3>1. Upload CSV</h3>
+    <p style="font-size:0.9em;color:#555;">
+        Upload a CSV file. It must contain a <strong>mobile</strong> column.<br>
+        Any other columns can be used as placeholders in your message.
+    </p>
+    <input type="file" id="csvFile" accept=".csv">
+    <div id="fieldsList">No file loaded yet.</div>
+
+    <hr style="margin:20px 0;">
+
+    <h3>2. Message Template</h3>
+    <label for="message">Message (max 160 characters)</label><br>
+    <textarea id="message" rows="4" maxlength="160" placeholder="Hi {name}, your course starts {start_date}. Price is {price}. Thanks CWEC Admin."></textarea>
+    <div id="charCount" style="margin-top: 4px; font-size: 0.85em; color: #555;">
+        0 / 160
+    </div>
+
+    <hr style="margin:20px 0;">
+
+    <h3>3. Preview (first 5 messages)</h3>
+    <div id="previewBox">No preview yet.</div>
+
+    <hr style="margin:20px 0;">
+
+    <button id="sendBtn" style="padding: 10px 20px; font-size: 1.05em;">
+        🚀 Send EQ Bulk Personalised SMS
+    </button>
+
+    <div id="status"></div>
+    <div id="resultDetails" style="margin-top: 10px; font-size: 0.9em;"></div>
+
+    <script>
+        const csvInput = document.getElementById("csvFile");
+        const fieldsList = document.getElementById("fieldsList");
+        const msg = document.getElementById("message");
+        const charCount = document.getElementById("charCount");
+        const previewBox = document.getElementById("previewBox");
+        const sendBtn = document.getElementById("sendBtn");
+        const statusBox = document.getElementById("status");
+        const resultDetails = document.getElementById("resultDetails");
+
+        let uploadedRows = [];
+        let detectedFields = [];
+
+        charCount.textContent = `${msg.value.length} / 160`;
+        msg.addEventListener("input", () => {
+            charCount.textContent = `${msg.value.length} / 160`;
+            updatePreview();
+        });
+
+        csvInput.addEventListener("change", function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const text = e.target.result;
+                parseCSV(text);
+            };
+            reader.readAsText(file);
+        });
+
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) {
+                fieldsList.textContent = "CSV must have a header row and at least one data row.";
+                uploadedRows = [];
+                detectedFields = [];
+                previewBox.textContent = "No preview yet.";
+                return;
+            }
+
+            const header = lines[0].split(",").map(h => h.trim());
+            detectedFields = header;
+
+            if (!header.includes("mobile")) {
+                fieldsList.textContent = "Error: CSV must contain a 'mobile' column.";
+                uploadedRows = [];
+                previewBox.textContent = "No preview due to missing 'mobile' column.";
+                return;
+            }
+
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const parts = line.split(",");
+                const row = {};
+                header.forEach((h, idx) => {
+                    row[h] = (parts[idx] || "").trim();
+                });
+                rows.push(row);
+            }
+
+            uploadedRows = rows;
+
+            fieldsList.textContent = "Detected fields: " + header.join(", ") +
+                " | Rows loaded: " + rows.length;
+
+            updatePreview();
+        }
+
+        function updatePreview() {
+            if (!uploadedRows.length) {
+                previewBox.textContent = "No data loaded yet.";
+                return;
+            }
+            const template = msg.value.trim();
+            if (!template) {
+                previewBox.textContent = "Enter a message template to see preview.";
+                return;
+            }
+
+            const maxPreview = Math.min(5, uploadedRows.length);
+            const lines = [];
+
+            for (let i = 0; i < maxPreview; i++) {
+                const row = uploadedRows[i];
+                try {
+                    let personalised = template;
+                    detectedFields.forEach(field => {
+                        const placeholder = `{${field}}`;
+                        if (personalised.includes(placeholder)) {
+                            personalised = personalised.replaceAll(placeholder, row[field] || "");
+                        }
+                    });
+                    lines.push((i + 1) + ". " + personalised);
+                } catch (e) {
+                    lines.push((i + 1) + ". [Error formatting row]");
+                }
+            }
+
+            if (uploadedRows.length > maxPreview) {
+                lines.push(`...and ${uploadedRows.length - maxPreview} more messages.`);
+            }
+
+            previewBox.textContent = lines.join("\n");
+        }
+
+        sendBtn.addEventListener("click", async () => {
+            const template = msg.value.trim();
+            if (!template) {
+                statusBox.textContent = "Message template cannot be empty.";
+                statusBox.style.color = "red";
+                return;
+            }
+            if (!uploadedRows.length) {
+                statusBox.textContent = "No CSV data loaded.";
+                statusBox.style.color = "red";
+                return;
+            }
+
+            statusBox.textContent = "Sending...";
+            statusBox.style.color = "#555";
+            resultDetails.textContent = "";
+
+            const response = await fetch("/equestrian/bulk_sms/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    template: template,
+                    rows: uploadedRows,
+                    fields: detectedFields
+                })
+            });
+
+            const result = await response.json();
+
+            statusBox.textContent = result.status;
+            statusBox.style.color = result.ok ? "green" : "red";
+
+            resultDetails.innerHTML = `
+                <p style="color:green;">
+                    <strong>Sent (${result.sent}):</strong><br>
+                    ${result.sent_numbers.length ? result.sent_numbers.join(", ") : "None"}
+                </p>
+                <p style="color:red;">
+                    <strong>Failed (${result.failed}):</strong><br>
+                    ${result.failed_numbers.length ? result.failed_numbers.join(", ") : "None"}
+                </p>
+                <p style="color:orange;">
+                    <strong>Skipped (${result.skipped}):</strong><br>
+                    ${result.skipped_numbers.length ? result.skipped_numbers.join(", ") : "None"}
+                </p>
+            `;
+        });
+    </script>
+</body>
+</html>

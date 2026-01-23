@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Wedding SMS Broadcast</title>
+</head>
+
+<body>
+    <h1>Wedding SMS Broadcast</h1>
+
+    <label for="message"><strong>Message (max 160 characters)</strong></label><br>
+    <textarea id="message" rows="6" maxlength="160">
+Hi there! You should have our Cherbon Waters wedding brochure now. If you'd like a viewing or have questions, we're here to help. Contact Jenny on 0405184280
+</textarea>
+
+    <div id="charCount" style="margin-top: 6px; font-size: 0.9em; color: #555;">
+        0 / 160
+    </div>
+
+    <script>
+        const msg = document.getElementById("message");
+        const counter = document.getElementById("charCount");
+
+        msg.addEventListener("input", () => {
+            counter.textContent = `${msg.value.length} / 160`;
+        });
+    </script>
+
+<hr style="margin: 20px 0;">
+
+<h3>Upload Phone Numbers</h3>
+<p style="color:#555; font-size:0.9em;">
+    Upload a .csv or .txt file containing one phone number per line.
+</p>
+
+<input type="file" id="phoneFile" accept=".csv,.txt">
+
+<div id="numberPreview" style="margin-top: 10px; font-size: 0.9em; color: #555;">
+    No numbers loaded yet.
+</div>
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const res = await fetch("/wedding/sms/pending");
+        const data = await res.json();
+
+        if (data.numbers && data.numbers.length > 0) {
+            window.uploadedNumbers = data.numbers;
+            document.getElementById("numberPreview").textContent =
+                `Loaded ${data.numbers.length} phone numbers (auto-loaded).`;
+        }
+    } catch (e) {
+        console.log("Could not auto-load pending numbers", e);
+    }
+});
+</script>
+
+
+
+
+
+<script>
+    const fileInput = document.getElementById("phoneFile");
+    const preview = document.getElementById("numberPreview");
+
+    fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const lines = e.target.result.split(/\r?\n/);
+
+            // Clean and filter
+            const numbers = lines
+                .map(n => n.trim())
+                .filter(n => n.length > 0);
+
+            // Store globally for later sending
+            window.uploadedNumbers = numbers;
+
+            preview.textContent = `Loaded ${numbers.length} phone numbers.`;
+        };
+
+        reader.readAsText(file);
+    });
+</script>
+
+
+<hr style="margin: 20px 0;">
+
+<button id="sendBtn" style="padding: 10px 20px; font-size: 1.1em;">
+    🚀 Send Wedding SMS
+</button>
+
+<div id="sendStatus" style="margin-top: 15px; font-size: 0.95em; color: #555;"></div>
+<div id="resultDetails" style="margin-top: 15px; font-size: 0.9em;"></div>
+
+
+<script>
+    const sendBtn = document.getElementById("sendBtn");
+    const statusBox = document.getElementById("sendStatus");
+
+    sendBtn.addEventListener("click", async () => {
+        const message = document.getElementById("message").value.trim();
+        const numbers = window.uploadedNumbers || [];
+
+        // Basic validation
+        if (message.length === 0) {
+            statusBox.textContent = "Message cannot be empty.";
+            statusBox.style.color = "red";
+            return;
+        }
+
+        if (numbers.length === 0) {
+            statusBox.textContent = "No phone numbers uploaded.";
+            statusBox.style.color = "red";
+            return;
+        }
+
+        statusBox.textContent = "Sending...";
+        statusBox.style.color = "#555";
+
+        // Send POST request
+        const response = await fetch("/wedding/sms/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message: message,
+                numbers: numbers
+            })
+        });
+
+        const result = await response.json();
+
+        statusBox.textContent = result.status;
+        statusBox.style.color = result.ok ? "green" : "red";
+
+        const details = document.getElementById("resultDetails");
+
+        details.innerHTML = `
+            <p style="color:green;">
+                <strong>Sent (${result.sent}):</strong><br>
+                ${result.sent_numbers.length ? result.sent_numbers.join(", ") : "None"}
+            </p>
+
+            <p style="color:red;">
+                <strong>Skipped (${result.skipped}):</strong><br>
+                ${result.skipped_numbers.length ? result.skipped_numbers.join(", ") : "None"}
+            </p>
+
+            <p style="color:orange;">
+                <strong>Failed (${result.failed}):</strong><br>
+                ${result.failed_numbers.length ? result.failed_numbers.join(", ") : "None"}
+            </p>
+        `;
+    });
+</script>
+
+
+</body>
+
+</html>

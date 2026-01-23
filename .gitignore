@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Environment files
+.env
+*.env
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE / Editor junk
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Flask / SQLAlchemy
+instance/
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# Bytecode cache
+*.cache/
+
+# Azure artifacts
+.azure/

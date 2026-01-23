@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Process Submission #{{ submission.id }}</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .client-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        label { font-weight: bold; display: block; margin-bottom: 4px; }
+        select { padding: 6px; width: 100%; }
+        button {
+            padding: 10px 20px;
+            background: #0645AD;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Process Submission #{{ submission.id }}</h1>
+
+<form method="post" action="{{ url_for('finalize_notification', webhook_id=submission.id) }}">
+
+    {% for c in clients %}
+        <div class="client-box">
+
+            <p><label>Name:</label> {{ c.name }}</p>
+            <p><label>Age:</label> {{ c.age }}</p>
+            <p><label>Guardian:</label> {{ c.guardian }}</p>
+            <p><label>Mobile:</label> {{ c.mobile }}</p>
+            <p><label>Email:</label> {{ c.email }}</p>
+
+            <label>Match:</label>
+            <select name="client_choice_{{ loop.index }}">
+                <option value="new">Create New</option>
+                <option value="new_same_name">Create New (Same Name)</option>
+
+                {% for m in c.matches %}
+                    <option value="existing_{{ m.client_id }}">
+                        Use Existing: {{ m.full_name }}
+                    </option>
+                    <option value="overwrite_{{ m.client_id }}">
+                        Overwrite Existing: {{ m.full_name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <!-- Hidden fields -->
+            <input type="hidden" name="name_{{ loop.index }}" value="{{ c.name }}">
+            <input type="hidden" name="age_{{ loop.index }}" value="{{ c.age }}">
+            <input type="hidden" name="guardian_{{ loop.index }}" value="{{ c.guardian }}">
+            <input type="hidden" name="mobile_{{ loop.index }}" value="{{ c.mobile }}">
+            <input type="hidden" name="email_{{ loop.index }}" value="{{ c.email }}">
+            <input type="hidden" name="disclaimer_{{ loop.index }}" value="{{ c.disclaimer }}">
+
+        </div>
+    {% endfor %}
+
+    <button type="submit">Save All Riders</button>
+
+</form>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+<a href="{{ url_for('index') }}">← Back to Equestrian Menu</a>
+<h2>Range Blockouts</h2>
+<form method="POST">
+  <label>Start:</label>
+  <input type="date" name="start_date" required>
+  <label>End:</label>
+  <input type="date" name="end_date" required>
+  <label>Reason:</label>
+  <input type="text" name="reason" placeholder="Optional reason">
+  <button type="submit">Add Blockout</button>
+</form>
+
+<table>
+  <thead><tr><th>Start</th><th>End</th><th>Reason</th><th>Action</th></tr></thead>
+  <tbody>
+    {% for b in blockouts %}
+    <tr>
+      <td>{{ b.start_date.strftime('%Y-%m-%d') }}</td>
+      <td>{{ b.end_date.strftime('%Y-%m-%d') }}</td>
+      <td>{{ b.reason }}</td>
+      <td>
+        <form method="POST" action="{{ url_for('delete_blockout_range', row_id=b.id) }}">
+          <button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

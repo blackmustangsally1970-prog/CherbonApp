@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invite Submissions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        a.back-btn {
+            font-size: 18px;
+            text-decoration: none;
+            color: #0077cc;
+        }
+        a.back-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>{{ count }} new submission{{ 's' if count != 1 else '' }} fetched</h2>
+
+    <p style="margin-top: 20px;">
+        <a class="back-btn" href="{{ url_for('pending_lessons') }}">
+            ← Back to Pending Lessons
+        </a>
+    </p>
+
+</body>
+</html>

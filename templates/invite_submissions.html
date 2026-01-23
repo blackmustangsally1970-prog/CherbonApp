@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Invite Submissions</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            th, td {
+                border: 1px solid #ccc;
+                padding: 8px 10px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            tr:nth-child(even) {
+                background-color: #fafafa;
+            }
+            a.process-btn {
+                background-color: #007bff;
+                color: white;
+                padding: 5px 10px;
+                text-decoration: none;
+                border-radius: 4px;
+            }
+            a.process-btn:hover {
+                background-color: #0056b3;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h2>Invite Submissions</h2>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Invite Token</th>
+                <th>Received</th>
+                <th>Processed</th>
+                <th>Action</th>
+            </tr>
+
+            {% for sub in subs %}
+            <tr>
+                <td>{{ sub.id }}</td>
+                <td>{{ sub.invite_token }}</td>
+                <td>{{ sub.received_at }}</td>
+                <td>{{ sub.processed }}</td>
+                <td>
+                    <a class="process-btn" href="/notifications/process/{{ sub.id }}">
+                        Process
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

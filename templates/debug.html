@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Debug & Admin Tools</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; }
+    /* Top link area */
+    .top-nav {
+      padding: 12px;
+    }
+    .top-nav a {
+      color: #0077cc;
+      text-decoration: none;
+    }
+    .top-nav a:hover { text-decoration: underline; }
+
+    header { padding: 10px 12px; }
+    header h3 { margin: 0; }
+
+    /* Vertical link list */
+    nav { padding: 12px; }
+    nav a {
+      display: block;
+      color: #0077cc;
+      text-decoration: none;
+      margin: 8px 0;
+    }
+    nav a:hover { text-decoration: underline; }
+
+    main { padding: 12px; }
+    .hidden-form { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Admin menu link at the very top -->
+  <div class="top-nav">
+    <a href="{{ url_for('index') }}">← Equestrian Admin Menu</a>
+  </div>
+
+  <header>
+    <h3>Debug & Admin Tools</h3>
+  </header>
+
+  <!-- Vertical links -->
+  <nav>
+    <a href="#" id="reindex-link">Reindex Tables</a>
+    <a href="{{ url_for('view_admin_logs') }}">View Admin Logs</a>
+  </nav>
+
+  <!-- Hidden POST form for Reindex Tables -->
+  <form id="reindex-form" class="hidden-form" method="POST" action="{{ url_for('reindex_tables') }}"></form>
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-container" style="margin-bottom:16px;">
+          {% for category, message in messages %}
+            <div style="color:#333; font-size:14px; margin-bottom:8px;">{{ message }}</div>
+          {% endfor %}
+        </div>
+        <script>
+          setTimeout(() => {
+            const fc = document.getElementById('flash-container');
+            if (fc) fc.style.display = 'none';
+          }, 5000);
+        </script>
+      {% endif %}
+    {% endwith %}
+
+    {% if last_log %}
+      <p style="color:#555; font-size:13px;">
+        Last recalculation: {{ last_log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+      </p>
+    {% endif %}
+  </main>
+
+  <script>
+    document.getElementById('reindex-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      if (confirm('Reindexing may briefly lock tables. Proceed?')) {
+        document.getElementById('reindex-form').submit();
+      }
+    });
+  </script>
+</body>
+</html>
