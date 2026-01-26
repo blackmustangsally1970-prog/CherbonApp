@@ -2000,65 +2000,6 @@ def create_app():
 
 
 
-    @app.route("/client/<int:client_id>/change_horse", methods=["POST"])
-    def change_client_horse(client_id):
-        mode = request.form.get("mode")
-        group_priv = request.form.get("group_priv")
-        cutoff_date = request.form.get("cutoff_date")
-        new_horse_id = request.form.get("new_horse")
-
-        # Convert horse_id → horse name
-        horse_obj = Horse.query.get(new_horse_id)
-        new_horse_name = horse_obj.horse
-
-        # Get client name
-        client_obj = Client.query.get(client_id)
-        client_name = client_obj.full_name
-
-        if not group_priv:
-            flash("Group Priv is required.", "danger")
-            return redirect(url_for("client_view", client_id=client_id))
-
-        if mode == "change_horse":
-            db.session.execute(
-                text("""
-                    UPDATE lessons
-                    SET horse = :new_horse
-                    WHERE client = :client_name
-                      AND group_priv = :group_priv
-                      AND lesson_date >= :cutoff_date
-                """),
-                {
-                    "new_horse": new_horse_name,
-                    "client_name": client_name,
-                    "group_priv": group_priv,
-                    "cutoff_date": cutoff_date
-                }
-            )
-
-        elif mode == "assign_if_empty":
-            db.session.execute(
-                text("""
-                    UPDATE lessons
-                    SET horse = :new_horse
-                    WHERE client = :client_name
-                      AND group_priv = :group_priv
-                      AND lesson_date >= :cutoff_date
-                      AND (horse IS NULL OR horse = '')
-                """),
-                {
-                    "new_horse": new_horse_name,
-                    "client_name": client_name,
-                    "group_priv": group_priv,
-                    "cutoff_date": cutoff_date
-                }
-            )
-
-        db.session.commit()
-        return redirect(url_for("client_view", client_id=client_id))
-
-
-
     @app.route('/debug', methods=['GET', 'POST'])
     def debug_page():
         selected_client = request.args.get('client') or request.form.get('client')
