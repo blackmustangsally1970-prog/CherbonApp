@@ -31,8 +31,11 @@ jobs:
         with:
           name: python-app
           path: |
-            .
-            !antenv/
+            app.py
+            requirements.txt
+            templates/
+            static/
+            *.py
 
   deploy:
     runs-on: ubuntu-latest
