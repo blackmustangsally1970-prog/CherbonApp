@@ -1958,47 +1958,6 @@ def create_app():
             return redirect(short_links[code])
         return "Invalid or expired link", 404
 
-    @app.route("/client/<int:client_id>/change_price", methods=["POST"])
-    def change_client_price(client_id):
-        mode = request.form.get("mode")
-        group_priv = request.form.get("group_priv")
-        cutoff_date = request.form.get("cutoff_date")
-        new_price = request.form.get("new_price")
-
-        # Get the actual client name from the DB
-        client_obj = Client.query.get(client_id)
-        client_name = client_obj.full_name
-
-        if not group_priv:
-            flash("Group Priv is required.", "danger")
-            return redirect(url_for("client_view", client_id=client_id))
-
-        if not new_price:
-            flash("New price is required.", "danger")
-            return redirect(url_for("client_view", client_id=client_id))
-
-        db.session.execute(
-            text("""
-                UPDATE lessons
-                SET price_pl = :new_price
-                WHERE client = :client_name
-                  AND group_priv = :group_priv
-                  AND lesson_date >= :cutoff_date
-            """),
-            {
-                "new_price": new_price,
-                "client_name": client_name,
-                "group_priv": group_priv,
-                "cutoff_date": cutoff_date
-            }
-        )
-
-        db.session.commit()
-        return redirect(url_for("client_view", client_id=client_id))
-
-
-
-
 
     @app.route('/debug', methods=['GET', 'POST'])
     def debug_page():
