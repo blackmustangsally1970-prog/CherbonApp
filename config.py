@@ -2,9 +2,17 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "devkey")
-    SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Safety check to prevent silent failures
-    if not SQLALCHEMY_DATABASE_URI:
-        raise RuntimeError("Environment variable SQLALCHEMY_DATABASE_URI is not set.")
+    # Try SQLALCHEMY_DATABASE_URI first (your preferred variable)
+    db_url = os.environ.get("SQLALCHEMY_DATABASE_URI")
+
+    # If Azure injects DATABASE_URL, use it
+    if not db_url:
+        db_url = os.environ.get("DATABASE_URL")
+
+    # Final fallback to SQLite
+    if not db_url:
+        db_url = "sqlite:///mydb.db"
+
+    SQLALCHEMY_DATABASE_URI = db_url
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
