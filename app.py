@@ -686,12 +686,11 @@ def parse_jotform_payload(payload, forced_submission_id=None):
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
-    app.config.from_object(Config)
+    app.config.from_object(Config())      # <-- fix
     app.config['SQLALCHEMY_ECHO'] = True
     db.init_app(app)
 
-    print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())
-
+    # print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())  # <-- remove or wrap
 
     @app.route("/health")
     def health():
