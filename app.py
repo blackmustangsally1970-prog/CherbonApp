@@ -1958,6 +1958,107 @@ def create_app():
             return redirect(short_links[code])
         return "Invalid or expired link", 404
 
+    @app.route("/client/<int:client_id>/change_price", methods=["POST"])
+    def change_client_price(client_id):
+        mode = request.form.get("mode")
+        group_priv = request.form.get("group_priv")
+        cutoff_date = request.form.get("cutoff_date")
+        new_price = request.form.get("new_price")
+
+        # Get the actual client name from the DB
+        client_obj = Client.query.get(client_id)
+        client_name = client_obj.full_name
+
+        if not group_priv:
+            flash("Group Priv is required.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        if not new_price:
+            flash("New price is required.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        db.session.execute(
+            text("""
+                UPDATE lessons
+                SET price_pl = :new_price
+                WHERE client = :client_name
+                  AND group_priv = :group_priv
+                  AND lesson_date >= :cutoff_date
+            """),
+            {
+                "new_price": new_price,
+                "client_name": client_name,
+                "group_priv": group_priv,
+                "cutoff_date": cutoff_date
+            }
+        )
+
+        db.session.commit()
+        return redirect(url_for("client_view", client_id=client_id))
+
+
+
+
+
+    @app.route("/client/<int:client_id>/change_horse", methods=["POST"])
+    def change_client_horse(client_id):
+        mode = request.form.get("mode")
+        group_priv = request.form.get("group_priv")
+        cutoff_date = request.form.get("cutoff_date")
+        new_horse_id = request.form.get("new_horse")
+
+        # Convert horse_id → horse name
+        horse_obj = Horse.query.get(new_horse_id)
+        new_horse_name = horse_obj.horse
+
+        # Get client name
+        client_obj = Client.query.get(client_id)
+        client_name = client_obj.full_name
+
+        if not group_priv:
+            flash("Group Priv is required.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        if mode == "change_horse":
+            db.session.execute(
+                text("""
+                    UPDATE lessons
+                    SET horse = :new_horse
+                    WHERE client = :client_name
+                      AND group_priv = :group_priv
+                      AND lesson_date >= :cutoff_date
+                """),
+                {
+                    "new_horse": new_horse_name,
+                    "client_name": client_name,
+                    "group_priv": group_priv,
+                    "cutoff_date": cutoff_date
+                }
+            )
+
+        elif mode == "assign_if_empty":
+            db.session.execute(
+                text("""
+                    UPDATE lessons
+                    SET horse = :new_horse
+                    WHERE client = :client_name
+                      AND group_priv = :group_priv
+                      AND lesson_date >= :cutoff_date
+                      AND (horse IS NULL OR horse = '')
+                """),
+                {
+                    "new_horse": new_horse_name,
+                    "client_name": client_name,
+                    "group_priv": group_priv,
+                    "cutoff_date": cutoff_date
+                }
+            )
+
+        db.session.commit()
+        return redirect(url_for("client_view", client_id=client_id))
+
+
+
     @app.route('/debug', methods=['GET', 'POST'])
     def debug_page():
         selected_client = request.args.get('client') or request.form.get('client')
@@ -3439,6 +3540,84 @@ Cherbon Waters Admin
         print(row.raw_payload)
         return "Printed to console"
 
+    @app.route("/client/<int:client_id>/change_price", methods=["POST"])
+    def change_client_price(client_id):
+        mode = request.form.get("mode")
+        group_priv = request.form.get("group_priv")
+        cutoff_date = request.form.get("cutoff_date")
+        new_price = request.form.get("new_price")
+
+        if not group_priv:
+            flash("Group Priv is required.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        if not new_price:
+            flash("New price is required.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        # Update price_pl for all matching lessons from cutoff date
+        db.session.execute("""
+            UPDATE lessons
+            SET price_pl = :new_price
+            WHERE client_id = :client_id
+              AND group_priv = :group_priv
+              AND lesson_date >= :cutoff_date
+        """, {
+            "new_price": new_price,
+            "client_id": client_id,
+            "group_priv": group_priv,
+            "cutoff_date": cutoff_date
+        })
+
+        db.session.commit()
+        return redirect(url_for("client_view", client_id=client_id))
+
+
+    @app.route("/client/<int:client_id>/change_horse", methods=["POST"])
+    def change_client_horse(client_id):
+        mode = request.form.get("mode")
+        group_priv = request.form.get("group_priv")
+        cutoff_date = request.form.get("cutoff_date")
+        new_horse = request.form.get("new_horse")
+
+        if not group_priv:
+            flash("Group Priv is required.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        if mode == "change_horse":
+            # Change horse for ALL matching lessons from cutoff date
+            db.session.execute("""
+                UPDATE lessons
+                SET horse_id = :new_horse
+                WHERE client_id = :client_id
+                  AND group_priv = :group_priv
+                  AND lesson_date >= :cutoff_date
+            """, {
+                "new_horse": new_horse,
+                "client_id": client_id,
+                "group_priv": group_priv,
+                "cutoff_date": cutoff_date
+            })
+
+        elif mode == "assign_if_empty":
+            # Assign horse ONLY where horse_id is NULL or empty
+            db.session.execute("""
+                UPDATE lessons
+                SET horse_id = :new_horse
+                WHERE client_id = :client_id
+                  AND group_priv = :group_priv
+                  AND lesson_date >= :cutoff_date
+                  AND (horse_id IS NULL OR horse_id = '')
+            """, {
+                "new_horse": new_horse,
+                "client_id": client_id,
+                "group_priv": group_priv,
+                "cutoff_date": cutoff_date
+            })
+
+        db.session.commit()
+        return redirect(url_for("client_view", client_id=client_id))
+
 
     @app.route('/client_view')
     def client_view():
@@ -3457,6 +3636,11 @@ Cherbon Waters Admin
         # ---------------------------------------------------------
         clients = db.session.query(Client).order_by(Client.full_name.asc()).all()
         client_names = [(c.client_id, c.full_name) for c in clients]
+
+        # ---------------------------------------------------------
+        # LOAD ALL HORSES  <-- THIS WAS MISSING
+        # ---------------------------------------------------------
+        horses = db.session.query(Horse).order_by(Horse.horse.asc()).all()
 
         # ---------------------------------------------------------
         # LOOK UP SELECTED CLIENT
@@ -3501,10 +3685,12 @@ Cherbon Waters Admin
             per_page=per_page,
             client_names=client_names,
             client_obj=client_obj,
+            horses=horses,                     # <-- NOW INCLUDED
             today=date.today().isoformat()
         )
 
     return app
+
 
 app = create_app()
 

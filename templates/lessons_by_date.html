@@ -603,11 +603,17 @@ select.teacher-dropdown {
   display: block !important;
 }
 
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
+
 
 
 
 </style>
-
 
 </head>
 
@@ -1034,8 +1040,10 @@ select.teacher-dropdown {
 
       </div>
 
-      <div class="lesson-table">
+<div class="lesson-table">
+    <div class="table-scroll">
         <table>
+
           <thead>
             <tr>
               <th>Horse</th>
@@ -1167,7 +1175,9 @@ select.teacher-dropdown {
   {% endfor %}
 </tbody>
         </table>
-      </div>
+    </div>
+</div>
+
     </div> {# close .lesson-block #}
     {% if show_arena_break %}
       <div class="print-break-after"></div>

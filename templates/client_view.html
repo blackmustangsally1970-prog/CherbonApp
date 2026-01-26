@@ -47,6 +47,27 @@
     resize: vertical;
 }
 
+    .action-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .action-row label {
+        font-weight: bold;
+        min-width: 90px;
+    }
+
+    .action-row select,
+    .action-row input[type="number"] {
+        width: 180px;   /* same width for horse + price */
+        padding: 4px;
+    }
+
+    .action-row button {
+        white-space: nowrap;
+    }
 
 
 
@@ -306,40 +327,158 @@
             </label>
             <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
         </form>
+{% endif %}
 
-        <!-- ========================= -->
-        <!-- DELETE CONTROLS (UNCHANGED) -->
-        <!-- ========================= -->
 
-        <div style="margin-top: 12px;">
-            <!-- Delete ALL future lessons -->
-            <form action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
-                  method="post" style="display:inline-block; margin-right:12px;">
-                <input type="hidden" name="mode" value="all">
-                <label for="cutoff-all">Cutoff Date:</label>
-                <input type="date" id="cutoff-all" name="cutoff_date" value="{{ today }}">
-                <button type="submit" class="btn btn-danger btn-sm"
-                        onclick="return confirm('Delete ALL lessons from cutoff date for {{ client_obj.full_name }}?');">
-                    Delete ALL From Cutoff
-                </button>
-            </form>
+{% if client_obj %}
 
-            <!-- Delete by group_priv -->
-            <form action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
-                  method="post" style="display:inline-block;">
-                <input type="hidden" name="mode" value="group_priv">
-                <label for="group-priv">Group Priv:</label>
-                <input type="text" name="group_priv" id="group-priv" placeholder="Enter group_priv value">
-                <label for="cutoff-type">Cutoff Date:</label>
-                <input type="date" id="cutoff-type" name="cutoff_date" value="{{ today }}">
-                <button type="submit" class="btn btn-warning btn-sm"
-                        onclick="return confirm('Delete lessons of this group_priv from cutoff date for {{ client_obj.full_name }}?');">
-                    Delete Selected Group Priv From Cutoff
-                </button>
-            </form>
-        </div>
-
+<!-- GLOBAL GROUP PRIV + GLOBAL CUTOFF DATE -->
+<div style="margin-top: 12px; margin-bottom: 12px; display:flex; gap:20px; align-items:center;">
+    <div>
+        <label for="global-cutoff" style="font-weight:bold;">Cutoff Date:</label>
+        <input type="date" id="global-cutoff" value="{{ today }}">
     </div>
+    <div>
+        <label for="global-grouppriv" style="font-weight:bold;">Group Priv:</label>
+        <input type="text" id="global-grouppriv" placeholder="e.g. J or CT">
+    </div>
+</div>
+
+<script>
+    function applyCutoff(formId) {
+        const cutoff = document.getElementById('global-cutoff').value;
+        const gp = document.getElementById('global-grouppriv').value;
+
+        const form = document.getElementById(formId);
+
+        // Set cutoff date
+        const cutoffField = form.querySelector('input[name="cutoff_date"]');
+        if (cutoffField) cutoffField.value = cutoff;
+
+        // Set group_priv if the form uses it
+        const gpField = form.querySelector('input[name="group_priv"]');
+        if (gpField) gpField.value = gp;
+
+        return true;
+    }
+</script>
+
+
+
+<div style="margin-top: 12px;">
+
+    <!-- DELETE ALL -->
+    <form id="form-delete-all"
+          action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
+          method="post" style="display:inline-block; margin-right:12px;"
+          onsubmit="return applyCutoff('form-delete-all');">
+
+        <input type="hidden" name="mode" value="all">
+        <input type="hidden" name="cutoff_date">
+
+        <button type="submit" class="btn btn-danger btn-sm"
+                onclick="return confirm('Delete ALL lessons from cutoff date for {{ client_obj.full_name }}?');">
+            Delete ALL Lessons From Cutoff
+        </button>
+    </form>
+
+    <!-- DELETE BY GROUP PRIV -->
+    <form id="form-delete-gp"
+          action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
+          method="post" style="display:inline-block;"
+          onsubmit="return applyCutoff('form-delete-gp');">
+
+        <input type="hidden" name="mode" value="group_priv">
+        <input type="hidden" name="cutoff_date">
+        <input type="hidden" name="group_priv">
+        <button type="submit" class="btn btn-warning btn-sm"
+                onclick="return confirm('Delete lessons of this group_priv from cutoff date for {{ client_obj.full_name }}?');">
+            Delete Selected Group Priv From Cutoff
+        </button>
+    </form>
+
+</div>
+<div style="margin-top: 20px;">
+
+<!-- CHANGE HORSE -->
+<form id="form-change-horse"
+      action="{{ url_for('change_client_horse', client_id=client_obj.client_id) }}"
+      method="post"
+      onsubmit="return applyCutoff('form-change-horse');"
+      style="margin-bottom:10px;">
+
+    <input type="hidden" name="mode" value="change_horse">
+    <input type="hidden" name="cutoff_date">
+    <input type="hidden" name="group_priv">
+
+    <div style="display:flex; align-items:center; gap:12px;">
+        <label class="form-label" style="min-width:110px;">New Horse:</label>
+
+        <select name="new_horse" style="width:180px; padding:4px;">
+            {% for horse in horses %}
+                <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-info btn-sm"
+                onclick="return confirm('Change horse for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
+            Change Horse From Cutoff
+        </button>
+    </div>
+</form>
+<!-- ASSIGN IF EMPTY -->
+<form id="form-assign-empty"
+      action="{{ url_for('change_client_horse', client_id=client_obj.client_id) }}"
+      method="post"
+      onsubmit="return applyCutoff('form-assign-empty');"
+      style="margin-bottom:10px;">
+
+    <input type="hidden" name="mode" value="assign_if_empty">
+    <input type="hidden" name="cutoff_date">
+    <input type="hidden" name="group_priv">
+
+    <div style="display:flex; align-items:center; gap:12px;">
+        <label class="form-label" style="min-width:110px;">Horse:</label>
+
+        <select name="new_horse" style="width:180px; padding:4px;">
+            {% for horse in horses %}
+                <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-success btn-sm"
+                onclick="return confirm('Assign horse ONLY where empty for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
+            Assign Horse If Empty
+        </button>
+    </div>
+</form>
+<!-- CHANGE PRICE -->
+<form id="form-change-price"
+      action="{{ url_for('change_client_price', client_id=client_obj.client_id) }}"
+      method="post"
+      onsubmit="return applyCutoff('form-change-price');"
+      style="margin-bottom:10px;">
+
+    <input type="hidden" name="mode" value="change_price">
+    <input type="hidden" name="cutoff_date">
+    <input type="hidden" name="group_priv">
+
+    <div style="display:flex; align-items:center; gap:12px;">
+        <label class="form-label" style="min-width:110px;">New Price:</label>
+
+        <input type="number" step="0.01" name="new_price"
+               placeholder="e.g. 65.00"
+               style="width:175px; padding:4px;">
+
+        <button type="submit" class="btn btn-primary btn-sm"
+                onclick="return confirm('Change price_pl for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
+            Change Price From Cutoff
+        </button>
+    </div>
+</form>
+
+</div>
+
 {% endif %}
 
 
@@ -349,12 +488,6 @@
 
 {% if lessons %}
 <div id="lesson-container">
-<button id="scroll-to-today" style="margin-bottom:10px; padding:6px 12px;">
-    Scroll to Today
-</button>
-
-
-
     <table>
         <thead>
             <tr>

@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>EQ Bulk Personalised SMS</title>
+
     <style>
         body { font-family: sans-serif; padding: 20px; }
         h1 { margin-bottom: 16px; }
@@ -11,9 +12,42 @@
         #fieldsList { font-size: 0.9em; color: #555; margin-top: 6px; }
         #previewBox { margin-top: 12px; padding: 10px; border: 1px solid #ccc; background: #fafafa; font-size: 0.9em; white-space: pre-wrap; }
         #status { margin-top: 12px; font-size: 0.95em; }
+
+        /* Back button styling */
+        .back-btn-container {
+            margin: 10px 0 15px 0;
+        }
+
+        .back-btn {
+            display: inline-block;
+            font-size: 18px;
+            padding: 8px 14px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #000;
+            border: 1px solid #ccc;
+        }
+
+        .back-btn:hover {
+            background: #e4e4e4;
+        }
+
+        @media (max-width: 600px) {
+            .back-btn {
+                font-size: 20px;
+                padding: 10px 16px;
+            }
+        }
     </style>
 </head>
+
 <body>
+
+    <div class="back-btn-container no-print">
+        <a href="{{ url_for('index') }}" class="back-btn">← Back to Eq Menu</a>
+    </div>
+
     <h1>EQ Bulk Personalised SMS</h1>
 
     <h3>1. Upload CSV</h3>
@@ -28,7 +62,7 @@
 
     <h3>2. Message Template</h3>
     <label for="message">Message (max 160 characters)</label><br>
-    <textarea id="message" rows="4" maxlength="160" placeholder="Hi {name}, your course starts {start_date}. Price is {price}. Thanks CWEC Admin."></textarea>
+    <textarea id="message" rows="4" maxlength="160"></textarea>
     <div id="charCount" style="margin-top: 4px; font-size: 0.85em; color: #555;">
         0 / 160
     </div>

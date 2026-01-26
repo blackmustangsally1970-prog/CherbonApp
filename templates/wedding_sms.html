@@ -3,15 +3,48 @@
 <head>
     <meta charset="utf-8">
     <title>Wedding SMS Broadcast</title>
+
+    <style>
+    .back-btn-container {
+        margin: 10px 0 15px 0;
+    }
+
+    .back-btn {
+        display: inline-block;
+        font-size: 18px;
+        padding: 8px 14px;
+        background: #f0f0f0;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #000;
+        border: 1px solid #ccc;
+    }
+
+    .back-btn:hover {
+        background: #e4e4e4;
+    }
+
+    @media (max-width: 600px) {
+        .back-btn {
+            font-size: 20px;
+            padding: 10px 16px;
+        }
+    }
+    </style>
 </head>
 
 <body>
+
+    <div class="back-btn-container no-print">
+        <a href="{{ url_for('index') }}" class="back-btn">← Back to Eq Menu</a>
+    </div>
+
     <h1>Wedding SMS Broadcast</h1>
 
     <label for="message"><strong>Message (max 160 characters)</strong></label><br>
     <textarea id="message" rows="6" maxlength="160">
-Hi there! You should have our Cherbon Waters wedding brochure now. If you'd like a viewing or have questions, we're here to help. Contact Jenny on 0405184280
-</textarea>
+We hope the Cherbon Waters brochure brings your vision to life. For an intimate viewing or personalised support, Jenny is available on 0405 184 280.
+    </textarea>
 
     <div id="charCount" style="margin-top: 6px; font-size: 0.9em; color: #555;">
         0 / 160

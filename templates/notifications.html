@@ -31,21 +31,43 @@
         a.button:hover {
             background: #003f8a;
         }
+
+        /* Back button styling */
+        .back-btn-container {
+            margin: 10px 0 15px 0;
+        }
+
+        .back-btn {
+            display: inline-block;
+            font-size: 18px;
+            padding: 8px 14px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #000;
+            border: 1px solid #ccc;
+        }
+
+        .back-btn:hover {
+            background: #e4e4e4;
+        }
+
+        @media (max-width: 600px) {
+            .back-btn {
+                font-size: 20px;
+                padding: 10px 16px;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-<div style="margin-bottom: 20px;">
-    <a href="{{ url_for('index') }}"
-       class="btn btn-primary"
-       style="padding: 10px 20px; font-size: 16px;">
-        ⬅ Back to Main Menu
-    </a>
-</div>
+    <div class="back-btn-container no-print">
+        <a href="{{ url_for('index') }}" class="back-btn">← Back to Eq Menu</a>
+    </div>
 
-
-
-<h1>Incoming Submissions</h1>
+    <h1>Incoming Submissions</h1>
 
 <p>
     <a class="button" href="{{ url_for('fetch_jotform_submissions') }}">
@@ -60,8 +82,6 @@
     <a class="button" href="{{ url_for('clear_processed') }}">
         🧹 Clear Processed Submissions
     </a>
-</p>
-
 </p>
 
 <table>
