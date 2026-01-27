@@ -1318,10 +1318,6 @@ def create_app():
             horse_schedule = defaultdict(list)
             lesson_rows = (
                 db.session.query(Lesson)
-                .options(
-                    joinedload(Lesson.client),
-                    joinedload(Lesson.horse),
-                )
                 .filter_by(lesson_date=selected_date)
                 .order_by(Lesson.time_frame)
                 .all()
