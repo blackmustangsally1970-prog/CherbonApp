@@ -1278,6 +1278,7 @@ def create_app():
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
     def lessons_by_date():
         selected_date, selected_date_str = parse_selected_date()
+        weekday_int = date.today().weekday()
         if not selected_date:
             # fallback to today if parsing failed
             selected_date = date.today()
