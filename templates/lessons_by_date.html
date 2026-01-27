@@ -717,6 +717,7 @@ select.teacher-dropdown {
               {% set saved_tags = block_tag_lookup.get(block_key, []) %}
 
                 {% if 'T' ~ (i+1) in saved_tags %}
+                  {% set lesson_obj = lesson_group[0][0] %}
                   {% set _ = lesson_blocks.append({
                       'time': timerange.split('-')[0].strip(),
                       'end':  timerange.split('-')[1].strip(),
@@ -724,7 +725,12 @@ select.teacher-dropdown {
                       'is_lesson': True,
                       'block_key': block_key,
                       'lesson_type': lesson_type,
-                      'group_priv': group_priv
+                      'group_priv': group_priv,
+                      'price_pl': lesson_obj.price_pl,
+                      'freq': lesson_obj.freq,
+                      'respect_blockouts': lesson_obj.respect_blockouts,
+                      'client_id': lesson_obj.client_id,
+                      'horse': lesson_obj.horse
                   }) %}
                 {% endif %}
               {% endfor %}
