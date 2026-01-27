@@ -27,6 +27,9 @@ import clicksend_client
 from clicksend_client import SmsMessage
 from clicksend_client.rest import ApiException
 from functools import lru_cache
+from sqlalchemy.orm import joinedload
+
+
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1311,9 +1314,17 @@ def create_app():
         invoice_clients = []  # ✅ ensure it’s always defined
 
         if selected_date:
-            lesson_rows = db.session.query(Lesson).filter_by(
-                lesson_date=selected_date
-            ).order_by(Lesson.time_frame).all()
+            lesson_rows = (
+                db.session.query(Lesson)
+                .options(
+                    joinedload(Lesson.client),
+                    joinedload(Lesson.horse),
+                    joinedload(Lesson.teacher)
+                )
+                .filter_by(lesson_date=selected_date)
+                .order_by(Lesson.time_frame)
+                .all()
+            )
 
             # Recalculate balance using carry_fwd + payment - price
             for lesson in lesson_rows:
