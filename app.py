@@ -1703,16 +1703,21 @@ def create_app():
 
     @app.route('/client_history/<client_key>')
     def client_history(client_key):
-        clean = client_key.strip().lower()
+        clean = (client_key or "").strip().lower()
+
+        # If no client key, return empty list immediately
+        if not clean:
+            return jsonify([])
 
         today = date.today()
 
         rows = (
             db.session.query(Lesson)
             .filter(
+                Lesson.client.isnot(None),  # prevent None from breaking lower()
                 func.replace(func.lower(Lesson.client), " ", "") == clean
             )
-            .filter(Lesson.lesson_date < today)   # <-- ONLY past lessons
+            .filter(Lesson.lesson_date < today)
             .order_by(Lesson.lesson_date.desc(), Lesson.lesson_id.desc())
             .limit(10)
             .all()
