@@ -1320,7 +1320,6 @@ def create_app():
                 .options(
                     joinedload(Lesson.client),
                     joinedload(Lesson.horse),
-                    # joinedload(Lesson.teacher)   # ❌ this must stay removed
                 )
                 .filter_by(lesson_date=selected_date)
                 .order_by(Lesson.time_frame)
