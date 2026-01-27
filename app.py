@@ -1315,6 +1315,7 @@ def create_app():
         invoice_clients = []  # ✅ ensure it’s always defined
 
         if selected_date:
+            horse_schedule = defaultdict(list)
             lesson_rows = (
                 db.session.query(Lesson)
                 .options(
