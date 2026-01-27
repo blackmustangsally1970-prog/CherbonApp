@@ -715,8 +715,7 @@ select.teacher-dropdown {
               {# detect whether a saved row exists for this block (even if it's explicitly empty) #}
               {% set has_saved = block_key in block_tag_lookup %}
               {% set saved_tags = block_tag_lookup.get(block_key, []) %}
-
-                {% if 'T' ~ (i+1) in saved_tags %}
+                {% if 'T' ~ (i+1) in saved_tags and lesson_group %}
                   {% set lesson_obj = lesson_group[0][0] %}
                   {% set _ = lesson_blocks.append({
                       'time': timerange.split('-')[0].strip(),
