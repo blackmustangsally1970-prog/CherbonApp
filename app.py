@@ -1388,8 +1388,11 @@ def create_app():
                     horse_schedule[horse_name].append(time_frame)
 
             time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
+
             client_lookup = {}
             clients = db.session.query(Client).limit(200).all()
+
+            for c in clients:
                 full = c.full_name or ''
                 key = normalize_name_for_lookup(full)
                 client_lookup[key] = c
