@@ -1389,7 +1389,7 @@ def create_app():
 
             time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
             client_lookup = {}
-            for c in db.session.query(Client).all():
+            clients = db.session.query(Client).limit(200).all()
                 full = c.full_name or ''
                 key = normalize_name_for_lookup(full)
                 client_lookup[key] = c
