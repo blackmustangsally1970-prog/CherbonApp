@@ -1906,8 +1906,7 @@ def create_app():
             group_priv=invite_group_priv,
             price_pl=cost_per_person,
             client=placeholder_client.full_name,
-            horse="",
-            teacher_id=teacher_id
+            horse=""
         )
         db.session.add(lesson)
         db.session.flush()
