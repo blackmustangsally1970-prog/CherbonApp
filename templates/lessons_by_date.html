@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,39 @@
 
 
 <style>
+
+/* Fix Select2 width inside booking panel */
+#top_existing_client + .select2-container {
+    width: 100% !important;
+    min-width: 200px !important;
+}
+
+#top_existing_client {
+    min-width: 200px !important;
+}
+
+
+/* Fix Select2 width for time dropdowns */
+.time-field + .select2-container {
+    width: 100% !important;
+    min-width: 150px !important;
+}
+
+.time-field {
+    min-width: 150px !important;
+}
+
+
+#multi-lesson-booker {
+    background: #f1ddc2;
+    border: 1px solid #c9a676;
+}
+
+#multi-lesson-booker .card-body {
+    background: #f1ddc2;
+}
+
+
 
 /* Save TXT button glow */
 #save-txt-btn.glow {
@@ -615,6 +649,10 @@ select.teacher-dropdown {
 
 </style>
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+
+
 </head>
 
 <body>
@@ -670,6 +708,19 @@ select.teacher-dropdown {
   <button type="button" id="print-page" style="margin-left:8px;">Print</button>
 <button type="button" id="save-txt-btn" style="margin-left:8px;">Save TXT</button>
 <div id="save-txt-spinner"></div>
+
+<button type="button" id="recalc-btn" class="btn btn-warning" style="margin-left:8px;">
+    Recalculate Balances
+</button>
+
+<button type="button"
+        id="open-booking-panel"
+        class="btn btn-success"
+        style="margin-left:8px;">
+    Book Lessons
+</button>
+
+
 
 
 </form>
@@ -788,7 +839,7 @@ select.teacher-dropdown {
 
     <label>Lesson Type</label>
     <select name="lesson_type">
-      {% for opt in ['Arena','Roundyard','Trail Ride','Go Gallop','Gym Go Gal'] %}
+      {% for opt in ['Arena','Roundyard','Trail Ride','Go Gallop','Party'] %}
         <option value="{{ opt }}" {% if item.lesson_type == opt %}selected{% endif %}>{{ opt }}</option>
       {% endfor %}
     </select>
@@ -873,6 +924,8 @@ select.teacher-dropdown {
       <option>Roundyard</option>
       <option>Trail Ride</option>
       <option>Go Gallop</option>
+      <option>Party</option>
+
     </select>
 
     <label>Group Priv</label>
@@ -999,6 +1052,87 @@ select.teacher-dropdown {
       </tbody>
     </table>
   </div>
+
+
+<!-- ⭐ Multi-lesson booking panel -->
+<div id="multi-lesson-booker" class="card" style="display:none; margin:12px 0;">
+    <div class="card-body">
+
+        <!-- ⭐ Booking Grid Header -->
+        <table class="booking-top-grid">
+            <thead>
+                <tr>
+                    <th>Booking Type</th>
+                    <th>Mobile Ph</th>
+                    <th>Existing Client (Name)</th>
+                    <th>New Client (Name)</th>
+                    <th>How Many Lessons</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>
+                        <select id="booking_type" class="form-select">
+                            <option value="sms">SMS Invite</option>
+                            <option value="existing">Existing Client</option>
+                            <option value="new">New Client</option>
+                        </select>
+                    </td>
+
+                    <td>
+                        <input type="text" id="top_mobile" class="form-control" placeholder="04xxxxxxxx">
+                    </td>
+
+                    <td>
+                        <select id="top_existing_client" class="searchable-dropdown">
+                            <option value=""></option>
+                            {% for c in clients %}
+                                <option value="{{ c.client_id }}">{{ c.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+
+                    <td>
+                        <input type="text" id="top_new_client_name" class="form-control" placeholder="Full name">
+                    </td>
+
+                    <td>
+                        <select id="top_lesson_count" class="form-select">
+                            {% for n in range(1, 7) %}
+                                <option value="{{ n }}" {% if n == 1 %}selected{% endif %}>{{ n }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Rows will be generated here -->
+        <table class="booking-grid">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>Group/Priv</th>
+                    <th>Price</th>
+                    <th class="sms-only-header" style="display:none;">Riders</th>
+                </tr>
+            </thead>
+            <tbody id="lesson-rows-container"></tbody>
+        </table>
+
+        <div class="mt-3">
+            <button type="button" id="save-lessons-btn" class="btn btn-primary">
+                Save Lessons
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
 
 {% if grouped_lessons %}
   {% set arena_keys = grouped_lessons.items() | selectattr('0.1', 'equalto', 'Arena') | list %}
@@ -1560,47 +1694,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return isNaN(parsed) ? 0 : parsed;
   }
 
-function recalculateBalance(lessonId) {
-  const carryFwd = parseFloat(document.querySelector(`[name="carry_fwd_${lessonId}"]`).value) || 0;
-  const payment = parseFloat(document.querySelector(`[name="payment_${lessonId}"]`).value) || 0;
-  const price = parseFloat(document.querySelector(`[name="price_pl_${lessonId}"]`).value) || 0;
-  const attendance = document.querySelector(`[name="attendance_${lessonId}"]`).value.trim().toUpperCase();
-
-  let balance = carryFwd + payment;
-  if (attendance === 'Y' || attendance === 'N') {
-    balance -= price;
-  }
-
-  const balanceField = document.querySelector(`#balance_display_${lessonId}`);
-  if (balanceField) {
-    balanceField.textContent = `$${balance.toFixed(2)}`;
-  }
-}
-
-  function recalcBalance($row) {
-    const att = ($row.find('select[name^="attendance_"]').val() || '').trim().toUpperCase();
-    const pay = parseMoney($row.find('input[name^="payment_"]').val());
-    const price = parseMoney($row.find('input[name^="price_pl_"]').val());
-    const balCell = $row.find('td').eq(5); // 6th column = balance
-
-
-
-    const carry = parseMoney($row.find('input[name^="carry_fwd_"]').val());
-
-    let newBal = carry + pay;
-    if (att === 'Y' || att === 'N') {
-        newBal -= price;
-    }
-
-    const formatted = '$' + newBal.toFixed(2);
-    balCell.text(formatted);
-
-    if (newBal < 0) {
-      balCell.addClass('negative-balance');
-    } else {
-      balCell.removeClass('negative-balance');
-    }
-  }
 
   // Bind change/blur events
   $('input[name^="payment_"], input[name^="price_pl_"]').on('blur', function () {
@@ -2791,5 +2884,270 @@ $(document).ready(function() {
 
 });
 </script>
+<script>
+document.getElementById("recalc-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("recalc-btn");
+    btn.disabled = true;
+    btn.textContent = "Recalculating...";
+
+    const resp = await fetch("/recalculate_all", { method: "POST" });
+
+    if (resp.ok) {
+        location.reload();
+    } else {
+        btn.disabled = false;
+        btn.textContent = "Recalculate Balances";
+        alert("Recalculation failed");
+    }
+});
+</script>
+<script>
+// ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
+document.addEventListener("DOMContentLoaded", () => {
+
+    const panel        = document.getElementById("multi-lesson-booker");
+    const btnOpen      = document.getElementById("open-booking-panel");
+    const lessonCount  = document.getElementById("top_lesson_count");
+    const bookingType  = document.getElementById("booking_type");
+    const mobile       = document.getElementById("top_mobile");
+    const existing     = document.getElementById("top_existing_client");
+    const newName      = document.getElementById("top_new_client_name");
+    const rowsContainer = document.getElementById("lesson-rows-container");
+
+    // ⭐ Show/hide panel + fix Select2 width
+    btnOpen.addEventListener("click", () => {
+        const visible = panel.style.display === "block";
+        panel.style.display = visible ? "none" : "block";
+
+        if (!visible) {
+            setTimeout(() => activateExistingClientSelect2(), 20);
+        }
+    });
+
+// ⭐ Generate lesson rows
+function generateRows() {
+    const count = parseInt(lessonCount.value || "0", 10);
+    rowsContainer.innerHTML = "";
+
+    for (let i = 0; i < count; i++) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>
+                <input type="date" class="form-control date-field" value="{{ selected_date }}">
+            </td>
+            <td>
+                <select class="form-select time-field searchable-dropdown">
+                    <option value=""></option>
+                    {% for t in times %}
+                        <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select class="form-select type-field">
+                    <option>Arena</option>
+                    <option>Roundyard</option>
+                    <option>Trail Ride</option>
+                    <option>Go Gallop</option>
+                    <option>Party</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-select gp-field">
+                    {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                        <option>{{ opt }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control price-field" placeholder="$0.00">
+            </td>
+            <td class="sms-only-cell" style="display:none;">
+                <select class="form-select riders-field">
+                    {% for i in range(1, 11) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        `;
+        rowsContainer.appendChild(row);
+    }
+
+    updateSMSVisibility();
+}
+
+    // ⭐ SMS column visibility
+    function updateSMSVisibility() {
+        const show = bookingType.value === "sms";
+        document.querySelectorAll(".sms-only-header").forEach(h => h.style.display = show ? "" : "none");
+        document.querySelectorAll(".sms-only-cell").forEach(c => c.style.display = show ? "" : "none");
+    }
+
+    // ⭐ Booking type logic
+    function updateBookingFields() {
+        mobile.disabled   = true;
+        existing.disabled = true;
+        newName.disabled  = true;
+
+        if (bookingType.value === "sms") mobile.disabled = false;
+        if (bookingType.value === "existing") existing.disabled = false;
+        if (bookingType.value === "new") {
+            newName.disabled = false;
+            mobile.disabled  = false;
+        }
+    }
+
+    // ⭐ TRUE PREFIX MATCHER
+    function prefixMatcher(params, data) {
+        if (!params.term) return data;
+        if (!data.text) return null;
+
+        const term = params.term.toLowerCase();
+        const text = data.text.toLowerCase();
+
+        return text.startsWith(term) ? $.extend({}, data, true) : null;
+    }
+
+    // ⭐ SELECT2 activation
+    function activateExistingClientSelect2() {
+        $('#top_existing_client').select2({
+            width: '100%',
+            matcher: prefixMatcher,
+            minimumResultsForSearch: 0,
+            selectOnClose: true
+        });
+    }
+
+    // ⭐ Initialise everything
+    activateExistingClientSelect2();
+    generateRows();
+    updateBookingFields();
+    updateSMSVisibility();
+
+    lessonCount.addEventListener("change", generateRows);
+    bookingType.addEventListener("change", () => {
+        updateBookingFields();
+        updateSMSVisibility();
+    });
+    // ⭐ Handle Save Lessons for SMS mode
+    document.getElementById("save-lessons-btn").addEventListener("click", async () => {
+
+        const type = document.getElementById("booking_type").value;
+        if (type !== "sms") return;   // only handle SMS here
+
+        const rows = document.querySelectorAll("#lesson-rows-container tr");
+        const mobile = document.getElementById("top_mobile").value.trim();
+
+        if (!mobile) {
+            alert("Mobile number is required for SMS invites.");
+            return;
+        }
+
+        const btn = document.getElementById("save-lessons-btn");
+        btn.disabled = true;
+        btn.textContent = "Sending SMS Invites...";
+
+        for (const row of rows) {
+
+            const date   = row.querySelector(".date-field")?.value;
+            const time   = row.querySelector(".time-field")?.value;
+            const type   = row.querySelector(".type-field")?.value;
+            const gp     = row.querySelector(".gp-field")?.value;
+            const price  = row.querySelector(".price-field")?.value;
+            const riders = row.querySelector(".riders-field")?.value || "1";
+
+            if (!date || !time) {
+                alert("Each SMS invite requires a date and time.");
+                btn.disabled = false;
+                btn.textContent = "Save Lessons";
+                return;
+            }
+
+            const payload = new FormData();
+            payload.append("invite_date", date);
+            payload.append("invite_time_frame", time);
+            payload.append("invite_lesson_type", type);
+            payload.append("invite_group_priv", gp);
+            payload.append("invite_mobile", mobile);
+            payload.append("invite_riders", riders);
+            payload.append("invite_cost", price);
+            payload.append("invite_duration", "");
+            payload.append("invite_end", "");
+
+            await fetch("/send_invite", {
+                method: "POST",
+                body: payload
+            });
+        }
+
+        btn.textContent = "Invites Sent!";
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = "Save Lessons";
+        }, 1500);
+    });
+});
+</script>
+
+<script>
+function updateBookingGrid() {
+    const type = document.getElementById("booking_type").value;
+
+    const mobile   = document.getElementById("top_mobile");
+    const existing = document.getElementById("top_existing_client");
+    const newName  = document.getElementById("top_new_client_name");
+
+    // Reset all to disabled
+    mobile.disabled   = true;
+    existing.disabled = true;
+    newName.disabled  = true;
+
+    // Enable based on booking type
+    if (type === "sms") {
+        mobile.disabled = false;
+    }
+
+    if (type === "existing") {
+        existing.disabled = false;
+    }
+
+    if (type === "new") {
+        newName.disabled  = false;
+        mobile.disabled   = false;   // new client requires mobile
+    }
+}
+
+// Wire it up
+document.getElementById("booking_type").addEventListener("change", updateBookingGrid);
+window.addEventListener("load", updateBookingGrid);
+</script>
+
+<script>
+function prefixMatcher(params, data) {
+    // If no search term, show all
+    if ($.trim(params.term) === '') {
+        return data;
+    }
+
+    if (typeof data.text === 'undefined') {
+        return null;
+    }
+
+    const term = params.term.toLowerCase();
+    const text = data.text.toLowerCase();
+
+    // ⭐ TRUE PREFIX MATCH
+    if (text.startsWith(term)) {
+        // MUST return a modified copy, not the original
+        return $.extend({}, data, true);
+    }
+
+    return null;
+}
+</script>
+
+
+
+
 </body>
 </html>

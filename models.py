@@ -6,7 +6,7 @@ class Client(db.Model):
     __tablename__ = 'clients'
 
     # --- Identity ---
-    client_id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     full_name = db.Column(db.String)
 
     # --- Guardian / Family ---

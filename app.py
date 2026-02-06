@@ -68,15 +68,15 @@ def get_static_teacher_time():
     ).all()
 
 
-def recalc_client_lessons_by_id(client_id):
-    client_obj = Client.query.get(client_id)
-    if not client_obj:
-        return
 
-    # Load ALL lessons for this client, oldest → newest
+def recalc_all_lessons():
+    """
+    Recalculate per-lesson balances for ALL lessons.
+    Simple model:
+        balance = carry_fwd + payment + adjust - price_pl (if attended/charged)
+    """
     lessons = (
         Lesson.query
-        .filter(Lesson.client == client_obj.full_name)
         .order_by(
             db.func.date(Lesson.lesson_date).asc(),
             Lesson.lesson_id.asc()
@@ -84,23 +84,22 @@ def recalc_client_lessons_by_id(client_id):
         .all()
     )
 
-    bal = 0
     for l in lessons:
-        att   = (l.attendance or '').strip().upper()
-        pay   = l.payment or 0
+        carry = l.carry_fwd or 0
+        payment = l.payment or 0
         price = l.price_pl or 0
+        adjust = l.adjust or 0
+        att = (l.attendance or '').strip().upper()
 
-        chargeable = att in ['Y', 'N']
+        balance = carry + payment + adjust
+        if att in ['Y', 'N']:
+            balance -= price
 
-        if chargeable:
-            new_balance = bal + pay - price
-        else:
-            new_balance = bal + pay
-
-        l.balance = new_balance
-        bal = new_balance
+        l.balance = balance
 
     db.session.commit()
+
+
 
 
 def log_lesson_changes(changes, user="system"):
@@ -236,6 +235,81 @@ def find_matching_clients(name):
         db.func.lower(Clients.name) == cleaned
     ).all()
 
+# ---------------------------------------------------------
+# HELPERS (NO INDENT)
+# ---------------------------------------------------------
+
+def handle_existing_client(data):
+    client_id = data.get("existing_client_id")
+    lessons = data.get("lessons", [])
+
+    if not client_id:
+        return jsonify(success=False, error="No client selected")
+
+    try:
+        for l in lessons:
+            lesson = Lesson(
+                lesson_date = l.get("date"),
+                time_frame  = l.get("time"),
+                lesson_type = l.get("type"),
+                group_priv  = l.get("grouppriv"),
+                price_pl    = l.get("price"),
+                client_id   = client_id,
+                client      = "",
+                horse       = "",
+                attendance  = "Pending",
+                payment     = None
+            )
+            db.session.add(lesson)
+
+        db.session.commit()
+        return jsonify(success=True)
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, error=str(e))
+
+
+def handle_new_client(data):
+    name   = data.get("new_client_name")
+    mobile = data.get("mobile")
+    lessons = data.get("lessons", [])
+
+    if not name:
+        return jsonify(success=False, error="Client name required")
+
+    try:
+        client = Client(
+            full_name = name,
+            mobile    = mobile,
+            notes     = "Created via booking panel"
+        )
+        db.session.add(client)
+        db.session.flush()
+
+        for l in lessons:
+            lesson = Lesson(
+                lesson_date = l.get("date"),
+                time_frame  = l.get("time"),
+                lesson_type = l.get("type"),
+                group_priv  = l.get("grouppriv"),
+                price_pl    = l.get("price"),
+                client_id   = client.client_id,
+                client      = name,
+                horse       = "",
+                attendance  = "Pending",
+                payment     = None
+            )
+            db.session.add(lesson)
+
+        db.session.commit()
+        return jsonify(success=True)
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, error=str(e))
+
+
 def generate_unique_client_name(base_name):
     cleaned = base_name.strip()
 
@@ -340,34 +414,6 @@ def levenshtein(a, b):
     return previous_row[-1]
 
 
-
-
-
-
-
-
-
-
-
-
-
-def extract_time_window(time_frame):
-    if not time_frame:
-        return ""
-
-    # Split on hyphens
-    parts = [p.strip() for p in time_frame.split("-")]
-
-    # Filter only valid HH:MM patterns
-    times = [p for p in parts if len(p) == 5 and ":" in p]
-
-    if len(times) < 2:
-        return time_frame  # fallback: return original
-
-    start = times[0]
-    end = times[-1]
-
-    return f"{start} - {end}"
 
 
 
@@ -896,6 +942,16 @@ def create_app():
         sub.processed = True
         db.session.commit()
 
+
+    @app.post("/recalculate_all")
+    def recalculate_all():
+        try:
+            recalc_all_lessons()
+            return jsonify(success=True, message="All lesson balances recalculated.")
+        except Exception as e:
+            return jsonify(success=False, error=str(e))
+
+
     @app.post("/update_lesson_field")
     def update_lesson_field():
         data = request.get_json()
@@ -907,7 +963,6 @@ def create_app():
         if field not in allowed:
             return jsonify(success=False, error="Invalid field")
 
-        # FIXED: use the correct model name
         lesson = Lesson.query.get(lesson_id)
         if not lesson:
             return jsonify(success=False, error=f"Lesson {lesson_id} not found")
@@ -920,6 +975,8 @@ def create_app():
                 return jsonify(success=False, error="Invalid number")
 
         setattr(lesson, field, value)
+
+        # no recalculation here
         db.session.commit()
 
         return jsonify(success=True)
@@ -1307,8 +1364,7 @@ def create_app():
         horse_list = []
         horse_schedule = defaultdict(list)
         client_horse_history = defaultdict(list)
-
-
+        times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
 
         teacher_names = [t.teacher for t in get_static_teachers()]
         block_tag_lookup = {}
@@ -1322,19 +1378,6 @@ def create_app():
                 .order_by(Lesson.time_frame)
                 .all()
             )
-
-            # Recalculate balance using carry_fwd + payment - price
-            for lesson in lesson_rows:
-                carry = lesson.carry_fwd or 0
-                payment = lesson.payment or 0
-                price = lesson.price_pl or 0
-                att = (lesson.attendance or '').strip().upper()
-
-                balance = carry + payment
-                if att in ['Y', 'N']:
-                    balance -= price
-
-                lesson.balance = balance
 
             for lesson in lesson_rows:
                 horse_name = to_proper_case(lesson.horse)
@@ -1415,19 +1458,7 @@ def create_app():
             weekday_int = selected_date.weekday()            # Python’s 0=Monday … 6=Sunday
             print("teacher_times_map:", teacher_times_map())
             print("weekday_int passed:", weekday_int)
-
-            # ✅ Query all timeranges for Finish dropdowns in popups
-            time_rows = get_static_times()
-            times = [row.timerange for row in time_rows]
             
-            teacher_horse_usage = {}
-            selected_date_obj = selected_date
-
-
-            teacher_horse_usage = {}
-            # selected_date is already a datetime.date, so use it directly
-            selected_date_obj = selected_date
-
             teacher_horse_usage = {}
             # selected_date is already a datetime.date, so use it directly
             selected_date_obj = selected_date
@@ -1449,8 +1480,12 @@ def create_app():
                                                 name = to_proper_case(str(raw_h).strip())
                                                 teacher_horse_usage.setdefault(name, []).append(time_slot)
 
-            for h, times in teacher_horse_usage.items():
-                        teacher_horse_usage[h] = sorted(set(times))
+            for h, usage_times in teacher_horse_usage.items():
+                teacher_horse_usage[h] = sorted(set(usage_times))
+
+
+
+        print("ABOUT TO RENDER TEMPLATE — ALL DATA LOADED OK")
 
 
         return render_template(
@@ -1467,8 +1502,8 @@ def create_app():
             clients=clients, 
             teacher_times=teacher_times_map(),   # 👈 add this
             teacher_horse_usage=teacher_horse_usage,   # 👈 add this
-            times=times   # 👈 add this
-
+            times=times,   # 👈 add this
+            get_static_teachers=get_static_teachers   # ⭐ ADD THIS
         )
 
 
@@ -1586,6 +1621,47 @@ def create_app():
 
         for rider in riders:
             try:
+                # ---------------------------------------------------------
+                # PATCH: Replace placeholder client + update pending lesson
+                # ---------------------------------------------------------
+
+                token = rider.get("invite_token")
+                invite_for_rider = LessonInvite.query.filter_by(token=token).first()
+
+                if invite_for_rider:
+                    # 1. Get the pending lesson created at send_invite
+                    pending_lesson = Lesson.query.get(invite_for_rider.lesson_id)
+
+                    # 2. Get the placeholder client
+                    placeholder_client = Client.query.get(pending_lesson.client_id)
+
+                    # 3. Create the REAL client
+                    real_client = Client(
+                        full_name=rider.get("full_name"),
+                        mobile=rider.get("mobile"),
+                        email=rider.get("email"),
+                        notes="Created via SMS invite"
+                    )
+                    db.session.add(real_client)
+                    db.session.flush()
+
+                    # 4. Update the pending lesson
+                    pending_lesson.client_id = real_client.client_id
+                    pending_lesson.client = real_client.full_name
+                    pending_lesson.attendance = "Pending"
+                    pending_lesson.payment = None
+
+                    # 5. Mark invite as completed
+                    invite_for_rider.status = "completed"
+
+                    # 6. Delete placeholder client
+                    db.session.delete(placeholder_client)
+
+                    # 7. Skip the old lesson‑creation logic
+                    created_lessons.append(pending_lesson)
+                    continue
+
+
                 client = get_or_create_client_from_rider(
                     rider,
                     invite_mobile,
@@ -1727,115 +1803,123 @@ def create_app():
     
     @app.route('/send_invite', methods=['POST'])
     def send_invite():
-        # Debug: see exactly what the popup sent
         print("SMS INVITE POST:", dict(request.form))
 
-        # Accept both the new popup invite_* names and any old ones
-        lesson_id_raw = (
-            request.form.get("invite_lesson_id") or
-            request.form.get("lesson_id")
-        )
-
+        # ------------------------------
+        # 1. Extract posted fields
+        # ------------------------------
         lesson_date_str = (
-            request.form.get("invite_date") or
-            request.form.get("lesson_date") or
-            request.form.get("date")
+            request.form.get("invite_date")
+            or request.form.get("lesson_date")
+            or request.form.get("date")
         )
 
-        # Read posted time fields (prefer the full time_frame)
         invite_time_frame = (request.form.get("invite_time_frame") or "").strip()
         invite_lesson_type = (
-                request.form.get("invite_lesson_type")
-                or request.form.get("lesson_type")
-                or ""
+            request.form.get("invite_lesson_type")
+            or request.form.get("lesson_type")
+            or ""
         ).strip()
 
         invite_group_priv = (
-                request.form.get("invite_group_priv")
-                or request.form.get("group_priv")
-                or ""
+            request.form.get("invite_group_priv")
+            or request.form.get("group_priv")
+            or ""
         ).strip()
-
-        invite_duration = (request.form.get("invite_duration") or "").strip()   # minutes as string
-        invite_end = (request.form.get("invite_end") or "").strip()             # HH:MM if provided
-
-        # Backwards-compatible single-value fields
-        lesson_time_fallback = (
-            request.form.get("invite_time") or
-            ""
-        ).strip()
-
-        # Build canonical lesson_time_str (full "HH:MM - HH:MM") when possible
-        # ALWAYS use the canonical frontend time frame
-        lesson_time_str = invite_time_frame
 
         mobile_raw = (
-            request.form.get("invite_mobile") or
-            request.form.get("mobile") or
-            request.form.get("client_phone") or
-            ""
+            request.form.get("invite_mobile")
+            or request.form.get("mobile")
+            or request.form.get("client_phone")
+            or ""
         )
 
         riders_requested_raw = (
-            request.form.get("invite_riders") or
-            request.form.get("riders_requested") or
-            "1"
+            request.form.get("invite_riders")
+            or request.form.get("riders_requested")
+            or "1"
         )
 
         cost_per_person_raw = (
-            request.form.get("invite_cost") or
-            request.form.get("cost_per_person") or
-            "0"
+            request.form.get("invite_cost")
+            or request.form.get("cost_per_person")
+            or "0"
         )
 
-        # Normalise to +61 format for ClickSend
+        teacher_id_raw = request.form.get("invite_teacher_id")
+        try:
+            teacher_id = int(teacher_id_raw)
+        except:
+            teacher_id = None
+
+        # Canonical time frame
+        lesson_time_str = invite_time_frame
+
+        # ------------------------------
+        # 2. Validate required fields
+        # ------------------------------
         digits = re.sub(r'\D+', '', mobile_raw or "")
         if digits.startswith("0"):
             digits = digits[1:]
         mobile_clean = "+61" + digits if digits else ""
 
-        try:
-            riders_requested = int(riders_requested_raw)
-        except Exception:
-            riders_requested = 1
-
-        try:
-            cost_per_person = float(cost_per_person_raw)
-        except Exception:
-            cost_per_person = 0.0
-
-        # lesson_id may be None or a non-numeric settime_... token
-        lesson_id = int(lesson_id_raw) if lesson_id_raw and str(lesson_id_raw).isdigit() else None
-
         if not lesson_date_str or not lesson_time_str or not mobile_clean:
             flash("Missing lesson date, time, or mobile number for invite.", "danger")
             return redirect(url_for('lessons_by_date', date=lesson_date_str or date.today().isoformat()))
 
-        # Generate token (use canonical lesson_time_str)
+        try:
+            riders_requested = int(riders_requested_raw)
+        except:
+            riders_requested = 1
+
+        try:
+            cost_per_person = float(cost_per_person_raw)
+        except:
+            cost_per_person = 0.0
+
+        # ------------------------------
+        # 3. Generate token
+        # ------------------------------
         token = generate_invite_token(lesson_date_str, lesson_time_str)
 
-        # Build Jotform URL (query params)
-        base_url = "https://form.jotform.com/253599154628066"
-        params = urlencode({
-            "i_t": token,
-            "r_r": riders_requested
-        })
-        jotform_url = f"{base_url}?{params}"
-        print("JOTFORM URL:", jotform_url)
+        # ------------------------------
+        # 4. CREATE PLACEHOLDER CLIENT
+        # ------------------------------
+        placeholder_client = Client(
+            full_name=f"[Pending {token}]",
+            mobile=mobile_clean,
+            notes="Pending SMS invite"
+        )
+        db.session.add(placeholder_client)
+        db.session.flush()
 
-        # Debug prints (temporary)
-        print("DEBUG: invite_time_frame (posted):", invite_time_frame)
-        print("DEBUG: invite_duration (posted):", invite_duration)
-        print("DEBUG: invite_end (posted/computed):", invite_end)
-        print("DEBUG: lesson_time_str (canonical):", lesson_time_str)
+        # ------------------------------
+        # 5. CREATE PENDING LESSON
+        # ------------------------------
+        lesson = Lesson(
+            lesson_date=datetime.strptime(lesson_date_str, "%Y-%m-%d").date(),
+            time_frame=lesson_time_str,
+            lesson_type=invite_lesson_type,
+            group_priv=invite_group_priv,
+            price_pl=cost_per_person,
+            client=placeholder_client.full_name,
+            client_id=placeholder_client.client_id,
+            horse="",
+            teacher_id=teacher_id
+        )
+        db.session.add(lesson)
+        db.session.flush()
 
+        # ------------------------------
+        # 6. CREATE LESSON INVITE
+        # ------------------------------
         invite = LessonInvite(
-            lesson_id=lesson_id,
+            lesson_id=lesson.id,
             token=token,
             mobile=mobile_clean,
             riders_requested=riders_requested,
             cost_per_person=cost_per_person,
-            time_frame=lesson_time_str,   # ALWAYS canonical "HH:MM - HH:MM"
+            time_frame=lesson_time_str,
             lesson_type=invite_lesson_type,
             group_priv=invite_group_priv,
             status="awaiting_form",
@@ -1845,97 +1929,71 @@ def create_app():
         db.session.add(invite)
         db.session.commit()
 
-        # Build SMS text
-        total_cost = riders_requested * cost_per_person
+        # ------------------------------
+        # 7. Build SMS + send
+        # ------------------------------
+        base_url = "https://form.jotform.com/253599154628066"
+        params = urlencode({
+            "i_t": token,
+            "r_r": riders_requested
+        })
+        jotform_url = f"{base_url}?{params}"
 
-        # Reformat date from YYYY-MM-DD → DD Mon
         from dateutil import parser
-
         try:
             date_obj = parser.parse(lesson_date_str)
-            formatted_date = date_obj.strftime("%-d %b")   # Linux/macOS
-        except Exception:
-            try:
-                formatted_date = date_obj.strftime("%#d %b")  # Windows fallback
-            except:
-                formatted_date = lesson_date_str
+            formatted_date = date_obj.strftime("%-d %b")
+        except:
+            formatted_date = lesson_date_str
 
-        # Parse the start time robustly from the canonical lesson_time_str
         m = re.search(r'(\d{1,2}:\d{2})', lesson_time_str or "")
-        start_24 = m.group(1) if m else (lesson_time_str.split("-")[0].strip() if lesson_time_str else "")
+        start_24 = m.group(1) if m else lesson_time_str.split("-")[0].strip()
 
-        # Convert to 12-hour format with dot and am/pm → "10.00am", "2.30pm"
         try:
             t_obj = datetime.strptime(start_24, "%H:%M")
             hour_12 = t_obj.strftime("%I").lstrip("0")
             minute = t_obj.strftime("%M")
             ampm = t_obj.strftime("%p").lower()
             start_pretty = f"{hour_12}.{minute}{ampm}"
-        except Exception:
-            start_pretty = start_24 or ""
+        except:
+            start_pretty = start_24
 
-        # For now we keep the full JotForm URL; replace with shortener later if desired
-        short_url = jotform_url
-
-        # Plural fix
-        rider_word = "rider" if int(riders_requested) == 1 else "riders"
+        rider_word = "rider" if riders_requested == 1 else "riders"
 
         sms_text = (
             f"Hi! Please confirm your lesson on {formatted_date} at {start_pretty}. "
             f"{riders_requested} {rider_word}, ${cost_per_person:.0f} ea. "
-            f"{short_url}"
+            f"{jotform_url}"
         )
 
-        # Debug prints to verify canonical values
-        print("CANONICAL invite_time_frame:", invite.time_frame)
-        print("lesson_time_str used:", lesson_time_str)
-        print("parsed start_24:", start_24, "start_pretty:", start_pretty)
+        sender = app.config.get("EQUESTRIAN_SENDER", "")
 
-        ok = send_sms_clicksend(mobile_clean, sms_text)
-        if ok:
-            flash("SMS invite sent successfully.", "success")
-        else:
-            flash("Failed to send SMS invite via ClickSend.", "danger")
-
-        print("SMS INVITE POST:", request.form)
+        ok = send_sms_clicksend(mobile_clean, sms_text, sender)
+        flash("SMS invite sent successfully." if ok else "Failed to send SMS invite.", 
+              "success" if ok else "danger")
 
         return redirect(url_for('lessons_by_date', date=lesson_date_str))
-
-    @app.route("/process_invite/<int:invite_id>")
-    def process_invite(invite_id):
-        invite = db.session.query(LessonInvite).get(invite_id)
-        if not invite:
-            return "Invite not found."
-
-        sub = None
-        pending = db.session.query(IncomingSubmission).filter_by(processed=False).all()
-
-        for s in pending:
-            try:
-                riders = parse_jotform_payload(s.raw_payload)
-                for rider in riders:
-                    token = rider.get("invite_token")
-                    if token == invite.token:
-                        sub = s
-                        break
-                if sub:
-                    break
-            except Exception:
-                continue
-
-        if not sub:
-            return "No matching submission found."
-
-        invite.status = "form_received"
-        db.session.commit()
-
-        process_submission(sub)
-
-        return redirect(url_for("pending_lessons"))
 
 
 
     # ---------------- ROUTES ---------------- #
+
+    @app.post("/save_booking")
+    def save_booking():
+        data = request.get_json()
+
+        booking_type = data.get("booking_type")
+
+        if booking_type == "existing":
+            return handle_existing_client(data)
+
+        if booking_type == "new":
+            return handle_new_client(data)
+
+        return jsonify(success=False, error="Invalid booking type")
+
+
+
 
     @app.route('/wedding/sms', methods=['GET'])
     def wedding_sms():
@@ -2926,50 +2984,28 @@ Cherbon Waters Admin
         return redirect(url_for('client_view', client=client.full_name))
 
 
-    @app.route('/recalculate_all', methods=['POST'])
-    def recalculate_all():
-        clients = db.session.query(Lesson.client).distinct().all()
-        for (client,) in clients:
-            lessons = Lesson.query.filter_by(client=client).order_by(
-                Lesson.lesson_date.asc(), Lesson.lesson_id.asc()
-            ).all()
-            bal = 0
-            for l in lessons:
-                att = (l.attendance or '').strip().upper()
-                pay = l.payment or 0
-                price = l.price_pl or 0
-                if att in ['Y', 'N']:
-                    l.balance = bal + pay - price
-                else:
-                    l.balance = bal + pay
-                l.carry_fwd = bal
-                bal = l.balance
-        db.session.commit()
-        flash("All lessons recalculated successfully.", "success")
-        return redirect(url_for('client_view', client_filter=client), code=303)
-
-    @app.route('/recalculate_client', methods=['POST'])
+    @app.post("/recalculate_client")
     def recalculate_client():
-        client = request.form.get('client')
-        lessons = Lesson.query.filter_by(client=client).order_by(
-            Lesson.lesson_date.asc(), Lesson.lesson_id.asc()
-        ).all()
-        bal = 0
+        client = request.form.get("client")
+
+        # get all lessons for this client
+        lessons = Lesson.query.filter_by(client=client).all()
+
         for l in lessons:
-            att = (l.attendance or '').strip().upper()
-            pay = l.payment or 0
+            carry = l.carry_fwd or 0
+            payment = l.payment or 0
             price = l.price_pl or 0
+            att = (l.attendance or '').strip().upper()
+
+            balance = carry + payment
             if att in ['Y', 'N']:
-                l.balance = bal + pay - price
-            else:
-                l.balance = bal + pay
-            l.carry_fwd = bal
-            bal = l.balance
+                balance -= price
+
+            l.balance = balance
+
         db.session.commit()
-        if lessons:
-            flash(f"Lessons recalculated for client: {client}", "success")
-        else:
-            flash(f"No lessons found for client: {client}", "danger")
+
+        flash(f"Lessons recalculated for client: {client}", "success")
         return redirect(url_for('client_view', client_filter=client), code=303)
 
     @app.route('/notifications/clear_processed')
@@ -3125,25 +3161,6 @@ Cherbon Waters Admin
             elif att in ['Y', 'N']:
                 lesson.balance = carry + pay - price
 
-            # Recalculate all future lessons for this client
-            future_lessons = db.session.query(Lesson).filter(
-                Lesson.client == lesson.client,
-                Lesson.lesson_date > lesson.lesson_date
-            ).order_by(Lesson.lesson_date.asc(), Lesson.lesson_id.asc()).all()
-
-            bal = lesson.balance
-            for l in future_lessons:
-                att = (l.attendance or '').strip().upper()
-                pay = l.payment or 0
-                price = l.price_pl or 0
-
-                if att in ['Y', 'N']:
-                    l.balance = bal + pay - price
-                else:
-                    l.balance = bal + pay
-
-                l.carry_fwd = bal
-                bal = l.balance
 
         # Update client notes
         client_ids = {
