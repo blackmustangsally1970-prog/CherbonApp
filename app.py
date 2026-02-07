@@ -1093,6 +1093,12 @@ def create_app():
         # Build lookup: invite_token → submission model
         submission_lookup = {}
         for sub in submissions:
+
+            # Ignore submissions from the disclaimer form
+            # Your SMS invite form ID = 253599154628066
+            if sub.form_id != "253599154628066":
+                continue
+
             try:
                 riders = parse_jotform_payload(sub.raw_payload, forced_submission_id=sub.id)
                 for rider in riders:
