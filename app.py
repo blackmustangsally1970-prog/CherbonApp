@@ -1090,7 +1090,7 @@ def create_app():
             .all()
         )
 
-        # Build lookup: invite_token → submission
+        # Build lookup: invite_token → submission model
         submission_lookup = {}
         for sub in submissions:
             try:
@@ -1106,9 +1106,19 @@ def create_app():
         pending = []
         for inv in invites:
             sub = submission_lookup.get(inv.token)
+
+            parsed = None
+            if sub:
+                try:
+                    riders = parse_jotform_payload(sub.raw_payload, forced_submission_id=sub.id)
+                    parsed = riders[0] if riders else None
+                except Exception:
+                    parsed = None
+
             pending.append({
                 "invite": inv,
-                "submission": sub
+                "submission": parsed,   # template‑safe dict
+                "raw": sub              # optional model reference
             })
 
         return render_template("pending_lessons.html", pending=pending)
