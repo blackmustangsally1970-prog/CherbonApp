@@ -771,22 +771,24 @@ def create_app():
         )
 
         try:
-            api_instance.sms_send_post(sms_messages)
-            return True
+            response = api_instance.sms_send_post(sms_messages)
+            print("ClickSend API response:", response)
+
+            try:
+                http_code = int(getattr(response, "http_code", 0))
+            except:
+                http_code = 0
+
+            if http_code == 200:
+                return True
+
+            print("ClickSend returned non-200:", response)
+            return False
+
         except ApiException as e:
             print("ClickSend SMS failed:", e)
             return False
 
-        sms_messages = clicksend_client.SmsMessageCollection(
-            messages=[sms_message]
-        )
-
-        try:
-            api_instance.sms_send_post(sms_messages)
-            return True
-        except ApiException as e:
-            print("ClickSend SMS failed:", e)
-            return False
 
     def load_wedding_unsubscribes():
         base = os.path.dirname(os.path.abspath(__file__))
