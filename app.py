@@ -736,6 +736,20 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
     app.config.from_object(Config())      # <-- fix
+    # Load ClickSend credentials from Azure App Settings or environment
+    app.config['CLICKSEND_USERNAME'] = (
+        os.environ.get('CLICKSEND_USERNAME')
+        or os.environ.get('APPSETTING_CLICKSEND_USERNAME')
+        or ""
+    )
+
+    app.config['CLICKSEND_API_KEY'] = (
+        os.environ.get('CLICKSEND_API_KEY')
+        or os.environ.get('APPSETTING_CLICKSEND_API_KEY')
+        or ""
+    )
+
+
     app.config['SQLALCHEMY_ECHO'] = True
     db.init_app(app)
 
