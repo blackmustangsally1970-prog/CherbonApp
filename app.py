@@ -1822,8 +1822,8 @@ def create_app():
     
     @app.route('/send_invite', methods=['POST'])
     def send_invite():
+        print("DEBUG AUTH:", os.getenv("CLICKSEND_USERNAME"), os.getenv("CLICKSEND_API_KEY"))
         print("SMS INVITE POST:", dict(request.form))
-
         # ------------------------------
         # 1. Extract posted fields
         # ------------------------------
