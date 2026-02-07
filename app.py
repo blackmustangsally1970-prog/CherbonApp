@@ -1915,7 +1915,7 @@ def create_app():
         # 6. CREATE LESSON INVITE
         # ------------------------------
         invite = LessonInvite(
-            lesson_id=lesson.id,
+            lesson_id=lesson.lesson.id,
             token=token,
             mobile=mobile_clean,
             riders_requested=riders_requested,
