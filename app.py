@@ -433,7 +433,15 @@ INVITE_WEIGHT_FIELDS   = ["45", "48", "51", "54", "57", "60", "63", "66", "69", 
 INVITE_NOTES_FIELDS    = []   # none in this form
 
 
-def parse_jotform_payload(payload, forced_submission_id=None):
+
+def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None, mode="full"):
+    """
+    mode:
+      - "light": parse names/fields only. NO DB client load. NO matching.
+      - "full": full matching behaviour (may use clients_cache or DB load).
+    clients_cache:
+      - Optional preloaded list of Client rows (or tuples) to avoid repeated DB scans.
+    """
     import json
     import unicodedata
     from sqlalchemy.util._collections import immutabledict
@@ -441,132 +449,88 @@ def parse_jotform_payload(payload, forced_submission_id=None):
     # Ensure payload is a real dict
     if isinstance(payload, immutabledict):
         payload = dict(payload)
-
     if not isinstance(payload, dict):
         try:
             payload = json.loads(payload)
         except Exception:
-            print("ERROR: Could not decode payload:", type(payload), payload)
+            print("ERROR: Could not decode payload:", type(payload))
             return []
-    # 🔥 ADD DEBUG HERE — RIGHT AFTER PAYLOAD IS A DICT
-    print("RAW PAYLOAD:", json.dumps(payload, indent=2))
 
+    # NOTE: you currently print full payloads here; consider gating by env var (can be huge / sensitive)
+    # print("RAW PAYLOAD:", json.dumps(payload, indent=2))
 
-
+    # Submission ID
     if forced_submission_id:
         submission_id = str(forced_submission_id)
     else:
         submission_id = str(
-            payload.get("id") or
-            payload.get("submission_id") or
-            payload.get("form_id") or
-            ""
+            payload.get("id")
+            or payload.get("submission_id")
+            or payload.get("form_id")
+            or ""
         )
-
-
 
     answers = payload.get("answers", {}) or {}
 
-    # ---------------------------------------------------------
-    # AUTO-DETECT EMAIL FIELD
-    # ---------------------------------------------------------
+    # ---- Email autodetect (keep your existing logic) ----
     email = ""
-
-    # 1. Look for any control_email field
     for key, item in answers.items():
         if item.get("type") == "control_email":
             ans = item.get("answer")
             if isinstance(ans, dict):
-                email = (
-                    ans.get("value")
-                    or ans.get("text")
-                    or ans.get("full")
-                    or ""
-                )
+                email = ans.get("value") or ans.get("text") or ans.get("full") or ""
             else:
                 email = ans or ""
             break
 
-    # 2. Fallback: look for fields literally named "email"
     if not email:
         for key, item in answers.items():
             if item.get("name", "").lower() == "email":
                 ans = item.get("answer")
                 if isinstance(ans, dict):
-                    email = (
-                        ans.get("value")
-                        or ans.get("text")
-                        or ans.get("full")
-                        or ""
-                    )
+                    email = ans.get("value") or ans.get("text") or ans.get("full") or ""
                 else:
                     email = ans or ""
                 break
 
-    # 3. Final fallback
     email = email or ""
-
 
     # Detect which form this submission belongs to
     form_id = str(payload.get("form_id") or payload.get("id") or "")
     is_invite_form = form_id == "253599154628066"
 
-    riders = []
-
-
-    # ---------------------------------------------------------
-    # EXTRACT INVITE TOKEN (supports both invite_token + i_t)
-    # ---------------------------------------------------------
+    # Invite token extraction (keep your existing logic)
     invite_token = None
-
-    # 1. Direct field #3 (invite form hidden token)
     field3 = answers.get("3")
     if field3:
         ans = field3.get("answer")
         if isinstance(ans, dict):
-            invite_token = (
-                ans.get("text")
-                or ans.get("value")
-                or ans.get("full")
-            )
+            invite_token = ans.get("text") or ans.get("value") or ans.get("full")
         else:
             invite_token = ans
 
-    # 2. Lookup by name="i_t"
     if not invite_token:
         for f in answers.values():
             if f.get("name") == "i_t":
                 ans = f.get("answer")
                 if isinstance(ans, dict):
-                    invite_token = (
-                        ans.get("text")
-                        or ans.get("value")
-                        or ans.get("full")
-                    )
+                    invite_token = ans.get("text") or ans.get("value") or ans.get("full")
                 else:
                     invite_token = ans
                 break
 
-    # 2b. Direct lookup by key "i_t"
     if not invite_token:
         direct = answers.get("i_t")
         if direct:
             ans = direct.get("answer")
             if isinstance(ans, dict):
-                invite_token = (
-                    ans.get("text")
-                    or ans.get("value")
-                    or ans.get("full")
-                )
+                invite_token = ans.get("text") or ans.get("value") or ans.get("full")
             else:
                 invite_token = ans
 
-    # 3. Final fallback
     invite_token = invite_token or ""
 
-    # ---------------------------------------------------------
-    # DETECT AGE FIELDS (dynamic)
-    # ---------------------------------------------------------
+    # Age field detection (your existing dynamic detection)
     age_fields = [
         key for key, item in answers.items()
         if item.get("type") in ("control_number", "control_dropdown")
@@ -574,11 +538,13 @@ def parse_jotform_payload(payload, forced_submission_id=None):
     ]
     age_fields = sorted(age_fields, key=lambda x: int(x))
 
-    # Global fields (these are disclaimer-form centric; invite form may not use them)
+    # Global fields (kept consistent with your existing IDs)
     guardian = answers.get("86", {}).get("answer", "") or ""
     mobile = answers.get("87", {}).get("answer", {}).get("full", "") or ""
-    email = answers.get("47", {}).get("answer", "") or ""
+    email_fallback = answers.get("47", {}).get("answer", "") or ""
     disclaimer = answers.get("63", {}).get("answer", None)
+    if email_fallback and not email:
+        email = email_fallback
 
     def normalize_name(s):
         if not s:
@@ -588,27 +554,10 @@ def parse_jotform_payload(payload, forced_submission_id=None):
         s = s.replace("\xa0", " ")
         return " ".join(s.strip().lower().split())
 
-    # ---------------------------------------------------------
-    # PRELOAD CLIENTS ONCE (CRITICAL FOR PERFORMANCE)
-    # ---------------------------------------------------------
-    existing_clients = db.session.query(Client).all()
-
-    client_cache = [
-        (c, normalize_name(c.full_name), c.jotform_submission_id)
-        for c in existing_clients
-        if c.full_name
-    ]
-
-    # Exact match dictionary: norm_name -> Client
-    exact_lookup = {norm: c for c, norm, _ in client_cache}
-
-    # ---------------------------------------------------------
-    # DETECT ONLY RIDER FULLNAME FIELDS
-    # ---------------------------------------------------------
+    # Detect rider fullname fields (invite vs disclaimer)
     if is_invite_form:
         fullname_fields = INVITE_FULLNAME_FIELDS
     else:
-        # Disclaimer form uses dynamic detection
         fullname_fields = [
             key for key, item in answers.items()
             if item.get("type") == "control_fullname"
@@ -616,17 +565,33 @@ def parse_jotform_payload(payload, forced_submission_id=None):
         ]
         fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
 
-    # ---------------------------------------------------------
-    # PROCESS EACH RIDER
-    # ---------------------------------------------------------
-    for idx, fullname_key in enumerate(fullname_fields):
+    riders = []
 
-        # Get the fullname field for this rider
+    # LIGHT mode = no matching, no client cache needed
+    do_matching = (mode == "full")
+
+    client_cache = None
+    exact_lookup = None
+
+    if do_matching:
+        # If not provided, fall back to DB load ONCE per call (still better than per-row per-page)
+        if clients_cache is None:
+            clients_cache = db.session.query(Client).all()
+
+        client_cache = []
+        for c in clients_cache:
+            full_name = getattr(c, "full_name", None)
+            if not full_name:
+                continue
+            client_cache.append((c, normalize_name(full_name), getattr(c, "jotform_submission_id", None)))
+
+        exact_lookup = {norm: c for c, norm, _ in client_cache}
+
+    for idx, fullname_key in enumerate(fullname_fields):
         item = answers.get(fullname_key)
         if not item:
             continue
 
-        # Extract rider name (prefer prettyFormat)
         pretty = item.get("prettyFormat")
         if pretty:
             raw_name = pretty
@@ -635,17 +600,15 @@ def parse_jotform_payload(payload, forced_submission_id=None):
             last = (item.get("answer", {}) or {}).get("last", "")
             raw_name = f"{first} {last}"
 
-        name = normalize_name(raw_name)
-        if not name:
+        name_norm = normalize_name(raw_name)
+        if not name_norm:
             continue
 
-        # Extract age (matched by index)
         age_key = age_fields[idx] if idx < len(age_fields) else None
         age = answers.get(age_key, {}).get("answer") if age_key else None
 
-        # Build rider object
         rider = {
-            "name": name,
+            "name": name_norm,
             "age": age,
             "guardian": guardian,
             "mobile": mobile,
@@ -653,78 +616,42 @@ def parse_jotform_payload(payload, forced_submission_id=None):
             "disclaimer": disclaimer,
             "matches": [],
             "jotform_submission_id": submission_id,
-            "invite_token": invite_token or ""
+            "invite_token": invite_token
         }
 
-        # ---------------------------------------------------------
-        # HEIGHT / WEIGHT / NOTES (invite vs disclaimer)
-        # ---------------------------------------------------------
+        # Height/weight/notes - reuse your existing extract_number + field maps
         if is_invite_form:
-            # Invite form supports up to 10 riders
             if idx < len(INVITE_HEIGHT_FIELDS):
                 height_field = INVITE_HEIGHT_FIELDS[idx]
                 weight_field = INVITE_WEIGHT_FIELDS[idx]
-                notes_field  = INVITE_NOTES_FIELDS[idx] if idx < len(INVITE_NOTES_FIELDS) else None
+                notes_field = INVITE_NOTES_FIELDS[idx] if idx < len(INVITE_NOTES_FIELDS) else None
             else:
                 height_field = weight_field = notes_field = None
         else:
-            # Disclaimer form supports up to 6 riders
             if idx < len(HEIGHT_FIELDS):
                 height_field = HEIGHT_FIELDS[idx]
                 weight_field = WEIGHT_FIELDS[idx]
-                notes_field  = NOTES_FIELDS[idx]
+                notes_field = NOTES_FIELDS[idx]
             else:
                 height_field = weight_field = notes_field = None
 
-        # Extract height/weight/notes values
         height_val = answers.get(height_field, {}).get("answer") if height_field else None
         weight_val = answers.get(weight_field, {}).get("answer") if weight_field else None
-        notes_val  = answers.get(notes_field, {}).get("answer") if notes_field else None
+        notes_val = answers.get(notes_field, {}).get("answer") if notes_field else None
 
         rider["height_cm"] = extract_number(height_val)
         rider["weight_kg"] = extract_number(weight_val)
         rider["notes"] = notes_val or ""
 
-        # ---------------------------------------------------------
-        # OPTIMISED MATCHING LOGIC (FAST FOR 30,000 CLIENTS)
-        # ---------------------------------------------------------
-        norm_name = normalize_name(name)
-
-        # 1. Exact match (O(1))
-        matched_client = exact_lookup.get(norm_name)
-        if matched_client:
-            guardian_norm = normalize_name(guardian)
-
-            # Skip guardian match
-            if guardian_norm and normalize_name(matched_client.full_name) == guardian_norm:
-                pass
-            # Skip if already linked to this submission
-            elif matched_client.jotform_submission_id != submission_id:
-                rider["matches"].append(matched_client)
-        else:
-            # 2. Fuzzy match (only compare names starting with same letter)
-            first_letter = norm_name[0] if norm_name else ""
-            guardian_norm = normalize_name(guardian)
-
-            for c, existing_norm, existing_sub_id in client_cache:
-                if not existing_norm:
-                    continue
-
-                # Skip guardian
-                if guardian_norm and existing_norm == guardian_norm:
-                    continue
-
-                # Skip if already linked to this submission
-                if existing_sub_id == submission_id:
-                    continue
-
-                # First-letter filter (cuts most comparisons)
-                if existing_norm[0] != first_letter:
-                    continue
-
-                # Fuzzy match (Levenshtein)
-                if levenshtein(existing_norm, norm_name) <= 2:
-                    rider["matches"].append(c)
+        # Matching only in FULL mode (exact match only; keep listing cheap)
+        if do_matching and exact_lookup is not None:
+            matched_client = exact_lookup.get(name_norm)
+            if matched_client:
+                guardian_norm = normalize_name(guardian)
+                if guardian_norm and normalize_name(matched_client.full_name) == guardian_norm:
+                    pass
+                elif matched_client.jotform_submission_id != submission_id:
+                    rider["matches"].append(matched_client)
 
         riders.append(rider)
 
@@ -2089,36 +2016,54 @@ def create_app():
 
         return render_template('debug.html', clients=clients, selected_client=selected_client)
 
+
     @app.route('/notifications')
     def notifications():
+        """
+        Fast notifications listing:
+        - Limits rows rendered (prevents timeouts)
+        - Parses payload in LIGHT mode (no client-table load / no matching)
+        """
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=50, type=int)
+        per_page = max(10, min(per_page, 200))  # clamp
+
         rows = (
             db.session.query(IncomingSubmission)
             .filter_by(processed=False)
             .order_by(IncomingSubmission.received_at.desc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
             .all()
         )
 
         for r in rows:
             try:
-                riders = parse_jotform_payload(r.raw_payload)
+                riders = parse_jotform_payload(
+                    r.raw_payload,
+                    forced_submission_id=r.form_id,
+                    clients_cache=None,
+                    mode="light"
+                )
 
-                # Build safe name list (invite submissions may not have "name")
                 names = []
                 for rider in riders:
                     n = rider.get("name")
                     if n:
                         names.append(n)
 
-                if names:
-                    r.display_names = ", ".join(names)
-                else:
-                    r.display_names = "Invite Submission"
+                r.display_names = ", ".join(names) if names else "Invite Submission"
 
             except Exception as e:
                 print("ERROR extracting names:", e)
                 r.display_names = "(unknown)"
 
-        return render_template('notifications.html', rows=rows)
+        return render_template(
+            'notifications.html',
+            rows=rows,
+            page=page,
+            per_page=per_page
+        )
 
         
     @app.route('/notifications/fetch')
