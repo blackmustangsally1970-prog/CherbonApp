@@ -2321,36 +2321,34 @@ def create_app():
         payload = row.raw_payload
         riders = parse_jotform_payload(payload, forced_submission_id=row.form_id)
 
-        # The REAL jotform submission ID you stored
         jotform_id = str(row.form_id)
 
         for i, rider in enumerate(riders, start=1):
             choice = request.form.get(f"client_choice_{i}")
 
-            name = request.form.get(f"name_{i}")
-            age = request.form.get(f"age_{i}")
-            guardian = request.form.get(f"guardian_{i}")
+            # If this is an invite submission, rider may not have disclaimer fields
+            name = request.form.get(f"name_{i}") or rider.get("name") or "Unknown"
+            age = request.form.get(f"age_{i}") or rider.get("age")
+            guardian = request.form.get(f"guardian_{i}") or rider.get("guardian")
 
-            raw_mobile = request.form.get(f"mobile_{i}")
-            mobile = clean_mobile(raw_mobile)
+            raw_mobile = request.form.get(f"mobile_{i}") or rider.get("mobile")
+            mobile = clean_mobile(raw_mobile) if raw_mobile else None
 
-            email = request.form.get(f"email_{i}")
+            email = request.form.get(f"email_{i}") or rider.get("email")
 
-            raw_disclaimer = request.form.get(f"disclaimer_{i}")
+            raw_disclaimer = request.form.get(f"disclaimer_{i}") or rider.get("disclaimer")
             try:
                 disclaimer = int(raw_disclaimer) if raw_disclaimer else None
             except ValueError:
                 disclaimer = None
 
-            # NEW FIELDS
-            height_cm = extract_number(request.form.get(f"height_{i}"))
-            weight_kg = extract_number(request.form.get(f"weight_{i}"))
-            notes = request.form.get(f"notes_{i}") or ""
+            height_cm = extract_number(request.form.get(f"height_{i}") or rider.get("height_cm"))
+            weight_kg = extract_number(request.form.get(f"weight_{i}") or rider.get("weight_kg"))
+            notes = request.form.get(f"notes_{i}") or rider.get("notes") or ""
 
             # --- CREATE NEW ---
             if choice == "new":
                 final_name = name
-
                 new_client = Client(
                     full_name=final_name,
                     guardian_name=guardian,
@@ -2365,14 +2363,13 @@ def create_app():
                     jotform_submission_id=jotform_id
                 )
                 db.session.add(new_client)
-                db.session.flush()  # ensure client_id is available
+                db.session.flush()
                 log_submission_link("CREATE_NEW", new_client, jotform_id)
                 continue
 
             # --- CREATE NEW (SAME NAME) ---
             if choice == "new_same_name":
                 final_name = generate_unique_client_name(name)
-
                 new_client = Client(
                     full_name=final_name,
                     guardian_name=guardian,
@@ -2392,7 +2389,7 @@ def create_app():
                 continue
 
             # --- USE EXISTING ---
-            if choice.startswith("existing_"):
+            if choice and choice.startswith("existing_"):
                 existing_id = int(choice.replace("existing_", ""))
                 client = Client.query.get(existing_id)
                 if client:
@@ -2401,36 +2398,34 @@ def create_app():
                 continue
 
             # --- OVERWRITE EXISTING ---
-            if choice.startswith("overwrite_"):
+            if choice and choice.startswith("overwrite_"):
                 existing_id = int(choice.replace("overwrite_", ""))
                 client = Client.query.get(existing_id)
-
-                client.full_name = name
-                client.guardian_name = guardian
-                client.age = age
-                client.mobile = mobile
-                client.email_primary = email
-                client.disclaimer = disclaimer
-                client.jotform_submission_id = jotform_id
-
-                # NEW FIELDS
-                client.height_cm = height_cm
-                client.weight_kg = weight_kg
-                client.notes = notes
-
-                log_submission_link("OVERWRITE_EXISTING", client, jotform_id)
+                if client:
+                    client.full_name = name
+                    client.guardian_name = guardian
+                    client.age = age
+                    client.mobile = mobile
+                    client.email_primary = email
+                    client.disclaimer = disclaimer
+                    client.height_cm = height_cm
+                    client.weight_kg = weight_kg
+                    client.notes = notes
+                    client.jotform_submission_id = jotform_id
+                    log_submission_link("OVERWRITE_EXISTING", client, jotform_id)
                 continue
 
-        # Log disclaimer names
+        # SAFE LOGGING
         riders_for_log = parse_jotform_payload(row.raw_payload, forced_submission_id=row.form_id)
-        names = [r["name"] for r in riders_for_log]
-        log_disclaimer_processed(names)
+        safe_names = [r.get("name") for r in riders_for_log if r.get("name")]
+        if safe_names:
+            log_disclaimer_processed(safe_names)
+        else:
+            log_disclaimer_processed(["(invite submission)"])
 
-        # Mark submission processed
         row.processed = True
         row.processed_at = datetime.utcnow()
         db.session.commit()
-
 
         return redirect(url_for('notifications'))
 
