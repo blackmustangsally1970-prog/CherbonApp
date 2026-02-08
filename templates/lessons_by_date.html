@@ -492,28 +492,33 @@ select.teacher-dropdown {
 .lesson-table table td:nth-child(4) { width: 120px !important; }  /* Guardian */
 
 .lesson-table table th:nth-child(5),
-.lesson-table table td:nth-child(5) { width: 90px !important; }  /* Mobile */
+.lesson-table table td:nth-child(5) { width: 90px !important; }   /* Mobile */
 
+/* ⭐ NEW COLUMN: FREQ (1‑letter) */
 .lesson-table table th:nth-child(6),
-.lesson-table table td:nth-child(6) { width: 40px !important; text-align:center; } /* Weight */
+.lesson-table table td:nth-child(6) { width: 40px !important; text-align:center; } /* FREQ */
 
+/* Shift everything below by +1 */
 .lesson-table table th:nth-child(7),
-.lesson-table table td:nth-child(7) { width: 40px !important; text-align:center; } /* Height */
+.lesson-table table td:nth-child(7) { width: 40px !important; text-align:center; } /* Weight */
 
 .lesson-table table th:nth-child(8),
-.lesson-table table td:nth-child(8) { width: 40px !important; text-align:center; } /* ATT */
+.lesson-table table td:nth-child(8) { width: 40px !important; text-align:center; } /* Height */
 
 .lesson-table table th:nth-child(9),
-.lesson-table table td:nth-child(9) { width: 90px !important; }   /* Payment */
+.lesson-table table td:nth-child(9) { width: 40px !important; text-align:center; } /* ATT */
 
 .lesson-table table th:nth-child(10),
-.lesson-table table td:nth-child(10) { width: 90px !important; }  /* Price */
+.lesson-table table td:nth-child(10) { width: 90px !important; }  /* Payment */
 
 .lesson-table table th:nth-child(11),
-.lesson-table table td:nth-child(11) { width: 70px !important; }  /* Balance */
+.lesson-table table td:nth-child(11) { width: 90px !important; }  /* Price */
 
 .lesson-table table th:nth-child(12),
-.lesson-table table td:nth-child(12) { width: 390px !important; } /* Notes */
+.lesson-table table td:nth-child(12) { width: 70px !important; }  /* Balance */
+
+.lesson-table table th:nth-child(13),
+.lesson-table table td:nth-child(13) { width: 390px !important; } /* Notes */
 
 /* Kill the Select2 arrow that is drawing the ghost line */
 .lesson-table .select2-selection__arrow {
@@ -523,6 +528,7 @@ select.teacher-dropdown {
 .lesson-table .select2-selection__arrow b {
     display: none !important;
 }
+
 
 
 
@@ -1190,6 +1196,7 @@ select.teacher-dropdown {
               <th>Age</th>
               <th>Guardian</th>
               <th>Mobile</th>
+              <th>Freq</th>
               <th>Weight</th>
               <th>Height</th>
               <th>ATT</th>
@@ -1247,6 +1254,9 @@ select.teacher-dropdown {
 
 <td>
   {{ client.mobile if client else '' }}
+</td>
+<td>
+  {{ lesson.freq or '' }}   <!-- ⭐ NEW FREQ COLUMN -->
 </td>
 
 <td>
