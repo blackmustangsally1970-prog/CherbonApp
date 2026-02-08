@@ -2091,25 +2091,34 @@ def create_app():
 
     @app.route('/notifications')
     def notifications():
-        rows = db.session.query(IncomingSubmission).filter_by(
-            processed=False
-        ).order_by(
-            IncomingSubmission.received_at.desc()
-        ).all()
+        rows = (
+            db.session.query(IncomingSubmission)
+            .filter_by(processed=False)
+            .order_by(IncomingSubmission.received_at.desc())
+            .all()
+        )
 
-        # Extract rider names using the same parser used for processing
         for r in rows:
             try:
                 riders = parse_jotform_payload(r.raw_payload)
-                r.display_names = ", ".join([rider["name"] for rider in riders]) if riders else "(unknown)"
+
+                # Build safe name list (invite submissions may not have "name")
+                names = []
+                for rider in riders:
+                    n = rider.get("name")
+                    if n:
+                        names.append(n)
+
+                if names:
+                    r.display_names = ", ".join(names)
+                else:
+                    r.display_names = "Invite Submission"
+
             except Exception as e:
                 print("ERROR extracting names:", e)
                 r.display_names = "(unknown)"
 
-        return render_template(
-            'notifications.html',
-            rows=rows
-        )
+        return render_template('notifications.html', rows=rows)
 
         
     @app.route('/notifications/fetch')
