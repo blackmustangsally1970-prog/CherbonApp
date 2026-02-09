@@ -2544,10 +2544,6 @@ def create_app():
         return redirect(url_for('process_all_pending'))
 
 
-
-
-
-
     @app.route("/fetch_invite_submissions")
     def fetch_invite_submissions():
         import requests
@@ -2567,17 +2563,18 @@ def create_app():
         count = 0
 
         for s in submissions:
-            jot_id = s.get("id")
+            submission_id = s.get("id")
+            form_id = s.get("form_id")
 
             # Skip if already stored
-            existing = db.session.query(IncomingSubmission).filter_by(form_id=jot_id).first()
+            existing = db.session.query(IncomingSubmission).filter_by(form_id=form_id).first()
             if existing:
                 continue
 
             raw_payload = json.dumps(s)
 
             new_sub = IncomingSubmission(
-                form_id=jot_id,
+                form_id=form_id,
                 raw_payload=raw_payload,
                 received_at=datetime.utcnow(),
                 processed=False
@@ -2595,7 +2592,6 @@ def create_app():
             count += 1
 
         return render_template("fetch_invite_submissions.html", count=count)
-
 
 
     @app.route("/process_all_invites")
