@@ -576,7 +576,12 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     if do_matching:
         # If not provided, fall back to DB load ONCE per call (still better than per-row per-page)
         if clients_cache is None:
-            clients_cache = db.session.query(Client).all()
+            clients_cache = db.session.query(
+                Client.client_id,
+                Client.full_name,
+                Client.mobile,
+                Client.email_primary
+            ).all()
 
         client_cache = []
         for c in clients_cache:
