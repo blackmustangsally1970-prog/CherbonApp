@@ -70,12 +70,23 @@
 <div class="section-title">Incoming Rider</div>
 
 <table>
-    <tr><th>Name</th><td>{{ rider.name }}</td></tr>
-    <tr><th>Age</th><td>{{ rider.age }}</td></tr>
-    <tr><th>Email</th><td>{{ rider.email }}</td></tr>
-    <tr><th>Mobile</th><td>{{ rider.mobile }}</td></tr>
-    <tr><th>Guardian</th><td>{{ rider.guardian }}</td></tr>
-    <tr><th>Disclaimer</th><td>{{ rider.disclaimer }}</td></tr>
+    <tr>
+        <th>Name</th>
+        <td>{{ rider.full_name or rider.name }}</td>
+    </tr>
+
+    {% if invite_mode %}
+        <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
+        <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
+    {% else %}
+        <tr><th>Age</th><td>{{ rider.age }}</td></tr>
+        <tr><th>Email</th><td>{{ rider.email }}</td></tr>
+        <tr><th>Mobile</th><td>{{ rider.mobile }}</td></tr>
+        <tr><th>Guardian</th><td>{{ rider.guardian }}</td></tr>
+        <tr><th>Disclaimer</th><td>{{ rider.disclaimer }}</td></tr>
+        <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
+        <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
+    {% endif %}
 </table>
 
 <div class="section-title">Matching Existing Clients</div>
@@ -84,11 +95,17 @@
     {% for m in matches %}
         <div class="match-block">
             <strong>{{ m.full_name }}</strong><br>
-            Age: {{ m.age }}<br>
-            Email: {{ m.email_primary }}<br>
-            Mobile: {{ m.mobile }}<br>
-            Guardian: {{ m.guardian_name }}<br>
-            Disclaimer: {{ m.disclaimer }}<br><br>
+
+            {% if invite_mode %}
+                Height: {{ m.height_cm }}<br>
+                Weight: {{ m.weight_kg }}<br><br>
+            {% else %}
+                Age: {{ m.age }}<br>
+                Email: {{ m.email_primary }}<br>
+                Mobile: {{ m.mobile }}<br>
+                Guardian: {{ m.guardian_name }}<br>
+                Disclaimer: {{ m.disclaimer }}<br><br>
+            {% endif %}
 
             <form method="post" style="display:inline;">
                 <input type="hidden" name="client_id" value="{{ m.client_id }}">
@@ -97,12 +114,14 @@
                 </button>
             </form>
 
+            {% if not invite_mode %}
             <form method="post" style="display:inline;">
                 <input type="hidden" name="client_id" value="{{ m.client_id }}">
                 <button class="button danger" name="choice" value="overwrite">
                     ⚠ Overwrite This Client
                 </button>
             </form>
+            {% endif %}
         </div>
     {% endfor %}
 {% else %}
@@ -120,15 +139,12 @@
         ➕ Create New (Same Name)
     </button>
 </form>
-<form method="post" action="{{ url_for('finalize_conflict', submission_id=submission.id, rider_index=rider_index) }}">
-    <!-- existing buttons here -->
 
-    <button type="submit" name="choice" value="ignore" class="btn btn-secondary">
-        Ignore this disclaimer (do not append)
+<form method="post">
+    <button type="submit" name="choice" value="ignore" class="button danger">
+        Ignore this submission (do not append)
     </button>
 </form>
-
-
 
 </body>
 </html>

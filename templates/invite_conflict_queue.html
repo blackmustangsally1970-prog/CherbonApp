@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invite Conflicts</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            text-align: left;
+        }
+
+        .button {
+            padding: 6px 12px;
+            background: #0645AD;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #003f8a;
+        }
+
+        .empty {
+            margin-top: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Invite Conflicts</h1>
+
+{% if rows %}
+<table>
+    <tr>
+        <th>Submission ID</th>
+        <th>Date</th>
+        <th>Riders</th>
+        <th>Action</th>
+    </tr>
+
+    {% for r in rows %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.created_at or "N/A" }}</td>
+            <td>
+                {% set riders = parse_jotform_payload(r.raw_payload, forced_submission_id=r.id) %}
+                {{ riders|length }}
+            </td>
+            <td>
+                <a class="button"
+                   href="{{ url_for('invite_conflict_resolution',
+                                    submission_id=r.id,
+                                    rider_index=1) }}">
+                    Resolve
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+{% else %}
+    <p class="empty">No invite conflicts pending.</p>
+{% endif %}
+
+</body>
+</html>

@@ -65,7 +65,7 @@ class IncomingSubmission(db.Model):
     processed_at = db.Column(db.DateTime)
     unique_hash = db.Column(db.String(64), index=True)
     ignored = db.Column(db.Boolean, default=False)
-
+    needs_client_match = db.Column(db.Boolean, default=False)
 
 class TeacherTime(db.Model):
     __tablename__ = 'teacher_time'

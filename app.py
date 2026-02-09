@@ -1507,6 +1507,46 @@ def create_app():
 
         return lesson
 
+    def soft_match_client_for_invite(rider_name: str):
+        """
+        Soft‑match a rider name to existing clients.
+        Returns:
+            ("exact", client)
+            ("none", None)
+            ("ambiguous", [clients])
+        """
+        if not rider_name:
+            return ("none", None)
+
+        name_norm = (rider_name or "").strip().lower()
+
+        # Exact match
+        exact = db.session.query(Client).filter(
+            func.lower(func.trim(Client.full_name)) == name_norm
+        ).all()
+
+        if len(exact) == 1:
+            return ("exact", exact[0])
+        if len(exact) > 1:
+            return ("ambiguous", exact)
+
+        # Soft match: remove spaces + hyphens
+        compact = name_norm.replace(" ", "").replace("-", "")
+
+        candidates = db.session.query(Client).filter(Client.full_name.isnot(None)).all()
+
+        matches = []
+        for c in candidates:
+            c_name = (c.full_name or "").strip().lower()
+            c_compact = c_name.replace(" ", "").replace("-", "")
+            if c_compact == compact:
+                matches.append(c)
+
+        if not matches:
+            return ("none", None)
+        if len(matches) == 1:
+            return ("exact", matches[0])
+        return ("ambiguous", matches)
 
 
     def process_submission(sub):
@@ -1588,95 +1628,115 @@ def create_app():
         for rider in riders:
             try:
                 # ---------------------------------------------------------
-                # PATCH: Replace placeholder client + update pending lesson
+                # STEP 3: Replace placeholder client + update pending lesson
                 # ---------------------------------------------------------
-
                 token = rider.get("invite_token")
                 invite_for_rider = LessonInvite.query.filter_by(token=token).first()
 
                 if invite_for_rider:
-                    # 1. Get the pending lesson created at send_invite
+                    # 1. Fetch the pending lesson created at send_invite
                     pending_lesson = Lesson.query.get(invite_for_rider.lesson_id)
 
-                    # 2. Get the placeholder client
+                    # 2. Fetch the placeholder client
                     placeholder_client = Client.query.get(pending_lesson.client_id)
 
-                    # 3. Create the REAL client
-                    real_client = Client(
-                        full_name=rider.get("full_name"),
-                        mobile=rider.get("mobile"),
-                        email=rider.get("email"),
-                        notes="Created via SMS invite"
-                    )
-                    db.session.add(real_client)
-                    db.session.flush()
+                    # 3. Resolve the REAL client using soft-match logic
+                    rider_name = rider.get("full_name") or rider.get("name") or ""
+                    match_type, match_data = soft_match_client_for_invite(rider_name)
 
-                    # 4. Update the pending lesson
-                    pending_lesson.client_id = real_client.client_id
+                    if match_type == "exact":
+                        real_client = match_data
+
+                    elif match_type == "none":
+                        # Create new client with ONLY name + height/weight
+                        real_client = Client(
+                            full_name=rider_name,
+                            height_cm=rider.get("height_cm"),
+                            weight_kg=rider.get("weight_kg"),
+                            guardian_name="",
+                            mobile="",
+                            notes="Created via SMS invite"
+                        )
+                        db.session.add(real_client)
+                        db.session.flush()
+
+                    else:  # ambiguous
+                        sub.needs_client_match = True
+                        db.session.commit()
+                        return "needs_client_match"
+
+                    # 4. Update the pending lesson with REAL client details
                     pending_lesson.client = real_client.full_name
+                    pending_lesson.height_cm = rider.get("height_cm")
+                    pending_lesson.weight_kg = rider.get("weight_kg")
+                    pending_lesson.horse = ""  # horse not assigned yet
                     pending_lesson.attendance = "Pending"
                     pending_lesson.payment = None
 
-                    # 5. Mark invite as completed
+                    # 5. Mark invite as completed for this rider
                     invite_for_rider.status = "completed"
 
                     # 6. Delete placeholder client
                     db.session.delete(placeholder_client)
 
-                    # 7. Skip the old lesson‑creation logic
+                    # 7. Add updated lesson to created list
                     created_lessons.append(pending_lesson)
+
+                    # 8. Continue to next rider (no new lesson created here)
+                    continue
+
+                # ---------------------------------------------------------
+                # STEP 4: Multi‑rider lesson cloning (rider #2+)
+                # ---------------------------------------------------------
+                if created_lessons:
+                    # This is NOT the first rider — create a cloned lesson row
+
+                    # Resolve client again (soft-match already done above)
+                    rider_name = rider.get("full_name") or rider.get("name") or ""
+                    match_type, match_data = soft_match_client_for_invite(rider_name)
+
+                    if match_type == "exact":
+                        real_client = match_data
+                    elif match_type == "none":
+                        real_client = Client(
+                            full_name=rider_name,
+                            height_cm=rider.get("height_cm"),
+                            weight_kg=rider.get("weight_kg"),
+                            guardian_name="",
+                            mobile="",
+                            notes="Created via SMS invite"
+                        )
+                        db.session.add(real_client)
+                        db.session.flush()
+                    else:
+                        sub.needs_client_match = True
+                        db.session.commit()
+                        return "needs_client_match"
+
+                    # Clone the first lesson's structure
+                    base_lesson = created_lessons[0]
+
+                    new_lesson = Lesson(
+                        lesson_date=base_lesson.lesson_date,
+                        time_frame=base_lesson.time_frame,
+                        lesson_type=base_lesson.lesson_type,
+                        group_priv=base_lesson.group_priv,
+                        price_pl=base_lesson.price_pl,
+                        client=real_client.full_name,
+                        height_cm=rider.get("height_cm"),
+                        weight_kg=rider.get("weight_kg"),
+                        horse="",
+                        attendance="Pending",
+                        payment=None
+                    )
+
+                    db.session.add(new_lesson)
+                    db.session.flush()
+
+                    created_lessons.append(new_lesson)
                     continue
 
 
-                client = get_or_create_client_from_rider(
-                    rider,
-                    invite_mobile,
-                    submission_id
-                )
-
-                if rider.get("height_cm") is not None:
-                    client.height_cm = rider.get("height_cm")
-                if rider.get("weight_kg") is not None:
-                    client.weight_kg = rider.get("weight_kg")
-                if rider.get("notes"):
-                    client.notes = rider.get("notes")
-
-                print("DEBUG MATCH CHECK:")
-                print("  lesson_date:", invite.lesson_date, type(invite.lesson_date))
-                print("  clean_time:", clean_time)
-                print("  lesson_type:", invite.lesson_type)
-                print("  client.full_name:", client.full_name)
-
-                existing_lesson = db.session.query(Lesson).filter(
-                    Lesson.lesson_date == invite.lesson_date,
-                    Lesson.time_frame == clean_time,
-                    Lesson.lesson_type == invite.lesson_type,
-                    func.lower(func.trim(Lesson.client)) == func.lower(func.trim(client.full_name))
-                ).first()
-
-                if existing_lesson:
-                    created_lessons.append(existing_lesson)
-                    client.jotform_submission_id = submission_id
-                    continue
-                print("  existing_lesson:", existing_lesson)
-
-                lesson = Lesson(
-                    lesson_date=invite.lesson_date,
-                    time_frame=clean_time,
-                    lesson_type=invite.lesson_type,
-                    group_priv=invite.group_priv,
-                    price_pl=invite.cost_per_person,
-                    client=(client.full_name or ""),
-                    horse="",
-                    attendance="Pending",
-                    payment=None
-                )
-
-                db.session.add(lesson)
-                db.session.flush()
-
-                client.jotform_submission_id = submission_id
-                created_lessons.append(lesson)
 
             except Exception as e:
                 print("RIDER ERROR:", rider, e)   # 👈 add this  
@@ -1687,13 +1747,19 @@ def create_app():
         # FINALIZE
         # ---------------------------------------------------------
         if created_lessons:
-            try:
-                invite.lesson_id = created_lessons[0].lesson_id
-            except Exception:
-                invite.lesson_id = getattr(created_lessons[0], "lesson_id", None)
+            # Always link invite to the FIRST lesson created/updated
+            first_lesson = created_lessons[0]
+            invite.lesson_id = first_lesson.lesson_id
 
-        invite.status = "completed"
-        sub.processed = True
+            # Mark invite as completed
+            invite.status = "completed"
+
+            # Mark submission as processed
+            sub.processed = True
+
+        else:
+            # Safety fallback — should never happen now
+            sub.processed = True
 
         try:
             db.session.commit()
@@ -1705,6 +1771,139 @@ def create_app():
             return f"Processed {len(created_lessons)} riders into lessons; errors: {len(errors)}"
         return f"Processed {len(created_lessons)} riders into lessons"
 
+
+
+    @app.route('/notifications/invite_conflicts')
+    def invite_conflicts():
+        rows = (
+            db.session.query(IncomingSubmission)
+            .filter_by(needs_client_match=True, processed=False)
+            .order_by(IncomingSubmission.id.asc())
+            .all()
+        )
+        return render_template('invite_conflict_queue.html', rows=rows)
+
+
+    @app.route('/notifications/invite_conflict/<int:submission_id>/<int:rider_index>')
+    def invite_conflict_resolution(submission_id, rider_index):
+        row = db.session.query(IncomingSubmission).get_or_404(submission_id)
+
+        riders = parse_jotform_payload(
+            row.raw_payload,
+            forced_submission_id=row.id
+        )
+
+        # rider_index is 1‑based
+        rider = riders[rider_index - 1]
+
+        # Soft-match to get candidate matches
+        rider_name = rider.get("full_name") or rider.get("name") or ""
+        match_type, match_data = soft_match_client_for_invite(rider_name)
+
+        if match_type == "exact":
+            matches = [match_data]
+        elif match_type == "none":
+            matches = []
+        else:
+            matches = match_data  # list of clients
+
+        return render_template(
+            'conflict_resolution.html',
+            submission=row,
+            rider=rider,
+            matches=matches,
+            rider_index=rider_index,
+            invite_mode=True  # tells template to hide overwrite option
+        )
+
+    @app.route('/notifications/invite_conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
+    def finalize_invite_conflict(submission_id, rider_index):
+        choice = request.form.get("choice")
+        client_id = request.form.get("client_id")
+
+        row = db.session.query(IncomingSubmission).get_or_404(submission_id)
+
+        riders = parse_jotform_payload(
+            row.raw_payload,
+            forced_submission_id=row.id
+        )
+        rider = riders[rider_index - 1]
+
+        rider_name = rider.get("full_name") or rider.get("name") or ""
+
+        # ---------------------------------------------------------
+        # RESOLVE CLIENT BASED ON CHOICE
+        # ---------------------------------------------------------
+        if choice == "use_existing" and client_id:
+            client = db.session.query(Client).get(int(client_id))
+
+        elif choice == "new":
+            client = Client(
+                full_name=rider_name,
+                height_cm=rider.get("height_cm"),
+                weight_kg=rider.get("weight_kg"),
+                guardian_name="",
+                mobile="",
+                notes="Created via SMS invite"
+            )
+            db.session.add(client)
+            db.session.flush()
+
+        elif choice == "new_same_name":
+            base = rider_name
+            counter = 2
+            while True:
+                candidate = f"{base} ({counter})"
+                exists = db.session.query(Client).filter_by(full_name=candidate).first()
+                if not exists:
+                    break
+                counter += 1
+
+            client = Client(
+                full_name=candidate,
+                height_cm=rider.get("height_cm"),
+                weight_kg=rider.get("weight_kg"),
+                guardian_name="",
+                mobile="",
+                notes="Created via SMS invite"
+            )
+            db.session.add(client)
+            db.session.flush()
+
+        elif choice == "ignore":
+            row.processed = True
+            row.ignored = True
+            db.session.commit()
+            return redirect(url_for('invite_conflicts'))
+
+        else:
+            return "Invalid choice", 400
+
+        # ---------------------------------------------------------
+        # STORE RESOLVED CLIENT ID ON RIDER OBJECT
+        # ---------------------------------------------------------
+        rider["resolved_client_id"] = client.client_id
+
+        # ---------------------------------------------------------
+        # CHECK IF ALL RIDERS ARE NOW RESOLVED
+        # ---------------------------------------------------------
+        all_resolved = True
+        for r in riders:
+            if not r.get("resolved_client_id"):
+                all_resolved = False
+                break
+
+        if not all_resolved:
+            db.session.commit()
+            return redirect(url_for('invite_conflicts'))
+
+        # ---------------------------------------------------------
+        # ALL RIDERS RESOLVED → CLEAR FLAG AND REPROCESS
+        # ---------------------------------------------------------
+        row.needs_client_match = False
+        db.session.commit()
+
+        return redirect(url_for('process_all_pending'))
 
 
     # ---------------- ROUTES ---------------- #
