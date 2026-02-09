@@ -580,7 +580,8 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                 Client.client_id,
                 Client.full_name,
                 Client.mobile,
-                Client.email_primary
+                Client.email_primary,
+                Client.jotform_submission_id
             ).all()
 
         client_cache = []
