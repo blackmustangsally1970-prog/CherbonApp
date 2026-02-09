@@ -456,9 +456,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             print("ERROR: Could not decode payload:", type(payload))
             return []
 
-    # NOTE: you currently print full payloads here; consider gating by env var (can be huge / sensitive)
-    # print("RAW PAYLOAD:", json.dumps(payload, indent=2))
-
     # Submission ID
     if forced_submission_id:
         submission_id = str(forced_submission_id)
@@ -472,7 +469,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
     answers = payload.get("answers", {}) or {}
 
-    # ---- Email autodetect (keep your existing logic) ----
+    # ---- Email autodetect ----
     email = ""
     for key, item in answers.items():
         if item.get("type") == "control_email":
@@ -495,11 +492,11 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
     email = email or ""
 
-    # Detect which form this submission belongs to
+    # Detect form type
     form_id = str(payload.get("form_id") or "")
     is_invite_form = form_id == "253599154628066"
 
-    # Invite token extraction (keep your existing logic)
+    # Invite token extraction
     invite_token = None
     field3 = answers.get("3")
     if field3:
@@ -530,7 +527,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
     invite_token = invite_token or ""
 
-    # Age field detection (your existing dynamic detection)
+    # Age field detection
     age_fields = [
         key for key, item in answers.items()
         if item.get("type") in ("control_number", "control_dropdown")
@@ -538,7 +535,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     ]
     age_fields = sorted(age_fields, key=lambda x: int(x))
 
-    # Global fields (kept consistent with your existing IDs)
+    # Global fields
     guardian = answers.get("86", {}).get("answer", "") or ""
     mobile = answers.get("87", {}).get("answer", {}).get("full", "") or ""
     email_fallback = answers.get("47", {}).get("answer", "") or ""
@@ -554,7 +551,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         s = s.replace("\xa0", " ")
         return " ".join(s.strip().lower().split())
 
-    # Detect rider fullname fields (invite vs disclaimer)
+    # Detect rider fullname fields
     if is_invite_form:
         fullname_fields = INVITE_FULLNAME_FIELDS
     else:
@@ -567,32 +564,24 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
     riders = []
 
-    # LIGHT mode = no matching, no client cache needed
+    # Matching mode
     do_matching = (mode == "full")
 
+    # ---------------------------------------------------------
+    # CLIENT CACHE LOADING — FIXED (NO FULL TABLE SCAN)
+    # ---------------------------------------------------------
     client_cache = None
     exact_lookup = None
 
     if do_matching:
-        # If not provided, fall back to DB load ONCE per call (still better than per-row per-page)
-        if clients_cache is None:
-            clients_cache = db.session.query(
-                Client.client_id,
-                Client.full_name,
-                Client.mobile,
-                Client.email_primary,
-                Client.jotform_submission_id
-            ).all()
-
+        # If caller did NOT provide a cache, we DO NOT load all clients.
+        # We only load clients when we have a rider name.
         client_cache = []
-        for c in clients_cache:
-            full_name = getattr(c, "full_name", None)
-            if not full_name:
-                continue
-            client_cache.append((c, normalize_name(full_name), getattr(c, "jotform_submission_id", None)))
+        exact_lookup = {}
 
-        exact_lookup = {norm: c for c, norm, _ in client_cache}
-
+    # ---------------------------------------------------------
+    # MAIN RIDER LOOP
+    # ---------------------------------------------------------
     for idx, fullname_key in enumerate(fullname_fields):
         item = answers.get(fullname_key)
         if not item:
@@ -610,6 +599,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         if not name_norm:
             continue
 
+        # Age
         age_key = age_fields[idx] if idx < len(age_fields) else None
         age = answers.get(age_key, {}).get("answer") if age_key else None
 
@@ -625,7 +615,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             "invite_token": invite_token
         }
 
-        # Height/weight/notes - reuse your existing extract_number + field maps
+        # Height/weight/notes
         if is_invite_form:
             if idx < len(INVITE_HEIGHT_FIELDS):
                 height_field = INVITE_HEIGHT_FIELDS[idx]
@@ -649,8 +639,41 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         rider["weight_kg"] = extract_number(weight_val)
         rider["notes"] = notes_val or ""
 
-        # Matching only in FULL mode (exact match only; keep listing cheap)
-        if do_matching and exact_lookup is not None:
+        # ---------------------------------------------------------
+        # MATCHING — FIXED (NO FULL TABLE SCAN)
+        # ---------------------------------------------------------
+        if do_matching:
+            # Load only relevant clients ONCE per rider
+            if clients_cache is None:
+                compact = name_norm.replace(" ", "").replace("-", "")
+                like_pattern = f"%{compact}%"
+
+                clients_cache = db.session.query(
+                    Client.client_id,
+                    Client.full_name,
+                    Client.mobile,
+                    Client.email_primary,
+                    Client.jotform_submission_id
+                ).filter(
+                    Client.full_name.isnot(None),
+                    func.replace(
+                        func.replace(func.lower(Client.full_name), " ", ""),
+                        "-", ""
+                    ).like(like_pattern)
+                ).all()
+
+            # Build lookup
+            client_cache = []
+            for c in clients_cache:
+                full_name = getattr(c, "full_name", None)
+                if not full_name:
+                    continue
+                norm = normalize_name(full_name)
+                client_cache.append((c, norm, getattr(c, "jotform_submission_id", None)))
+
+            exact_lookup = {norm: c for c, norm, _ in client_cache}
+
+            # Exact match only
             matched_client = exact_lookup.get(name_norm)
             if matched_client:
                 guardian_norm = normalize_name(guardian)
@@ -1525,8 +1548,11 @@ def create_app():
             return ("none", None)
 
         name_norm = (rider_name or "").strip().lower()
+        compact = name_norm.replace(" ", "").replace("-", "")
 
-        # Exact match
+        # ---------------------------------------------------------
+        # 1. Exact match (case‑insensitive)
+        # ---------------------------------------------------------
         exact = db.session.query(Client).filter(
             func.lower(func.trim(Client.full_name)) == name_norm
         ).all()
@@ -1536,24 +1562,25 @@ def create_app():
         if len(exact) > 1:
             return ("ambiguous", exact)
 
-        # Soft match: remove spaces + hyphens
-        compact = name_norm.replace(" ", "").replace("-", "")
+        # ---------------------------------------------------------
+        # 2. Soft match using compact form (SQL LIKE)
+        #    Avoid full-table scan by filtering in SQL
+        # ---------------------------------------------------------
+        like_pattern = f"%{compact}%"
 
-        candidates = db.session.query(Client).filter(Client.full_name.isnot(None)).all()
+        candidates = db.session.query(Client).filter(
+            Client.full_name.isnot(None),
+            func.replace(
+                func.replace(func.lower(Client.full_name), " ", ""),
+                "-", ""
+            ).like(like_pattern)
+        ).all()
 
-        matches = []
-        for c in candidates:
-            c_name = (c.full_name or "").strip().lower()
-            c_compact = c_name.replace(" ", "").replace("-", "")
-            if c_compact == compact:
-                matches.append(c)
-
-        if not matches:
+        if not candidates:
             return ("none", None)
-        if len(matches) == 1:
-            return ("exact", matches[0])
-        return ("ambiguous", matches)
-
+        if len(candidates) == 1:
+            return ("exact", candidates[0])
+        return ("ambiguous", candidates)
 
     def process_submission(sub):
         """
