@@ -1039,6 +1039,10 @@ def create_app():
         pending = []
         for inv in invites:
             sub = submission_lookup.get(inv.token)
+            # If we found a matching submission, update invite status
+            if sub and inv.status == "waiting":
+                inv.status = "process"
+                db.session.commit()
 
             parsed = None
             if sub:
