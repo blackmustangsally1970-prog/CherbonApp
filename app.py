@@ -1638,7 +1638,7 @@ def create_app():
                     pending_lesson = Lesson.query.get(invite_for_rider.lesson_id)
 
                     # 2. Fetch the placeholder client
-                    placeholder_client = Client.query.get(pending_lesson.client_id)
+                    placeholder_client = Client.query.filter_by(full_name=pending_lesson.client).first()
 
                     # 3. Resolve the REAL client using soft-match logic
                     rider_name = rider.get("full_name") or rider.get("name") or ""
