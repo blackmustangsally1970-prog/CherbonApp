@@ -496,7 +496,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     email = email or ""
 
     # Detect which form this submission belongs to
-    form_id = str(payload.get("form_id") or payload.get("id") or "")
+    form_id = str(payload.get("form_id") or "")
     is_invite_form = form_id == "253599154628066"
 
     # Invite token extraction (keep your existing logic)
@@ -2100,7 +2100,7 @@ def create_app():
 
             # Dedupe by hash (blocks JotForm replay duplicates)
             existing_row = db.session.query(IncomingSubmission).filter_by(
-                form_id=submission_id
+                unique_hash=payload_hash
             ).first()
 
             if existing_row:
@@ -2108,7 +2108,7 @@ def create_app():
 
             # Insert into incoming_submissions
             row = IncomingSubmission(
-                form_id=submission_id,               # store REAL submission ID
+                form_id=FORM_ID,
                 raw_payload=json.dumps(sub),         # store full JSON
                 processed=False,
                 unique_hash=payload_hash
@@ -2126,9 +2126,24 @@ def create_app():
     @app.route('/notifications/<int:webhook_id>')
     def process_notification(webhook_id):
         submission = db.session.query(IncomingSubmission).get_or_404(webhook_id)
-        riders = parse_jotform_payload(submission.raw_payload, forced_submission_id=submission.form_id)
-        # Unified conflict detection (same as batch)
-        for i, rider in enumerate(riders, start=1):
+        riders = parse_jotform_payload(
+            submission.raw_payload,
+            forced_submission_id=submission.form_id
+        )
+
+        # NEW: filter valid riders (skip incomplete)
+        valid_riders = [r for r in riders if not r.get("incomplete")]
+
+        # NEW: if all riders incomplete → auto-ignore
+        if not valid_riders:
+            submission.processed = True
+            submission.ignored = True
+            submission.processed_at = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('notifications'))
+
+        # NEW: conflict detection only on valid riders
+        for i, rider in enumerate(valid_riders, start=1):
             if rider.get("matches"):
                 return redirect(url_for(
                     'resolve_conflict',
@@ -2140,7 +2155,7 @@ def create_app():
         return render_template(
             'process_notification.html',
             submission=submission,
-            clients=riders
+            clients=valid_riders
         )
 
 
@@ -2168,10 +2183,36 @@ def create_app():
         client_id = request.form.get("client_id")
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
-        riders = parse_jotform_payload(row.raw_payload, forced_submission_id=row.form_id)
+
+        # PHASE 3: Parse riders ONCE
+        riders = parse_jotform_payload(
+            row.raw_payload,
+            forced_submission_id=row.form_id
+        )
         rider = riders[rider_index - 1]
 
-        # Clean incoming fields
+        # Skip incomplete riders (safety)
+        if rider.get("incomplete"):
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('process_all_pending'))
+
+        # NEW: ignore option
+        if choice == "ignore":
+            row.processed = True
+            row.ignored = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('process_all_pending'))
+
+        # PHASE 3: Preload clients ONCE
+        all_clients = db.session.query(Client).all()
+        clients_by_id = {c.id: c for c in all_clients}
+
+        existing = clients_by_id.get(int(client_id)) if client_id else None
+
+        # Extract fields
         name = normalise_full_name(rider["name"])
         age = int(rider["age"]) if rider["age"] else None
         guardian = rider["guardian"]
@@ -2180,11 +2221,8 @@ def create_app():
         disclaimer = int(rider["disclaimer"]) if rider["disclaimer"] else None
         jotform_id = str(row.form_id)
 
-        # Fetch selected existing client (if any)
-        existing = Client.query.get(client_id) if client_id else None
-
         # -----------------------------------------
-        # USE EXISTING
+        # USE EXISTING (FAST)
         # -----------------------------------------
         if choice == "use_existing" and existing:
             existing.jotform_submission_id = jotform_id
@@ -2192,7 +2230,7 @@ def create_app():
             return redirect(url_for('process_all_pending'))
 
         # -----------------------------------------
-        # OVERWRITE EXISTING
+        # OVERWRITE EXISTING (FAST)
         # -----------------------------------------
         if choice == "overwrite" and existing:
             existing.full_name = name
@@ -2201,15 +2239,15 @@ def create_app():
             existing.mobile = mobile
             existing.email_primary = email
             existing.disclaimer = disclaimer
-            existing.jotform_submission_id = jotform_id
             existing.height_cm = rider.get("height_cm")
             existing.weight_kg = rider.get("weight_kg")
             existing.notes = rider.get("notes")
+            existing.jotform_submission_id = jotform_id
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
         # -----------------------------------------
-        # CREATE NEW CLIENT
+        # CREATE NEW CLIENT (FAST)
         # -----------------------------------------
         if choice == "new":
             new_client = Client(
@@ -2230,7 +2268,7 @@ def create_app():
             return redirect(url_for('process_all_pending'))
 
         # -----------------------------------------
-        # CREATE NEW CLIENT (SAME NAME)
+        # CREATE NEW CLIENT (SAME NAME) (FAST)
         # -----------------------------------------
         if choice == "new_same_name":
             base = name
@@ -2268,19 +2306,41 @@ def create_app():
 
 
 
-
     @app.route('/notifications/<int:webhook_id>', methods=['POST'])
     def finalize_notification(webhook_id):
         row = db.session.query(IncomingSubmission).get_or_404(webhook_id)
-        payload = row.raw_payload
-        riders = parse_jotform_payload(payload, forced_submission_id=row.form_id)
+
+        # PHASE 3: Parse riders ONCE
+        riders = parse_jotform_payload(
+            row.raw_payload,
+            forced_submission_id=row.form_id
+        )
 
         jotform_id = str(row.form_id)
 
-        for i, rider in enumerate(riders, start=1):
+        # PHASE 3: Skip incomplete riders
+        valid_riders = [r for r in riders if not r.get("incomplete")]
+
+        # If all riders incomplete → auto-ignore
+        if not valid_riders:
+            row.processed = True
+            row.ignored = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('notifications'))
+
+        # PHASE 3: Preload clients ONCE
+        all_clients = db.session.query(Client).all()
+        clients_by_id = {c.id: c for c in all_clients}
+
+        for i, rider in enumerate(valid_riders, start=1):
             choice = request.form.get(f"client_choice_{i}")
 
-            # If this is an invite submission, rider may not have disclaimer fields
+            # Safety skip
+            if rider.get("incomplete"):
+                continue
+
+            # Extract fields
             name = request.form.get(f"name_{i}") or rider.get("name") or "Unknown"
             age = request.form.get(f"age_{i}") or rider.get("age")
             guardian = request.form.get(f"guardian_{i}") or rider.get("guardian")
@@ -2302,9 +2362,8 @@ def create_app():
 
             # --- CREATE NEW ---
             if choice == "new":
-                final_name = name
                 new_client = Client(
-                    full_name=final_name,
+                    full_name=name,
                     guardian_name=guardian,
                     age=age,
                     mobile=mobile,
@@ -2345,7 +2404,7 @@ def create_app():
             # --- USE EXISTING ---
             if choice and choice.startswith("existing_"):
                 existing_id = int(choice.replace("existing_", ""))
-                client = Client.query.get(existing_id)
+                client = clients_by_id.get(existing_id)
                 if client:
                     client.jotform_submission_id = jotform_id
                     log_submission_link("USE_EXISTING", client, jotform_id)
@@ -2354,7 +2413,7 @@ def create_app():
             # --- OVERWRITE EXISTING ---
             if choice and choice.startswith("overwrite_"):
                 existing_id = int(choice.replace("overwrite_", ""))
-                client = Client.query.get(existing_id)
+                client = clients_by_id.get(existing_id)
                 if client:
                     client.full_name = name
                     client.guardian_name = guardian
@@ -2370,7 +2429,10 @@ def create_app():
                 continue
 
         # SAFE LOGGING
-        riders_for_log = parse_jotform_payload(row.raw_payload, forced_submission_id=row.form_id)
+        riders_for_log = parse_jotform_payload(
+            row.raw_payload,
+            forced_submission_id=row.form_id
+        )
         safe_names = [r.get("name") for r in riders_for_log if r.get("name")]
         if safe_names:
             log_disclaimer_processed(safe_names)
@@ -2387,54 +2449,50 @@ def create_app():
     def process_all_pending():
         from datetime import datetime
 
-        # Get the next unprocessed submission
-        next_row = db.session.query(IncomingSubmission).filter_by(processed=False).first()
+        # Get the next unprocessed + not ignored submission
+        next_row = (
+            db.session.query(IncomingSubmission)
+            .filter_by(processed=False, ignored=False)
+            .first()
+        )
 
         if not next_row:
             return redirect(url_for('notifications'))
 
-        # Parse riders from stored JSON
-        riders = parse_jotform_payload(next_row.raw_payload, forced_submission_id=next_row.form_id)
+        # -----------------------------------------
+        # PHASE 3: Parse riders ONCE
+        # -----------------------------------------
+        riders = parse_jotform_payload(
+            next_row.raw_payload,
+            forced_submission_id=next_row.form_id
+        )
 
-        # ---------------------------------------------------------
-        # FIX 1: CLEAR MATCHES FOR RIDERS ALREADY RESOLVED
-        # ---------------------------------------------------------
-        for rider in riders:
-            existing = db.session.query(Client).filter_by(
-                jotform_submission_id=rider["jotform_submission_id"]
-            ).first()
+        # -----------------------------------------
+        # PHASE 3: Skip incomplete riders
+        # -----------------------------------------
+        valid_riders = [r for r in riders if not r.get("incomplete")]
 
-            if existing:
-                rider["matches"] = []
-
-        # ---------------------------------------------------------
-        # FIX 3: IF ALL RIDERS ARE RESOLVED → MARK PROCESSED
-        # ---------------------------------------------------------
-        all_resolved = True
-        for rider in riders:
-            existing = db.session.query(Client).filter_by(
-                jotform_submission_id=rider["jotform_submission_id"]
-            ).first()
-
-            if not existing:
-                all_resolved = False
-                break
-
-        if all_resolved:
-            # Log disclaimer names
-            riders_for_log = parse_jotform_payload(next_row.raw_payload, forced_submission_id=next_row.form_id)
-            names = [r["name"] for r in riders_for_log]
-            log_disclaimer_processed(names)
-
+        # If all riders incomplete → auto-ignore
+        if not valid_riders:
             next_row.processed = True
+            next_row.ignored = True
             next_row.processed_at = datetime.utcnow()
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
         # -----------------------------------------
-        # STEP 1: CHECK FOR CONFLICTS
+        # PHASE 3: Preload clients ONCE
         # -----------------------------------------
-        for idx, rider in enumerate(riders, start=1):
+        all_clients = db.session.query(Client).all()
+        clients_by_name = {
+            normalise_full_name(c.full_name): c
+            for c in all_clients
+        }
+
+        # -----------------------------------------
+        # PHASE 3: Conflict detection (fast)
+        # -----------------------------------------
+        for idx, rider in enumerate(valid_riders, start=1):
             matches = rider.get("matches", [])
             if matches:
                 return redirect(url_for(
@@ -2444,9 +2502,9 @@ def create_app():
                 ))
 
         # -----------------------------------------
-        # STEP 2: NO CONFLICTS → CREATE NEW CLIENTS
+        # PHASE 3: No conflicts → fast create
         # -----------------------------------------
-        for rider in riders:
+        for rider in valid_riders:
             name = normalise_full_name(rider["name"])
             age = int(rider["age"]) if rider["age"] else None
             guardian = rider["guardian"]
@@ -2470,12 +2528,9 @@ def create_app():
             db.session.add(new_client)
 
         # -----------------------------------------
-        # STEP 3: MARK SUBMISSION AS PROCESSED
+        # Mark processed
         # -----------------------------------------
-
-        # Log disclaimer names
-        riders_for_log = parse_jotform_payload(next_row.raw_payload, forced_submission_id=next_row.form_id)
-        names = [r["name"] for r in riders_for_log]
+        names = [r["name"] for r in valid_riders]
         log_disclaimer_processed(names)
 
         next_row.processed = True

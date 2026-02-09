@@ -120,6 +120,15 @@
         ➕ Create New (Same Name)
     </button>
 </form>
+<form method="post" action="{{ url_for('finalize_conflict', submission_id=submission.id, rider_index=rider_index) }}">
+    <!-- existing buttons here -->
+
+    <button type="submit" name="choice" value="ignore" class="btn btn-secondary">
+        Ignore this disclaimer (do not append)
+    </button>
+</form>
+
+
 
 </body>
 </html>
