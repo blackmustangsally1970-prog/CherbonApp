@@ -93,10 +93,20 @@
       <td>{{ inv.mobile }}</td>
       <td>{{ inv.riders_requested }}</td>
 
-      {% if sub %}
+      {% if inv.status == "process" %}
+        <td class="ok">Process</td>
+        <td>—</td>
+
+      {% elif inv.status == "form_received" %}
         <td class="ok">Form Received</td>
-      {% else %}
+        <td>—</td>
+
+      {% elif inv.status == "waiting" %}
         <td class="missing">Waiting</td>
+        <td>—</td>
+
+      {% else %}
+        <td>{{ inv.status }}</td>
         <td>—</td>
       {% endif %}
     </tr>
