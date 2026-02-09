@@ -58,6 +58,7 @@ class IncomingSubmission(db.Model):
     __tablename__ = 'incoming_submissions'
 
     id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String, unique=True)   # <-- ADD THIS
     form_id = db.Column(db.String)
     raw_payload = db.Column(db.JSON)
     received_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -66,6 +67,7 @@ class IncomingSubmission(db.Model):
     unique_hash = db.Column(db.String(64), index=True)
     ignored = db.Column(db.Boolean, default=False)
     needs_client_match = db.Column(db.Boolean, default=False)
+
 
 class TeacherTime(db.Model):
     __tablename__ = 'teacher_time'

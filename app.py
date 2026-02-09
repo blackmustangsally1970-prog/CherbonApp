@@ -2748,40 +2748,48 @@ def create_app():
         import requests
         import json
         from datetime import datetime
+        from sqlalchemy import func
 
         INVITE_FORM_ID = "253599154628066"
         API_KEY = os.getenv("JOTFORM_API_KEY", "")
 
+        # Pull ALL submissions from JotForm for this form
         url = f"https://api.jotform.com/form/{INVITE_FORM_ID}/submissions?apiKey={API_KEY}"
-
         r = requests.get(url)
         data = r.json()
 
         submissions = data.get("content", [])
-
         count = 0
 
         for s in submissions:
-            submission_id = s.get("id")
+            submission_id = s.get("id")  # UNIQUE PER SUBMISSION
             form_id = s.get("form_id")
 
-            # Skip if already stored
-            existing = db.session.query(IncomingSubmission).filter_by(form_id=form_id).first()
+            # Check if THIS EXACT submission is already stored
+            existing = (
+                db.session.query(IncomingSubmission)
+                .filter(IncomingSubmission.submission_id == submission_id)
+                .first()
+            )
             if existing:
                 continue
 
+            # Store raw payload
             raw_payload = json.dumps(s)
 
             new_sub = IncomingSubmission(
-                form_id=form_id,
+                submission_id=submission_id,   # <-- MUST EXIST IN MODEL
+                form_id=form_id,               # JotForm form ID (same for all)
                 raw_payload=raw_payload,
                 received_at=datetime.utcnow(),
-                processed=False
+                processed=False,
+                needs_client_match=False
             )
+
             db.session.add(new_sub)
             db.session.commit()
 
-            # Attempt to match to invite immediately
+            # Attempt immediate invite match
             invite = match_submission_to_invite(new_sub)
             if invite:
                 invite.submission_id = new_sub.id
