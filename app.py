@@ -812,7 +812,7 @@ def create_app():
 
 
     def create_lesson_from_invite(invite, primary_client):
-        clean_time = extract_time_window(invite.time_frame)
+        clean_time = invite.time_frame
         start, end = clean_time.split(" - ")
 
         lesson = Lesson(
@@ -1490,7 +1490,7 @@ def create_app():
         """
         Creates one Lesson row for a single client using fields from lesson_invites.
         """
-        clean_time = extract_time_window(invite.time_frame)
+        clean_time = invite.time_frame
 
         lesson = Lesson(
             lesson_date=invite.lesson_date,
@@ -1583,7 +1583,7 @@ def create_app():
         created_lessons = []
         errors = []
 
-        clean_time = extract_time_window(invite.time_frame)
+        clean_time = invite.time_frame
 
         for rider in riders:
             try:
