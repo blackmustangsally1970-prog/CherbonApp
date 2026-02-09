@@ -2612,7 +2612,7 @@ def create_app():
                 continue
 
             # Only process invites that are awaiting_form
-            if invite.status != "awaiting_form":
+            if invite.status != "process":
                 continue
 
             # Mark invite as form_received
