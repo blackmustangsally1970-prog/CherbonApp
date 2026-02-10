@@ -1345,6 +1345,12 @@ def create_app():
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
     def lessons_by_date():
         selected_date, selected_date_str = parse_selected_date()
+
+        # If no date was provided, default to today
+        if not selected_date:
+                selected_date = date.today()
+                selected_date_str = selected_date.strftime('%Y-%m-%d')
+
         weekday_int = date.today().weekday()
         if not selected_date:
             # fallback to today if parsing failed
@@ -1355,7 +1361,7 @@ def create_app():
         print("=== DEBUG lessons_by_date ENTRY ===")
         print("method:", request.method)
         print("request.values:", dict(request.values))
-        raw = request.values.get('date') or request.values.get('selected_date') or ''
+        raw = request.values.get('selected_date') or ''
         print("raw date (string):", repr(raw))
         try:
             parsed = datetime.strptime(raw, '%Y-%m-%d').date() if raw else None

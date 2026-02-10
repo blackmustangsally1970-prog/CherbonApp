@@ -701,28 +701,33 @@ select.teacher-dropdown {
 
 </div>
 <span id="saved-message">Saved!</span>
+
 <form method="POST" action="/lessons_by_date" id="date-nav-form" style="display:flex; gap:8px; align-items:center;">
   <button type="button" id="prev-day">←</button>
   <input type="date" name="date" id="date-picker" required>
   <button type="button" id="next-day">→</button>
   <button type="submit" style="margin-left:12px;">View</button>
-<!-- <button type="submit" form="update-lessons-form" style="margin-left:8px;">Save</button> -->
 
-<button id="save-button" type="submit" class="save-btn" form="update-lessons-form">
-    Save
-</button>
+  <button id="save-button" type="submit" class="save-btn" form="update-lessons-form">
+      Save
+  </button>
+
   <button type="button" id="print-page" style="margin-left:8px;">Print</button>
-    <form action="/save_txt?selected_date={{ selected_date }}" method="POST" style="display:inline;">
-        <button type="submit" class="btn btn-primary" style="margin-left:8px;">
-            Download TXT
-        </button>
-    </form>
+</form>   <!-- ⭐ CLOSE MAIN FORM HERE -->
 
-    <form action="/save_xlsx?selected_date={{ selected_date }}" method="POST" style="display:inline;">
-        <button type="submit" class="btn btn-success" style="margin-left:8px;">
-            Download Excel
-        </button>
-    </form>
+<!-- ⭐ DOWNLOAD BUTTONS NOW INLINE AND VALID -->
+<form action="/save_txt?selected_date={{ selected_date }}" method="POST" style="display:inline;">
+    <button type="submit" class="btn btn-primary" style="margin-left:8px;">
+        Download TXT
+    </button>
+</form>
+
+<form action="/save_xlsx?selected_date={{ selected_date }}" method="POST" style="display:inline;">
+    <button type="submit" class="btn btn-success" style="margin-left:8px;">
+        Download Excel
+    </button>
+</form>
+
 <div id="save-txt-spinner"></div>
 
 <button type="button" id="recalc-btn" class="btn btn-warning" style="margin-left:8px;">
@@ -735,6 +740,7 @@ select.teacher-dropdown {
         style="margin-left:8px;">
     Book Lessons
 </button>
+
 
 
 
