@@ -3143,7 +3143,8 @@ def create_app():
         if client_id:
             recalc_client_lessons_by_id(client_id)
 
-        return redirect(url_for("lessons_by_date", date=lesson_date_str))
+        return redirect(url_for("lessons_by_date", selected_date=lesson_date_str))
+
 
 
 
