@@ -2138,60 +2138,6 @@ document.querySelectorAll('#update-lessons-form input').forEach(el => {
   });
 </script>
 
-<script>
-function placeHeadersUnderTeachers() {
-  function parseStartMinutesFromHeader(header) {
-    try {
-      const m = String(header || '').match(/(\d{1,2}:\d{2})/);
-      if (!m) return 0;
-      const [h, mm] = m[1].split(':').map(Number);
-      return h * 60 + mm;
-    } catch (e) { return 0; }
-  }
-
-  document.querySelectorAll('.lesson-block').forEach(block => {
-    const rawSaved   = (block.dataset.savedTags   || '').trim();
-    const rawDefault = (block.dataset.defaultTags || '').trim();
-
-    const effectiveTags = (
-        block.dataset.savedTags != null && block.dataset.savedTags.trim() !== ""
-          ? rawSaved
-          : rawDefault
-      )
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    // 🔴 Remove ALL anchors for this block before re‑adding
-    document.querySelectorAll(`.teacher-col-body a.teacher-slot[href="#${block.dataset.blockKey}"]`)
-      .forEach(a => a.remove());
-
-    // ✅ Add anchors only for current effective tags
-    effectiveTags.forEach(tag => {
-      const teacherIndex = parseInt(tag.replace('T',''), 10);
-      const body = document.querySelector(`#teacher_col_${teacherIndex} .teacher-col-body`);
-      if (body) {
-        const a = document.createElement('a');
-        a.className = 'lesson-header-token teacher-slot';
-        a.href = '#' + block.dataset.blockKey;
-        a.textContent = '📘 ' + (block.dataset.blockHeader || '');
-
-        const startMins = parseStartMinutesFromHeader(block.dataset.blockHeader);
-        let inserted = false;
-        body.querySelectorAll('a.teacher-slot').forEach(existing => {
-          const existingMins = parseStartMinutesFromHeader(existing.textContent);
-          if (!inserted && existingMins > startMins) {
-            body.insertBefore(a, existing);
-            inserted = true;
-          }
-        });
-        if (!inserted) body.appendChild(a);
-      }
-    });
-  });
-}
-
-</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
