@@ -3590,6 +3590,9 @@ Cherbon Waters Admin
         return f"Seed complete. Updated {updated} clients."
 
 
+
+
+
     @app.route('/save_txt', methods=['POST'])
     def save_txt():
         try:
@@ -3678,7 +3681,9 @@ Cherbon Waters Admin
             full_text = "\n".join(lines)
 
             # --- Write TXT ---
-            out_dir = CSV_ROOT            
+            out_dir = "/home/schedule_exports"
+            os.makedirs(out_dir, exist_ok=True)
+            
             txt_path = os.path.join(out_dir, f"{filename}.txt")
             excel_path = os.path.join(out_dir, f"{filename}.xlsx")
 
@@ -3739,10 +3744,24 @@ Cherbon Waters Admin
 
             # --- Launch Notepad++ ---
             
-            return {"status": "Text and Excel files saved successfully"}, 200
+            return send_file(txt_path, as_attachment=True)
+
+
 
         except Exception as e:
             return {"error": str(e)}, 500
+
+    @app.route('/download_schedule/<filename>')
+    def download_schedule(filename):
+        export_dir = "/home/schedule_exports"
+        file_path = os.path.join(export_dir, filename)
+
+        if not os.path.exists(file_path):
+            return {"error": "File not found"}, 404
+
+        return send_file(file_path, as_attachment=True)
+
+
 
     @app.route("/debug_order/<client>")
     def debug_order(client):

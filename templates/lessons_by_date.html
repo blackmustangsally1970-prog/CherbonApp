@@ -712,7 +712,19 @@ select.teacher-dropdown {
     Save
 </button>
   <button type="button" id="print-page" style="margin-left:8px;">Print</button>
-<button type="button" id="save-txt-btn" style="margin-left:8px;">Save TXT</button>
+    <button type="button"
+            class="btn btn-primary"
+            style="margin-left:8px;"
+            onclick="window.location.href='/download_schedule/{{ filename }}.txt'">
+        Download TXT
+    </button>
+
+    <button type="button"
+            class="btn btn-success"
+            style="margin-left:8px;"
+            onclick="window.location.href='/download_schedule/{{ filename }}.xlsx'">
+        Download Excel
+    </button>
 <div id="save-txt-spinner"></div>
 
 <button type="button" id="recalc-btn" class="btn btn-warning" style="margin-left:8px;">
