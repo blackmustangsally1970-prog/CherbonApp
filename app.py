@@ -45,7 +45,7 @@ os.makedirs(CSV_ROOT, exist_ok=True)
 
 @lru_cache(maxsize=1)
 def get_static_clients():
-    return db.session.query(Client).order_by(Client.full_name).all()
+    return db.session.query(Client).order_by(Client.full_name).all()ftoken
 
 @lru_cache(maxsize=1)
 def get_static_horses():
@@ -771,10 +771,28 @@ def create_app():
             return {line.strip() for line in f if line.strip()}
 
     def generate_invite_token(lesson_date_str, lesson_time_str):
+        """
+        Generates a unique invite token. If a collision occurs,
+        regenerates a new random suffix until unique.
+        """
+        import secrets
+        import string
+
         date_comp = (lesson_date_str or "").replace("-", "")
         time_comp = (lesson_time_str or "").replace(":", "")[:4]
-        rand = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        return f"TR-{date_comp}-{time_comp}-{rand}"
+
+        while True:
+            rand = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+            token = f"TR-{date_comp}-{time_comp}-{rand}"
+
+            # Check DB for existing token
+            exists = db.session.query(
+                db.session.query(LessonInvite.id).filter_by(invite_token=token).exists()
+            ).scalar()
+
+            if not exists:
+                return token
+            # else: collision → loop again
 
     def teacher_times_map():
         rows = get_static_teacher_time()   # <— cached rows instead of DB query
