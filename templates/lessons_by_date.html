@@ -698,49 +698,45 @@ select.teacher-dropdown {
 
 
 
-
 </div>
 <span id="saved-message">Saved!</span>
 
-<form method="POST" action="/lessons_by_date" id="date-nav-form" style="display:flex; gap:8px; align-items:center;">
-  <button type="button" id="prev-day">←</button>
-  <input type="date" name="date" id="date-picker" required>
-  <button type="button" id="next-day">→</button>
-  <button type="submit" style="margin-left:12px;">View</button>
+<div style="display:flex; gap:8px; align-items:center; flex-wrap:nowrap;">
 
-  <button id="save-button" type="submit" class="save-btn" form="update-lessons-form">
-      Save
-  </button>
+    <form method="POST" action="/lessons_by_date" id="date-nav-form" style="display:flex; gap:8px; align-items:center;">
+        <button type="button" id="prev-day">←</button>
+        <input type="date" name="date" id="date-picker" required>
+        <button type="button" id="next-day">→</button>
+        <button type="submit" style="margin-left:12px;">View</button>
 
-  <button type="button" id="print-page" style="margin-left:8px;">Print</button>
-</form>   <!-- ⭐ CLOSE MAIN FORM HERE -->
+        <button id="save-button" type="submit" class="save-btn" form="update-lessons-form">
+            Save
+        </button>
 
-<!-- ⭐ DOWNLOAD BUTTONS NOW INLINE AND VALID -->
-<form action="/save_txt?selected_date={{ selected_date }}" method="POST" style="display:inline;">
-    <button type="submit" class="btn btn-primary" style="margin-left:8px;">
-        Download TXT
+        <button type="button" id="print-page" style="margin-left:8px;">Print</button>
+    </form>
+
+    <form action="/save_txt?selected_date={{ selected_date }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-primary">
+            Download TXT
+        </button>
+    </form>
+
+    <form action="/save_xlsx?selected_date={{ selected_date }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-success">
+            Download Excel
+        </button>
+    </form>
+
+    <button type="button" id="recalc-btn" class="btn btn-warning">
+        Recalculate Balances
     </button>
-</form>
 
-<form action="/save_xlsx?selected_date={{ selected_date }}" method="POST" style="display:inline;">
-    <button type="submit" class="btn btn-success" style="margin-left:8px;">
-        Download Excel
+    <button type="button" id="open-booking-panel" class="btn btn-success">
+        Book Lessons
     </button>
-</form>
 
-<div id="save-txt-spinner"></div>
-
-<button type="button" id="recalc-btn" class="btn btn-warning" style="margin-left:8px;">
-    Recalculate Balances
-</button>
-
-<button type="button"
-        id="open-booking-panel"
-        class="btn btn-success"
-        style="margin-left:8px;">
-    Book Lessons
-</button>
-
+</div>
 
 
 
