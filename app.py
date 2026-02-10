@@ -45,7 +45,7 @@ os.makedirs(CSV_ROOT, exist_ok=True)
 
 @lru_cache(maxsize=1)
 def get_static_clients():
-    return db.session.query(Client).order_by(Client.full_name).all()ftoken
+    return db.session.query(Client).order_by(Client.full_name).all()
 
 @lru_cache(maxsize=1)
 def get_static_horses():
