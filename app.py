@@ -3136,6 +3136,7 @@ def create_app():
                 group_priv=group_priv,
                 freq=freq,
                 client=canonical_name,
+                client_id=client_id,     # ⭐ CRITICAL FIX
                 horse=horse,
             )
             db.session.add(lesson)
