@@ -2571,6 +2571,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         for (let i = 0; i < count; i++) {
             const row = document.createElement("tr");
+            
             row.innerHTML = String.raw`
                 <td>
                     <input type="date" class="form-control date-field" value="{{ selected_date }}">
@@ -2610,6 +2611,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </select>
                 </td>
             `;
+             
             rowsContainer.appendChild(row);
         }
 
@@ -2793,6 +2795,7 @@ function prefixMatcher(params, data) {
 
     return null;
 }
+
 </script>
 
 
