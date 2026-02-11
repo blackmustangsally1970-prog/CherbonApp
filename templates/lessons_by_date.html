@@ -1,9 +1,14 @@
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Lessons by Date</title>
+ <meta http-equiv="Cache-Control" content="no-store" />
+
+
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 
 
@@ -741,7 +746,7 @@ select.teacher-dropdown {
 
 
 
-</form>
+
 
 <form method="POST" action="{{ url_for('update_lessons') }}" id="update-lessons-form">
   <input type="hidden" name="selected_date" value="{{ selected_date }}">
@@ -1678,34 +1683,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-<script>
-  // Print helper: close open Select2, remove focus, then call print
-  document.getElementById('print-page').addEventListener('click', function () {
-    try {
-      // close any open Select2 dropdowns
-      $('.select2-container--open').each(function () {
-        try { $(this).prev('select').select2('close'); } catch(e) {}
-      });
-    } catch (e) {}
-
-    // remove focus so input outlines don't appear in print
-    try { document.activeElement && document.activeElement.blur(); } catch(e) {}
-
-    // short timeout to let UI settle, then print
-    setTimeout(function () {
-      window.print();
-    }, 120);
-  });
-</script>
-
-
-
-
-
-
-
-
-
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -2001,7 +1978,6 @@ if (typeof placeHeadersUnderTeachers === 'function') {
   });
 });
 
-})();
 </script>
 
 <script>
@@ -2216,49 +2192,6 @@ document.addEventListener('submit', function(e) {
 });
 </script>
 
-<script>
-document.getElementById("save-txt-btn").addEventListener("click", async function () {
-    const btn = document.getElementById("save-txt-btn");
-    const spinner = document.getElementById("save-txt-spinner");
-    const toast = document.getElementById("export-toast");
-    const selectedDate = document.getElementById("date-picker").value;
-
-    // Start spinner + remove glow
-    spinner.style.display = "inline-block";
-    btn.classList.remove("glow");
-
-    // 1. Save all lesson changes first
-    const form = document.getElementById("update-lessons-form");
-    const formData = new FormData(form);
-
-    await fetch("/update_lessons", {
-        method: "POST",
-        body: formData
-    });
-
-    // 2. Now run the export
-    const res = await fetch(`/save_txt?selected_date=${selectedDate}`, {
-        method: "POST"
-    });
-
-    const data = await res.json();
-
-    // Stop spinner
-    spinner.style.display = "none";
-
-    if (data.status) {
-        // Glow effect
-        btn.classList.add("glow");
-        setTimeout(() => btn.classList.remove("glow"), 1500);
-
-        // Toast
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 2500);
-    } else {
-        alert("Error: " + data.error);
-    }
-});
-</script>
 
 
 <script>
@@ -2568,379 +2501,124 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.action = "/new_lesson";   // reset to normal save
             }
         });
-    });
+    });   // ← THIS LINE WAS MISSING
 
-document.querySelectorAll('.send-invite-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const form = this.closest('form');
-        const inviteMode = form.querySelector('.invite-mode');
+    document.querySelectorAll('.send-invite-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const form = this.closest('form');
+            const inviteMode = form.querySelector('.invite-mode');
 
-        // Show SMS invite panel
-        inviteMode.style.display = 'block';
+            // Show SMS invite panel
+            inviteMode.style.display = 'block';
 
-        // Switch form action but DO NOT submit yet
-        form.action = "/send_invite";
-    });
-});
-
-});
-</script>
-
-<script>
-// -----------------------------------------------------------
-// REQUIRE VALID LESSON TIME + FORCE CORRECT FORM ACTION
-// -----------------------------------------------------------
-document.addEventListener("click", function (e) {
-
-    const isSave = e.target.classList.contains("save-lesson-btn");
-    const isFinalInvite = e.target.classList.contains("submit-invite-btn");
-
-    // Only validate on Save or Final Invite
-    if (!isSave && !isFinalInvite) return;
-
-    const form = e.target.closest("form");
-    const popup = e.target.closest(".lesson-popup");
-    if (!form || !popup) return;
-
-    // FORCE SAVE to always use /new_lesson
-    if (isSave) {
-        form.action = "/new_lesson";
-    }
-
-    // Extract start + end
-    const start = popup.querySelector("input[name='start']")?.value?.trim();
-    const end =
-        popup.querySelector("select[name='end']")?.value?.trim() ||
-        popup.querySelector(".popup-end-select")?.value?.trim();
-
-    // Block submit if missing time
-    if (!start || !end) {
-        e.preventDefault();
-        alert("Please select a valid lesson time before continuing.");
-        return false;
-    }
-});
-</script>
-
-<script>
-(function clientHistoryHover() {
-
-  const toggle = document.getElementById('toggle-horse-history');
-  const tip = document.getElementById('client-history-tip');
-
-  // Show tooltip on hover
-  document.addEventListener('mouseover', function(e) {
-    if (!toggle || !toggle.checked) return;
-
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
-
-    const client = cell.dataset.client;
-    if (!client) return;
-
-    fetch(`/client_history/${encodeURIComponent(client)}`)
-      .then(r => r.json())
-      .then(list => {
-        tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
-
-        const rect = cell.getBoundingClientRect();
-        tip.style.top = (rect.bottom + window.scrollY + 4) + "px";
-        tip.style.left = (rect.left + window.scrollX) + "px";
-
-        tip.style.visibility = 'visible';
-        tip.style.opacity = '1';
-      });
-  });
-
-  // Hide when leaving the client cell
-  document.addEventListener('mouseout', function(e) {
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
-
-    if (cell.contains(e.relatedTarget)) return;
-
-    tip?.style?.visibility = 'hidden';
-    tip.style.opacity = '0';
-  }, true);
-
-})();
-</script>
-
-<div id="client-history-tip" class="client-history-tip" aria-hidden="true"></div>
-
-<script>
-(function clientHistoryHover() {
-
-  const toggle = document.getElementById('toggle-horse-history');
-  const tip = document.getElementById('client-history-tip');
-
-  document.addEventListener('mouseover', function(e) {
-    if (!toggle || !toggle.checked) return;
-
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
-
-    const client = cell.dataset.client;
-    if (!client) return;
-
-    fetch(`/client_history/${encodeURIComponent(client)}`)
-      .then(r => r.json())
-      .then(list => {
-        tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
-
-        const rect = cell.getBoundingClientRect();
-        tip.style.top = (rect.bottom + window.scrollY + 4) + "px";
-        tip.style.left = (rect.left + window.scrollX) + "px";
-
-        tip.style.visibility = 'visible';
-        tip.style.opacity = '1';
-      });
-  });
-
-  document.addEventListener('mouseout', function(e) {
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
-
-    if (cell.contains(e.relatedTarget)) return;
-
-    tip.style.visibility = 'hidden';
-    tip.style.opacity = '0';
-  }, true);
-
-})();
-</script>
-
-<script>
-// ---------------------------------------------
-// 1. Prefix-only matcher (Trev → Trevor only)
-// ---------------------------------------------
-function select2PrefixMatcher(params, data) {
-    if (!params.term) return data;
-    if (!data.text) return null;
-
-    const term = params.term.toLowerCase().trim();
-    const text = String(data.text).toLowerCase().trim();
-
-    if (text.startsWith(term)) return data;
-
-    const startToken = text.split('-')[0].trim();
-    if (startToken.startsWith(term)) return data;
-
-    const hourOnly = startToken.split(':')[0];
-    if (hourOnly && hourOnly.startsWith(term)) return data;
-
-    return null;
-}
-
-// ---------------------------------------------
-// 2. Auto-focus search field on open
-// ---------------------------------------------
-$(document).on('select2:open', function () {
-    const sf = document.querySelector('.select2-container--open .select2-search__field');
-    if (sf) {
-        sf.focus();
-        try { sf.setSelectionRange(sf.value.length, sf.value.length); } catch (e) {}
-    }
-});
-
-// ---------------------------------------------
-// 3. Show popup when clicking a slot
-// ---------------------------------------------
-$(document).on('click', '.teacher-slot, .set-time-server', function (e) {
-    e.preventDefault();
-
-    const blockKey = $(this).data('block-key');
-    const $popup = $('.lesson-popup[data-block-key="' + blockKey + '"]');
-
-    $('.lesson-popup').hide();
-    $popup.show();
-
-    // After popup is visible, init Select2
-    setTimeout(function () {
-
-        $popup.find('.searchable-dropdown').each(function () {
-            const $s = $(this);
-
-            if ($s.data('select2')) {
-                $s.select2('destroy');
-            }
-
-            $s.select2({
-                width: '100%',
-                allowClear: true,
-                minimumResultsForSearch: 0,
-                matcher: select2PrefixMatcher,
-                dropdownParent: $popup
-            });
+            // Switch form action but DO NOT submit yet
+            form.action = "/send_invite";
         });
-
-    }, 20);
-});
-
-// ---------------------------------------------
-// 4. Close popup
-// ---------------------------------------------
-$(document).on('click', '.popup-close', function () {
-    $(this).closest('.lesson-popup').hide();
-});
-
-
-// ---------------------------------------------
-// Prevent accidental click-out from closing popups
-// ---------------------------------------------
-$(document).on('click', function (e) {
-    // If the click is inside a popup, ignore
-    if ($(e.target).closest('.lesson-popup').length) return;
-
-    // If the click is on a teacher-slot or set-time-server, ignore (handled by section 3)
-    if ($(e.target).closest('.teacher-slot, .set-time-server').length) return;
-
-    // Otherwise: DO NOTHING (do NOT hide popups)
-    e.stopImmediatePropagation();
-});
-
-
-</script>
-
-<script>
-$(document).ready(function() {
-
-    /* --- FIX #1: 1‑click focus + instant typing --- */
-    $('.searchable-dropdown').select2({
-        minimumResultsForSearch: 0,
-        selectOnClose: true
-    }).on('select2:open', function() {
-        let searchField = $('.select2-container--open .select2-search__field');
-        searchField.focus();
-    });
-
-
-    /* --- FIX #2: Starts‑with matching instead of contains --- */
-    function startsWithMatcher(params, data) {
-        if ($.trim(params.term) === '') {
-            return data;
-        }
-        if (typeof data.text === 'undefined') {
-            return null;
-        }
-
-        let term = params.term.toLowerCase();
-        let text = data.text.toLowerCase();
-
-        if (text.startsWith(term)) {
-            return data;
-        }
-        return null;
-    }
-
-    $('.searchable-dropdown').select2({
-        matcher: startsWithMatcher
-    });
-
-
-    /* --- FIX #3: Open Select2 dropdown on first click --- */
-    $('.searchable-dropdown').on('mousedown', function(e) {
-        e.preventDefault();
-        $(this).select2('open');
     });
 
 });
 </script>
+
 <script>
-document.getElementById("recalc-btn").addEventListener("click", async () => {
-    const btn = document.getElementById("recalc-btn");
-    btn.disabled = true;
-    btn.textContent = "Recalculating...";
+const recalcBtn = document.getElementById("recalc-btn");
 
-    const resp = await fetch("/recalculate_all", { method: "POST" });
+if (recalcBtn) {
+    recalcBtn.addEventListener("click", async () => {
+        recalcBtn.disabled = true;
+        recalcBtn.textContent = "Recalculating...";
 
-    if (resp.ok) {
-        location.reload();
-    } else {
-        btn.disabled = false;
-        btn.textContent = "Recalculate Balances";
-        alert("Recalculation failed");
-    }
-});
+        const resp = await fetch("/recalculate_all", { method: "POST" });
+
+        if (resp.ok) {
+            location.reload();
+        } else {
+            recalcBtn.disabled = false;
+            recalcBtn.textContent = "Recalculate Balances";
+            alert("Recalculation failed");
+        }
+    });
+}
 </script>
 <script>
 // ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
 document.addEventListener("DOMContentLoaded", () => {
 
-    const panel        = document.getElementById("multi-lesson-booker");
-    const btnOpen      = document.getElementById("open-booking-panel");
-    const lessonCount  = document.getElementById("top_lesson_count");
-    const bookingType  = document.getElementById("booking_type");
-    const mobile       = document.getElementById("top_mobile");
-    const existing     = document.getElementById("top_existing_client");
-    const newName      = document.getElementById("top_new_client_name");
+    const panel         = document.getElementById("multi-lesson-booker");
+    const btnOpen       = document.getElementById("open-booking-panel");
+    const lessonCount   = document.getElementById("top_lesson_count");
+    const bookingType   = document.getElementById("booking_type");
+    const mobile        = document.getElementById("top_mobile");
+    const existing      = document.getElementById("top_existing_client");
+    const newName       = document.getElementById("top_new_client_name");
     const rowsContainer = document.getElementById("lesson-rows-container");
 
     // ⭐ Show/hide panel + fix Select2 width
-    btnOpen.addEventListener("click", () => {
-        const visible = panel.style.display === "block";
-        panel.style.display = visible ? "none" : "block";
+    if (btnOpen) {
+        btnOpen.addEventListener("click", () => {
+            const visible = panel.style.display === "block";
+            panel.style.display = visible ? "none" : "block";
 
-        if (!visible) {
-            setTimeout(() => activateExistingClientSelect2(), 20);
-        }
-    });
-
-// ⭐ Generate lesson rows
-function generateRows() {
-    const count = parseInt(lessonCount.value || "0", 10);
-    rowsContainer.innerHTML = "";
-
-    for (let i = 0; i < count; i++) {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>
-                <input type="date" class="form-control date-field" value="{{ selected_date }}">
-            </td>
-            <td>
-                <select class="form-select time-field searchable-dropdown">
-                    <option value=""></option>
-                    {% for t in times %}
-                        <option value="{{ t }}">{{ t }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            <td>
-                <select class="form-select type-field">
-                    <option>Arena</option>
-                    <option>Roundyard</option>
-                    <option>Trail Ride</option>
-                    <option>Go Gallop</option>
-                    <option>Party</option>
-                </select>
-            </td>
-            <td>
-                <select class="form-select gp-field">
-                    {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
-                        <option>{{ opt }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            <td>
-                <input type="text" class="form-control price-field" placeholder="$0.00">
-            </td>
-            <td class="sms-only-cell" style="display:none;">
-                <select class="form-select riders-field">
-                    {% for i in range(1, 11) %}
-                        <option value="{{ i }}">{{ i }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-        `;
-        rowsContainer.appendChild(row);
+            if (!visible) {
+                setTimeout(() => activateExistingClientSelect2(), 20);
+            }
+        });
     }
 
-    updateSMSVisibility();
-}
+    // ⭐ Generate lesson rows
+    function generateRows() {
+        const count = parseInt(lessonCount?.value || "0", 10);
+        rowsContainer.innerHTML = "";
+
+        for (let i = 0; i < count; i++) {
+            const row = document.createElement("tr");
+            row.innerHTML = String.raw`
+                <td>
+                    <input type="date" class="form-control date-field" value="{{ selected_date }}">
+                </td>
+                <td>
+                    <select class="form-select time-field searchable-dropdown">
+                        <option value=""></option>
+                        {% for t in times %}
+                            <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select type-field">
+                        <option>Arena</option>
+                        <option>Roundyard</option>
+                        <option>Trail Ride</option>
+                        <option>Go Gallop</option>
+                        <option>Party</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select gp-field">
+                        {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                            <option>{{ opt }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control price-field" placeholder="$0.00">
+                </td>
+                <td class="sms-only-cell" style="display:none;">
+                    <select class="form-select riders-field">
+                        {% for i in range(1, 11) %}
+                            <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            `;
+            rowsContainer.appendChild(row);
+        }
+
+        updateSMSVisibility();
+    }
 
     // ⭐ SMS column visibility
     function updateSMSVisibility() {
-        const show = bookingType.value === "sms";
+        const show = bookingType?.value === "sms";
         document.querySelectorAll(".sms-only-header").forEach(h => h.style.display = show ? "" : "none");
         document.querySelectorAll(".sms-only-cell").forEach(c => c.style.display = show ? "" : "none");
     }
@@ -2986,68 +2664,77 @@ function generateRows() {
     updateBookingFields();
     updateSMSVisibility();
 
-    lessonCount.addEventListener("change", generateRows);
-    bookingType.addEventListener("change", () => {
-        updateBookingFields();
-        updateSMSVisibility();
-    });
+    if (lessonCount) {
+        lessonCount.addEventListener("change", generateRows);
+    }
+
+    if (bookingType) {
+        bookingType.addEventListener("change", () => {
+            updateBookingFields();
+            updateSMSVisibility();
+        });
+    }
+
     // ⭐ Handle Save Lessons for SMS mode
-    document.getElementById("save-lessons-btn").addEventListener("click", async () => {
+    const saveLessonsBtn = document.getElementById("save-lessons-btn");
 
-        const type = document.getElementById("booking_type").value;
-        if (type !== "sms") return;   // only handle SMS here
+    if (saveLessonsBtn) {
+        saveLessonsBtn.addEventListener("click", async () => {
 
-        const rows = document.querySelectorAll("#lesson-rows-container tr");
-        const mobile = document.getElementById("top_mobile").value.trim();
+            const bookingMode = document.getElementById("booking_type").value;
+            if (bookingMode !== "sms") return;
 
-        if (!mobile) {
-            alert("Mobile number is required for SMS invites.");
-            return;
-        }
+            const rows = document.querySelectorAll("#lesson-rows-container tr");
+            const mobile = document.getElementById("top_mobile").value.trim();
 
-        const btn = document.getElementById("save-lessons-btn");
-        btn.disabled = true;
-        btn.textContent = "Sending SMS Invites...";
-
-        for (const row of rows) {
-
-            const date   = row.querySelector(".date-field")?.value;
-            const time   = row.querySelector(".time-field")?.value;
-            const type   = row.querySelector(".type-field")?.value;
-            const gp     = row.querySelector(".gp-field")?.value;
-            const price  = row.querySelector(".price-field")?.value;
-            const riders = row.querySelector(".riders-field")?.value || "1";
-
-            if (!date || !time) {
-                alert("Each SMS invite requires a date and time.");
-                btn.disabled = false;
-                btn.textContent = "Save Lessons";
+            if (!mobile) {
+                alert("Mobile number is required for SMS invites.");
                 return;
             }
 
-            const payload = new FormData();
-            payload.append("invite_date", date);
-            payload.append("invite_time_frame", time);
-            payload.append("invite_lesson_type", type);
-            payload.append("invite_group_priv", gp);
-            payload.append("invite_mobile", mobile);
-            payload.append("invite_riders", riders);
-            payload.append("invite_cost", price);
-            payload.append("invite_duration", "");
-            payload.append("invite_end", "");
+            saveLessonsBtn.disabled = true;
+            saveLessonsBtn.textContent = "Sending SMS Invites...";
 
-            await fetch("/send_invite", {
-                method: "POST",
-                body: payload
-            });
-        }
+            for (const row of rows) {
 
-        btn.textContent = "Invites Sent!";
-        setTimeout(() => {
-            btn.disabled = false;
-            btn.textContent = "Save Lessons";
-        }, 1500);
-    });
+                const date       = row.querySelector(".date-field")?.value;
+                const time       = row.querySelector(".time-field")?.value;
+                const lessonType = row.querySelector(".type-field")?.value;
+                const gp         = row.querySelector(".gp-field")?.value;
+                const price      = row.querySelector(".price-field")?.value;
+                const riders     = row.querySelector(".riders-field")?.value || "1";
+
+                if (!date || !time) {
+                    alert("Each SMS invite requires a date and time.");
+                    saveLessonsBtn.disabled = false;
+                    saveLessonsBtn.textContent = "Save Lessons";
+                    return;
+                }
+
+                const payload = new FormData();
+                payload.append("invite_date", date);
+                payload.append("invite_time_frame", time);
+                payload.append("invite_lesson_type", lessonType);
+                payload.append("invite_group_priv", gp);
+                payload.append("invite_mobile", mobile);
+                payload.append("invite_riders", riders);
+                payload.append("invite_cost", price);
+                payload.append("invite_duration", "");
+                payload.append("invite_end", "");
+
+                await fetch("/send_invite", {
+                    method: "POST",
+                    body: payload
+                });
+            }
+
+            saveLessonsBtn.textContent = "Invites Sent!";
+            setTimeout(() => {
+                saveLessonsBtn.disabled = false;
+                saveLessonsBtn.textContent = "Save Lessons";
+            }, 1500);
+        });
+    }
 });
 </script>
 
