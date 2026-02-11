@@ -72,5 +72,8 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: 'CherbonApp'
-          slot-name: 'Production'
+          slot-name: 'production'
+          package: .
+
+
           
