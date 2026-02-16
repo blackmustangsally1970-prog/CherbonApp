@@ -1527,7 +1527,8 @@ def create_app():
                 teacher_times=teacher_times_map(),
                 teacher_horse_usage=teacher_horse_usage,
                 times=times,
-                get_static_teachers=get_static_teachers
+                get_static_teachers=get_static_teachers,
+                client_lookup=client_lookup
             )
         except Exception as e:
             print("\n\n=== TEMPLATE ERROR ===")

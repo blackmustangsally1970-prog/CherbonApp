@@ -530,6 +530,16 @@ select.teacher-dropdown {
 }
 
 
+.client-link {
+    color: #0645AD;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 2px 0;
+}
+
+.client-link:hover {
+    text-decoration: underline;
+}
 
 
 /* --- Print styles (clean, no column widths) --- */
@@ -1260,14 +1270,22 @@ select.teacher-dropdown {
 {% set horses = client_horse_history.get(client_key) %}
 
 <td class="client-cell" data-client="{{ client_key }}">
-  <input type="text"
-         value="{{ display_name }}"
-         readonly
-         class="{% if client and (client.disclaimer is none or client.disclaimer|int <= 30000) %}flag-client{% endif %}"
-         style="border:none;background:transparent;width:100%;"
-         {% if horses %}
-         title="{{ horses|join(', ') }}"
-         {% endif %}>
+
+  {% set cid = client.client_id if client else None %}
+
+  {% if cid %}
+    <a href="{{ url_for('client_view', client_filter=cid) }}"
+       class="client-link"
+       style="display:block; width:100%;"
+       {% if horses %}
+       title="{{ horses|join(', ') }}"
+       {% endif %}>
+       {{ display_name }}
+    </a>
+  {% else %}
+    {{ display_name }}
+  {% endif %}
+
 </td>
 
     <td>

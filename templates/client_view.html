@@ -24,6 +24,15 @@
     100% { box-shadow: 0 0 0 0 transparent; }
 }
 
+.client-link {
+    color: #0645AD;
+    font-weight: bold;
+    text-decoration: none;
+}
+.client-link:hover {
+    text-decoration: underline;
+}
+
 
 .client-details-table td {
     padding: 4px 8px;
@@ -572,9 +581,17 @@
 <td>
     {% if lesson.lesson_date %}
         {% if lesson.lesson_date.__class__.__name__ == 'date' %}
-            {{ lesson.lesson_date.strftime('%d-%m-%Y') }}
+            {% set iso = lesson.lesson_date.strftime('%Y-%m-%d') %}
+            <a href="{{ url_for('lessons_by_date') }}?selected_date={{ iso }}"
+               class="client-link">
+               {{ lesson.lesson_date.strftime('%d-%m-%Y') }}
+            </a>
         {% else %}
-            {{ lesson.lesson_date.split('-')[2] }}-{{ lesson.lesson_date.split('-')[1] }}-{{ lesson.lesson_date.split('-')[0] }}
+            {% set iso = lesson.lesson_date %}
+            <a href="{{ url_for('lessons_by_date') }}?selected_date={{ iso }}"
+               class="client-link">
+               {{ lesson.lesson_date.split('-')[2] }}-{{ lesson.lesson_date.split('-')[1] }}-{{ lesson.lesson_date.split('-')[0] }}
+            </a>
         {% endif %}
     {% endif %}
 </td>
