@@ -1503,28 +1503,36 @@ def create_app():
                 teacher_horse_usage[h] = sorted(set(usage_times))
 
 
-
+        print("teacher_times:", teacher_times_map())
+        print("horse_schedule:", horse_schedule)
+        print("teacher_horse_usage:", teacher_horse_usage)
+        print("invoice_clients:", invoice_clients)
         print("ABOUT TO RENDER TEMPLATE — ALL DATA LOADED OK")
 
-
-        return render_template(
-            'lessons_by_date.html',
-            grouped_lessons=grouped_lessons,
-            selected_date=selected_date_str,
-            weekday_int=weekday_int,
-            horse_list=horse_list,
-            horse_schedule=horse_schedule,
-            teacher_names=teacher_names,
-            block_tag_lookup=block_tag_lookup,
-            client_horse_history=client_horse_history,
-            invoice_clients=invoice_clients,  # ✅ Add this line
-            clients=clients, 
-            teacher_times=teacher_times_map(),   # 👈 add this
-            teacher_horse_usage=teacher_horse_usage,   # 👈 add this
-            times=times,   # 👈 add this
-            get_static_teachers=get_static_teachers   # ⭐ ADD THIS
-        )
-
+        import sys
+        try:
+            return render_template(
+                'lessons_by_date.html',
+                grouped_lessons=grouped_lessons,
+                selected_date=selected_date_str,
+                weekday_int=weekday_int,
+                horse_list=horse_list,
+                horse_schedule=horse_schedule,
+                teacher_names=teacher_names,
+                block_tag_lookup=block_tag_lookup,
+                client_horse_history=client_horse_history,
+                invoice_clients=invoice_clients,
+                clients=clients,
+                teacher_times=teacher_times_map(),
+                teacher_horse_usage=teacher_horse_usage,
+                times=times,
+                get_static_teachers=get_static_teachers
+            )
+        except Exception as e:
+            print("\n\n=== TEMPLATE ERROR ===")
+            print(e)
+            print("======================\n\n")
+            raise
 
 
 
@@ -3045,10 +3053,6 @@ def create_app():
 
             db.session.commit()
 
-            # Recalculate this client's entire ledger after editing
-            if client_id:
-                recalc_client_lessons_by_id(client_id)
-
             return redirect(url_for("lessons_by_date", date=lesson_date_str))
 
         # ---------------------------------------------------------
@@ -3136,7 +3140,6 @@ def create_app():
                 group_priv=group_priv,
                 freq=freq,
                 client=canonical_name,
-                client_id=client_id,     # ⭐ CRITICAL FIX
                 horse=horse,
             )
             db.session.add(lesson)
@@ -3146,9 +3149,7 @@ def create_app():
         db.session.commit()
         print(f"[DEBUG] commit done, total lessons added={added}")
 
-        # Recalculate this client's entire ledger
-        if client_id:
-            recalc_client_lessons_by_id(client_id)
+
 
         return redirect(url_for("lessons_by_date", selected_date=lesson_date_str))
 
