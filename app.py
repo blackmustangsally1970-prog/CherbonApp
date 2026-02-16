@@ -2479,8 +2479,7 @@ def create_app():
 
         # PHASE 3: Preload clients ONCE
         all_clients = db.session.query(Client).all()
-        clients_by_id = {c.id: c for c in all_clients}
-
+        clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(int(client_id)) if client_id else None
 
         # Extract fields
