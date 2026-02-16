@@ -23,50 +23,100 @@
     }
     a { text-decoration: none; color: #0645AD; }
     a:hover { text-decoration: underline; }
+
+
+/* Main menu button style (matches Back button) */
+.menu-btn {
+  display: inline-block;
+  background: #eee;
+  border: 1px solid #aaa;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #0645AD;
+  text-decoration: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.menu-btn:hover {
+  background: #ddd;
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Keep submenu links simple */
+ul.submenu {
+  list-style: none;
+  padding-left: 24px;
+  font-size: 0.9em;
+  color: #555;
+}
+
+ul.submenu a {
+  color: #555;
+}
+
+ul.submenu a:hover {
+  color: #0645AD;
+  text-decoration: underline;
+}
+
+/* Space between menu items */
+ul.menu > li {
+  margin-bottom: 16px;
+}
+
+
+
   </style>
 </head>
 <body>
-  <h1>Equestrian Admin Menu</h1>
-  <ul class="menu">
+<h1>Equestrian Admin Menu</h1>
 
-    <li>
-      <a href="{{ url_for('lessons_by_date') }}">📅 View Lessons by Date</a>
-      <ul class="submenu">
-        <li><a href="{{ url_for('manage_blockout_dates') }}">🚫 Manage Single‑Day Blockouts</a></li>
-        <li><a href="{{ url_for('manage_blockout_ranges') }}">📆 Manage Range Blockouts</a></li>
-      </ul>
-    </li>
+<ul class="menu">
 
-    <li>
-      👩‍🏫 Teacher
-      <ul class="submenu">
-        <li><a href="{{ url_for('manage_teacher_times') }}">🕒 Enter Set Times</a></li>
-      </ul>
-    </li>
+  <li>
+    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
+    <ul class="submenu">
+      <li><a href="{{ url_for('manage_blockout_dates') }}">🚫 Manage Single‑Day Blockouts</a></li>
+      <li><a href="{{ url_for('manage_blockout_ranges') }}">📆 Manage Range Blockouts</a></li>
+    </ul>
+  </li>
 
-    <li><a href="{{ url_for('client_view') }}">👤 Client View</a></li>
+  <li>
+    <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
+  </li>
 
-    <li>
-      <a href="{{ url_for('notifications') }}">🔔 Notifications</a>
-      <ul class="submenu">
-        <li><a href="{{ url_for('notifications') }}">📥 Disclaimers</a></li>
-        <li><a href="{{ url_for('pending_lessons') }}">⏳ Lessons Pending</a></li>
-      </ul>
-    </li>
+  <li>
+    <a href="{{ url_for('notifications') }}" class="menu-btn">🔔 Notifications</a>
+    <ul class="submenu">
+      <li><a href="{{ url_for('notifications') }}">📥 Disclaimers</a></li>
+      <li><a href="{{ url_for('pending_lessons') }}">⏳ Lessons Pending</a></li>
+    </ul>
+  </li>
 
-    <li><a href="{{ url_for('debug_page') }}">🛠️ Debug Tools</a></li>
+  <li>
+    <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
+  </li>
 
-<!-- ⭐ NEW MESSAGES SECTION ⭐ -->
-<li>
-  ✉️ Messages
-  <ul class="submenu">
-    <li><a href="{{ url_for('wedding_sms') }}">💍 Wedding SMS Broadcast</a></li>
-    <li><a href="{{ url_for('equestrian_sms') }}">🐎 Equestrian SMS Broadcast</a></li>
-    <li><a href="{{ url_for('equestrian_bulk_sms') }}">📡 EQ Bulk Personalised SMS</a></li>
-  </ul>
-</li>
+  <li>
+    <span class="menu-btn">✉️ Messages</span>
+    <ul class="submenu">
+      <li><a href="{{ url_for('wedding_sms') }}">💍 Wedding SMS Broadcast</a></li>
+      <li><a href="{{ url_for('equestrian_sms') }}">🐎 Equestrian SMS Broadcast</a></li>
+      <li><a href="{{ url_for('equestrian_bulk_sms') }}">📡 EQ Bulk Personalised SMS</a></li>
+    </ul>
+  </li>
 
+  <!-- Teacher moved to bottom -->
+  <li>
+    <span class="menu-btn">👩‍🏫 Teacher</span>
+    <ul class="submenu">
+      <li><a href="{{ url_for('manage_teacher_times') }}">🕒 Enter Set Times</a></li>
+    </ul>
+  </li>
 
-  </ul>
+</ul>
+
 </body>
 </html>
