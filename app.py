@@ -2,6 +2,7 @@ from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, make_response, after_this_request, flash, jsonify
 )
+from flask import Response
 from config import Config
 from extensions import db
 from collections import defaultdict
@@ -3611,7 +3612,7 @@ Cherbon Waters Admin
 
             day = datetime.strptime(selected_date, "%Y-%m-%d").date()
             today_str = day.strftime("%d-%m-%y")
-            filename = f"lesson_schedule_{today_str}"
+            filename = f"lesson_schedule_{today_str}.txt"
 
             # --- Pull all horses (ALWAYS include all horses) ---
             horses = [
@@ -3625,7 +3626,7 @@ Cherbon Waters Admin
                 Lesson.lesson_date == day
             ).order_by(Lesson.time_frame.asc()).all()
 
-            # --- Build time slots from lessons ---
+            # --- Build time slots ---
             time_slots = sorted({
                 (l.time_frame or "").split("-")[0].strip()
                 for l in lessons
@@ -3638,19 +3639,16 @@ Cherbon Waters Admin
             # --- Fill schedule (skip attendance C) ---
             for l in lessons:
                 h = (l.horse or "").strip()
-                if not h:
-                    continue
-                if h not in schedule:
+                if not h or h not in schedule:
                     continue
 
                 if (l.attendance or "").upper() == "C":
-                    continue  # cancelled → blank cell
+                    continue
 
                 slot = (l.time_frame or "").split("-")[0].strip()
                 if slot not in time_slots:
                     continue
 
-                # Display rules
                 if (l.lesson_type or "").strip() == "Trail Ride":
                     disp = f"{slot}T"
                 else:
@@ -3661,7 +3659,6 @@ Cherbon Waters Admin
             # --- Build TXT output ---
             columns = ["Horse"] + time_slots
 
-            # Column widths
             col_widths = []
             for col in columns:
                 if col == "Horse":
@@ -3689,71 +3686,18 @@ Cherbon Waters Admin
 
             full_text = "\n".join(lines)
 
-            # --- Write TXT ---
-            out_dir = "/home/schedule_exports"
-            os.makedirs(out_dir, exist_ok=True)
-            
-            txt_path = os.path.join(out_dir, f"{filename}.txt")
-            excel_path = os.path.join(out_dir, f"{filename}.xlsx")
-
-            with open(txt_path, "w", encoding="utf-8") as f:
-                f.write(full_text)
-
-            # --- Excel Output ---
-            from openpyxl import Workbook
-            from openpyxl.styles import Font, Alignment, Border, Side
-
-            wb = Workbook()
-            ws = wb.active
-            ws.title = "Lesson Schedule"
-
-            # Header row
-            ws.append(columns)
-
-            # Data rows
-            for h in horses:
-                row = [h] + [schedule[h][slot] for slot in time_slots]
-                ws.append(row)
-
-            # Styling
-            bold_font = Font(bold=True)
-            center_align = Alignment(horizontal='center', vertical='center')
-            thin_border = Border(
-                left=Side(style='thin'),
-                right=Side(style='thin'),
-                top=Side(style='thin'),
-                bottom=Side(style='thin')
+            # --- Return TXT directly (NO FILE WRITING) ---
+            return Response(
+                full_text,
+                mimetype="text/plain",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}"
+                }
             )
 
-            for row in ws.iter_rows():
-                for cell in row:
-                    cell.font = bold_font
-                    cell.alignment = center_align
-                    cell.border = thin_border
+        except Exception as e:
+            return {"error": str(e)}, 500
 
-            # Page setup
-            ws.page_margins.left   = 0.2
-            ws.page_margins.right  = 0.2
-            ws.page_margins.top    = 0.1
-            ws.page_margins.bottom = 0.1
-            ws.page_margins.header = 0.0
-            ws.page_margins.footer = 0.0
-            ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
-            ws.page_setup.fitToWidth = 1
-            ws.page_setup.fitToHeight = 0
-            ws.page_setup.paperSize = ws.PAPERSIZE_A4
-
-            # Auto-fit columns
-            for col in ws.columns:
-                max_length = max(len(str(cell.value or "")) for cell in col)
-                adjusted_width = max(max_length + 2, 10)
-                ws.column_dimensions[col[0].column_letter].width = adjusted_width
-
-            wb.save(excel_path)
-
-            # --- Launch Notepad++ ---
-            
-            return send_file(txt_path, as_attachment=True)
 
 
 

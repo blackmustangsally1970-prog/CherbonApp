@@ -712,8 +712,14 @@ select.teacher-dropdown {
     Save
 </button>
   <button type="button" id="print-page" style="margin-left:8px;">Print</button>
-<button type="button" id="save-txt-btn" style="margin-left:8px;">Save TXT</button>
-<div id="save-txt-spinner"></div>
+
+<button type="button" id="download-txt-btn" class="btn btn-primary" style="margin-left:8px;">
+    Download TXT
+</button>
+
+<button type="button" id="download-xlsx-btn" class="btn btn-success" style="margin-left:8px;">
+    Download Excel
+</button>
 
 <button type="button" id="recalc-btn" class="btn btn-warning" style="margin-left:8px;">
     Recalculate Balances
@@ -2264,49 +2270,6 @@ document.addEventListener('submit', function(e) {
 });
 </script>
 
-<script>
-document.getElementById("save-txt-btn").addEventListener("click", async function () {
-    const btn = document.getElementById("save-txt-btn");
-    const spinner = document.getElementById("save-txt-spinner");
-    const toast = document.getElementById("export-toast");
-    const selectedDate = document.getElementById("date-picker").value;
-
-    // Start spinner + remove glow
-    spinner.style.display = "inline-block";
-    btn.classList.remove("glow");
-
-    // 1. Save all lesson changes first
-    const form = document.getElementById("update-lessons-form");
-    const formData = new FormData(form);
-
-    await fetch("/update_lessons", {
-        method: "POST",
-        body: formData
-    });
-
-    // 2. Now run the export
-    const res = await fetch(`/save_txt?selected_date=${selectedDate}`, {
-        method: "POST"
-    });
-
-    const data = await res.json();
-
-    // Stop spinner
-    spinner.style.display = "none";
-
-    if (data.status) {
-        // Glow effect
-        btn.classList.add("glow");
-        setTimeout(() => btn.classList.remove("glow"), 1500);
-
-        // Toast
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 2500);
-    } else {
-        alert("Error: " + data.error);
-    }
-});
-</script>
 
 
 <script>
@@ -3156,6 +3119,31 @@ function prefixMatcher(params, data) {
 }
 </script>
 
+<script>
+document.getElementById("download-txt-btn").addEventListener("click", function () {
+    const selectedDate = document.getElementById("date-picker").value;
+    const url = `/save_txt?selected_date=${selectedDate}`;
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = url;
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+});
+
+document.getElementById("download-xlsx-btn").addEventListener("click", function () {
+    const selectedDate = document.getElementById("date-picker").value;
+    const url = `/save_xlsx?selected_date=${selectedDate}`;
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = url;
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+});
+</script>
 
 
 
