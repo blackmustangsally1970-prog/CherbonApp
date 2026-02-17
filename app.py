@@ -2492,29 +2492,69 @@ def create_app():
         jotform_id = str(row.form_id)
 
         # -----------------------------------------
-        # USE EXISTING (FAST)
+        # USE EXISTING (SAFE UPDATE)
         # -----------------------------------------
         if choice == "use_existing" and existing:
-            existing.jotform_submission_id = jotform_id
-            db.session.commit()
-            return redirect(url_for('process_all_pending'))
+
+                # Update only fields that have real values
+                if guardian:
+                        existing.guardian_name = guardian
+
+                if age:
+                        existing.age = age
+
+                if mobile:
+                        existing.mobile = mobile
+
+                if email:
+                        existing.email_primary = email
+
+                if disclaimer is not None:
+                        existing.disclaimer = disclaimer
+
+                h = rider.get("height_cm")
+                if h not in (None, "", "N/A"):
+                        existing.height_cm = h
+
+                w = rider.get("weight_kg")
+                if w not in (None, "", "N/A"):
+                        existing.weight_kg = w
+
+                n = rider.get("notes")
+                if n:
+                        existing.notes = n
+
+                # Always update submission link
+                existing.jotform_submission_id = jotform_id
+
+                db.session.commit()
+                return redirect(url_for('process_all_pending'))
 
         # -----------------------------------------
-        # OVERWRITE EXISTING (FAST)
+        # OVERWRITE EXISTING (FULL REPLACEMENT)
         # -----------------------------------------
         if choice == "overwrite" and existing:
-            existing.full_name = name
-            existing.age = age
-            existing.guardian_name = guardian
-            existing.mobile = mobile
-            existing.email_primary = email
-            existing.disclaimer = disclaimer
-            existing.height_cm = rider.get("height_cm")
-            existing.weight_kg = rider.get("weight_kg")
-            existing.notes = rider.get("notes")
-            existing.jotform_submission_id = jotform_id
-            db.session.commit()
-            return redirect(url_for('process_all_pending'))
+
+                # Full overwrite: treat disclaimer as source of truth
+                existing.full_name = name
+                existing.age = age
+                existing.guardian_name = guardian
+                existing.mobile = mobile
+                existing.email_primary = email
+                existing.disclaimer = disclaimer
+
+                # Normalised height/weight
+                existing.height_cm = height_cm if height_cm not in ("", "N/A") else None
+                existing.weight_kg = weight_kg if weight_kg not in ("", "N/A") else None
+
+                # Notes may be blank
+                existing.notes = notes if notes not in ("", "N/A") else None
+
+                # Always update submission link
+                existing.jotform_submission_id = jotform_id
+
+                db.session.commit()
+                return redirect(url_for('process_all_pending'))
 
         # -----------------------------------------
         # CREATE NEW CLIENT (FAST)
