@@ -2439,7 +2439,7 @@ def create_app():
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>')
     def resolve_conflict(submission_id, rider_index):
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
-        riders = parse_jotform_payload(row.raw_payload, forced_submission_id=row.form_id)
+        riders = parse_jotform_payload(row.raw_payload, forced_submission_id=row.id)
         # rider_index is 1‑based
         rider = riders[rider_index - 1]
 
@@ -2464,7 +2464,7 @@ def create_app():
         # Parse riders once
         riders = parse_jotform_payload(
             row.raw_payload,
-            forced_submission_id=row.form_id
+            forced_submission_id=row.id
         )
         rider = riders[rider_index - 1]
 
@@ -2640,7 +2640,7 @@ def create_app():
         # PHASE 3: Parse riders ONCE
         riders = parse_jotform_payload(
             row.raw_payload,
-            forced_submission_id=row.form_id
+            forced_submission_id=row.id
         )
 
         jotform_id = str(row.form_id)
@@ -2758,7 +2758,7 @@ def create_app():
         # SAFE LOGGING
         riders_for_log = parse_jotform_payload(
             row.raw_payload,
-            forced_submission_id=row.form_id
+            forced_submission_id=row.id
         )
         safe_names = [r.get("name") for r in riders_for_log if r.get("name")]
         if safe_names:
