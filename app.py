@@ -2461,21 +2461,21 @@ def create_app():
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-        # PHASE 3: Parse riders ONCE
+        # Parse riders once
         riders = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.form_id
         )
         rider = riders[rider_index - 1]
 
-        # Skip incomplete riders (safety)
+        # Skip incomplete riders
         if rider.get("incomplete"):
             row.processed = True
             row.processed_at = datetime.utcnow()
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-        # NEW: ignore option
+        # Ignore option
         if choice == "ignore":
             row.processed = True
             row.ignored = True
@@ -2483,88 +2483,99 @@ def create_app():
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-        # PHASE 3: Preload clients ONCE
+        # Preload clients
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(int(client_id)) if client_id else None
 
-        # Extract fields
-        name = normalise_full_name(rider["name"])
-        age = int(rider["age"]) if rider["age"] else None
-        guardian = rider["guardian"]
-        mobile = clean_mobile(rider["mobile"])
-        email = rider["email"]
-        disclaimer = int(rider["disclaimer"]) if rider["disclaimer"] else None
+        # ---------------------------------------------------------
+        # SAFE EXTRACTION (prevents NameErrors + bad values)
+        # ---------------------------------------------------------
+        def safe_int(v):
+            if v is None:
+                return None
+            if isinstance(v, int):
+                return v
+            v = str(v).strip()
+            return int(v) if v.isdigit() else None
+
+        def safe_text(v):
+            if not v:
+                return None
+            v = str(v).strip()
+            return v if v not in ("", "N/A") else None
+
+        name = normalise_full_name(rider.get("name"))
+        age = safe_int(rider.get("age"))
+        guardian = safe_text(rider.get("guardian"))
+        mobile = clean_mobile(rider.get("mobile"))
+        email = safe_text(rider.get("email"))
+        disclaimer = safe_int(rider.get("disclaimer"))
+
+        height_cm = safe_int(rider.get("height_cm"))
+        weight_kg = safe_int(rider.get("weight_kg"))
+        notes = safe_text(rider.get("notes"))
+
         jotform_id = str(row.form_id)
 
-        # -----------------------------------------
-        # USE EXISTING (SAFE UPDATE)
-        # -----------------------------------------
+        # ---------------------------------------------------------
+        # USE EXISTING (SAFE MERGE)
+        # ---------------------------------------------------------
         if choice == "use_existing" and existing:
 
-                # Update only fields that have real values
-                if guardian:
-                        existing.guardian_name = guardian
-
-                if age:
-                        existing.age = age
-
-                if mobile:
-                        existing.mobile = mobile
-
-                if email:
-                        existing.email_primary = email
-
-                if disclaimer is not None:
-                        existing.disclaimer = disclaimer
-
-                h = rider.get("height_cm")
-                if h not in (None, "", "N/A"):
-                        existing.height_cm = h
-
-                w = rider.get("weight_kg")
-                if w not in (None, "", "N/A"):
-                        existing.weight_kg = w
-
-                n = rider.get("notes")
-                if n:
-                        existing.notes = n
-
-                # Always update submission link
-                existing.jotform_submission_id = jotform_id
-
-                db.session.commit()
-                return redirect(url_for('process_all_pending'))
-
-        # -----------------------------------------
-        # OVERWRITE EXISTING (FULL REPLACEMENT)
-        # -----------------------------------------
-        if choice == "overwrite" and existing:
-
-                # Full overwrite: treat disclaimer as source of truth
-                existing.full_name = name
-                existing.age = age
+            if guardian:
                 existing.guardian_name = guardian
+
+            if age is not None:
+                existing.age = age
+
+            if mobile:
                 existing.mobile = mobile
+
+            if email:
                 existing.email_primary = email
+
+            if disclaimer is not None:
                 existing.disclaimer = disclaimer
 
-                # Normalised height/weight
-                existing.height_cm = height_cm if height_cm not in ("", "N/A") else None
-                existing.weight_kg = weight_kg if weight_kg not in ("", "N/A") else None
+            if height_cm is not None:
+                existing.height_cm = height_cm
 
-                # Notes may be blank
-                existing.notes = notes if notes not in ("", "N/A") else None
+            if weight_kg is not None:
+                existing.weight_kg = weight_kg
 
-                # Always update submission link
-                existing.jotform_submission_id = jotform_id
+            if notes is not None:
+                existing.notes = notes
 
-                db.session.commit()
-                return redirect(url_for('process_all_pending'))
+            existing.jotform_submission_id = jotform_id
 
-        # -----------------------------------------
-        # CREATE NEW CLIENT (FAST)
-        # -----------------------------------------
+            db.session.commit()
+            return redirect(url_for('process_all_pending'))
+
+        # ---------------------------------------------------------
+        # OVERWRITE EXISTING (FULL REPLACEMENT)
+        # ---------------------------------------------------------
+        if choice == "overwrite" and existing:
+
+            existing.full_name = name
+            existing.age = age
+            existing.guardian_name = guardian
+            existing.mobile = mobile
+            existing.email_primary = email
+            existing.disclaimer = disclaimer
+
+            existing.height_cm = height_cm
+            existing.weight_kg = weight_kg
+            existing.notes = notes
+
+            existing.jotform_submission_id = jotform_id
+
+            db.session.commit()
+            return redirect(url_for('process_all_pending'))
+
+        # ---------------------------------------------------------
+        # CREATE NEW CLIENT
+        # ---------------------------------------------------------
         if choice == "new":
             new_client = Client(
                 full_name=name,
@@ -2573,9 +2584,9 @@ def create_app():
                 mobile=mobile,
                 email_primary=email,
                 disclaimer=disclaimer,
-                height_cm=rider.get("height_cm"),
-                weight_kg=rider.get("weight_kg"),
-                notes=rider.get("notes"),
+                height_cm=height_cm,
+                weight_kg=weight_kg,
+                notes=notes,
                 invoice_required=False,
                 jotform_submission_id=jotform_id
             )
@@ -2583,9 +2594,9 @@ def create_app():
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-        # -----------------------------------------
-        # CREATE NEW CLIENT (SAME NAME) (FAST)
-        # -----------------------------------------
+        # ---------------------------------------------------------
+        # CREATE NEW CLIENT (SAME NAME)
+        # ---------------------------------------------------------
         if choice == "new_same_name":
             base = name
             counter = 2
@@ -2604,9 +2615,9 @@ def create_app():
                 mobile=mobile,
                 email_primary=email,
                 disclaimer=disclaimer,
-                height_cm=rider.get("height_cm"),
-                weight_kg=rider.get("weight_kg"),
-                notes=rider.get("notes"),
+                height_cm=height_cm,
+                weight_kg=weight_kg,
+                notes=notes,
                 invoice_required=False,
                 jotform_submission_id=jotform_id
             )
@@ -2614,9 +2625,9 @@ def create_app():
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-        # -----------------------------------------
+        # ---------------------------------------------------------
         # FALLBACK
-        # -----------------------------------------
+        # ---------------------------------------------------------
         db.session.commit()
         return redirect(url_for('process_all_pending'))
 
