@@ -1852,38 +1852,6 @@ def create_app():
         return render_template('invite_conflict_queue.html', rows=rows)
 
 
-    @app.route('/notifications/invite_conflict/<int:submission_id>/<int:rider_index>')
-    def invite_conflict_resolution(submission_id, rider_index):
-        row = db.session.query(IncomingSubmission).get_or_404(submission_id)
-
-        riders = parse_jotform_payload(
-            row.raw_payload,
-            forced_submission_id=row.id
-        )
-
-        # rider_index is 1‑based
-        rider = riders[rider_index - 1]
-
-        # Soft-match to get candidate matches
-        rider_name = rider.get("full_name") or rider.get("name") or ""
-        match_type, match_data = soft_match_client_for_invite(rider_name)
-
-        if match_type == "exact":
-            matches = [match_data]
-        elif match_type == "none":
-            matches = []
-        else:
-            matches = match_data  # list of clients
-
-        return render_template(
-            'conflict_resolution.html',
-            submission=row,
-            rider=rider,
-            matches=matches,
-            rider_index=rider_index,
-            invite_mode=True  # tells template to hide overwrite option
-        )
-
     @app.route('/notifications/invite_conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_invite_conflict(submission_id, rider_index):
         choice = request.form.get("choice")
@@ -1898,6 +1866,15 @@ def create_app():
         rider = riders[rider_index - 1]
 
         rider_name = rider.get("full_name") or rider.get("name") or ""
+
+
+        # ---------------------------------------------------------
+        # USE EXISTING (NEVER CREATE DUPLICATES)
+        # ---------------------------------------------------------
+        if choice == "use_existing" and client_id:
+            client = db.session.query(Client).get(int(client_id))
+            if not client:
+                return "Client not found", 400
 
         # ---------------------------------------------------------
         # RESOLVE CLIENT BASED ON CHOICE
@@ -1972,6 +1949,7 @@ def create_app():
         db.session.commit()
 
         return redirect(url_for('process_all_pending'))
+
 
 
     # ---------------- ROUTES ---------------- #
