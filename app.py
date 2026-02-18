@@ -2318,7 +2318,7 @@ def create_app():
             try:
                 riders = parse_jotform_payload(
                     r.raw_payload,
-                    forced_submission_id=r.form_id,
+                    forced_submission_id=r.id,        # ✅
                     clients_cache=None,
                     mode="light"
                 )
@@ -2405,7 +2405,7 @@ def create_app():
         submission = db.session.query(IncomingSubmission).get_or_404(webhook_id)
         riders = parse_jotform_payload(
             submission.raw_payload,
-            forced_submission_id=submission.form_id
+            forced_submission_id=submission.id
         )
 
         # NEW: filter valid riders (skip incomplete)
@@ -2791,7 +2791,7 @@ def create_app():
         # -----------------------------------------
         riders = parse_jotform_payload(
             next_row.raw_payload,
-            forced_submission_id=next_row.form_id
+            forced_submission_id=next_row.id        # ✅
         )
 
         # -----------------------------------------
