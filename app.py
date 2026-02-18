@@ -1867,6 +1867,33 @@ def create_app():
 
         rider_name = rider.get("full_name") or rider.get("name") or ""
 
+        # ---------------------------------------------------------
+        # SAFE FIELD EXTRACTION (required for overwrite + update)
+        # ---------------------------------------------------------
+        def safe_int(value):
+            if value is None:
+                return None
+            if isinstance(value, int):
+                return value
+            value = str(value).strip()
+            return int(value) if value.isdigit() else None
+
+        def safe_text(value):
+            if not value:
+                return None
+            value = str(value).strip()
+            return value if value not in ("", "N/A") else None
+
+        age = safe_int(rider.get("age"))
+        disclaimer = safe_int(rider.get("disclaimer"))
+        height_cm = safe_int(rider.get("height_cm"))
+        weight_kg = safe_int(rider.get("weight_kg"))
+        notes = safe_text(rider.get("notes"))
+        guardian = safe_text(rider.get("guardian"))
+        mobile = safe_text(rider.get("mobile"))
+        email = safe_text(rider.get("email"))
+
+
 
         # ---------------------------------------------------------
         # USE EXISTING (NEVER CREATE DUPLICATES)
@@ -1879,8 +1906,9 @@ def create_app():
         # ---------------------------------------------------------
         # RESOLVE CLIENT BASED ON CHOICE
         # ---------------------------------------------------------
-        if choice == "use_existing" and client_id:
+        elif choice == "use_existing" and client_id:
             client = db.session.query(Client).get(int(client_id))
+
 
         elif choice == "new":
             client = Client(
