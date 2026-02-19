@@ -344,22 +344,8 @@
                 </td>
             </tr>
 
-            <tr>
-                <td><strong>Notes:</strong></td>
-                <td>
-                    <textarea class="client-edit"
-                              data-field="notes"
-                              data-id="{{ client_obj.client_id }}">{{ client_obj.notes or '' }}</textarea>
-                </td>
-            </tr>
 
             <tr>
-                <td><strong>Notes 2:</strong></td>
-                <td>
-                    <textarea class="client-edit"
-                              data-field="notes2"
-                              data-id="{{ client_obj.client_id }}">{{ client_obj.notes2 or '' }}</textarea>
-                </td>
             </tr>
 
         </table>
@@ -660,7 +646,14 @@
                 <td>{{ lesson.group_priv or '' }}</td>
                 <td>{{ lesson.lesson_type or '' }}</td>
                 <td>{{ lesson.block_ends or '' }}</td>
-                <td>{{ lesson.notes or '' }}</td>
+                <td>
+                    <textarea class="lesson-edit"
+                              data-field="lesson_notes"
+                              data-id="{{ lesson.lesson_id }}"
+                              style="width:260px; height:22px; resize:horizontal; overflow:hidden;">{{ lesson.lesson_notes or '' }}</textarea>
+                </td>
+
+
             </tr>
             {% endfor %}
         </tbody>

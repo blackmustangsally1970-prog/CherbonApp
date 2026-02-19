@@ -951,7 +951,14 @@ def create_app():
         field = data.get("field")
         value = data.get("value")
 
-        allowed = {"attendance", "carry_fwd", "payment", "price_pl", "adjust"}
+        allowed = {
+            "attendance",
+            "carry_fwd",
+            "payment",
+            "price_pl",
+            "adjust",
+            "lesson_notes"      # ⭐ NEW
+        }
         if field not in allowed:
             return jsonify(success=False, error="Invalid field")
 

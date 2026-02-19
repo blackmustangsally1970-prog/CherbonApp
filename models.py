@@ -120,6 +120,7 @@ class Lesson(db.Model):
     price_pl = db.Column(db.Float)
     attendance = db.Column(db.String)
     balance = db.Column(db.Float)
+    lesson_notes = db.Column(db.Text)
     lesson_type = db.Column(db.String)
     group_priv = db.Column(db.String)
 
