@@ -2440,10 +2440,16 @@ def create_app():
     def resolve_conflict(submission_id, rider_index):
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
         riders = parse_jotform_payload(row.raw_payload, forced_submission_id=row.id)
+
         # rider_index is 1‑based
         rider = riders[rider_index - 1]
 
-        matches = rider.get("matches", [])
+        # ORIGINAL: matches = rider.get("matches", [])
+        match_dicts = rider.get("matches", [])
+        match_ids = [m["client_id"] for m in match_dicts]
+
+        # Load REAL Client objects
+        matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
 
         return render_template(
             'conflict_resolution.html',
