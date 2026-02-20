@@ -2394,9 +2394,15 @@ def create_app():
             if existing_row:
                 continue
 
-            # NEW: skip if older than newest stored submission
-            created_at = datetime.fromtimestamp(int(sub.get("created_at")))
-            if latest and created_at < latest.received_at:
+            # NEW: safe created_at extraction
+            created_raw = sub.get("created_at")
+            try:
+                created_at = datetime.fromtimestamp(int(created_raw))
+            except Exception:
+                created_at = None
+
+            # Skip if older than newest stored submission
+            if latest and created_at and created_at < latest.received_at:
                 continue
 
             # Insert new submission
