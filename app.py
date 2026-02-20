@@ -2451,8 +2451,22 @@ def create_app():
         # rider_index is 1‑based
         rider = riders[rider_index - 1]
 
-        # ORIGINAL: matches = rider.get("matches", [])
-        match_dicts = rider.get("matches", [])
+        # Raw matches from parse_jotform_payload (SQLAlchemy tuples)
+        raw_matches = rider.get("matches", [])
+
+        # Convert SQLAlchemy row tuples → dicts
+        match_dicts = [
+            {
+                "client_id": m[0],
+                "full_name": m[1],
+                "mobile": m[2],
+                "email": m[3],
+                "jotform_submission_id": m[4]
+            }
+            for m in raw_matches
+        ]
+
+        # Extract client IDs
         match_ids = [m["client_id"] for m in match_dicts]
 
         # Load REAL Client objects
