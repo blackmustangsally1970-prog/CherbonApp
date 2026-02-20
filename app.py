@@ -2576,8 +2576,13 @@ def create_app():
 
             existing.jotform_submission_id = jotform_id
 
+            # ⭐ NEW: mark submission processed
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+
             db.session.commit()
             return redirect(url_for('process_all_pending'))
+
 
         # ---------------------------------------------------------
         # OVERWRITE EXISTING (FULL REPLACEMENT)
@@ -2597,8 +2602,13 @@ def create_app():
 
             existing.jotform_submission_id = jotform_id
 
+            # ⭐ NEW: mark submission processed
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+
             db.session.commit()
             return redirect(url_for('process_all_pending'))
+
 
         # ---------------------------------------------------------
         # CREATE NEW CLIENT
@@ -2618,8 +2628,14 @@ def create_app():
                 jotform_submission_id=jotform_id
             )
             db.session.add(new_client)
+
+            # ⭐ NEW: mark submission processed
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+
             db.session.commit()
             return redirect(url_for('process_all_pending'))
+
 
         # ---------------------------------------------------------
         # CREATE NEW CLIENT (SAME NAME)
@@ -2649,6 +2665,11 @@ def create_app():
                 jotform_submission_id=jotform_id
             )
             db.session.add(new_client)
+
+            # ⭐ NEW: mark submission processed
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
