@@ -2354,8 +2354,8 @@ def create_app():
     def fetch_jotform_submissions():
         import requests
         import json
+        from datetime import datetime
 
-        # Your hard‑coded credentials
         API_KEY = os.getenv("JOTFORM_API_KEY", "")
         FORM_ID = "211021514885045"
 
@@ -2371,31 +2371,41 @@ def create_app():
 
         inserted = 0
 
+        # NEW: get newest stored submission for this form
+        latest = (
+            db.session.query(IncomingSubmission)
+            .filter(IncomingSubmission.form_id == FORM_ID)
+            .order_by(IncomingSubmission.received_at.desc())
+            .first()
+        )
+
         for sub in submissions:
-            # Extract the TRUE submission ID from the JSON
             submission_id = str(sub.get("id"))
             print("JOTFORM ID:", submission_id)
 
-            # Skip if this submission already exists in incoming_submissions
-
-            # Compute stable hash of the entire payload
+            # Compute stable hash
             payload_str = json.dumps(sub, sort_keys=True)
             payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
 
-            # Dedupe by hash (blocks JotForm replay duplicates)
+            # Skip if identical payload already stored
             existing_row = db.session.query(IncomingSubmission).filter_by(
                 unique_hash=payload_hash
             ).first()
-
             if existing_row:
                 continue
 
-            # Insert into incoming_submissions
+            # NEW: skip if older than newest stored submission
+            created_at = datetime.fromtimestamp(int(sub.get("created_at")))
+            if latest and created_at < latest.received_at:
+                continue
+
+            # Insert new submission
             row = IncomingSubmission(
                 form_id=FORM_ID,
-                raw_payload=json.dumps(sub),         # store full JSON
+                raw_payload=json.dumps(sub),
                 processed=False,
-                unique_hash=payload_hash
+                unique_hash=payload_hash,
+                received_at=datetime.utcnow()
             )
             db.session.add(row)
             inserted += 1
