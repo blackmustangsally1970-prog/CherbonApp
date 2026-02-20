@@ -2443,7 +2443,7 @@ def create_app():
         )
 
 
-    @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>')
+    @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['GET'])
     def resolve_conflict(submission_id, rider_index):
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
         riders = parse_jotform_payload(row.raw_payload, forced_submission_id=row.id)
