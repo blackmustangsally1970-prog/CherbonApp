@@ -107,7 +107,12 @@
                 Disclaimer: {{ m.disclaimer }}<br><br>
             {% endif %}
 
-            <form method="post" style="display:inline;">
+            <!-- USE EXISTING -->
+            <form method="post"
+                  action="{{ url_for('finalize_conflict',
+                                     submission_id=submission.id,
+                                     rider_index=rider_index) }}"
+                  style="display:inline;">
                 <input type="hidden" name="client_id" value="{{ m.client_id }}">
                 <button class="button" name="choice" value="use_existing">
                     ✔ Use This Client
@@ -115,7 +120,12 @@
             </form>
 
             {% if not invite_mode %}
-            <form method="post" style="display:inline;">
+            <!-- OVERWRITE -->
+            <form method="post"
+                  action="{{ url_for('finalize_conflict',
+                                     submission_id=submission.id,
+                                     rider_index=rider_index) }}"
+                  style="display:inline;">
                 <input type="hidden" name="client_id" value="{{ m.client_id }}">
                 <button class="button danger" name="choice" value="overwrite">
                     ⚠ Overwrite This Client
@@ -130,7 +140,11 @@
 
 <div class="section-title">Or Create New</div>
 
-<form method="post">
+<!-- CREATE NEW -->
+<form method="post"
+      action="{{ url_for('finalize_conflict',
+                         submission_id=submission.id,
+                         rider_index=rider_index) }}">
     <button class="button" name="choice" value="new">
         ➕ Create New Client
     </button>
@@ -140,7 +154,11 @@
     </button>
 </form>
 
-<form method="post">
+<!-- IGNORE -->
+<form method="post"
+      action="{{ url_for('finalize_conflict',
+                         submission_id=submission.id,
+                         rider_index=rider_index) }}">
     <button type="submit" name="choice" value="ignore" class="button danger">
         Ignore this submission (do not append)
     </button>
