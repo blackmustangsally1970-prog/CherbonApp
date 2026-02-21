@@ -2401,8 +2401,12 @@ def create_app():
             except Exception:
                 created_at = None
 
+            # If timestamp missing/invalid → treat as OLD and skip
+            if latest and created_at is None:
+                continue
+
             # Skip if older than newest stored submission
-            if latest and created_at and created_at < latest.received_at:
+            if latest and created_at < latest.received_at:
                 continue
 
             # Insert new submission
