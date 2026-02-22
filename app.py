@@ -2394,19 +2394,14 @@ def create_app():
             if existing_row:
                 continue
 
-            # NEW: safe created_at extraction
-            created_raw = sub.get("created_at")
+            # NEW: ID-based filtering (bulletproof)
             try:
-                created_at = datetime.fromtimestamp(int(created_raw))
+                sub_id_int = int(submission_id)
             except Exception:
-                created_at = None
-
-            # If timestamp missing/invalid → treat as OLD and skip
-            if latest and created_at is None:
-                continue
+                sub_id_int = None
 
             # Skip if older than newest stored submission
-            if latest and created_at < latest.received_at:
+            if latest and latest.jotform_id and sub_id_int and sub_id_int <= int(latest.jotform_id):
                 continue
 
             # Insert new submission
