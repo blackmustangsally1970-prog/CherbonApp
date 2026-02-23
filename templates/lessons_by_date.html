@@ -1171,6 +1171,10 @@ select.teacher-dropdown {
             </button>
         </div>
 
+<button type="button" class="submit-normal-booking-btn btn btn-primary">
+    Save Booking
+</button>
+
     </div>
 </div>
 
@@ -3184,6 +3188,39 @@ document.getElementById("download-xlsx-btn").addEventListener("click", function 
 </script>
 
 
+<script>
+$(document).on("click", ".submit-normal-booking-btn", function (e) {
+    e.preventDefault();
+
+    const $popup = $(this).closest(".lesson-popup");
+
+    const payload = {
+        booking_type: $popup.find("input[name='client_mode']:checked").val(),
+        client_id: $popup.find("select[name='existing_client_id']").val(),
+        new_client_name: $popup.find("input[name='new_client_name']").val(),
+        new_client_mobile: $popup.find("input[name='new_client_mobile']").val(),
+        lesson_date: $popup.find("input[name='lesson_date']").val(),
+        time_frame: $popup.find("select[name='time_frame']").val(),
+        lesson_type: $popup.find("select[name='lesson_type']").val(),
+        group_priv: $popup.find("select[name='group_priv']").val(),
+        cost: $popup.find("input[name='cost']").val()
+    };
+
+    fetch("/save_booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(resp => {
+        if (resp.success) {
+            window.location.reload();
+        } else {
+            alert("Booking failed: " + resp.error);
+        }
+    });
+});
+</script>
 
 </body>
 </html>
