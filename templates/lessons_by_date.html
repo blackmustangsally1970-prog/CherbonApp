@@ -924,11 +924,12 @@ select.teacher-dropdown {
         <option value="{{ horse }}" {% if horse == item.horse %}selected{% endif %}>{{ horse }}</option>
       {% endfor %}
     </select>
-
+    <input type="hidden" name="booking_type" value="existing">
     <div style="margin-top:8px; display:flex; gap:10px;">
       <button type="submit" class="save-lesson-btn">Save</button>
       <button type="button" class="popup-close">× Close</button>
     </div>
+
 
   </form>
 </div>
