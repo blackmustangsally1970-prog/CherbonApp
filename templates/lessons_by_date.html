@@ -3174,7 +3174,6 @@ document.getElementById("download-xlsx-btn").addEventListener("click", function 
 });
 </script>
 
-
 <script>
 $(document).on("click", ".save-lesson-btn", function (e) {
     e.preventDefault();
@@ -3183,7 +3182,7 @@ $(document).on("click", ".save-lesson-btn", function (e) {
     const $popup = $(this).closest(".lesson-popup");
 
     const payload = {
-        booking_type: "existing",   // ALWAYS existing for this modal
+        booking_type: "existing",
 
         client_id: $popup.find("select[name='client_id']").val(),
         horse: $popup.find("select[name='horse']").val(),
@@ -3209,7 +3208,6 @@ $(document).on("click", ".save-lesson-btn", function (e) {
     })
     .then(r => r.json())
     .then(resp => {
-        console.log("RESPONSE:", resp);
         if (resp.success) {
             window.location.reload();
         } else {
@@ -3217,8 +3215,8 @@ $(document).on("click", ".save-lesson-btn", function (e) {
         }
     });
 });
-</script>
 
+</script>
 
 </body>
 </html>
