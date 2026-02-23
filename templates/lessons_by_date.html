@@ -926,7 +926,7 @@ select.teacher-dropdown {
     </select>
     <input type="hidden" name="booking_type" value="existing">
     <div style="margin-top:8px; display:flex; gap:10px;">
-      <button type="submit" class="save-lesson-btn">Save</button>
+      <button type="button" class="save-lesson-btn">Save</button>
       <button type="button" class="popup-close">× Close</button>
     </div>
 
@@ -3191,27 +3191,26 @@ document.getElementById("download-xlsx-btn").addEventListener("click", function 
 <script>
 $(document).on("click", ".save-lesson-btn", function (e) {
     e.preventDefault();
-    console.log("SAVE CLICKED");
+    console.log("SAVE CLICKED (teacher block)");
 
     const $popup = $(this).closest(".lesson-popup");
 
     const payload = {
-        booking_type: $popup.find("input[name='client_mode']:checked").val(),
+        booking_type: "existing",   // ALWAYS existing for this modal
 
-        // Existing client
         client_id: $popup.find("select[name='client_id']").val(),
-
-        // New client
-        client_name: $popup.find("input[name='client_name']").val(),
-        client_phone: $popup.find("input[name='client_phone']").val(),
-
-        // Lesson details
         horse: $popup.find("select[name='horse']").val(),
-        lesson_date: $popup.find("input[name='invite_date']").val(),
-        time_frame: $popup.find("input[name='invite_time']").val(),
-        lesson_type: $popup.find("input[name='invite_lesson_type']").val(),
+
+        lesson_date: $popup.find("input[name='date']").val(),
+        time_frame: $popup.find("input[name='start']").val(),
+        end: $popup.find("select[name='end']").val(),
+
+        lesson_type: $popup.find("select[name='lesson_type']").val(),
         group_priv: $popup.find("select[name='group_priv']").val(),
-        cost: $popup.find("input[name='invite_cost']").val()
+        price_pl: $popup.find("input[name='price_pl']").val(),
+
+        freq: $popup.find("select[name='freq']").val(),
+        respect_blockouts: $popup.find("select[name='respect_blockouts']").val()
     };
 
     console.log("PAYLOAD:", payload);
