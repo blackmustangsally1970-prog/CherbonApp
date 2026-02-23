@@ -1424,29 +1424,11 @@ document.addEventListener('blur', function(e) {
 </script>
 
 <script>
-  // --- Toggle client mode inside popup ---
-  $(document).on('change', '.lesson-popup input[name="client_mode"]', function () {
-    const $popup = $(this).closest('.lesson-popup');
-    if (this.value === 'existing') {
-      $popup.find('.client-existing').show();
-      $popup.find('.client-new').hide();
-    } else {
-      $popup.find('.client-existing').hide();
-      $popup.find('.client-new').show();
-    }
-  });
-
-  // --- Close popup via button ---
-  $(document).on('click', '.popup-close', function () {
-    $(this).closest('.lesson-popup').hide();
-  });
-
-// Close popup when clicking outside (but not when clicking a slot, a row, or inside Select2)
+// Close popup when clicking outside (but not when clicking inside popup, a slot, a row, or inside Select2)
 $(document).on('click', function (e) {
   const $target = $(e.target);
   const $popup = $target.closest('.lesson-popup');
 
-  // NEW: treat clicks inside Select2 container/dropdown as inside the popup
   const isInsideSelect2 =
     $target.closest('.select2-container').length ||
     $target.closest('.select2-dropdown').length;
@@ -1455,14 +1437,19 @@ $(document).on('click', function (e) {
     $target.closest('.teacher-slot').length ||
     $target.closest('tr[data-lesson-id]').length;
 
-  if (!$popup.length && !isSlotOrRow && !isInsideSelect2) {
-    $('.lesson-popup').each(function () {
-      this.style.removeProperty('display');
-      $(this).hide();
-    });
+  // NEW: If click is inside popup OR allowed areas, do nothing
+  if ($popup.length || isInsideSelect2 || isSlotOrRow) {
+    return;
   }
+
+  // Otherwise close all popups
+  $('.lesson-popup').each(function () {
+    this.style.removeProperty('display');
+    $(this).hide();
+  });
 });
 </script>
+
 
 
 
