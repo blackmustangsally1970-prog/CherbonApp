@@ -3189,21 +3189,22 @@ document.getElementById("download-xlsx-btn").addEventListener("click", function 
 
 
 <script>
-$(document).on("click", ".submit-normal-booking-btn", function (e) {
+$(document).on("click", ".save-lesson-btn", function (e) {
     e.preventDefault();
 
     const $popup = $(this).closest(".lesson-popup");
 
     const payload = {
         booking_type: $popup.find("input[name='client_mode']:checked").val(),
-        client_id: $popup.find("select[name='existing_client_id']").val(),
-        new_client_name: $popup.find("input[name='new_client_name']").val(),
-        new_client_mobile: $popup.find("input[name='new_client_mobile']").val(),
-        lesson_date: $popup.find("input[name='lesson_date']").val(),
-        time_frame: $popup.find("select[name='time_frame']").val(),
-        lesson_type: $popup.find("select[name='lesson_type']").val(),
+        client_id: $popup.find("select[name='client_id']").val(),
+        client_name: $popup.find("input[name='client_name']").val(),
+        client_phone: $popup.find("input[name='client_phone']").val(),
+        horse: $popup.find("select[name='horse']").val(),
+        lesson_date: $popup.find("input[name='invite_date']").val(),
+        time_frame: $popup.find("input[name='invite_time']").val(),
+        lesson_type: $popup.find("input[name='invite_lesson_type']").val(),
         group_priv: $popup.find("select[name='group_priv']").val(),
-        cost: $popup.find("input[name='cost']").val()
+        cost: $popup.find("input[name='invite_cost']").val()
     };
 
     fetch("/save_booking", {
