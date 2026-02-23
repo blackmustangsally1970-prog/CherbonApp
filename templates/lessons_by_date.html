@@ -1070,8 +1070,7 @@ select.teacher-dropdown {
 
 
 <div style="margin-top:8px; display:flex; gap:10px;">
-  <button type="submit" class="save-lesson-btn">Save</button>
-
+  <button type="button" class="save-lesson-btn">Save</button>
   <button type="button" class="send-invite-btn"
           style="background:#2a7; color:white; padding:4px 10px; border-radius:4px;">
       Send SMS Invite
@@ -3191,14 +3190,21 @@ document.getElementById("download-xlsx-btn").addEventListener("click", function 
 <script>
 $(document).on("click", ".save-lesson-btn", function (e) {
     e.preventDefault();
+    console.log("SAVE CLICKED");
 
     const $popup = $(this).closest(".lesson-popup");
 
     const payload = {
         booking_type: $popup.find("input[name='client_mode']:checked").val(),
+
+        // Existing client
         client_id: $popup.find("select[name='client_id']").val(),
+
+        // New client
         client_name: $popup.find("input[name='client_name']").val(),
         client_phone: $popup.find("input[name='client_phone']").val(),
+
+        // Lesson details
         horse: $popup.find("select[name='horse']").val(),
         lesson_date: $popup.find("input[name='invite_date']").val(),
         time_frame: $popup.find("input[name='invite_time']").val(),
@@ -3207,6 +3213,8 @@ $(document).on("click", ".save-lesson-btn", function (e) {
         cost: $popup.find("input[name='invite_cost']").val()
     };
 
+    console.log("PAYLOAD:", payload);
+
     fetch("/save_booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -3214,6 +3222,7 @@ $(document).on("click", ".save-lesson-btn", function (e) {
     })
     .then(r => r.json())
     .then(resp => {
+        console.log("RESPONSE:", resp);
         if (resp.success) {
             window.location.reload();
         } else {
@@ -3222,6 +3231,7 @@ $(document).on("click", ".save-lesson-btn", function (e) {
     });
 });
 </script>
+
 
 </body>
 </html>
