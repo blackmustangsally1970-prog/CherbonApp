@@ -2410,7 +2410,9 @@ def create_app():
                 raw_payload=json.dumps(sub),
                 processed=False,
                 unique_hash=payload_hash,
-                received_at=datetime.utcnow()
+                received_at=datetime.utcnow(),
+                jotform_id=submission_id      # ⭐ ADD THIS
+ 
             )
             db.session.add(row)
             inserted += 1
