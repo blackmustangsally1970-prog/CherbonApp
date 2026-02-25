@@ -2251,7 +2251,10 @@ def create_app():
         FORM_ID = "253599154628066"
 
         # Fetch all submissions
-        url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
+        url = (
+            f"https://api.jotform.com/form/{FORM_ID}/submissions"
+            f"?apiKey={API_KEY}&orderby=created_at&direction=DESC&limit=1000"
+        )
         data = requests.get(url).json()
         subs = data.get("content", [])
 
