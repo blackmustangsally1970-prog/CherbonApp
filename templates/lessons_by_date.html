@@ -2845,50 +2845,7 @@ $(document).on('click', function (e) {
 
 </script>
 
-<script>
-$(document).ready(function() {
 
-    /* --- FIX #1: 1‑click focus + instant typing --- */
-    $('.searchable-dropdown').select2({
-        minimumResultsForSearch: 0,
-        selectOnClose: true
-    }).on('select2:open', function() {
-        let searchField = $('.select2-container--open .select2-search__field');
-        searchField.focus();
-    });
-
-
-    /* --- FIX #2: Starts‑with matching instead of contains --- */
-    function startsWithMatcher(params, data) {
-        if ($.trim(params.term) === '') {
-            return data;
-        }
-        if (typeof data.text === 'undefined') {
-            return null;
-        }
-
-        let term = params.term.toLowerCase();
-        let text = data.text.toLowerCase();
-
-        if (text.startsWith(term)) {
-            return data;
-        }
-        return null;
-    }
-
-    $('.searchable-dropdown').select2({
-        matcher: startsWithMatcher
-    });
-
-
-    /* --- FIX #3: Open Select2 dropdown on first click --- */
-    $('.searchable-dropdown').on('mousedown', function(e) {
-        e.preventDefault();
-        $(this).select2('open');
-    });
-
-});
-</script>
 <script>
 document.getElementById("recalc-btn").addEventListener("click", async () => {
     const btn = document.getElementById("recalc-btn");
