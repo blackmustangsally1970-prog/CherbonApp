@@ -1,0 +1,702 @@
+    @app.route("/equestrian_bulk_sms")
+    def equestrian_bulk_sms():
+        return render_template("equestrian_bulk_sms.html")
+
+    @app.route("/equestrian/bulk_sms/send", methods=["POST"])
+    def equestrian_bulk_sms_send():
+        data = request.get_json()
+
+        template = data.get("template", "").strip()
+        rows = data.get("rows", [])
+        fields = data.get("fields", [])
+
+        sender = app.config.get("EQUESTRIAN_SENDER")
+
+        sent_numbers = []
+        failed_numbers = []
+        skipped_numbers = []
+
+        if not template:
+            return jsonify({
+                "ok": False,
+                "status": "Template is empty.",
+                "sent": 0,
+                "failed": 0,
+                "skipped": 0,
+                "sent_numbers": [],
+                "failed_numbers": [],
+                "skipped_numbers": []
+            })
+
+        if not rows:
+            return jsonify({
+                "ok": False,
+                "status": "No rows received from client.",
+                "sent": 0,
+                "failed": 0,
+                "skipped": 0,
+                "sent_numbers": [],
+                "failed_numbers": [],
+                "skipped_numbers": []
+            })
+
+        if "mobile" not in fields:
+            return jsonify({
+                "ok": False,
+                "status": "CSV does not contain 'mobile' column.",
+                "sent": 0,
+                "failed": 0,
+                "skipped": len(rows),
+                "sent_numbers": [],
+                "failed_numbers": [],
+                "skipped_numbers": [r.get("mobile", "") for r in rows]
+            })
+
+        for row in rows:
+            mobile = (row.get("mobile") or "").strip()
+            if not mobile:
+                skipped_numbers.append(mobile)
+                continue
+
+            personalised = template
+            for field in fields:
+                placeholder = f"{{{field}}}"
+                if placeholder in personalised:
+                    personalised = personalised.replace(placeholder, row.get(field, "") or "")
+
+            ok = send_sms_clicksend(mobile, personalised, sender)
+            if ok:
+                sent_numbers.append(mobile)
+            else:
+                failed_numbers.append(mobile)
+
+        status = (
+            f"Sent {len(sent_numbers)} messages. "
+            f"Failed {len(failed_numbers)}. "
+            f"Skipped {len(skipped_numbers)}."
+        )
+
+        return jsonify({
+            "ok": True,
+            "status": status,
+            "sent": len(sent_numbers),
+            "failed": len(failed_numbers),
+            "skipped": len(skipped_numbers),
+            "sent_numbers": sent_numbers,
+            "failed_numbers": failed_numbers,
+            "skipped_numbers": skipped_numbers
+        })
+
+    def archive_wedding_sms_numbers(numbers):
+        from datetime import datetime
+
+        pending_path = os.path.join(WEDDING_SMS_ROOT, "wedding_sms_pending.txt")
+        archive_path = os.path.join(
+            WEDDING_SMS_ROOT,
+            f"wedding_sms_sent_{datetime.now().strftime('%Y-%m-%d')}.txt"
+        )
+
+
+        # Append all numbers to archive
+        with open(archive_path, "a", encoding="utf-8") as f:
+            for num in numbers:
+                f.write(num + "\n")
+
+        # Clear pending file
+        with open(pending_path, "w", encoding="utf-8") as f:
+            f.write("")
+
+    @app.get("/wedding/sms/pending")
+    def wedding_sms_pending():
+        path = os.path.join(WEDDING_SMS_ROOT, "wedding_sms_pending.txt")
+
+
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                numbers = [line.strip() for line in f.readlines() if line.strip()]
+        except FileNotFoundError:
+            numbers = []
+
+        return {"numbers": numbers}
+
+
+    @app.route('/wedding/sms/send', methods=['POST'])
+    def wedding_sms_send():
+        data = request.get_json()
+
+        message = data.get("message", "")
+        numbers = data.get("numbers", [])
+
+        sender = app.config['WEDDING_SENDER']
+
+        # Load unsubscribe list
+        base = os.path.dirname(os.path.abspath(__file__))
+        unsub_path = os.path.join(base, "unsubscribe", "wedding_unsubscribe.txt")
+
+        unsub = set()
+        if os.path.exists(unsub_path):
+            with open(unsub_path, "r") as f:
+                unsub = {line.strip() for line in f if line.strip()}
+
+        # Filter numbers
+        filtered = []
+        skipped = []
+
+        for num in numbers:
+            if num in unsub:
+                skipped.append(num)
+            else:
+                filtered.append(num)
+
+        # Send SMS to filtered numbers
+        sent_numbers = []
+        failed_numbers = []
+
+        for num in filtered:
+            ok = send_sms_clicksend(num, message, sender)
+            if ok:
+                sent_numbers.append(num)
+            else:
+                failed_numbers.append(num)
+
+        # ---------------------------------------------------------
+        # ARCHIVE ALL NUMBERS (Option A)
+        # ---------------------------------------------------------
+        archive_wedding_sms_numbers(numbers)
+
+        return jsonify({
+            "ok": True,
+            "sent": len(sent_numbers),
+            "skipped": len(skipped),
+            "failed": len(failed_numbers),
+            "sent_numbers": sent_numbers,
+            "skipped_numbers": skipped,
+            "failed_numbers": failed_numbers,
+            "status": (
+                f"Sent {len(sent_numbers)} messages. "
+                f"Skipped {len(skipped)} unsubscribed numbers. "
+                f"Failed {len(failed_numbers)}."
+            )
+        })
+
+
+    @app.route('/api/teacher_times.json')
+    def api_all_teacher_times():
+        return {"teacher_times": teacher_times_map()}
+
+
+
+    @app.route('/')
+    @login_required
+    def index():
+        return render_template('index.html')
+
+    @app.route('/lessons_by_date', methods=['GET', 'POST'])
+    def lessons_by_date():
+        selected_date, selected_date_str = parse_selected_date()
+
+        # If no date was provided, default to today
+        if not selected_date:
+                selected_date = date.today()
+                selected_date_str = selected_date.strftime('%Y-%m-%d')
+
+        weekday_int = date.today().weekday()
+        if not selected_date:
+            # fallback to today if parsing failed
+            selected_date = date.today()
+            selected_date_str = selected_date.strftime('%Y-%m-%d')
+
+        # DEBUG: trace incoming date and DB sample for forensic inspection
+        print("=== DEBUG lessons_by_date ENTRY ===")
+        print("method:", request.method)
+        print("request.values:", dict(request.values))
+        raw = request.values.get('selected_date') or ''
+        print("raw date (string):", repr(raw))
+        try:
+            parsed = datetime.strptime(raw, '%Y-%m-%d').date() if raw else None
+            print("parsed date:", parsed, "type:", type(parsed))
+        except Exception as e:
+            parsed = None
+            print("parse error:", e)
+        # quick DB check for that parsed date
+        rows = db.session.query(Lesson).filter(Lesson.lesson_date == parsed).limit(5).all() if parsed else []
+        print("rows found (count):", len(rows))
+        for r in rows:
+            print("  sample:", r.lesson_id, getattr(r, 'client', None), getattr(r, 'lesson_date', None))
+        print("=== END DEBUG ===")
+
+        grouped_lessons = {}
+        horse_list = []
+        horse_schedule = defaultdict(list)
+        client_horse_history = defaultdict(list)
+        times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
+
+        teacher_names = [t.teacher for t in get_static_teachers()]
+        block_tag_lookup = {}
+        invoice_clients = []  # ✅ ensure it’s always defined
+
+        if selected_date:
+            horse_schedule = defaultdict(list)
+            lesson_rows = (
+                db.session.query(Lesson)
+                .filter_by(lesson_date=selected_date)
+                .order_by(Lesson.time_frame)
+                .all()
+            )
+
+            for lesson in lesson_rows:
+                horse_name = to_proper_case(lesson.horse)
+                att = (lesson.attendance or '').strip().upper()
+                time_frame = (lesson.time_frame or '').strip()
+
+                if horse_name and time_frame and att != 'C':
+                    horse_schedule[horse_name].append(time_frame)
+
+            time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
+
+            client_lookup = {}
+            clients = db.session.query(Client).all()
+
+            for c in clients:
+                full = c.full_name or ''
+                key = normalize_name_for_lookup(full)
+                client_lookup[key] = c
+                client_lookup[(full or '').lower().replace(' ', '')] = c
+
+            block_tag_lookup = {}
+            rows = db.session.query(LessonBlockTag).filter_by(lesson_date=selected_date).all()
+            for r in rows:
+                key = norm_timerange_key(r.time_range)
+                tags = [t.strip() for t in (r.teacher_tags or '').split(',') if t.strip()]
+                block_tag_lookup[key] = tags
+
+            grouped = defaultdict(list)
+            for lesson in lesson_rows:
+                time_key = norm(lesson.time_frame)
+                time_obj = time_lookup.get(time_key)
+                client_key = normalize_name_for_lookup(lesson.client or '')
+                client_obj = client_lookup.get(client_key)
+
+                if not client_obj:
+                    alt_key = (lesson.client or '').lower().replace(' ', '')
+                    client_obj = client_lookup.get(alt_key)
+
+                timerange_display = time_obj.timerange if time_obj else (lesson.time_frame or '—')
+                group_key = (timerange_display, lesson.lesson_type or '', lesson.group_priv or '')
+                grouped[group_key].append((lesson, client_obj))
+
+            def time_sort_key(timerange):
+                try:
+                    return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
+                except Exception:
+                    return time.min   # earliest possible time of day
+
+            sorted_keys = sorted(
+                grouped.keys(),
+                key=lambda k: (0 if (k[1] or '').lower() == 'arena' else 1, time_sort_key(k[0]))
+            )
+
+            grouped_lessons = {
+                k: sorted(grouped[k], key=lambda pair: ((pair[1].full_name if pair[1] else pair[0].client) or '').lower())
+                for k in sorted_keys
+            }
+
+            # ✅ Seed defaults AFTER grouped_lessons is built
+            for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
+                block_key = norm_timerange_key(timerange)
+                saved_tags = block_tag_lookup.get(block_key)
+                if not saved_tags or saved_tags == ['']:
+                    if (lesson_type or '').lower() == 'arena':
+                        block_tag_lookup[block_key] = ['T1']
+                    else:
+                        block_tag_lookup[block_key] = ['T2']
+
+            # Debug print to confirm
+            print("block_tag_lookup (final):", block_tag_lookup)
+
+            horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
+            horse_schedule = {str(k): [str(t) for t in v] for k, v in horse_schedule.items()}
+
+            invoice_clients = [
+                c.client_id for c in db.session.query(Client).filter_by(invoice_required=True).all()
+            ]
+
+            # Populate clients for the popup client dropdown
+            clients = get_static_clients()
+            weekday_int = selected_date.weekday()            # Python’s 0=Monday … 6=Sunday
+            print("teacher_times_map:", teacher_times_map())
+            print("weekday_int passed:", weekday_int)
+            
+            teacher_horse_usage = {}
+            # selected_date is already a datetime.date, so use it directly
+            selected_date_obj = selected_date
+
+            teacher_rows = db.session.query(TeacherHorse).filter(
+                        TeacherHorse.date == selected_date_obj
+            ).all()
+
+            for th in teacher_rows:
+                        bk = (th.block_key or "").strip()
+                        if len(bk) == 8 and bk.isdigit():
+                                    start, end = bk[:4], bk[4:]
+                                    time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
+                        else:
+                                    time_slot = bk or "??:??"
+
+                        for raw_h in (th.horse1, th.horse2):
+                                    if raw_h:
+                                                name = to_proper_case(str(raw_h).strip())
+                                                teacher_horse_usage.setdefault(name, []).append(time_slot)
+
+            for h, usage_times in teacher_horse_usage.items():
+                teacher_horse_usage[h] = sorted(set(usage_times))
+
+
+        print("teacher_times:", teacher_times_map())
+        print("horse_schedule:", horse_schedule)
+        print("teacher_horse_usage:", teacher_horse_usage)
+        print("invoice_clients:", invoice_clients)
+        print("ABOUT TO RENDER TEMPLATE — ALL DATA LOADED OK")
+
+        import sys
+        try:
+            return render_template(
+                'lessons_by_date.html',
+                grouped_lessons=grouped_lessons,
+                selected_date=selected_date_str,
+                weekday_int=weekday_int,
+                horse_list=horse_list,
+                horse_schedule=horse_schedule,
+                teacher_names=teacher_names,
+                block_tag_lookup=block_tag_lookup,
+                client_horse_history=client_horse_history,
+                invoice_clients=invoice_clients,
+                clients=clients,
+                teacher_times=teacher_times_map(),
+                teacher_horse_usage=teacher_horse_usage,
+                times=times,
+                get_static_teachers=get_static_teachers,
+                client_lookup=client_lookup
+            )
+        except Exception as e:
+            print("\n\n=== TEMPLATE ERROR ===")
+            print(e)
+            print("======================\n\n")
+            raise
+
+    return app
+
+
+def detect_conflicts(riders):
+    conflicts = []
+    for rider in riders:
+        if rider.get("matches"):
+            conflicts.append({
+                "rider": rider,
+                "matches": rider["matches"]
+            })
+    return conflicts
+
+
+def create_lesson_row(invite, client_name):
+    """
+    Creates one Lesson row for a single client using fields from lesson_invites.
+    """
+    clean_time = invite.time_frame
+
+    lesson = Lesson(
+        lesson_date=invite.lesson_date,
+        time_frame=clean_time,
+        lesson_type=invite.lesson_type,
+        group_priv=invite.group_priv,
+        price_pl=invite.cost_per_person,
+        client=client_name,
+        horse=""
+    )
+
+    db.session.add(lesson)
+    db.session.flush()
+
+    return lesson
+
+def soft_match_client_for_invite(rider_name: str):
+    """
+    Soft‑match a rider name to existing clients.
+    Returns:
+        ("exact", client)
+        ("none", None)
+        ("ambiguous", [clients])
+    """
+    if not rider_name:
+        return ("none", None)
+
+    name_norm = (rider_name or "").strip().lower()
+    compact = name_norm.replace(" ", "").replace("-", "")
+
+    # ---------------------------------------------------------
+    # 1. Exact match (case‑insensitive)
+    # ---------------------------------------------------------
+    exact = db.session.query(Client).filter(
+        func.lower(func.trim(Client.full_name)) == name_norm
+    ).all()
+
+    if len(exact) == 1:
+        return ("exact", exact[0])
+    if len(exact) > 1:
+        return ("ambiguous", exact)
+
+    # ---------------------------------------------------------
+    # 2. Soft match using compact form (SQL LIKE)
+    #    Avoid full-table scan by filtering in SQL
+    # ---------------------------------------------------------
+    like_pattern = f"%{compact}%"
+
+    candidates = db.session.query(Client).filter(
+        Client.full_name.isnot(None),
+        func.replace(
+            func.replace(func.lower(Client.full_name), " ", ""),
+            "-", ""
+        ).like(like_pattern)
+    ).all()
+
+    if not candidates:
+        return ("none", None)
+    if len(candidates) == 1:
+        return ("exact", candidates[0])
+    return ("ambiguous", candidates)
+
+def process_submission(sub):
+    """
+    Robust replacement for the old process_submission.
+    """
+
+    # ---------------------------------------------------------
+    # TESTING MODE (set True while developing)
+    # ---------------------------------------------------------
+    TESTING_MODE = True
+
+    # ---------------------------------------------------------
+    # MATCH INVITE FIRST (we need invite.status for guardrail)
+    # ---------------------------------------------------------
+    invite = match_submission_to_invite(sub)
+    if not invite:
+        return "No matching invite"
+
+    submission_id = str(sub.id)
+
+
+    # ---------------------------------------------------------
+    # PRODUCTION GUARDRAIL:
+    # Only skip if the invite is already completed.
+    # ---------------------------------------------------------
+    if not TESTING_MODE:
+        if invite.status == "completed":
+            sub.processed = True
+            db.session.commit()
+            return f"Invite already completed for submission {submission_id}"
+    # In TESTING_MODE, we allow full reprocessing.
+
+    # ---------------------------------------------------------
+    # PARSE RIDERS
+    # ---------------------------------------------------------
+    try:
+        riders = parse_jotform_payload(
+            sub.raw_payload,
+            forced_submission_id=sub.id
+        )
+    except Exception as e:
+        print("RIDER PARSE ERROR:", e)
+        return f"Invalid payload: {e}"
+
+    if not riders:
+        return "No riders found"
+
+    # ---------------------------------------------------------
+    # CONFLICT DETECTION
+    # ---------------------------------------------------------
+    conflicts = detect_conflicts(riders) if 'detect_conflicts' in globals() else None
+    if conflicts:
+        session['conflicts'] = conflicts
+        session['sub_id_pending_conflict'] = sub.id
+        return "conflict"
+
+    # ---------------------------------------------------------
+    # PREPARE INVITE MOBILE
+    # ---------------------------------------------------------
+    def convert_mobile_for_client(m):
+        if not m:
+            return ""
+        digits = re.sub(r'\D+', '', str(m))
+        if digits.startswith("61") and len(digits) > 2:
+            return "0" + digits[2:]
+        return digits
+
+    invite_mobile = convert_mobile_for_client(invite.mobile)
+
+    # ---------------------------------------------------------
+    # CREATE / ATTACH LESSONS
+    # ---------------------------------------------------------
+    created_lessons = []
+    errors = []
+
+    clean_time = invite.time_frame
+
+    for rider in riders:
+        try:
+            # ---------------------------------------------------------
+            # STEP 3: Replace placeholder client + update pending lesson
+            # ---------------------------------------------------------
+            token = rider.get("invite_token")
+            invite_for_rider = LessonInvite.query.filter_by(token=token).first()
+
+            if invite_for_rider:
+                # 1. Fetch the pending lesson created at send_invite
+                pending_lesson = Lesson.query.get(invite_for_rider.lesson_id)
+
+                # 2. Fetch the placeholder client
+                placeholder_client = Client.query.filter_by(full_name=pending_lesson.client).first()
+
+                # 3. Resolve the REAL client using soft-match logic
+                rider_name = rider.get("full_name") or rider.get("name") or ""
+                match_type, match_data = soft_match_client_for_invite(rider_name)
+
+                if match_type == "exact":
+                    real_client = match_data
+
+                elif match_type == "none":
+                    # Create new client with ONLY name + height/weight
+                    real_client = Client(
+                        full_name=rider_name,
+                        height_cm=rider.get("height_cm"),
+                        weight_kg=rider.get("weight_kg"),
+                        guardian_name="",
+                        mobile="",
+                        notes="Created via SMS invite"
+                    )
+                    db.session.add(real_client)
+                    db.session.flush()
+
+                else:  # ambiguous
+                    sub.needs_client_match = True
+                    db.session.commit()
+                    return "needs_client_match"
+
+                # 4. Update the pending lesson with REAL client details
+                pending_lesson.client = real_client.full_name
+                pending_lesson.height_cm = rider.get("height_cm")
+                pending_lesson.weight_kg = rider.get("weight_kg")
+                pending_lesson.horse = ""  # horse not assigned yet
+                pending_lesson.attendance = "Pending"
+                pending_lesson.payment = None
+
+                # 5. Mark invite as completed for this rider
+                invite_for_rider.status = "completed"
+
+                # 6. Delete placeholder client
+                db.session.delete(placeholder_client)
+
+                # 7. Add updated lesson to created list
+                created_lessons.append(pending_lesson)
+
+                # 8. Continue to next rider (no new lesson created here)
+                continue
+
+            # ---------------------------------------------------------
+            # STEP 4: Multi‑rider lesson cloning (rider #2+)
+            # ---------------------------------------------------------
+            if created_lessons:
+                # This is NOT the first rider — create a cloned lesson row
+
+                # Resolve client again (soft-match already done above)
+                rider_name = rider.get("full_name") or rider.get("name") or ""
+                match_type, match_data = soft_match_client_for_invite(rider_name)
+
+                if match_type == "exact":
+                    real_client = match_data
+                elif match_type == "none":
+                    real_client = Client(
+                        full_name=rider_name,
+                        height_cm=rider.get("height_cm"),
+                        weight_kg=rider.get("weight_kg"),
+                        guardian_name="",
+                        mobile="",
+                        notes="Created via SMS invite"
+                    )
+                    db.session.add(real_client)
+                    db.session.flush()
+                else:
+                    sub.needs_client_match = True
+                    db.session.commit()
+                    return "needs_client_match"
+
+                # Clone the first lesson's structure
+                base_lesson = created_lessons[0]
+
+                new_lesson = Lesson(
+                    lesson_date=base_lesson.lesson_date,
+                    time_frame=base_lesson.time_frame,
+                    lesson_type=base_lesson.lesson_type,
+                    group_priv=base_lesson.group_priv,
+                    price_pl=base_lesson.price_pl,
+                    client=real_client.full_name,
+                    height_cm=rider.get("height_cm"),
+                    weight_kg=rider.get("weight_kg"),
+                    horse="",
+                    attendance="Pending",
+                    payment=None
+                )
+
+                db.session.add(new_lesson)
+                db.session.flush()
+
+                created_lessons.append(new_lesson)
+                continue
+
+
+
+        except Exception as e:
+            print("RIDER ERROR:", rider, e)   # 👈 add this  
+            errors.append(str(e))
+            continue
+
+    # ---------------------------------------------------------
+    # FINALIZE
+    # ---------------------------------------------------------
+    if created_lessons:
+        # Always link invite to the FIRST lesson created/updated
+        first_lesson = created_lessons[0]
+        invite.lesson_id = first_lesson.lesson_id
+
+        # Mark invite as completed
+        invite.status = "completed"
+
+        # Mark submission as processed
+        sub.processed = True
+
+    else:
+        # Safety fallback — should never happen now
+        sub.processed = True
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return f"DB commit failed: {e}"
+
+    if errors:
+        return f"Processed {len(created_lessons)} riders into lessons; errors: {len(errors)}"
+    return f"Processed {len(created_lessons)} riders into lessons"
+
+
+
+@app.route('/notifications/invite_conflicts')
+def invite_conflicts():
+    rows = (
+        db.session.query(IncomingSubmission)
+        .filter_by(needs_client_match=True, processed=False)
+        .order_by(IncomingSubmission.id.asc())
+        .all()
+    )
+    return render_template('invite_conflict_queue.html', rows=rows)
+
+

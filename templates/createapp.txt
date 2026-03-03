@@ -1,721 +1,3 @@
-
-from flask import (
-    Flask, render_template, request, redirect, url_for,
-    send_file, make_response, after_this_request, flash, jsonify
-)
-from flask import Response
-from config import Config
-from extensions import db
-from collections import defaultdict
-from sqlalchemy import func, text
-from datetime import date, datetime, time
-from models import (
-    Lesson, Time, Client, Horse, Teacher,
-    LessonBlockTag, TeacherTime, TeacherHorse,
-    BlockoutDate, BlockoutRange, IncomingSubmission,
-    LessonInvite
-)
-import secrets
-import string
-from urllib.parse import urlencode
-import re
-import subprocess
-import tempfile
-import os
-import unicodedata
-import json
-import hashlib
-import clicksend_client
-from clicksend_client import SmsMessage
-from clicksend_client.rest import ApiException
-from functools import lru_cache
-from sqlalchemy.orm import joinedload
-from flask import session
-from werkzeug.security import generate_password_hash, check_password_hash
-from models import Users
-from functools import wraps
-
-
-
-
-
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_ROOT = os.path.join(BASE_DIR, "lesson_logs")
-os.makedirs(LOG_ROOT, exist_ok=True)
-
-WEDDING_SMS_ROOT = os.path.join(BASE_DIR, "weddingsms")
-os.makedirs(WEDDING_SMS_ROOT, exist_ok=True)
-
-CSV_ROOT = os.path.join(BASE_DIR, "csv")
-os.makedirs(CSV_ROOT, exist_ok=True)
-
-
-@lru_cache(maxsize=1)
-def get_static_clients():
-    return db.session.query(Client).order_by(Client.full_name).all()
-
-@lru_cache(maxsize=1)
-def get_static_horses():
-    return db.session.query(Horse).order_by(Horse.horse).all()
-
-@lru_cache(maxsize=1)
-def get_static_times():
-    return db.session.query(Time).order_by(Time.timerange).all()
-
-@lru_cache(maxsize=1)
-def get_static_teachers():
-    return db.session.query(Teacher).order_by(Teacher.teacher).all()
-
-@lru_cache(maxsize=1)
-def get_static_teacher_time():
-    return db.session.query(TeacherTime).order_by(
-        TeacherTime.teacher_key,
-        TeacherTime.weekday,
-        TeacherTime.time
-    ).all()
-
-
-
-def recalc_all_lessons():
-    """
-    Recalculate per-lesson balances for ALL lessons.
-    Simple model:
-        balance = carry_fwd + payment + adjust - price_pl (if attended/charged)
-    """
-    lessons = (
-        Lesson.query
-        .order_by(
-            db.func.date(Lesson.lesson_date).asc(),
-            Lesson.lesson_id.asc()
-        )
-        .all()
-    )
-
-    for l in lessons:
-        carry = l.carry_fwd or 0
-        payment = l.payment or 0
-        price = l.price_pl or 0
-        adjust = l.adjust or 0
-        att = (l.attendance or '').strip().upper()
-
-        balance = carry + payment + adjust
-        if att in ['Y', 'N']:
-            balance -= price
-
-        l.balance = balance
-
-    db.session.commit()
-
-
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if "user_id" not in session:
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-    return wrapper
-
-def role_required(*roles):
-    def decorator(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            user = Users.query.get(session.get("user_id"))
-            if not user or user.role not in roles:
-                return "Access denied", 403
-            return f(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
-
-def log_lesson_changes(changes, user="system"):
-    from datetime import datetime
-
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_date = datetime.now().strftime("%Y-%m-%d")
-    log_path = os.path.join(LOG_ROOT, f"lesson_changes_{log_date}.log")
-
-    # Separate lesson and client keys
-    lesson_ids = [lid for lid in changes if isinstance(lid, int)]
-    client_ids = [int(str(k).split("_")[1]) for k in changes if str(k).startswith("client_")]
-
-    lessons = db.session.query(Lesson).filter(Lesson.lesson_id.in_(lesson_ids)).all()
-    clients = db.session.query(Client).filter(Client.client_id.in_(client_ids)).all()
-
-    # 🔑 keep both client name and lesson date
-    lesson_lookup = {
-        lesson.lesson_id: (lesson.client, lesson.lesson_date)
-        for lesson in lessons
-    }
-    client_lookup = {client.client_id: client.full_name for client in clients}
-
-    try:
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{ts}] by {user}\n")
-            for key in sorted(changes, key=lambda x: str(x)):
-                if str(key).startswith("client_"):
-                    cid = int(str(key).split("_")[1])
-                    client = client_lookup.get(cid, f"Client {cid}")
-                    lesson_date = ""   # no specific lesson date for client notes
-                else:
-                    client, lesson_date = lesson_lookup.get(key, (f"Lesson {key}", None))
-
-                fields = changes[key]
-                client_fmt = f"{client:<35}"
-                date_fmt = lesson_date.strftime("%Y-%m-%d") if lesson_date else "—"
-
-                parts = []
-                if "payment" in fields:
-                    old, new = fields["payment"]
-                    if old != new:
-                        parts.append(f"payment: '{old}' -> '{new}'")
-                if "attendance" in fields:
-                    old, new = fields["attendance"]
-                    if old != new:
-                        parts.append(f"attendance: '{old}' -> '{new}'")
-                if "horse" in fields:
-                    old, new = fields["horse"]
-                    if old != new:
-                        parts.append(f"horse: '{old}' -> '{new}'")
-                if "notes" in fields:
-                    old, new = fields["notes"]
-                    if (old or '').strip() != (new or '').strip():
-                        parts.append(f"notes: '{old}' -> '{new}'")
-
-                if parts:
-                    # ✅ now includes lesson date
-                    f.write(f"  {client_fmt} | {date_fmt} | " + " | ".join(parts) + "\n")
-            f.write("\n")
-    except Exception as e:
-        print(f"Log write failed: {e}")
-
-def log_disclaimer_processed(names):
-    from datetime import datetime
-    log_date = datetime.now().strftime("%Y-%m-%d")
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    log_path = os.path.join(LOG_ROOT, f"disclaimers_{log_date}.txt")
-
-
-
-    try:
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{ts}] {', '.join(names)}\n")
-    except Exception as e:
-        print("Failed to write disclaimer log:", e)
-
-
-def log_wedding_sms(result, message):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    lines = []
-
-    for num in result.get("sent_numbers", []):
-        lines.append(f"{timestamp} | SENT | {num} | {message}")
-
-    for num in result.get("skipped_numbers", []):
-        lines.append(f"{timestamp} | SKIPPED | {num} | {message}")
-
-    for num in result.get("failed_numbers", []):
-        lines.append(f"{timestamp} | FAILED | {num} | {message}")
-
-    with open("wedding_sms_log.txt", "a", encoding="utf-8") as f:
-        for line in lines:
-            f.write(line + "\n")
-
-
-def normalize_name_for_lookup(name: str) -> str:
-    """
-    Normalize a client name for accent-insensitive lookup.
-    - Keeps original spelling intact in DB/UI
-    - Strips diacritics for search keys
-    - Lowercases and removes spaces
-    """
-    if not name:
-        return ""
-    # Normalize to NFKD form (decompose accents)
-    nfkd = unicodedata.normalize("NFKD", name)
-    # Strip combining marks (accents/diacritics)
-    stripped = "".join(c for c in nfkd if not unicodedata.combining(c))
-    # Lowercase and remove spaces for consistent lookup
-    return stripped.lower().replace(" ", "")
-
-
-def log_admin_action(action, user="system"):
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_date = datetime.now().strftime("%Y-%m-%d")
-    log_path = os.path.join(LOG_ROOT, f"admin_actions_{log_date}.log")
-
-
-
-    try:
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{ts}] by {user} | {action}\n")
-    except Exception as e:
-        print(f"Admin log write failed: {e}")
-
-
-def find_matching_clients(name):
-    cleaned = name.strip().lower()
-    return Clients.query.filter(
-        db.func.lower(Clients.name) == cleaned
-    ).all()
-
-# ---------------------------------------------------------
-# HELPERS (NO INDENT)
-# ---------------------------------------------------------
-
-def handle_existing_client(data):
-    client_id = data.get("existing_client_id")
-    lessons = data.get("lessons", [])
-
-    if not client_id:
-        return jsonify(success=False, error="No client selected")
-
-    try:
-        for l in lessons:
-            lesson = Lesson(
-                lesson_date = l.get("date"),
-                time_frame  = l.get("time"),
-                lesson_type = l.get("type"),
-                group_priv  = l.get("grouppriv"),
-                price_pl    = l.get("price"),
-                client_id   = client_id,
-                client      = "",
-                horse       = "",
-                attendance  = "Pending",
-                payment     = None
-            )
-            db.session.add(lesson)
-
-        db.session.commit()
-        return jsonify(success=True)
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify(success=False, error=str(e))
-
-
-def handle_new_client(data):
-    name   = data.get("new_client_name")
-    mobile = data.get("mobile")
-    lessons = data.get("lessons", [])
-
-    if not name:
-        return jsonify(success=False, error="Client name required")
-
-    try:
-        client = Client(
-            full_name = name,
-            mobile    = mobile,
-            notes     = "Created via booking panel"
-        )
-        db.session.add(client)
-        db.session.flush()
-
-        for l in lessons:
-            lesson = Lesson(
-                lesson_date = l.get("date"),
-                time_frame  = l.get("time"),
-                lesson_type = l.get("type"),
-                group_priv  = l.get("grouppriv"),
-                price_pl    = l.get("price"),
-                client_id   = client.client_id,
-                client      = name,
-                horse       = "",
-                attendance  = "Pending",
-                payment     = None
-            )
-            db.session.add(lesson)
-
-        db.session.commit()
-        return jsonify(success=True)
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify(success=False, error=str(e))
-
-
-def generate_unique_client_name(base_name):
-    cleaned = base_name.strip()
-
-    existing = Clients.query.filter(
-        Clients.name.ilike(f"{cleaned}%")
-    ).all()
-
-    if not existing:
-        return cleaned
-
-    suffix = 2
-    while True:
-        candidate = f"{cleaned} ({suffix})"
-        if not any(c.name == candidate for c in existing):
-            return candidate
-        suffix += 1
-
-def clean_name(s):
-    if not s:
-        return ""
-    # Collapse multiple spaces, strip ends, title case
-    return " ".join(s.strip().split()).title()
-
-def clean_mobile(s):
-    if not s:
-        return ""
-    return s.replace(" ", "").strip()
-
-def extract_number(value):
-    """
-    Extracts digits from a string like '63kg' or '178 cm' and returns an int.
-    Returns None if no digits found.
-    """
-    if not value:
-        return None
-    digits = ''.join(ch for ch in str(value) if ch.isdigit())
-    return int(digits) if digits else None
-
-def normalise_full_name(name: str) -> str:
-    if not name:
-        return ""
-
-    import unicodedata
-    import re
-
-    # Strip accents
-    name = unicodedata.normalize("NFKD", name)
-    name = "".join(c for c in name if not unicodedata.combining(c))
-
-    # Replace weird spaces
-    name = name.replace("\xa0", " ")
-
-    # Trim + collapse spaces
-    name = " ".join(name.strip().split())
-
-    # Split into parts (handles multi‑word names)
-    parts = name.split()
-
-    def fix_part(part):
-        # Handle O', D', L', etc.
-        if re.match(r"^[A-Za-z]'", part):
-            return part[0].upper() + "'" + part[2:].capitalize()
-
-        # Handle Mc / Mac prefixes
-        if part.lower().startswith("mc") and len(part) > 2:
-            return "Mc" + part[2:].capitalize()
-
-        if part.lower().startswith("mac") and len(part) > 3:
-            return "Mac" + part[3:].capitalize()
-
-        # Handle hyphenated names (Smith-Jones)
-        if "-" in part:
-            return "-".join(p.capitalize() for p in part.split("-"))
-
-        # Default proper case
-        return part.capitalize()
-
-    # Apply rules to each part
-    cleaned = " ".join(fix_part(p) for p in parts)
-
-    return cleaned
-
-def levenshtein(a, b):
-    # Simple pure‑Python Levenshtein distance
-    if a == b:
-        return 0
-    if len(a) < len(b):
-        return levenshtein(b, a)
-    if len(b) == 0:
-        return len(a)
-
-    previous_row = range(len(b) + 1)
-    for i, c1 in enumerate(a):
-        current_row = [i + 1]
-        for j, c2 in enumerate(b):
-            insertions = previous_row[j + 1] + 1
-            deletions = current_row[j] + 1
-            substitutions = previous_row[j] + (c1 != c2)
-            current_row.append(min(insertions, deletions, substitutions))
-        previous_row = current_row
-
-    return previous_row[-1]
-
-
-
-
-
-# ------------------------------
-# DISCLAIMER FORM FIELD MAP
-# ------------------------------
-HEIGHT_FIELDS = ["8", "14", "21", "28", "35", "39"]
-WEIGHT_FIELDS = ["9", "15", "22", "29", "37", "38"]
-NOTES_FIELDS  = ["11", "17", "25", "32", "60", "61"]
-
-# ------------------------------
-# INVITE FORM FIELD MAP
-# ------------------------------
-INVITE_FULLNAME_FIELDS = ["43", "46", "49", "52", "55", "58", "61", "64", "67", "70"]
-INVITE_HEIGHT_FIELDS   = ["44", "47", "50", "53", "56", "59", "62", "65", "68", "71"]
-INVITE_WEIGHT_FIELDS   = ["45", "48", "51", "54", "57", "60", "63", "66", "69", "72"]
-INVITE_NOTES_FIELDS    = []   # none in this form
-
-
-
-def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None, mode="full"):
-    """
-    mode:
-      - "light": parse names/fields only. NO DB client load. NO matching.
-      - "full": full matching behaviour (may use clients_cache or DB load).
-    clients_cache:
-      - Optional preloaded list of Client rows (or tuples) to avoid repeated DB scans.
-    """
-    import json
-    import unicodedata
-    from sqlalchemy.util._collections import immutabledict
-
-    # Ensure payload is a real dict
-    if isinstance(payload, immutabledict):
-        payload = dict(payload)
-    if not isinstance(payload, dict):
-        try:
-            payload = json.loads(payload)
-        except Exception:
-            print("ERROR: Could not decode payload:", type(payload))
-            return []
-
-    # Submission ID
-    if forced_submission_id:
-        submission_id = str(forced_submission_id)
-    else:
-        submission_id = str(
-            payload.get("id")
-            or payload.get("submission_id")
-            or payload.get("form_id")
-            or ""
-        )
-
-    answers = payload.get("answers", {}) or {}
-
-    # ---- Email autodetect ----
-    email = ""
-    for key, item in answers.items():
-        if item.get("type") == "control_email":
-            ans = item.get("answer")
-            if isinstance(ans, dict):
-                email = ans.get("value") or ans.get("text") or ans.get("full") or ""
-            else:
-                email = ans or ""
-            break
-
-    if not email:
-        for key, item in answers.items():
-            if item.get("name", "").lower() == "email":
-                ans = item.get("answer")
-                if isinstance(ans, dict):
-                    email = ans.get("value") or ans.get("text") or ans.get("full") or ""
-                else:
-                    email = ans or ""
-                break
-
-    email = email or ""
-
-    # Detect form type
-    form_id = str(payload.get("form_id") or "")
-    is_invite_form = form_id == "253599154628066"
-
-    # Invite token extraction
-    invite_token = None
-    field3 = answers.get("3")
-    if field3:
-        ans = field3.get("answer")
-        if isinstance(ans, dict):
-            invite_token = ans.get("text") or ans.get("value") or ans.get("full")
-        else:
-            invite_token = ans
-
-    if not invite_token:
-        for f in answers.values():
-            if f.get("name") == "i_t":
-                ans = f.get("answer")
-                if isinstance(ans, dict):
-                    invite_token = ans.get("text") or ans.get("value") or ans.get("full")
-                else:
-                    invite_token = ans
-                break
-
-    if not invite_token:
-        direct = answers.get("i_t")
-        if direct:
-            ans = direct.get("answer")
-            if isinstance(ans, dict):
-                invite_token = ans.get("text") or ans.get("value") or ans.get("full")
-            else:
-                invite_token = ans
-
-    invite_token = invite_token or ""
-
-    # Age field detection
-    age_fields = [
-        key for key, item in answers.items()
-        if item.get("type") in ("control_number", "control_dropdown")
-        and "age" in item.get("text", "").lower()
-    ]
-    age_fields = sorted(age_fields, key=lambda x: int(x))
-
-    # Global fields
-    guardian = answers.get("86", {}).get("answer", "") or ""
-    mobile = answers.get("87", {}).get("answer", {}).get("full", "") or ""
-    email_fallback = answers.get("47", {}).get("answer", "") or ""
-    disclaimer = answers.get("63", {}).get("answer", None)
-    if email_fallback and not email:
-        email = email_fallback
-
-    def normalize_name(s):
-        if not s:
-            return ""
-        s = unicodedata.normalize("NFKD", s)
-        s = "".join(c for c in s if not unicodedata.combining(c))
-        s = s.replace("\xa0", " ")
-        return " ".join(s.strip().lower().split())
-
-    # Detect rider fullname fields
-    if is_invite_form:
-        fullname_fields = INVITE_FULLNAME_FIELDS
-    else:
-        fullname_fields = [
-            key for key, item in answers.items()
-            if item.get("type") == "control_fullname"
-            and item.get("text", "").lower().startswith("rider")
-        ]
-        fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
-
-    riders = []
-
-    # Matching mode
-    do_matching = (mode == "full")
-
-    # ---------------------------------------------------------
-    # CLIENT CACHE LOADING — FIXED (NO FULL TABLE SCAN)
-    # ---------------------------------------------------------
-    client_cache = None
-    exact_lookup = None
-
-    if do_matching:
-        # If caller did NOT provide a cache, we DO NOT load all clients.
-        # We only load clients when we have a rider name.
-        client_cache = []
-        exact_lookup = {}
-
-    # ---------------------------------------------------------
-    # MAIN RIDER LOOP
-    # ---------------------------------------------------------
-    for idx, fullname_key in enumerate(fullname_fields):
-        item = answers.get(fullname_key)
-        if not item:
-            continue
-
-        pretty = item.get("prettyFormat")
-        if pretty:
-            raw_name = pretty
-        else:
-            first = (item.get("answer", {}) or {}).get("first", "")
-            last = (item.get("answer", {}) or {}).get("last", "")
-            raw_name = f"{first} {last}"
-
-        name_norm = normalize_name(raw_name)
-        if not name_norm:
-            continue
-
-        # Age
-        age_key = age_fields[idx] if idx < len(age_fields) else None
-        age = answers.get(age_key, {}).get("answer") if age_key else None
-
-        rider = {
-            "name": name_norm,
-            "age": age,
-            "guardian": guardian,
-            "mobile": mobile,
-            "email": email,
-            "disclaimer": disclaimer,
-            "matches": [],
-            "jotform_submission_id": submission_id,
-            "invite_token": invite_token
-        }
-
-        # Height/weight/notes
-        if is_invite_form:
-            if idx < len(INVITE_HEIGHT_FIELDS):
-                height_field = INVITE_HEIGHT_FIELDS[idx]
-                weight_field = INVITE_WEIGHT_FIELDS[idx]
-                notes_field = INVITE_NOTES_FIELDS[idx] if idx < len(INVITE_NOTES_FIELDS) else None
-            else:
-                height_field = weight_field = notes_field = None
-        else:
-            if idx < len(HEIGHT_FIELDS):
-                height_field = HEIGHT_FIELDS[idx]
-                weight_field = WEIGHT_FIELDS[idx]
-                notes_field = NOTES_FIELDS[idx]
-            else:
-                height_field = weight_field = notes_field = None
-
-        height_val = answers.get(height_field, {}).get("answer") if height_field else None
-        weight_val = answers.get(weight_field, {}).get("answer") if weight_field else None
-        notes_val = answers.get(notes_field, {}).get("answer") if notes_field else None
-
-        rider["height_cm"] = extract_number(height_val)
-        rider["weight_kg"] = extract_number(weight_val)
-        rider["notes"] = notes_val or ""
-
-        # ---------------------------------------------------------
-        # MATCHING — FIXED (NO FULL TABLE SCAN)
-        # ---------------------------------------------------------
-        if do_matching:
-            # Load only relevant clients ONCE per rider
-            if clients_cache is None:
-                compact = name_norm.replace(" ", "").replace("-", "")
-                like_pattern = f"%{compact}%"
-
-                clients_cache = db.session.query(
-                    Client.client_id,
-                    Client.full_name,
-                    Client.mobile,
-                    Client.email_primary,
-                    Client.jotform_submission_id
-                ).filter(
-                    Client.full_name.isnot(None),
-                    func.replace(
-                        func.replace(func.lower(Client.full_name), " ", ""),
-                        "-", ""
-                    ).like(like_pattern)
-                ).all()
-
-            # Build lookup
-            client_cache = []
-            for c in clients_cache:
-                full_name = getattr(c, "full_name", None)
-                if not full_name:
-                    continue
-                norm = normalize_name(full_name)
-                client_cache.append((c, norm, getattr(c, "jotform_submission_id", None)))
-
-            exact_lookup = {norm: c for c, norm, _ in client_cache}
-
-            # Exact match only
-            matched_client = exact_lookup.get(name_norm)
-            if matched_client:
-                guardian_norm = normalize_name(guardian)
-                if guardian_norm and normalize_name(matched_client.full_name) == guardian_norm:
-                    pass
-                elif matched_client.jotform_submission_id != submission_id:
-                    rider["matches"].append(matched_client)
-
-        riders.append(rider)
-
-    return riders
-
-
-
 def create_app():
     print(">>> JOTFORM KEY IN APP:", os.getenv("JOTFORM_API_KEY"))
     app = Flask(__name__)
@@ -739,6 +21,45 @@ def create_app():
     db.init_app(app)
 
     # print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())  # <-- remove or wrap
+
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        from werkzeug.security import check_password_hash
+        from flask import session
+
+        if request.method == "POST":
+            username = request.form.get("username", "").strip()
+            password = request.form.get("password", "").strip()
+
+            user = Users.query.filter_by(username=username, active=True).first()
+
+            if user and check_password_hash(user.password_hash, password):
+                session["user_id"] = user.user_id
+                session["username"] = user.username
+                return redirect(url_for("lessons_by_date"))
+
+            return render_template("login.html", error="Invalid username or password")
+
+        return render_template("login.html")
+
+    @app.route("/admin_create_user/<username>/<password>/<role>")
+    @login_required
+    @role_required("admin")
+    def admin_create_user(username, password, role):
+        from werkzeug.security import generate_password_hash
+
+        existing = Users.query.filter_by(username=username).first()
+        if existing:
+            return f"User '{username}' already exists"
+
+        pw_hash = generate_password_hash(password)
+        user = Users(username=username, password_hash=pw_hash, active=True, role=role)
+        db.session.add(user)
+        db.session.commit()
+
+        return f"User '{username}' created with role '{role}'"
+
 
     @app.route("/health")
     def health():
@@ -960,46 +281,6 @@ def create_app():
         invite.status = "completed"
         sub.processed = True
         db.session.commit()
-
-
-    @app.route("/login", methods=["GET", "POST"])
-    def login():
-        if request.method == "POST":
-            username = request.form.get("username", "").strip()
-            password = request.form.get("password", "").strip()
-
-            user = Users.query.filter_by(username=username, active=True).first()
-            if user and check_password_hash(user.password_hash, password):
-                session["user_id"] = user.user_id
-                session["username"] = user.username
-                return redirect(url_for("index"))
-
-            return render_template("login.html", error="Invalid username or password")
-
-        return render_template("login.html")
-
-
-    @app.route("/logout")
-    def logout():
-        session.clear()
-        return redirect(url_for("login"))
-
-
-    @app.route("/admin_create_user/<username>/<password>/<role>")
-    @login_required
-    @role_required("admin")
-    def admin_create_user(username, password, role):
-        existing = Users.query.filter_by(username=username).first()
-        if existing:
-            return f"User '{username}' already exists"
-
-        pw_hash = generate_password_hash(password)
-        user = Users(username=username, password_hash=pw_hash, active=True, role=role)
-        db.session.add(user)
-        db.session.commit()
-
-        return f"User '{username}' created with role '{role}'"
-
 
 
     @app.post("/recalculate_all")
@@ -1414,9 +695,9 @@ def create_app():
 
 
     @app.route('/')
+    @login_required
     def index():
         return render_template('index.html')
-
 
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
     def lessons_by_date():
@@ -2441,15 +1722,13 @@ def create_app():
 
         inserted = 0
 
-        # NEW: get newest stored submission by timestamp (correct)
+        # NEW: get newest stored submission for this form
         latest = (
             db.session.query(IncomingSubmission)
             .filter(IncomingSubmission.form_id == FORM_ID)
             .order_by(IncomingSubmission.received_at.desc())
             .first()
         )
-
-        latest_ts = latest.received_at if latest else None
 
         for sub in submissions:
             submission_id = str(sub.get("id"))
@@ -2466,14 +1745,14 @@ def create_app():
             if existing_row:
                 continue
 
-            # NEW: timestamp-based filtering (bulletproof)
-            submission_created = sub.get("created_at") or sub.get("updated_at")
+            # NEW: ID-based filtering (bulletproof)
             try:
-                submission_dt = datetime.utcfromtimestamp(int(submission_created))
+                sub_id_int = int(submission_id)
             except Exception:
-                submission_dt = datetime.utcnow()
+                sub_id_int = None
 
-            if latest_ts and submission_dt <= latest_ts:
+            # Skip if older than newest stored submission
+            if latest and latest.jotform_id and sub_id_int and sub_id_int <= int(latest.jotform_id):
                 continue
 
             # Insert new submission
@@ -2482,8 +1761,9 @@ def create_app():
                 raw_payload=json.dumps(sub),
                 processed=False,
                 unique_hash=payload_hash,
-                received_at=submission_dt,
-                jotform_id=submission_id
+                received_at=datetime.utcnow(),
+                jotform_id=submission_id      # ⭐ ADD THIS
+ 
             )
             db.session.add(row)
             inserted += 1
@@ -3008,10 +2288,12 @@ def create_app():
         import requests
         import json
         from datetime import datetime
+        from sqlalchemy import func
 
         INVITE_FORM_ID = "253599154628066"
         API_KEY = os.getenv("JOTFORM_API_KEY", "")
 
+        # Pull ALL submissions from JotForm for this form
         url = f"https://api.jotform.com/form/{INVITE_FORM_ID}/submissions?apiKey={API_KEY}"
         r = requests.get(url)
         data = r.json()
@@ -3019,51 +2301,29 @@ def create_app():
         submissions = data.get("content", [])
         count = 0
 
-        # NEW: get newest stored submission by timestamp
-        latest = (
-            db.session.query(IncomingSubmission)
-            .filter(IncomingSubmission.form_id == INVITE_FORM_ID)
-            .order_by(IncomingSubmission.received_at.desc())
-            .first()
-        )
-        latest_ts = latest.received_at if latest else None
-
         for s in submissions:
-            submission_id = str(s.get("id"))
+            submission_id = s.get("id")  # UNIQUE PER SUBMISSION
             form_id = s.get("form_id")
 
-            # Compute stable hash
-            payload_str = json.dumps(s, sort_keys=True)
-            payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
-
-            # Skip if identical payload already stored
+            # Check if THIS EXACT submission is already stored
             existing = (
                 db.session.query(IncomingSubmission)
-                .filter(IncomingSubmission.unique_hash == payload_hash)
+                .filter(IncomingSubmission.submission_id == submission_id)
                 .first()
             )
             if existing:
                 continue
 
-            # NEW: timestamp-based filtering (correct)
-            created_ts = s.get("created_at") or s.get("updated_at")
-            try:
-                submission_dt = datetime.utcfromtimestamp(int(created_ts))
-            except Exception:
-                submission_dt = datetime.utcnow()
+            # Store raw payload
+            raw_payload = json.dumps(s)
 
-            if latest_ts and submission_dt <= latest_ts:
-                continue
-
-            # Insert new submission
             new_sub = IncomingSubmission(
-                submission_id=submission_id,
-                form_id=form_id,
-                raw_payload=json.dumps(s),
-                received_at=submission_dt,
+                submission_id=submission_id,   # <-- MUST EXIST IN MODEL
+                form_id=form_id,               # JotForm form ID (same for all)
+                raw_payload=raw_payload,
+                received_at=datetime.utcnow(),
                 processed=False,
-                needs_client_match=False,
-                unique_hash=payload_hash
+                needs_client_match=False
             )
 
             db.session.add(new_sub)
