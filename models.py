@@ -58,16 +58,34 @@ class IncomingSubmission(db.Model):
     __tablename__ = 'incoming_submissions'
 
     id = db.Column(db.Integer, primary_key=True)
-    submission_id = db.Column(db.String, unique=True)   # <-- ADD THIS
-    form_id = db.Column(db.String)
-    raw_payload = db.Column(db.JSON)
-    received_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # PRIMARY DEDUPE KEY (must always be set)
+    submission_id = db.Column(db.String, index=True, nullable=False)
+
+    # JotForm form ID
+    form_id = db.Column(db.String, nullable=False)
+
+    # Raw JSON payload
+    raw_payload = db.Column(db.JSON, nullable=False)
+
+    # REAL JotForm timestamp (created_at)
+    received_at = db.Column(db.DateTime, index=True, nullable=False)
+
+    # Processing flags
     processed = db.Column(db.Boolean, default=False)
     processed_at = db.Column(db.DateTime)
+
+    # Secondary dedupe
     unique_hash = db.Column(db.String(64), index=True)
-    ignored = db.Column(db.Boolean, default=False)
+
+    # Invite flow
     needs_client_match = db.Column(db.Boolean, default=False)
-    jotform_id = db.Column(db.String)
+
+    # Disclaimer flow
+    ignored = db.Column(db.Boolean, default=False)
+
+    # JotForm ID (same as submission_id)
+    jotform_id = db.Column(db.String, index=True)
 
 class TeacherTime(db.Model):
     __tablename__ = 'teacher_time'

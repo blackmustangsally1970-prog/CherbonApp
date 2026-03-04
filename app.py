@@ -2441,32 +2441,30 @@ def create_app():
 
         inserted = 0
 
-        # NEW: get newest stored submission by timestamp (correct)
         latest = (
             db.session.query(IncomingSubmission)
             .filter(IncomingSubmission.form_id == FORM_ID)
             .order_by(IncomingSubmission.received_at.desc())
             .first()
         )
-
         latest_ts = latest.received_at if latest else None
 
         for sub in submissions:
             submission_id = str(sub.get("id"))
             print("JOTFORM ID:", submission_id)
 
-            # Compute stable hash
-            payload_str = json.dumps(sub, sort_keys=True)
-            payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
-
-            # Skip if identical payload already stored
+            # PRIMARY DEDUPE: submission_id
             existing_row = db.session.query(IncomingSubmission).filter_by(
-                unique_hash=payload_hash
+                submission_id=submission_id
             ).first()
             if existing_row:
                 continue
 
-            # NEW: timestamp-based filtering (bulletproof)
+            # Compute hash (secondary dedupe only)
+            payload_str = json.dumps(sub, sort_keys=True)
+            payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
+
+            # Timestamp from JotForm
             submission_created = sub.get("created_at") or sub.get("updated_at")
             try:
                 submission_dt = datetime.utcfromtimestamp(int(submission_created))
@@ -2476,8 +2474,8 @@ def create_app():
             if latest_ts and submission_dt <= latest_ts:
                 continue
 
-            # Insert new submission
             row = IncomingSubmission(
+                submission_id=submission_id,
                 form_id=FORM_ID,
                 raw_payload=json.dumps(sub),
                 processed=False,
@@ -2492,6 +2490,7 @@ def create_app():
         print(f"Inserted {inserted} new submissions.")
 
         return redirect(url_for('notifications'))
+
 
 
 
@@ -3019,7 +3018,6 @@ def create_app():
         submissions = data.get("content", [])
         count = 0
 
-        # NEW: get newest stored submission by timestamp
         latest = (
             db.session.query(IncomingSubmission)
             .filter(IncomingSubmission.form_id == INVITE_FORM_ID)
@@ -3032,20 +3030,19 @@ def create_app():
             submission_id = str(s.get("id"))
             form_id = s.get("form_id")
 
-            # Compute stable hash
-            payload_str = json.dumps(s, sort_keys=True)
-            payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
-
-            # Skip if identical payload already stored
+            # PRIMARY DEDUPE: submission_id
             existing = (
                 db.session.query(IncomingSubmission)
-                .filter(IncomingSubmission.unique_hash == payload_hash)
+                .filter_by(submission_id=submission_id)
                 .first()
             )
             if existing:
                 continue
 
-            # NEW: timestamp-based filtering (correct)
+            # Compute hash (secondary dedupe only)
+            payload_str = json.dumps(s, sort_keys=True)
+            payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
+
             created_ts = s.get("created_at") or s.get("updated_at")
             try:
                 submission_dt = datetime.utcfromtimestamp(int(created_ts))
@@ -3055,7 +3052,6 @@ def create_app():
             if latest_ts and submission_dt <= latest_ts:
                 continue
 
-            # Insert new submission
             new_sub = IncomingSubmission(
                 submission_id=submission_id,
                 form_id=form_id,
@@ -3069,7 +3065,6 @@ def create_app():
             db.session.add(new_sub)
             db.session.commit()
 
-            # Attempt immediate invite match
             invite = match_submission_to_invite(new_sub)
             if invite:
                 invite.submission_id = new_sub.id
