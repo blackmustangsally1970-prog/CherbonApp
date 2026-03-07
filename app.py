@@ -2424,10 +2424,14 @@ def create_app():
     def fetch_jotform_submissions():
         import requests
         import json
-        from datetime import datetime
+        import hashlib
+        from datetime import datetime, timedelta
 
         API_KEY = os.getenv("JOTFORM_API_KEY", "")
-        FORM_ID = "211021514885045"
+        FORM_ID = "211021514885045"   # Disclaimer & Indemnity form
+
+        # DYNAMIC CUTOFF — ignore anything older than 1 month
+        CUTOFF = datetime.utcnow() - timedelta(days=30)
 
         url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
         response = requests.get(url)
@@ -2441,6 +2445,7 @@ def create_app():
 
         inserted = 0
 
+        # Find the latest disclaimer submission already in DB
         latest = (
             db.session.query(IncomingSubmission)
             .filter(IncomingSubmission.form_id == FORM_ID)
@@ -2471,9 +2476,15 @@ def create_app():
             except Exception:
                 submission_dt = datetime.utcnow()
 
+            # DYNAMIC CUTOFF — ignore anything older than 1 month
+            if submission_dt < CUTOFF:
+                continue
+
+            # Ignore anything older than the latest DB entry
             if latest_ts and submission_dt <= latest_ts:
                 continue
 
+            # Insert new submission
             row = IncomingSubmission(
                 submission_id=submission_id,
                 form_id=FORM_ID,
