@@ -154,6 +154,13 @@ class TeacherHorse(db.Model):
     horse1 = db.Column(db.String(100))
     horse2 = db.Column(db.String(100))
 
+class TeacherSlot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    lesson_date = db.Column(db.Date, nullable=False)
+    slot_number = db.Column(db.Integer, nullable=False)
+    teacher_name = db.Column(db.String(50))
+
+
 class Users(db.Model):
     __tablename__ = "users"
 
@@ -162,8 +169,6 @@ class Users(db.Model):
     password_hash = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, default=True)
     role = db.Column(db.String(20), default="management")
-
-
 
 
 class LessonBlockTag(db.Model):

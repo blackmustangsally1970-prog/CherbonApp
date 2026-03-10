@@ -282,15 +282,18 @@ th {
 }
 
 #teacher-print-block {
-  display: none;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
 }
+
 
 body.show-teachers #teacher-print-block {
   display: block !important;
+  visibility: visible;
+  height: auto;
+  overflow: visible;
 }
-
-
-
 
 .group-header {
   display: flex;
@@ -679,10 +682,30 @@ select.teacher-dropdown {
     box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
+.save-spinner {
+    margin-left: 6px;
+    border: 2px solid #fff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+
 
 
 
 </style>
+
+
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
@@ -691,6 +714,14 @@ select.teacher-dropdown {
 </head>
 
 <body>
+
+<div id="save-status"
+     style="position:fixed; top:10px; right:10px; z-index:99999;
+            font-weight:bold; font-size:14px; color:#0645AD;">
+</div>
+
+
+
 
 {% if session.pop('show_flash', None) %}
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -736,10 +767,14 @@ select.teacher-dropdown {
   <button type="submit" style="margin-left:12px;">View</button>
 <!-- <button type="submit" form="update-lessons-form" style="margin-left:8px;">Save</button> -->
 
-<button id="save-button" type="submit" class="save-btn" form="update-lessons-form">
+<button id="save-button" type="button" class="save-btn">
     Save
 </button>
-  <button type="button" id="print-page" style="margin-left:8px;">Print</button>
+
+<button type="button" id="print-page" style="margin-left:8px;">
+    Print
+</button>
+
 
 <button type="button" id="download-txt-btn" class="btn btn-primary" style="margin-left:8px;">
     Download TXT
@@ -765,7 +800,7 @@ select.teacher-dropdown {
 
 </form>
 
-<form method="POST" action="{{ url_for('update_lessons') }}" id="update-lessons-form">
+<form id="update-lessons-form">
   <input type="hidden" name="selected_date" value="{{ selected_date }}">
 
   <!-- Teacher dropdowns row -->
@@ -784,12 +819,21 @@ select.teacher-dropdown {
         <tr>
           {% for i in range(5) %}
           <td>
-            <select name="teacher_select_{{ i+1 }}" class="teacher-dropdown">
-              <option value=""></option>
-              {% for name in teacher_names %}
-                <option value="{{ name }}">{{ name }}</option>
-              {% endfor %}
-            </select>
+<select 
+    name="teacher_select_{{ i+1 }}" 
+    id="teacher_select_{{ i+1 }}" 
+    class="teacher-dropdown">
+
+  <option value=""></option>
+
+  {% set current = slot_map.get(i+1) %}
+  {% for name in teacher_names %}
+    <option value="{{ name }}" 
+            {% if name == current %}selected{% endif %}>
+        {{ name }}
+    </option>
+  {% endfor %}
+</select>
           </td>
           {% endfor %}
         </tr>
@@ -1119,9 +1163,9 @@ select.teacher-dropdown {
                 <tr>
                     <td>
                         <select id="booking_type" class="form-select">
-                            <option value="sms">SMS Invite</option>
-                            <option value="existing">Existing Client</option>
+                            <option value="existing" selected>Existing Client</option>
                             <option value="new">New Client</option>
+                            <option value="sms">SMS Invite</option>
                         </select>
                     </td>
 
@@ -1149,6 +1193,20 @@ select.teacher-dropdown {
                             {% endfor %}
                         </select>
                     </td>
+
+                    <td>
+                        <label class="form-label fw-bold">Recurrence</label>
+                    <select id="recurrence_type" class="form-select">
+                        <option value="S" selected>Single</option>
+                        <option value="W">Weekly</option>
+                        <option value="F">Fortnightly</option>
+                    </select>
+
+                        <div id="recurrence_options" class="mt-2" style="display:none;">
+                            <label class="form-label">Number of Occurrences</label>
+                            <input id="recurrence_count" type="number" class="form-control" min="1" max="52" value="1">
+                        </div>
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -1173,11 +1231,6 @@ select.teacher-dropdown {
                 Save Lessons
             </button>
         </div>
-
-<button type="button" class="submit-normal-booking-btn btn btn-primary">
-    Save Booking
-</button>
-
     </div>
 </div>
 
@@ -1251,8 +1304,17 @@ select.teacher-dropdown {
           </thead>
 <tbody>
 {% set rendered_clients = [] %}
-{% for lesson, client in lesson_group %}
+{% for pair in lesson_group %}
+    {% set lesson = pair[0] %}
+    {% set client = pair[1] %}
+
 <tr data-lesson-id="{{ lesson.lesson_id }}" data-time="{{ lesson.time_frame }}" data-att="{{ lesson.attendance or '' }}">
+    <input type="hidden" class="meta-group-priv" value="{{ lesson.group_priv }}">
+    <input type="hidden" class="meta-lesson-type" value="{{ lesson.lesson_type }}">
+    <input type="hidden" class="meta-freq" value="{{ lesson.freq }}">
+    <input type="hidden" class="meta-start" value="{{ lesson.time_frame.split(' - ')[0] }}">
+    <input type="hidden" class="meta-end" value="{{ lesson.time_frame.split(' - ')[1] }}">
+    <input type="hidden" class="meta-client-id" value="{{ client.client_id }}">
 
     <!-- Hidden fields for SMS Invite -->
     <input type="hidden" class="sms-rider-count" value="{{ lesson_group|length }}">
@@ -1328,30 +1390,30 @@ select.teacher-dropdown {
       </select>
     </td>
 
-    <td>
-      {% set pay_val = parse_money(lesson.payment) %}
-      {% set bal_val = lesson.balance or 0 %}
-      {% set price_val = parse_money(lesson.price_pl) %}
-      {% set show_red = ((price_val or 0) > (bal_val or 0) and not pay_val) %}
-      <input type="text"
-             name="payment_{{ lesson.lesson_id }}"
-             value="{% if pay_val and pay_val > 0.001 %}${{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
-             class="compact-money{% if show_red %} negative-balance{% endif %}"
-             autocomplete="off" inputmode="decimal"
-             oninput="recalculateBalance({{ lesson.lesson_id }})">
-    </td>
+<td>
+    {% set pay_val = parse_money(lesson.payment) %}
+    {% set bal_val = lesson.balance or 0 %}
+    {% set price_val = lesson.price_pl %}
+    {% set show_red = ((price_val or 0) > (bal_val or 0) and not pay_val) %}
+    <input type="text"
+           name="payment_{{ lesson.lesson_id }}"
+           value="{% if pay_val and pay_val > 0.001 %}${{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
+           class="compact-money{% if show_red %} negative-balance{% endif %}"
+           autocomplete="off" inputmode="decimal"
+           oninput="recalculateBalance({{ lesson.lesson_id }})">
+</td>
 
-    <td>
-      <input type="text"
-             name="price_pl_{{ lesson.lesson_id }}"
-             value="{{ '$%.2f'|format(lesson.price_pl or 0) }}"
-             class="compact-money"
-             oninput="recalculateBalance({{ lesson.lesson_id }})">
-    </td>
+<td>
+    <input type="text"
+           name="price_pl_{{ lesson.lesson_id }}"
+           value="{{ '%.2f' % lesson.price_pl if lesson.price_pl is not none else '' }}"
+           class="compact-money"
+           oninput="recalculateBalance({{ lesson.lesson_id }})">
+</td>
 
-    <td id="balance_display_{{ lesson.lesson_id }}">
-      {{ '$%.2f'|format(lesson.balance or 0) }}
-    </td>
+<td id="balance_display_{{ lesson.lesson_id }}">
+    {{ '$%.2f'|format(lesson.balance or 0) }}
+</td>
 
     <td>
     {% set cid = client.client_id if client else None %}
@@ -1425,34 +1487,6 @@ document.addEventListener('blur', function(e) {
   }
 }, true);
 </script>
-
-<script>
-// Close popup when clicking outside (but not when clicking inside popup, a slot, a row, or inside Select2)
-$(document).on('click', function (e) {
-  const $target = $(e.target);
-  const $popup = $target.closest('.lesson-popup');
-
-  const isInsideSelect2 =
-    $target.closest('.select2-container').length ||
-    $target.closest('.select2-dropdown').length;
-
-  const isSlotOrRow =
-    $target.closest('.teacher-slot').length ||
-    $target.closest('tr[data-lesson-id]').length;
-
-  // NEW: If click is inside popup OR allowed areas, do nothing
-  if ($popup.length || isInsideSelect2 || isSlotOrRow) {
-    return;
-  }
-
-  // Otherwise close all popups
-  $('.lesson-popup').each(function () {
-    this.style.removeProperty('display');
-    $(this).hide();
-  });
-});
-</script>
-
 
 
 
@@ -2060,96 +2094,6 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<script>
-function autoSaveLessonField(lessonId, fieldName, value) {
-  const payload = new FormData();
-  payload.append(`${fieldName}_${lessonId}`, value);
-
-  // Include selected_date if present
-  const selectedDateInput = document.querySelector('form#update-lessons-form input[name="selected_date"]');
-  if (selectedDateInput) {
-    payload.append('selected_date', selectedDateInput.value);
-  }
-
-
-
-  fetch('/update_lessons', {
-    method: 'POST',
-    body: payload,
-    keepalive: true  // ✅ allows background send during unload
-  }).then(res => {
-    if (!res.ok) console.warn(`Auto-save failed for ${fieldName}_${lessonId}`);
-  }).catch(err => {
-    console.error(`Auto-save error for ${fieldName}_${lessonId}:`, err);
-  });
-}
-
-// Attach listeners to all editable fields
-document.querySelectorAll('#update-lessons-form input, #update-lessons-form select').forEach(el => {
-  const match = (el.name || '').match(/^(horse|attendance|payment|price_pl|notes|bank_transfer)_(\d+)$/);
-  if (match) {
-    const field = match[1];
-    const lessonId = match[2];
-    el.addEventListener('change', () => {
-      const val = el.value;
-      autoSaveLessonField(lessonId, field, val);
-    });
-  }
-});
-</script>
-<script>
-window.addEventListener('beforeunload', function () {
-  const form = document.getElementById('update-lessons-form');
-  if (!form) return;
-
-  const payload = new FormData(form);
-  navigator.sendBeacon('/update_lessons', new URLSearchParams(payload));
-});
-</script>
-<script>
-const debounceMap = {};  // one timer per field
-
-function debouncedAutoSave(lessonId, fieldName, value) {
-  const key = `${fieldName}_${lessonId}`;
-  clearTimeout(debounceMap[key]);
-
-  debounceMap[key] = setTimeout(() => {
-    const payload = new FormData();
-    payload.append(key, value);
-
-    const selectedDateInput = document.querySelector('form#update-lessons-form input[name="selected_date"]');
-    if (selectedDateInput) {
-      payload.append('selected_date', selectedDateInput.value);
-    }
-
-    fetch('/update_lessons', {
-      method: 'POST',
-      body: payload,
-      keepalive: true
-    }).then(res => {
-      if (!res.ok) console.warn(`Debounced save failed for ${key}`);
-    }).catch(err => {
-      console.error(`Debounced save error for ${key}:`, err);
-    });
-  }, 600); // ✅ 600ms debounce window
-}
-
-document.querySelectorAll('#update-lessons-form input').forEach(el => {
-  const match = (el.name || '').match(/^(notes|payment|price_pl)_(\d+)$/);
-  if (match) {
-    const field = match[1];
-    const lessonId = match[2];
-    console.log(`Debounced save triggered for ${field}_${lessonId}:`, el.value);
-    el.addEventListener('input', () => {
-      debouncedAutoSave(lessonId, field, el.value);
-    });
-    el.addEventListener('change', () => {
-      debouncedAutoSave(lessonId, field, el.value);
-    });
-  }
-});
-
-</script>
 
 <script>
   
@@ -2170,60 +2114,6 @@ document.querySelectorAll('#update-lessons-form input').forEach(el => {
   });
 </script>
 
-<script>
-function placeHeadersUnderTeachers() {
-  function parseStartMinutesFromHeader(header) {
-    try {
-      const m = String(header || '').match(/(\d{1,2}:\d{2})/);
-      if (!m) return 0;
-      const [h, mm] = m[1].split(':').map(Number);
-      return h * 60 + mm;
-    } catch (e) { return 0; }
-  }
-
-  document.querySelectorAll('.lesson-block').forEach(block => {
-    const rawSaved   = (block.dataset.savedTags   || '').trim();
-    const rawDefault = (block.dataset.defaultTags || '').trim();
-
-    const effectiveTags = (
-        block.dataset.savedTags != null && block.dataset.savedTags.trim() !== ""
-          ? rawSaved
-          : rawDefault
-      )
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    // 🔴 Remove ALL anchors for this block before re‑adding
-    document.querySelectorAll(`.teacher-col-body a.teacher-slot[href="#${block.dataset.blockKey}"]`)
-      .forEach(a => a.remove());
-
-    // ✅ Add anchors only for current effective tags
-    effectiveTags.forEach(tag => {
-      const teacherIndex = parseInt(tag.replace('T',''), 10);
-      const body = document.querySelector(`#teacher_col_${teacherIndex} .teacher-col-body`);
-      if (body) {
-        const a = document.createElement('a');
-        a.className = 'lesson-header-token teacher-slot';
-        a.href = '#' + block.dataset.blockKey;
-        a.textContent = '📘 ' + (block.dataset.blockHeader || '');
-
-        const startMins = parseStartMinutesFromHeader(block.dataset.blockHeader);
-        let inserted = false;
-        body.querySelectorAll('a.teacher-slot').forEach(existing => {
-          const existingMins = parseStartMinutesFromHeader(existing.textContent);
-          if (!inserted && existingMins > startMins) {
-            body.insertBefore(a, existing);
-            inserted = true;
-          }
-        });
-        if (!inserted) body.appendChild(a);
-      }
-    });
-  });
-}
-
-</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -2256,6 +2146,11 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+
+
+
+
+
 <script>
 let teacherEditsMade = false;
 const saveBtn = document.getElementById('save-button');
@@ -2281,7 +2176,6 @@ document.addEventListener('change', function(e) {
     if (e.target.name && e.target.name.startsWith('teacher_tag_')) {
         teacherEditsMade = true;
         saveBtn.classList.add('glow');
-        savedMsg.classList.remove('show'); // hide old saved message
     }
 });
 
@@ -2393,241 +2287,10 @@ const applyState = function (showDetails) {
 });
 </script>
 
-<script>
-/* -----------------------------------------------------------
-   1) TIME-FRAME CANONICALISER (runs BEFORE submit)
------------------------------------------------------------ */
-(function () {
-
-  function addMinutesToTime(hhmm, minutes) {
-    try {
-      const [h, m] = hhmm.split(':').map(Number);
-      const d = new Date(2000,0,1,h,m);
-      d.setMinutes(d.getMinutes() + Number(minutes));
-      return String(d.getHours()).padStart(2,'0') + ":" +
-             String(d.getMinutes()).padStart(2,'0');
-    } catch (e) { return ""; }
-  }
-
-  $(document).on("click", ".submit-invite-btn", function () {
-
-const $popup = $(this).closest(".lesson-popup");
-if (!$popup.length) return;
-
-// ⭐ NEW FIX: If this is an EXISTING lesson popup,
-// and it already has a hidden end time BUT NO visible end selector,
-// then SKIP all time-canonicalisation logic.
-const hasHiddenEnd = $popup.find('input[name="end"]').length > 0;
-const hasVisibleEndSelect = $popup.find('select[name="end"]').length > 0;
-
-if (hasHiddenEnd && !hasVisibleEndSelect) {
-    return;   // ← This prevents the "required time" popup for existing lessons
-}
-
-    // Ensure hidden fields exist
-    ["invite_time_frame","invite_duration","invite_end"]
-      .forEach(n => {
-        if ($popup.find(`input[name="${n}"]`).length === 0)
-          $popup.append(`<input type="hidden" name="${n}" value="">`);
-      });
-
-    const startFull = $popup.find('input[name="start"]').val() || "";
-    const startOnly = (startFull.split(' ')[0] || "").trim();
-
-    const visibleEnd =
-      $popup.find('select[name="end"]').val() ||
-      $popup.find('select.popup-end-select').val() ||
-      $popup.find('select[name="end_time"]').val() ||
-      $popup.find('select.end-select').val() ||
-      "";
-
-    const visibleDuration =
-      $popup.find('select[name="duration"]').val() ||
-      $popup.find('select.duration-select').val() ||
-      $popup.find('.duration-select').val() ||
-      "";
-
-    const $inviteDuration = $popup.find('input[name="invite_duration"]');
-    const $inviteEnd      = $popup.find('input[name="invite_end"]');
-    const $inviteFrame    = $popup.find('input[name="invite_time_frame"]');
-
-    // CASE 1: explicit end time
-    if (visibleEnd) {
-      $inviteEnd.val(visibleEnd);
-
-      if (startOnly) {
-        const [sh, sm] = startOnly.split(':').map(Number);
-        const [eh, em] = visibleEnd.split(':').map(Number);
-        const dur = (eh*60+em) - (sh*60+sm);
-        $inviteDuration.val(String(Math.max(0,dur)));
-      }
-    }
-
-    // CASE 2: duration only
-    else if (visibleDuration) {
-      $inviteDuration.val(visibleDuration);
-      if (startOnly) {
-        const end = addMinutesToTime(startOnly, visibleDuration);
-        $inviteEnd.val(end);
-      }
-    }
-
-    // Build final time frame
-    const finalStart = startOnly;
-    const finalEnd   = $inviteEnd.val() || "";
-
-    if (finalStart && finalEnd)
-      $inviteFrame.val(`${finalStart} - ${finalEnd}`);
-    else if (!$inviteFrame.val())
-      $inviteFrame.val(startFull || finalStart);
-
-  });
-
-})();
-</script>
 
 
-<script>
-/* -----------------------------------------------------------
-   2) OPEN SMS INVITE PANEL
------------------------------------------------------------ */
-(function () {
-
-  $(document).on("click", ".send-invite-btn", function (e) {
-    e.preventDefault();
-
-    const $popup = $(this).closest(".lesson-popup");
-    if (!$popup.length) return;
-
-    const $inviteMode = $popup.find(".invite-mode");
-    $inviteMode.slideDown(150);
-
-    // Autofill riders/mobile/cost from lesson row if present
-    const blockKey = $popup.data("block-key");
-    const $row = blockKey
-      ? $(`.lesson-block[data-block-key="${blockKey}"] tbody tr[data-lesson-id]`).first()
-      : $();
-
-    if ($row.length) {
-      const riders = $row.find(".sms-rider-count").val() || "";
-      const mobile = $row.find(".sms-mobile").val() || "";
-      const cost   = $row.find(".sms-cost").val() || "";
-
-      if (riders) $popup.find(".invite-riders-field").val(riders);
-      if (mobile) $popup.find(".invite-mobile-field").val(mobile);
-      if (cost)   $popup.find(".invite-cost-field").val(cost);
-    }
-  });
-
-})();
-</script>
 
 
-<script>
-/* -----------------------------------------------------------
-   3) FINAL SUBMIT HANDLER — BUILDS CLEAN POST FORM
------------------------------------------------------------ */
-(function () {
-
-$(document).on("click", ".submit-invite-btn", function (e) {
-        e.preventDefault();
-
-        const $popup = $(this).closest(".lesson-popup");
-        const $submitBtn = $(this);
-
-        try {
-                const $form = $("<form>", {
-                        method: "POST",
-                        action: "/send_invite"
-                });
-
-                // 🔹 Capture lesson_type into invite_lesson_type
-                const ltVal = $popup.find("select[name='lesson_type']").val() || "";
-                if (ltVal) {
-                        $form.append(
-                                $("<input>", {
-                                        type: "hidden",
-                                        name: "invite_lesson_type"
-                                }).val(ltVal)
-                        );
-                }
-
-                // 🔹 Capture group_priv into invite_group_priv
-                const gpVal = $popup.find("select[name='group_priv']").val() || "";
-                if (gpVal) {
-                        $form.append(
-                                $("<input>", {
-                                        type: "hidden",
-                                        name: "invite_group_priv"
-                                }).val(gpVal)
-                        );
-                }
-
-                // Copy all invite_* fields
-                $popup.find("input[name^='invite_'], select[name^='invite_'], textarea[name^='invite_']")
-                        .each(function () {
-                                const name = $(this).attr("name");
-                                const val  = $(this).val() || "";
-                                $form.append($("<input>", { type:"hidden", name }).val(val));
-                        });
-
-                $submitBtn.prop("disabled", true);
-                $("body").append($form);
-                $form.submit();
-
-                setTimeout(() => {
-                        try { $form.remove(); } catch {}
-                        try { $submitBtn.prop("disabled", false); } catch {}
-                }, 1500);
-
-        } catch (err) {
-                console.error("submit-invite-btn error:", err);
-                try { $submitBtn.prop("disabled", false); } catch {}
-        }
-});
-
-})();
-</script>
-
-<script>
-// -----------------------------------------------------------
-// 4) CLIENT MODE LOGIC — SHOW/HIDE SMS + SWITCH FORM ACTION
-// -----------------------------------------------------------
-document.addEventListener('DOMContentLoaded', function () {
-
-    // Toggle SMS invite visibility based on client mode
-    document.querySelectorAll('input[name="client_mode"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            const form = this.closest('form');
-            const inviteMode = form.querySelector('.invite-mode');
-            const sendInviteBtn = form.querySelector('.send-invite-btn');
-
-            if (this.value === 'new') {
-                inviteMode.style.display = 'block';
-                sendInviteBtn.style.display = 'inline-block';
-            } else {
-                inviteMode.style.display = 'none';
-                sendInviteBtn.style.display = 'none';
-                form.action = "/new_lesson";   // reset to normal save
-            }
-        });
-    });
-
-document.querySelectorAll('.send-invite-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const form = this.closest('form');
-        const inviteMode = form.querySelector('.invite-mode');
-
-        // Show SMS invite panel
-        inviteMode.style.display = 'block';
-
-        // Switch form action but DO NOT submit yet
-        form.action = "/send_invite";
-    });
-});
-
-});
-</script>
 
 <script>
 // -----------------------------------------------------------
@@ -2711,47 +2374,6 @@ document.addEventListener("click", function (e) {
 
 <div id="client-history-tip" class="client-history-tip" aria-hidden="true"></div>
 
-<script>
-(function clientHistoryHover() {
-
-  const toggle = document.getElementById('toggle-horse-history');
-  const tip = document.getElementById('client-history-tip');
-
-  document.addEventListener('mouseover', function(e) {
-    if (!toggle || !toggle.checked) return;
-
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
-
-    const client = cell.dataset.client;
-    if (!client) return;
-
-    fetch(`/client_history/${encodeURIComponent(client)}`)
-      .then(r => r.json())
-      .then(list => {
-        tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
-
-        const rect = cell.getBoundingClientRect();
-        tip.style.top = (rect.bottom + window.scrollY + 4) + "px";
-        tip.style.left = (rect.left + window.scrollX) + "px";
-
-        tip.style.visibility = 'visible';
-        tip.style.opacity = '1';
-      });
-  });
-
-  document.addEventListener('mouseout', function(e) {
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
-
-    if (cell.contains(e.relatedTarget)) return;
-
-    tip.style.visibility = 'hidden';
-    tip.style.opacity = '0';
-  }, true);
-
-})();
-</script>
 
 <script>
 // ---------------------------------------------
@@ -2863,6 +2485,59 @@ document.getElementById("recalc-btn").addEventListener("click", async () => {
     }
 });
 </script>
+
+
+<script>
+function prefixMatcher(params, data) {
+    // If no search term, show all
+    if ($.trim(params.term) === '') {
+        return data;
+    }
+
+    if (typeof data.text === 'undefined') {
+        return null;
+    }
+
+    const term = params.term.toLowerCase();
+    const text = data.text.toLowerCase();
+
+    // ⭐ TRUE PREFIX MATCH
+    if (text.startsWith(term)) {
+        // MUST return a modified copy, not the original
+        return $.extend({}, data, true);
+    }
+
+    return null;
+}
+</script>
+
+<script>
+document.getElementById("download-txt-btn").addEventListener("click", function () {
+    const selectedDate = document.getElementById("date-picker").value;
+    const url = `/save_txt?selected_date=${selectedDate}`;
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = url;
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+});
+
+document.getElementById("download-xlsx-btn").addEventListener("click", function () {
+    const selectedDate = document.getElementById("date-picker").value;
+    const url = `/save_xlsx?selected_date=${selectedDate}`;
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = url;
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+});
+</script>
+
+
 <script>
 // ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
 document.addEventListener("DOMContentLoaded", () => {
@@ -2871,6 +2546,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnOpen      = document.getElementById("open-booking-panel");
     const lessonCount  = document.getElementById("top_lesson_count");
     const bookingType  = document.getElementById("booking_type");
+    bookingType.value = "existing";   // enforce default on load
     const mobile       = document.getElementById("top_mobile");
     const existing     = document.getElementById("top_existing_client");
     const newName      = document.getElementById("top_new_client_name");
@@ -2886,57 +2562,100 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-// ⭐ Generate lesson rows
-function generateRows() {
-    const count = parseInt(lessonCount.value || "0", 10);
-    rowsContainer.innerHTML = "";
+    // ⭐ Generate lesson rows (recurrence-aware)
+    function generateRows() {
+        const count = parseInt(lessonCount.value || "0", 10);
+        const recurrence = document.getElementById("recurrence_type")?.value || "none";
+        const repeats = parseInt(document.getElementById("recurrence_count")?.value || "1", 10);
 
+        rowsContainer.innerHTML = "";
+
+        // Base date from server
+        const baseDate = "{{ selected_date }}";
+
+        // Helpers
+        function addDays(dateStr, days) {
+            const d = new Date(dateStr);
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split("T")[0];
+        }
+
+        function addMonths(dateStr, months) {
+            const d = new Date(dateStr);
+            d.setMonth(d.getMonth() + months);
+            return d.toISOString().split("T")[0];
+        }
+
+        let dates = [];
+
+// ⭐ Single lesson (S)
+if (recurrence === "S") {
     for (let i = 0; i < count; i++) {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>
-                <input type="date" class="form-control date-field" value="{{ selected_date }}">
-            </td>
-            <td>
-                <select class="form-select time-field searchable-dropdown">
-                    <option value=""></option>
-                    {% for t in times %}
-                        <option value="{{ t }}">{{ t }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            <td>
-                <select class="form-select type-field">
-                    <option>Arena</option>
-                    <option>Roundyard</option>
-                    <option>Trail Ride</option>
-                    <option>Go Gallop</option>
-                    <option>Party</option>
-                </select>
-            </td>
-            <td>
-                <select class="form-select gp-field">
-                    {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
-                        <option>{{ opt }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            <td>
-                <input type="text" class="form-control price-field" placeholder="$0.00">
-            </td>
-            <td class="sms-only-cell" style="display:none;">
-                <select class="form-select riders-field">
-                    {% for i in range(1, 11) %}
-                        <option value="{{ i }}">{{ i }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-        `;
-        rowsContainer.appendChild(row);
+        dates.push(baseDate);
     }
-
-    updateSMSVisibility();
 }
+
+// ⭐ Weekly (W)
+if (recurrence === "W") {
+    for (let i = 0; i < repeats; i++) {
+        dates.push(addDays(baseDate, i * 7));
+    }
+}
+
+// ⭐ Fortnightly (F)
+if (recurrence === "F") {
+    for (let i = 0; i < repeats; i++) {
+        dates.push(addDays(baseDate, i * 14));
+    }
+}
+
+        // ⭐ Build rows
+        dates.forEach(dateVal => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>
+                    <input type="date" class="form-control date-field" value="${dateVal}">
+                </td>
+                <td>
+                    <select class="form-select time-field searchable-dropdown">
+                        <option value=""></option>
+                        {% for t in times %}
+                            <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select type-field">
+                        <option>Arena</option>
+                        <option>Roundyard</option>
+                        <option>Trail Ride</option>
+                        <option>Go Gallop</option>
+                        <option>Party</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select gp-field">
+                        {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                            <option>{{ opt }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control price-field" placeholder="$0.00">
+                </td>
+                <td class="sms-only-cell" style="display:none;">
+                    <select class="form-select riders-field">
+                        {% for i in range(1, 11) %}
+                            <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            `;
+            rowsContainer.appendChild(row);
+        });
+
+        updateSMSVisibility();
+    }
 
     // ⭐ SMS column visibility
     function updateSMSVisibility() {
@@ -2991,102 +2710,276 @@ function generateRows() {
         updateBookingFields();
         updateSMSVisibility();
     });
-    // ⭐ Handle Save Lessons for SMS mode
+
+    document.getElementById("recurrence_type").addEventListener("change", generateRows);
+    document.getElementById("recurrence_count").addEventListener("change", generateRows);
+
+    // ⭐ STEP 9 — Collect all lesson rows into a clean array
+    function collectLessonRows() {
+        const rows = [];
+        const trs = rowsContainer.querySelectorAll("tr");
+
+        trs.forEach(row => {
+            const date   = row.querySelector(".date-field")?.value?.trim() || "";
+            const time   = row.querySelector(".time-field")?.value?.trim() || "";
+            const type   = row.querySelector(".type-field")?.value?.trim() || "";
+            const gp     = row.querySelector(".gp-field")?.value?.trim() || "";
+            const price  = row.querySelector(".price-field")?.value?.trim() || "";
+            const riders = row.querySelector(".riders-field")?.value?.trim() || "1";
+
+            rows.push({
+                lesson_date: date,
+                time_frame:  time,
+                lesson_type: type,
+                group_priv:  gp,
+                price:       price,
+                riders:      riders
+            });
+        });
+
+        return rows;
+    }
+    // ⭐ Collect top-row booking info
+    function collectBookingInfo() {
+        return {
+            booking_type: bookingType.value,
+            mobile:       mobile.value.trim(),
+            client_id:    existing.value.trim(),
+            new_client_name: newName.value.trim()
+        };
+    }
+
+    // ⭐ Build unified booking payload
+    function buildUnifiedPayload(info, lessons) {
+        return {
+            booking_type: info.booking_type,
+            mobile: info.mobile,
+            client_id: info.client_id,
+            new_client_name: info.new_client_name,
+            lessons: lessons
+        };
+    }
+
+    // ⭐ Validate a date string (YYYY-MM-DD)
+    function isValidDate(dateStr) {
+        const d = new Date(dateStr);
+        return !isNaN(d.getTime()) && dateStr === d.toISOString().split("T")[0];
+    }
+
+    function hasDuplicateDates(lessons) {
+        const dates = lessons.map(l => l.lesson_date);
+        return new Set(dates).size !== dates.length;
+    }
+
+
+
+
+    // ⭐ Unified Save Handler (supports all booking types structurally)
     document.getElementById("save-lessons-btn").addEventListener("click", async () => {
 
-        const type = document.getElementById("booking_type").value;
-        if (type !== "sms") return;   // only handle SMS here
+        const info = collectBookingInfo();
+        const lessons = collectLessonRows();
 
-        const rows = document.querySelectorAll("#lesson-rows-container tr");
-        const mobile = document.getElementById("top_mobile").value.trim();
-
-        if (!mobile) {
-            alert("Mobile number is required for SMS invites.");
+        if (lessons.length === 0) {
+            alert("No lessons to save.");
             return;
         }
 
-        const btn = document.getElementById("save-lessons-btn");
-        btn.disabled = true;
-        btn.textContent = "Sending SMS Invites...";
+        // ⭐ Validate rows
+        for (const row of lessons) {
 
-        for (const row of rows) {
-
-            const date   = row.querySelector(".date-field")?.value;
-            const time   = row.querySelector(".time-field")?.value;
-            const type   = row.querySelector(".type-field")?.value;
-            const gp     = row.querySelector(".gp-field")?.value;
-            const price  = row.querySelector(".price-field")?.value;
-            const riders = row.querySelector(".riders-field")?.value || "1";
-
-            if (!date || !time) {
-                alert("Each SMS invite requires a date and time.");
-                btn.disabled = false;
-                btn.textContent = "Save Lessons";
+            if (!row.lesson_date || !row.time_frame) {
+                alert("Each lesson requires a date and time.");
                 return;
             }
 
-            const payload = new FormData();
-            payload.append("invite_date", date);
-            payload.append("invite_time_frame", time);
-            payload.append("invite_lesson_type", type);
-            payload.append("invite_group_priv", gp);
-            payload.append("invite_mobile", mobile);
-            payload.append("invite_riders", riders);
-            payload.append("invite_cost", price);
-            payload.append("invite_duration", "");
-            payload.append("invite_end", "");
-
-            await fetch("/send_invite", {
-                method: "POST",
-                body: payload
-            });
+            if (!isValidDate(row.lesson_date)) {
+                alert("One or more dates are invalid.");
+                return;
+            }
         }
 
-        btn.textContent = "Invites Sent!";
-        setTimeout(() => {
-            btn.disabled = false;
-            btn.textContent = "Save Lessons";
-        }, 1500);
+        // ⭐ EXISTING CLIENT MODE
+if (info.booking_type === "existing") {
+
+    if (!info.client_id) {
+        alert("Please select an existing client.");
+        return;
+    }
+
+    const freq = document.getElementById("recurrence_type").value;
+
+    for (const row of lessons) {
+        const form = new FormData();
+        form.append("date", row.lesson_date);
+
+        const [start, end] = row.time_frame.split("-").map(s => s.trim());
+        form.append("start", start);
+        form.append("end", end);
+
+        form.append("lesson_type", row.lesson_type);
+        form.append("group_priv", row.group_priv);
+        form.append("price_pl", row.price);
+        form.append("freq", freq);
+
+        form.append("client_mode", "existing");
+        form.append("client_id", info.client_id);
+        form.append("respect_blockouts", "yes");
+
+        await fetch("/new_lesson", {
+            method: "POST",
+            body: form
+        });
+    }
+
+    alert("Existing client booking saved!");
+    return;
+}
+
+
+        // ⭐ NEW CLIENT MODE
+if (info.booking_type === "new") {
+
+    if (!info.new_client_name) {
+        alert("Please enter the new client's name.");
+        return;
+    }
+
+    const freq = document.getElementById("recurrence_type").value;
+
+    for (const row of lessons) {
+        const form = new FormData();
+        form.append("date", row.lesson_date);
+
+        const [start, end] = row.time_frame.split("-").map(s => s.trim());
+        form.append("start", start);
+        form.append("end", end);
+
+        form.append("lesson_type", row.lesson_type);
+        form.append("group_priv", row.group_priv);
+        form.append("price_pl", row.price);
+        form.append("freq", freq);
+
+        form.append("client_mode", "new");
+        form.append("client_name", info.new_client_name);
+        form.append("client_phone", info.mobile);
+        form.append("respect_blockouts", "yes");
+
+        await fetch("/new_lesson", {
+            method: "POST",
+            body: form
+        });
+    }
+
+    alert("New client booking saved!");
+    return;
+}
+
+        // ⭐ SMS MODE (fully functional)
+        if (info.booking_type === "sms") {
+
+            if (!info.mobile) {
+                alert("Mobile number is required for SMS invites.");
+                return;
+            }
+
+            const btn = document.getElementById("save-lessons-btn");
+            btn.disabled = true;
+            btn.textContent = "Sending SMS Invites...";
+
+            for (const row of lessons) {
+                const payload = new FormData();
+                payload.append("lesson_date", row.lesson_date);
+                payload.append("time_frame", row.time_frame);
+                payload.append("lesson_type", row.lesson_type);
+                payload.append("group_priv", row.group_priv);
+                payload.append("mobile", info.mobile);
+                payload.append("riders", row.riders);
+                payload.append("price", row.price);
+
+                await fetch("/send_invite", {
+                    method: "POST",
+                    body: payload
+                });
+            }
+
+            btn.textContent = "Invites Sent!";
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = "Save Lessons";
+            }, 1500);
+
+            return;
+        }
+
     });
+
 });
 </script>
 
 <script>
-function updateBookingGrid() {
-    const type = document.getElementById("booking_type").value;
+document.getElementById("save-button").addEventListener("click", async () => {
 
-    const mobile   = document.getElementById("top_mobile");
-    const existing = document.getElementById("top_existing_client");
-    const newName  = document.getElementById("top_new_client_name");
+    const statusBox = document.getElementById("save-status");
+    statusBox.textContent = "Saving…";
 
-    // Reset all to disabled
-    mobile.disabled   = true;
-    existing.disabled = true;
-    newName.disabled  = true;
+    const rows = document.querySelectorAll("tr[data-lesson-id]");
+    const selectedDate = document.getElementById("date-picker").value;
 
-    // Enable based on booking type
-    if (type === "sms") {
-        mobile.disabled = false;
-    }
+    const payload = {
+        date: selectedDate,
+        lessons: []
+    };
 
-    if (type === "existing") {
-        existing.disabled = false;
-    }
+for (const row of rows) {
+    const lessonId = row.dataset.lessonId;
+    if (!lessonId) continue;
 
-    if (type === "new") {
-        newName.disabled  = false;
-        mobile.disabled   = false;   // new client requires mobile
-    }
+    const clientId = row.querySelector(".meta-client-id")?.value || "";
+
+    const notesField = clientId
+        ? row.querySelector(`input[name='notes_${clientId}']`)
+        : null;
+
+    const notesVal = notesField ? notesField.value : "";
+
+    payload.lessons.push({
+        lesson_id: lessonId,
+
+        horse: row.querySelector(`select[name='horse_${lessonId}']`)?.value || "",
+        attendance: row.querySelector(`select[name='attendance_${lessonId}']`)?.value || "",
+        payment: row.querySelector(`input[name='payment_${lessonId}']`)?.value || "",
+        price_pl: row.querySelector(`input[name='price_pl_${lessonId}']`)?.value || "",
+
+        notes: notesVal,
+
+        group_priv: row.querySelector(".meta-group-priv")?.value || "",
+        lesson_type: row.querySelector(".meta-lesson-type")?.value || "",
+        start: row.querySelector(".meta-start")?.value || "",
+        end: row.querySelector(".meta-end")?.value || ""
+    });
 }
 
-// Wire it up
-document.getElementById("booking_type").addEventListener("change", updateBookingGrid);
-window.addEventListener("load", updateBookingGrid);
+
+
+
+    await fetch("/save_all_lessons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    statusBox.textContent = "Saved!";
+
+    setTimeout(() => {
+        window.location = `/lessons_by_date?date=${selectedDate}`;
+    }, 400);
+});
 </script>
+
 
 <script>
 function prefixMatcher(params, data) {
-    // If no search term, show all
     if ($.trim(params.term) === '') {
         return data;
     }
@@ -3095,90 +2988,120 @@ function prefixMatcher(params, data) {
         return null;
     }
 
-    const term = params.term.toLowerCase();
-    const text = data.text.toLowerCase();
+    let term = params.term.toLowerCase();
+    let text = data.text.toLowerCase();
 
-    // ⭐ TRUE PREFIX MATCH
+    // Only match from the START of the string
     if (text.startsWith(term)) {
-        // MUST return a modified copy, not the original
-        return $.extend({}, data, true);
+        return data;
     }
 
     return null;
 }
-</script>
 
-<script>
-document.getElementById("download-txt-btn").addEventListener("click", function () {
-    const selectedDate = document.getElementById("date-picker").value;
-    const url = `/save_txt?selected_date=${selectedDate}`;
+function initSelect2() {
 
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = url;
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-});
+    /* ---------------------------------------------------------
+       1. NORMAL SELECT2 (client, horse, group_priv, etc.)
+       --------------------------------------------------------- */
+    $('.searchable-dropdown').select2({
+        width: '100%',
+        dropdownAutoWidth: true,
+        matcher: prefixMatcher
+    });
 
-document.getElementById("download-xlsx-btn").addEventListener("click", function () {
-    const selectedDate = document.getElementById("date-picker").value;
-    const url = `/save_xlsx?selected_date=${selectedDate}`;
+    /* ---------------------------------------------------------
+       2. TIME FIELDS — allow NEW times (tags mode)
+       --------------------------------------------------------- */
+    $('.time-field').select2({
+        tags: true,
+        width: '100%',
+        dropdownAutoWidth: true,
+        matcher: prefixMatcher,
 
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = url;
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-});
-</script>
+        createTag: function(params) {
+            let v = params.term.trim();
+            let re = /^([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)$/;
+            if (!re.test(v)) return null;
 
-<script>
-$(document).on("click", ".save-lesson-btn", function (e) {
-    e.preventDefault();
-    console.log("SAVE CLICKED (teacher block)");
+            let [start, end] = v.split('-').map(s => s.trim());
+            if (end <= start) return null;
 
-    const $popup = $(this).closest(".lesson-popup");
-
-    const payload = {
-        booking_type: "existing",
-
-        client_id: $popup.find("select[name='client_id']").val(),
-        horse: $popup.find("select[name='horse']").val(),
-
-        lesson_date: $popup.find("input[name='date']").val(),
-        time_frame: $popup.find("input[name='start']").val(),
-        end: $popup.find("select[name='end']").val(),
-
-        lesson_type: $popup.find("select[name='lesson_type']").val(),
-        group_priv: $popup.find("select[name='group_priv']").val(),
-        price_pl: $popup.find("input[name='price_pl']").val(),
-
-        freq: $popup.find("select[name='freq']").val(),
-        respect_blockouts: $popup.find("select[name='respect_blockouts']").val()
-    };
-
-    console.log("PAYLOAD:", payload);
-
-    fetch("/save_booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(resp => {
-        if (resp.success) {
-            window.location.reload();
-        } else {
-            alert("Booking failed: " + resp.error);
+            return { id: v, text: v, newTag: true };
         }
     });
+}
+
+/* ---------------------------------------------------------
+   Run on page load
+   --------------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", function() {
+    initSelect2();
 });
 
+/* ---------------------------------------------------------
+   Re-run whenever a popup/modal is opened
+   --------------------------------------------------------- */
+$(document).on('click', '.teacher-slot', function() {
+    setTimeout(initSelect2, 50);
+});
+
+$(document).on('click', '#open-booking-panel', function() {
+    setTimeout(initSelect2, 50);
+});
 </script>
 
-<!-- force git update -->
+<script>
+// START SPINNER when clicking Save inside booking popup
+$(document).on('click', '.save-lesson-btn', function () {
+    let btn = $(this);
+
+    btn.prop('disabled', true);
+    btn.addClass('saving');
+    btn.html('Saving… <span class="save-spinner"></span>');
+
+    $('#save-overlay').fadeIn(100);
+});
+
+// RESET SPINNER when popup closes
+$(document).on('click', '.popup-close', function () {
+    resetSaveLessonButton();
+});
+
+// UNIVERSAL RESET FUNCTION
+function resetSaveLessonButton() {
+    let btn = $('.save-lesson-btn');
+    btn.prop('disabled', false);
+    btn.removeClass('saving');
+    btn.text('Save');
+    $('#save-overlay').fadeOut(150);
+}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("save-lessons-btn");
+
+    btn.addEventListener("click", function () {
+
+        // VISUAL SIGN: change button state
+        btn.disabled = true;
+        btn.innerHTML = 'Saving… <span class="save-spinner"></span>';
+
+        // Reset after 1.5 seconds
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = 'Save Lessons';
+        }, 1500);
+    });
+});
+</script>
+
+
+
+
+</body>
+</html>
 
 
 </body>
