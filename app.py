@@ -8,7 +8,7 @@ from config import Config
 from extensions import db
 from collections import defaultdict
 from sqlalchemy import func, text
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from models import (
     Lesson, Time, Client, Horse, Teacher,
     LessonBlockTag, TeacherTime, TeacherHorse,
@@ -34,7 +34,6 @@ from flask import session
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import Users
 from functools import wraps
-
 
 
 
@@ -3048,6 +3047,31 @@ def create_app():
         db.session.commit()
 
         return redirect(url_for('process_all_pending'))
+
+
+    @app.route('/admin/cleanup_incoming_submissions')
+    def cleanup_incoming_submissions():
+        """
+        Deletes processed incoming submissions older than 40 days.
+        Safe to run — unprocessed submissions are never touched.
+        """
+        cutoff = datetime.utcnow() - timedelta(days=40)
+
+        old = (
+            db.session.query(IncomingSubmission)
+            .filter(
+                IncomingSubmission.processed == True,
+                IncomingSubmission.received_at < cutoff
+            )
+        )
+
+        count = old.count()
+        old.delete()
+        db.session.commit()
+
+        flash(f"Deleted {count} processed submissions older than 40 days.", "success")
+        return redirect(url_for('debug_page'))
+
 
 
     @app.route("/fetch_invite_submissions")

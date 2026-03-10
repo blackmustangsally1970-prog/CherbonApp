@@ -107,13 +107,9 @@
         <strong>40 days</strong>. Unprocessed submissions are always kept.
       </p>
 
-      <p style="color:#b00; font-weight:bold;">
-        ⚠ Cleanup is disabled until backend route is implemented.
-      </p>
-
-      <a class="button-disabled">
-        🧹 Delete Processed Submissions Older Than 40 Days
-      </a>
+<a href="{{ url_for('cleanup_incoming_submissions') }}" class="menu-btn">
+    🧹 Delete Processed Submissions Older Than 40 Days
+</a>
     </div>
 
   </main>
