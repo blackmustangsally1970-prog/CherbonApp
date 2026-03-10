@@ -34,7 +34,7 @@ from flask import session
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import Users
 from functools import wraps
-
+from zoneinfo import ZoneInfo
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1418,16 +1418,13 @@ def create_app():
     def lessons_by_date():
         selected_date, selected_date_str = parse_selected_date()
 
-        # If no date was provided, default to today
+        # If no date was provided, default to Brisbane "today"
         if not selected_date:
-                selected_date = date.today()
-                selected_date_str = selected_date.strftime('%Y-%m-%d')
-
-        weekday_int = date.today().weekday()
-        if not selected_date:
-            # fallback to today if parsing failed
-            selected_date = date.today()
+            selected_date = datetime.now(ZoneInfo("Australia/Brisbane")).date()
             selected_date_str = selected_date.strftime('%Y-%m-%d')
+
+        # Brisbane weekday
+        weekday_int = datetime.now(ZoneInfo("Australia/Brisbane")).weekday()
 
         # DEBUG: trace incoming date and DB sample for forensic inspection
         print("=== DEBUG lessons_by_date ENTRY ===")
@@ -2107,7 +2104,7 @@ def create_app():
         if not clean:
             return jsonify([])
 
-        today = date.today()
+        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
 
         rows = (
             db.session.query(Lesson)
