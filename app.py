@@ -2443,61 +2443,88 @@ def create_app():
         API_KEY = os.getenv("JOTFORM_API_KEY", "")
         FORM_ID = "211021514885045"   # Disclaimer & Indemnity form
 
-        # DYNAMIC CUTOFF — ignore anything older than 1 month
+        # ---------------------------------------------------------
+        # 1. DYNAMIC CUTOFF — ignore anything older than 30 days
+        # ---------------------------------------------------------
         CUTOFF = datetime.utcnow() - timedelta(days=30)
 
-        url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
-        response = requests.get(url)
-
-        if response.status_code != 200:
-            print("ERROR: JotForm API failed:", response.text)
-            return redirect(url_for('notifications'))
-
-        data = response.json()
-        submissions = data.get("content", [])
-
-        inserted = 0
-
-        # Find the latest disclaimer submission already in DB
-        latest = (
+        # ---------------------------------------------------------
+        # 2. CHECKPOINT — latest UNPROCESSED submission
+        # ---------------------------------------------------------
+        latest_unprocessed = (
             db.session.query(IncomingSubmission)
-            .filter(IncomingSubmission.form_id == FORM_ID)
+            .filter(
+                IncomingSubmission.form_id == FORM_ID,
+                IncomingSubmission.processed == False
+            )
             .order_by(IncomingSubmission.received_at.desc())
             .first()
         )
-        latest_ts = latest.received_at if latest else None
+        latest_ts = latest_unprocessed.received_at if latest_unprocessed else None
 
+        # ---------------------------------------------------------
+        # 3. PAGINATION — fetch ALL pages from JotForm
+        # ---------------------------------------------------------
+        submissions = []
+        offset = 0
+        limit = 1000  # JotForm max per page
+
+        while True:
+            url = (
+                f"https://api.jotform.com/form/{FORM_ID}/submissions"
+                f"?apiKey={API_KEY}&offset={offset}&limit={limit}"
+            )
+            r = requests.get(url)
+            if r.status_code != 200:
+                print("ERROR: JotForm API failed:", r.text)
+                break
+
+            page = r.json().get("content", [])
+            if not page:
+                break
+
+            submissions.extend(page)
+            offset += limit
+
+        print(f"Fetched {len(submissions)} submissions from JotForm.")
+
+        inserted = 0
+
+        # ---------------------------------------------------------
+        # 4. PROCESS EACH SUBMISSION
+        # ---------------------------------------------------------
         for sub in submissions:
             submission_id = str(sub.get("id"))
-            print("JOTFORM ID:", submission_id)
 
-            # PRIMARY DEDUPE: submission_id
-            existing_row = db.session.query(IncomingSubmission).filter_by(
-                submission_id=submission_id
-            ).first()
-            if existing_row:
+            # PRIMARY DEDUPE — submission_id
+            existing = (
+                db.session.query(IncomingSubmission)
+                .filter_by(submission_id=submission_id)
+                .first()
+            )
+            if existing:
                 continue
 
-            # Compute hash (secondary dedupe only)
+            # SECONDARY DEDUPE — hash of payload
             payload_str = json.dumps(sub, sort_keys=True)
             payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
 
-            # Timestamp from JotForm
+            # TIMESTAMP
             submission_created = sub.get("created_at") or sub.get("updated_at")
             try:
                 submission_dt = datetime.utcfromtimestamp(int(submission_created))
             except Exception:
                 submission_dt = datetime.utcnow()
 
-            # DYNAMIC CUTOFF — ignore anything older than 1 month
+            # CUTOFF
             if submission_dt < CUTOFF:
                 continue
 
-            # Ignore anything older than the latest DB entry
+            # CHECKPOINT — only compare against UNPROCESSED latest
             if latest_ts and submission_dt <= latest_ts:
                 continue
 
-            # Insert new submission
+            # INSERT NEW ROW
             row = IncomingSubmission(
                 submission_id=submission_id,
                 form_id=FORM_ID,
