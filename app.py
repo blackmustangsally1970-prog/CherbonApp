@@ -3993,7 +3993,7 @@ Cherbon Waters Admin
 
             day = datetime.strptime(selected_date, "%Y-%m-%d").date()
             today_str = day.strftime("%d-%m-%y")
-            filename = f"lesson_schedule_{today_str}"
+            filename = f"lesson_schedule_{today_str}.xlsx"
 
             # --- Pull all horses ---
             horses = [
@@ -4041,7 +4041,7 @@ Cherbon Waters Admin
             out_dir = "/home/schedule_exports"
             os.makedirs(out_dir, exist_ok=True)
 
-            excel_path = os.path.join(out_dir, f"{filename}.xlsx")
+            excel_path = os.path.join(out_dir, filename)
 
             # --- Excel Output ---
             from openpyxl import Workbook
