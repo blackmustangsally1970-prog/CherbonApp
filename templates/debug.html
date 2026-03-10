@@ -5,6 +5,7 @@
   <title>Debug & Admin Tools</title>
   <style>
     body { font-family: sans-serif; margin: 0; }
+
     /* Top link area */
     .top-nav {
       padding: 12px;
@@ -30,8 +31,31 @@
 
     main { padding: 12px; }
     .hidden-form { display: none; }
+
+    /* Admin cleanup block */
+    .admin-box {
+      margin-top: 25px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .admin-box h3 {
+      margin-top: 0;
+    }
+    .admin-box .button-disabled {
+      display: inline-block;
+      padding: 8px 14px;
+      background: #999;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+      pointer-events: none;
+      opacity: 0.55;
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Admin menu link at the very top -->
@@ -74,6 +98,24 @@
         Last recalculation: {{ last_log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
       </p>
     {% endif %}
+
+    <!-- NEW: Admin Cleanup Section -->
+    <div class="admin-box">
+      <h3>Cleanup: Incoming Submissions</h3>
+      <p>
+        This tool will remove <strong>processed</strong> incoming submissions older than
+        <strong>40 days</strong>. Unprocessed submissions are always kept.
+      </p>
+
+      <p style="color:#b00; font-weight:bold;">
+        ⚠ Cleanup is disabled until backend route is implemented.
+      </p>
+
+      <a class="button-disabled">
+        🧹 Delete Processed Submissions Older Than 40 Days
+      </a>
+    </div>
+
   </main>
 
   <script>
@@ -84,5 +126,6 @@
       }
     });
   </script>
+
 </body>
 </html>

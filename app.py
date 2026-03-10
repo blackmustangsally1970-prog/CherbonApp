@@ -2449,18 +2449,16 @@ def create_app():
         CUTOFF = datetime.utcnow() - timedelta(days=30)
 
         # ---------------------------------------------------------
-        # 2. CHECKPOINT — latest UNPROCESSED submission
+        # 2. CHECKPOINT — latest submission (ANY state)
+        #    This prevents re-importing processed ones.
         # ---------------------------------------------------------
-        latest_unprocessed = (
+        latest_any = (
             db.session.query(IncomingSubmission)
-            .filter(
-                IncomingSubmission.form_id == FORM_ID,
-                IncomingSubmission.processed == False
-            )
+            .filter(IncomingSubmission.form_id == FORM_ID)
             .order_by(IncomingSubmission.received_at.desc())
             .first()
         )
-        latest_ts = latest_unprocessed.received_at if latest_unprocessed else None
+        latest_ts = latest_any.received_at if latest_any else None
 
         # ---------------------------------------------------------
         # 3. PAGINATION — fetch ALL pages from JotForm
@@ -2520,7 +2518,7 @@ def create_app():
             if submission_dt < CUTOFF:
                 continue
 
-            # CHECKPOINT — only compare against UNPROCESSED latest
+            # CHECKPOINT — compare against latest ANY submission
             if latest_ts and submission_dt <= latest_ts:
                 continue
 
@@ -2541,7 +2539,6 @@ def create_app():
         print(f"Inserted {inserted} new submissions.")
 
         return redirect(url_for('notifications'))
-
 
 
 
