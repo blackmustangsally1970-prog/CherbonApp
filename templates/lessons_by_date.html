@@ -2358,6 +2358,8 @@ document.addEventListener("click", function (e) {
         tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
 
         const rect = cell.getBoundingClientRect();
+
+        // ⭐ Position tooltip to the RIGHT of the client cell
         tip.style.top = (rect.top + window.scrollY) + "px";
         tip.style.left = (rect.right + window.scrollX + 4) + "px";
 
@@ -2366,19 +2368,24 @@ document.addEventListener("click", function (e) {
       });
   });
 
-  // Hide when leaving the client cell
+  // Hide when leaving both the cell AND the tooltip
   document.addEventListener('mouseout', function(e) {
     const cell = e.target.closest('.client-cell');
     if (!cell) return;
 
+    // If moving into the tooltip, do NOT hide
+    if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
+
+    // If still inside the cell, do NOT hide
     if (cell.contains(e.relatedTarget)) return;
 
-    if (tip && tip.style) tip.style.visibility = 'hidden';
-    if (tip && tip.style) tip.style.opacity = '0';
+    tip.style.visibility = 'hidden';
+    tip.style.opacity = '0';
   }, true);
 
 })();
 </script>
+
 
 <script>
 // ---------------------------------------------
