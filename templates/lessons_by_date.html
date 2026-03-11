@@ -50,20 +50,6 @@
     font-weight: bold;
 }
 
-.client-history-tip {
-  position: absolute;
-  background: rgba(0,0,0,0.88);
-  color: #fff;
-  padding: 6px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  white-space: nowrap;
-  z-index: 2000;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .12s ease, visibility .12s ease;
-}
 
 
 /* Spinner */
@@ -700,7 +686,27 @@ select.teacher-dropdown {
 
 
 
+#client-history-tip {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 4px;
+  background: rgba(0,0,0,0.88);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 2000;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, visibility .12s ease;
+}
 
+.client-cell {
+    position: relative;
+}
 
 
 </style>
@@ -714,6 +720,8 @@ select.teacher-dropdown {
 </head>
 
 <body>
+
+<div id="client-history-tip" class="client-history-tip"></div>
 
 <div id="save-status"
      style="position:fixed; top:10px; right:10px; z-index:99999;
@@ -2295,7 +2303,7 @@ const applyState = function (showDetails) {
 <script>
 // -----------------------------------------------------------
 // REQUIRE VALID LESSON TIME + FORCE CORRECT FORM ACTION
-// -----------------------------------------------------------
+// -----------------------------------------------------------<body<
 document.addEventListener("click", function (e) {
 
     const isSave = e.target.classList.contains("save-lesson-btn");
@@ -2350,8 +2358,8 @@ document.addEventListener("click", function (e) {
         tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
 
         const rect = cell.getBoundingClientRect();
-        tip.style.top = (rect.bottom + window.scrollY + 4) + "px";
-        tip.style.left = (rect.left + window.scrollX) + "px";
+        tip.style.top = (rect.top + window.scrollY) + "px";
+        tip.style.left = (rect.right + window.scrollX + 4) + "px";
 
         tip.style.visibility = 'visible';
         tip.style.opacity = '1';
@@ -2371,9 +2379,6 @@ document.addEventListener("click", function (e) {
 
 })();
 </script>
-
-<div id="client-history-tip" class="client-history-tip" aria-hidden="true"></div>
-
 
 <script>
 // ---------------------------------------------
@@ -3098,10 +3103,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
-
-
-</body>
-</html>
 
 
 </body>
