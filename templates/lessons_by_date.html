@@ -792,9 +792,13 @@ select.teacher-dropdown {
     Download Excel
 </button>
 
+
+<!--
 <button type="button" id="recalc-btn" class="btn btn-warning" style="margin-left:8px;">
     Recalculate Balances
 </button>
+-->
+
 
 <button type="button"
         id="open-booking-panel"
@@ -2943,42 +2947,56 @@ document.getElementById("save-button").addEventListener("click", async () => {
         lessons: []
     };
 
-for (const row of rows) {
-    const lessonId = row.dataset.lessonId;
-    if (!lessonId) continue;
+    for (const row of rows) {
+        const lessonId = row.dataset.lessonId;
+        if (!lessonId) continue;
 
-    const clientId = row.querySelector(".meta-client-id")?.value || "";
+        const clientId = row.querySelector(".meta-client-id")?.value || "";
+        const notesField = clientId
+            ? row.querySelector(`input[name='notes_${clientId}']`)
+            : null;
 
-    const notesField = clientId
-        ? row.querySelector(`input[name='notes_${clientId}']`)
-        : null;
+        const notesVal = notesField ? notesField.value : "";
 
-    const notesVal = notesField ? notesField.value : "";
+        payload.lessons.push({
+            lesson_id: lessonId,
 
-    payload.lessons.push({
-        lesson_id: lessonId,
+            horse: row.querySelector(`select[name='horse_${lessonId}']`)?.value || "",
+            attendance: row.querySelector(`select[name='attendance_${lessonId}']`)?.value || "",
+            payment: row.querySelector(`input[name='payment_${lessonId}']`)?.value || "",
+            price_pl: row.querySelector(`input[name='price_pl_${lessonId}']`)?.value || "",
 
-        horse: row.querySelector(`select[name='horse_${lessonId}']`)?.value || "",
-        attendance: row.querySelector(`select[name='attendance_${lessonId}']`)?.value || "",
-        payment: row.querySelector(`input[name='payment_${lessonId}']`)?.value || "",
-        price_pl: row.querySelector(`input[name='price_pl_${lessonId}']`)?.value || "",
+            teacher: row.querySelector(`select[name='teacher_${lessonId}']`)?.value || "",
 
-        notes: notesVal,
+            notes: notesVal,
+            group_priv: row.querySelector(".meta-group-priv")?.value || "",
+            lesson_type: row.querySelector(".meta-lesson-type")?.value || "",
+            start: row.querySelector(".meta-start")?.value || "",
+            end: row.querySelector(".meta-end")?.value || ""
+        });
+    }
 
-        group_priv: row.querySelector(".meta-group-priv")?.value || "",
-        lesson_type: row.querySelector(".meta-lesson-type")?.value || "",
-        start: row.querySelector(".meta-start")?.value || "",
-        end: row.querySelector(".meta-end")?.value || ""
-    });
-}
-
-
-
-
+    // ⭐ Save lesson details
     await fetch("/save_all_lessons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
+    });
+
+    // ⭐ Save teacher slots (5-slot engine)
+    await fetch("/save_teacher_slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            date: selectedDate,
+            slots: {
+                1: document.querySelector("#teacher_select_1")?.value || "",
+                2: document.querySelector("#teacher_select_2")?.value || "",
+                3: document.querySelector("#teacher_select_3")?.value || "",
+                4: document.querySelector("#teacher_select_4")?.value || "",
+                5: document.querySelector("#teacher_select_5")?.value || ""
+            }
+        })
     });
 
     statusBox.textContent = "Saved!";
@@ -2988,6 +3006,8 @@ for (const row of rows) {
     }, 400);
 });
 </script>
+
+
 
 
 <script>

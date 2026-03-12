@@ -3479,19 +3479,17 @@ def create_app():
                     continue
 
                 # ----------------------------------------------------
-                # SANITIZE MONEY FIELDS (fixes $22.00, $0.00, "")
+                # SANITIZE MONEY FIELDS
                 # ----------------------------------------------------
                 payment_raw = (item.get("payment") or "").replace("$", "").strip()
                 price_raw   = (item.get("price_pl") or "").replace("$", "").strip()
 
-                # PAYMENT — SAFE UPDATE
                 if payment_raw not in ("", None, "None"):
                     try:
                         lesson.payment = float(payment_raw)
                     except ValueError:
-                        pass  # ignore invalid input
+                        pass
 
-                # PRICE_PL — SAFE UPDATE
                 if price_raw not in ("", None, "None"):
                     try:
                         lesson.price_pl = float(price_raw)
@@ -3499,13 +3497,11 @@ def create_app():
                         pass
 
                 # ----------------------------------------------------
-                # NORMAL FIELDS — SAFE UPDATE
+                # NORMAL FIELDS
                 # ----------------------------------------------------
                 horse_val = item.get("horse")
                 if horse_val not in ("", None, "None"):
-                    print("DEBUG HORSE BEFORE:", lesson.lesson_id, "incoming:", horse_val, "existing:", lesson.horse)
                     lesson.horse = horse_val
-                    print("DEBUG HORSE AFTER:", lesson.lesson_id, "incoming:", horse_val, "existing:", lesson.horse)
 
                 att_val = item.get("attendance")
                 if att_val not in ("", None, "None"):
@@ -3519,8 +3515,12 @@ def create_app():
                 if lt_val not in ("", None, "None"):
                     lesson.lesson_type = lt_val
 
+                teacher_val = item.get("teacher")
+                if teacher_val not in ("", None, "None"):
+                    lesson.teacher = teacher_val
+
                 # ----------------------------------------------------
-                # CLIENT NOTES — SAVE TO CLIENTS TABLE
+                # CLIENT NOTES
                 # ----------------------------------------------------
                 notes_val = item.get("notes")
                 if notes_val not in ("", None, "None"):
@@ -3529,17 +3529,15 @@ def create_app():
                         if client_obj:
                             client_obj.notes = notes_val
 
-                # Time fields — always update
+                # Always update times
                 lesson.start = item.get("start")
                 lesson.end = item.get("end")
 
                 # ----------------------------------------------------
                 # CARRY-FORWARD ENGINE (WEEKLY / FORTNIGHTLY)
                 # ----------------------------------------------------
-                print("DEBUG FREQ:", lesson.lesson_id, repr(lesson.freq))
                 if lesson.freq in ("W", "F") and lesson.horse not in ("", None, "None"):
 
-                    # Find all future lessons for this client
                     future_lessons = (
                         Lesson.query
                         .filter(
@@ -3550,22 +3548,29 @@ def create_app():
                         .all()
                     )
 
-                    # Weekly = every 7 days, Fortnightly = every 14 days
                     step = 7 if lesson.freq == "W" else 14
 
                     for fl in future_lessons:
                         delta = (fl.lesson_date - lesson.lesson_date).days
 
-                        # Only update lessons that match the recurrence interval
                         if delta % step == 0:
+                            # ⭐ PRESERVE ATTENDANCE — FIXES OVERWRITE BUG
+                            old_att = fl.attendance
                             fl.horse = lesson.horse
+                            fl.attendance = old_att
 
+            # --------------------------------------------------------
+            # RECALCULATE BALANCES AFTER SAVE
+            # --------------------------------------------------------
+            recalc_all_lessons()
             db.session.commit()
+
             return {"status": "ok"}
 
         except Exception as e:
             db.session.rollback()
             return {"status": "error", "message": str(e)}, 500
+
 
 
 
