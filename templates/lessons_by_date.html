@@ -815,7 +815,7 @@ select.teacher-dropdown {
 <form id="update-lessons-form">
   <input type="hidden" name="selected_date" value="{{ selected_date }}">
 
-  <!-- Teacher dropdowns row -->
+  <!--  dropdowns row -->
   <div id="teacher-print-block" style="margin: 12px 0; display: none;">
     <table class="teacher-table" style="width:95%; margin:0 auto; border-collapse:collapse; table-layout:fixed;">
       <thead>
@@ -2214,7 +2214,7 @@ document.addEventListener('submit', function(e) {
 document.addEventListener('DOMContentLoaded', function () {
 
   // -------------------------------
-  // HORSE TOOLTIP LOGIC
+  // HORSE TOOLTIP LOGIC (unchanged)
   // -------------------------------
   function setTooltipForElement($container, horseName) {
     const times = (window.horseSchedule && window.horseSchedule[horseName])
@@ -2244,7 +2244,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Apply tooltip wiring to existing horse cells
   if (window.jQuery) {
     $('.horse-cell').each(function () {
       const $c = $(this);
@@ -2265,16 +2264,16 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // -------------------------------
-  // TOGGLE "SHOW ALL LESSON DETAILS"
+  // RESTORED: SHOW ALL LESSONS BUTTON
   // -------------------------------
   const toggle = document.getElementById('toggle-all-lessons');
 
   if (toggle) {
-const applyState = function (showDetails) {
-  document.querySelectorAll('.lesson-block').forEach(function (block) {
-    block.classList.toggle('collapsed', !showDetails);
-  });
-};
+    const applyState = function (showDetails) {
+      document.querySelectorAll('.lesson-block').forEach(function (block) {
+        block.classList.toggle('collapsed', !showDetails);
+      });
+    };
 
     // Apply initial state
     applyState(toggle.checked);
@@ -2285,16 +2284,10 @@ const applyState = function (showDetails) {
     });
   }
 
-  // Allow clicking a header to toggle that single block
-  document.querySelectorAll('.group-header').forEach(function (header) {
-    header.style.cursor = 'pointer';
-    header.addEventListener('click', function () {
-      const block = header.closest('.lesson-block');
-      if (block) {
-        block.classList.toggle('collapsed');
-      }
-    });
-  });
+  // -------------------------------
+  // REMOVED: header click collapsing
+  // -------------------------------
+  // (intentionally left out)
 
 });
 </script>
@@ -2965,9 +2958,6 @@ document.getElementById("save-button").addEventListener("click", async () => {
             attendance: row.querySelector(`select[name='attendance_${lessonId}']`)?.value || "",
             payment: row.querySelector(`input[name='payment_${lessonId}']`)?.value || "",
             price_pl: row.querySelector(`input[name='price_pl_${lessonId}']`)?.value || "",
-
-            teacher: row.querySelector(`select[name='teacher_${lessonId}']`)?.value || "",
-
             notes: notesVal,
             group_priv: row.querySelector(".meta-group-priv")?.value || "",
             lesson_type: row.querySelector(".meta-lesson-type")?.value || "",
@@ -3130,6 +3120,40 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+{% block scripts %}
+<script>
+    window.addEventListener('load', function () {
+        document.querySelectorAll('.lesson-block input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', function () {
+
+                const blockDiv = this.closest('.lesson-block');
+                const blockKey = blockDiv.dataset.blockKey;
+                const date = "{{ selected_date_str }}";
+
+                const selected = Array.from(
+                    blockDiv.querySelectorAll('input[type="checkbox"]:checked')
+                ).map(x => x.value);
+
+                fetch("/save_block_tags", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        block_key: blockKey,
+                        lesson_date: date,
+                        tags: selected
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    console.log("Saved:", data);
+                    blockDiv.style.outline = "2px solid #4CAF50";
+                    setTimeout(() => blockDiv.style.outline = "", 600);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
 
 
 </body>

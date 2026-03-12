@@ -1526,15 +1526,17 @@ def create_app():
                 for k in sorted_keys
             }
 
-            # ✅ Seed defaults AFTER grouped_lessons is built
             for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
                 block_key = norm_timerange_key(timerange)
                 saved_tags = block_tag_lookup.get(block_key)
-                if not saved_tags or saved_tags == ['']:
+
+                # ⭐ Apply defaults ONLY if the block has never been saved before
+                if block_key not in block_tag_lookup:
                     if (lesson_type or '').lower() == 'arena':
                         block_tag_lookup[block_key] = ['T1']
                     else:
                         block_tag_lookup[block_key] = ['T2']
+
 
             # Debug print to confirm
             print("block_tag_lookup (final):", block_tag_lookup)
@@ -3243,6 +3245,37 @@ def create_app():
         return redirect(url_for('manage_blockout_ranges'))
 
 
+    @app.route('/save_block_tags', methods=['POST'])
+    def save_block_tags():
+        data = request.get_json()
+        block_key = data.get('block_key')
+        lesson_date = data.get('lesson_date')
+        tags = data.get('tags', [])
+
+        # Normalize tags into comma string
+        tag_string = ",".join(tags)
+
+        # Find existing row
+        row = LessonBlockTag.query.filter_by(
+            lesson_date=lesson_date,
+            time_range=block_key
+        ).first()
+
+        if row:
+            row.teacher_tags = tag_string
+        else:
+            row = LessonBlockTag(
+                lesson_date=lesson_date,
+                time_range=block_key,
+                teacher_tags=tag_string
+            )
+            db.session.add(row)
+
+        db.session.commit()
+
+        return jsonify({"status": "ok", "saved": tags})
+
+
     @app.route("/new_lesson", methods=["POST"])
     def new_lesson():
         import re
@@ -3504,8 +3537,7 @@ def create_app():
                     lesson.horse = horse_val
 
                 att_val = item.get("attendance")
-                if att_val not in ("", None, "None"):
-                    lesson.attendance = att_val
+                lesson.attendance = att_val or ""
 
                 gp_val = item.get("group_priv")
                 if gp_val not in ("", None, "None"):
@@ -3742,33 +3774,27 @@ Cherbon Waters Admin
 
     @app.route("/save_teacher_slots", methods=["POST"])
     def save_teacher_slots():
-        date_str = request.form.get("date")
-        if not date_str:
-            return "Missing date", 400
+        data = request.get_json()
+        date = data.get("date")
+        slots = data.get("slots", {})
 
-        try:
-            lesson_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except ValueError:
-            return "Invalid date", 400
+        for slot_num, teacher_name in slots.items():
+            slot = TeacherSlot.query.filter_by(
+                lesson_date=date,
+                slot_number=int(slot_num)
+            ).first()
 
-        # Clear existing teacher slots for that date
-        TeacherSlot.query.filter_by(lesson_date=lesson_date).delete()
+            if not slot:
+                slot = TeacherSlot(
+                    lesson_date=date,
+                    slot_number=int(slot_num)
+                )
+                db.session.add(slot)
 
-        # Insert new teacher slots
-        for i in range(1, 6):
-            field = f"teacher_select_{i}"
-            teacher_name = request.form.get(field, "").strip()
-
-            new_slot = TeacherSlot(
-                lesson_date=lesson_date,
-                slot_number=i,
-                teacher_name=teacher_name
-            )
-            db.session.add(new_slot)
+            slot.teacher_name = teacher_name or ""
 
         db.session.commit()
-        return "OK", 200
-
+        return jsonify({"status": "ok"})
 
     @app.route('/manage_teacher_times', methods=['GET'])
     def manage_teacher_times():
