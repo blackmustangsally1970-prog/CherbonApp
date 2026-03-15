@@ -2595,10 +2595,6 @@ def create_app():
             if submission_dt < CUTOFF:
                 continue
 
-            # CHECKPOINT — compare against latest ANY submission
-            if latest_ts and submission_dt <= latest_ts:
-                continue
-
             # INSERT NEW ROW
             row = IncomingSubmission(
                 submission_id=submission_id,
