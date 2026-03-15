@@ -54,6 +54,13 @@ class LessonInvite(db.Model):
     status = db.Column(db.String, nullable=False)
     lesson_date = db.Column(db.Date, nullable=False)
 
+class DisclaimerState(db.Model):
+    __tablename__ = 'disclaimer_state'
+
+    id = db.Column(db.Integer, primary_key=True)
+    max_disclaimer_number = db.Column(db.Integer, nullable=False, default=0)
+
+
 class IncomingSubmission(db.Model):
     __tablename__ = 'incoming_submissions'
 
@@ -83,9 +90,11 @@ class IncomingSubmission(db.Model):
 
     # Disclaimer flow
     ignored = db.Column(db.Boolean, default=False)
-
+    
     # JotForm ID (same as submission_id)
     jotform_id = db.Column(db.String, index=True)
+
+
 
 class TeacherTime(db.Model):
     __tablename__ = 'teacher_time'

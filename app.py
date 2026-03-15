@@ -2474,13 +2474,23 @@ def create_app():
         FORM_ID = "211021514885045"   # Disclaimer & Indemnity form
 
         # ---------------------------------------------------------
+        # 0. LOAD GLOBAL MAX DISCLAIMER NUMBER
+        # ---------------------------------------------------------
+        state = DisclaimerState.query.first()
+        if not state:
+            state = DisclaimerState(max_disclaimer_number=0)
+            db.session.add(state)
+            db.session.commit()
+
+        current_max_disclaimer = state.max_disclaimer_number or 0
+
+        # ---------------------------------------------------------
         # 1. DYNAMIC CUTOFF — ignore anything older than 30 days
         # ---------------------------------------------------------
         CUTOFF = datetime.utcnow() - timedelta(days=30)
 
         # ---------------------------------------------------------
         # 2. CHECKPOINT — latest submission (ANY state)
-        #    This prevents re-importing processed ones.
         # ---------------------------------------------------------
         latest_any = (
             db.session.query(IncomingSubmission)
@@ -2517,6 +2527,7 @@ def create_app():
         print(f"Fetched {len(submissions)} submissions from JotForm.")
 
         inserted = 0
+        new_global_max = current_max_disclaimer
 
         # ---------------------------------------------------------
         # 4. PROCESS EACH SUBMISSION
@@ -2532,6 +2543,42 @@ def create_app():
             )
             if existing:
                 continue
+
+            # EXTRACT ALL DISCLAIMER NUMBERS FROM PAYLOAD
+            answers = sub.get("answers", {}) or {}
+            disclaimer_numbers = []
+
+            for key, val in answers.items():
+                text = (val.get("text") or "").lower()
+                if "disclaimer" in text:
+                    ans = val.get("answer")
+                    if isinstance(ans, list):
+                        disclaimer_numbers.extend(ans)
+                    elif ans is not None:
+                        disclaimer_numbers.append(ans)
+
+            # NORMALISE TO INTS AND FIND MAX
+            numeric_disclaimers = []
+            for dn in disclaimer_numbers:
+                try:
+                    numeric_disclaimers.append(int(str(dn).strip()))
+                except Exception:
+                    continue
+
+            if numeric_disclaimers:
+                max_in_submission = max(numeric_disclaimers)
+            else:
+                max_in_submission = None
+
+            # HARD RULE:
+            # If this submission's max disclaimer number is
+            # <= global max, it is OLD and must be ignored.
+            if max_in_submission is not None:
+                if max_in_submission <= current_max_disclaimer:
+                    continue
+                # Track the highest we've seen this run
+                if max_in_submission > new_global_max:
+                    new_global_max = max_in_submission
 
             # SECONDARY DEDUPE — hash of payload
             payload_str = json.dumps(sub, sort_keys=True)
@@ -2556,7 +2603,7 @@ def create_app():
             row = IncomingSubmission(
                 submission_id=submission_id,
                 form_id=FORM_ID,
-                raw_payload=json.dumps(sub),
+                raw_payload=sub,
                 processed=False,
                 unique_hash=payload_hash,
                 received_at=submission_dt,
@@ -2565,11 +2612,19 @@ def create_app():
             db.session.add(row)
             inserted += 1
 
-        db.session.commit()
+        # ---------------------------------------------------------
+        # 5. UPDATE GLOBAL MAX DISCLAIMER NUMBER
+        # ---------------------------------------------------------
+        if new_global_max > current_max_disclaimer:
+            state.max_disclaimer_number = new_global_max
+            db.session.commit()
+            print(f"Updated max disclaimer number to {new_global_max}")
+        else:
+            db.session.commit()
+
         print(f"Inserted {inserted} new submissions.")
 
         return redirect(url_for('notifications'))
-
 
 
     @app.route('/notifications/<int:webhook_id>')
