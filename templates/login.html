@@ -5,8 +5,19 @@
 </head>
 <body>
 
-<form method="POST">
-    <input type="text" name="username" placeholder="Username" required><br>
+<h2>Staff Login</h2>
+
+<form method="POST" autocomplete="off">
+
+    <!-- Username with hidden quick-select options -->
+    <input list="usernames" name="user" placeholder="Username" autocomplete="off" required><br>
+
+    <datalist id="usernames">
+        <option value="steve">
+        <option value="trevor">
+        <option value="tamara">
+    </datalist>
+
     <input type="password" name="password" placeholder="Password" required><br>
 
     {% if error %}
@@ -18,4 +29,3 @@
 
 </body>
 </html>
-

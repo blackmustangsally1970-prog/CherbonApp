@@ -961,14 +961,14 @@ def create_app():
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if request.method == "POST":
-            username = request.form.get("username", "").strip()
+            username = request.form.get("user", "").strip()
             password = request.form.get("password", "").strip()
 
             user = Users.query.filter_by(username=username, active=True).first()
             if user and check_password_hash(user.password_hash, password):
                 session["user_id"] = user.user_id
                 session["username"] = user.username
-                return redirect(url_for("index"))
+                return redirect(url_for("dashboard"))
 
             return render_template("login.html", error="Invalid username or password")
 
@@ -980,10 +980,21 @@ def create_app():
         session.clear()
         return redirect(url_for("login"))
 
+    @app.route("/admin_reset_password/<username>/<newpassword>")
+    def admin_reset_password(username, newpassword):
+        user = Users.query.filter_by(username=username).first()
+        if not user:
+            return f"User '{username}' does not exist"
+
+        user.password_hash = generate_password_hash(newpassword)
+        db.session.commit()
+        return f"Password for '{username}' reset successfully"
+
+
 
     @app.route("/admin_create_user/<username>/<password>/<role>")
     @login_required
-    @role_required("admin")
+    @role_required("admin", "management")
     def admin_create_user(username, password, role):
         existing = Users.query.filter_by(username=username).first()
         if existing:
@@ -995,6 +1006,20 @@ def create_app():
         db.session.commit()
 
         return f"User '{username}' created with role '{role}'"
+
+
+    @app.route("/admin_delete_user/<username>")
+    @login_required
+    @role_required("admin", "management")
+    def admin_delete_user(username):
+        user = Users.query.filter_by(username=username).first()
+        if not user:
+            return f"User '{username}' does not exist"
+
+        db.session.delete(user)
+        db.session.commit()
+        return f"User '{username}' deleted"
+
 
 
 
@@ -1411,7 +1436,14 @@ def create_app():
 
     @app.route('/')
     def index():
-        return render_template('index.html')
+        return redirect(url_for("login"))
+
+    @app.route('/dashboard')
+    @login_required
+    @role_required("admin", "management")
+    def dashboard():
+        return render_template("index.html")
+
 
 
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
