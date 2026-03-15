@@ -2588,10 +2588,16 @@ def create_app():
             submission_created = sub.get("created_at") or sub.get("updated_at")
 
             try:
-                # JotForm sends ISO8601 strings, not epoch ints
-                submission_dt = datetime.fromisoformat(submission_created.replace("Z", ""))
+                if submission_created:
+                    # JotForm sends ISO8601 strings, not epoch ints
+                    submission_dt = datetime.fromisoformat(
+                        submission_created.replace("Z", "")
+                    )
+                else:
+                    submission_dt = datetime.utcnow()
             except Exception:
                 submission_dt = datetime.utcnow()
+
 
             # CUTOFF
             if submission_dt < CUTOFF:
