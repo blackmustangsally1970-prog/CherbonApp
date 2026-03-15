@@ -2,6 +2,71 @@
 <html>
 <head>
     <title>Login</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+
+        /* MOBILE FIRST — huge fields */
+        input[type="text"],
+        input[type="password"],
+        input[list] {
+            width: 90%;
+            padding: 22px;
+            font-size: 28px;
+            margin-bottom: 22px;
+            border: 3px solid #4a6bff;
+            border-radius: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 90%;
+            padding: 26px;
+            font-size: 30px;
+            font-weight: 900;
+            background: #4a6bff;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #3a56d6;
+        }
+
+        /* DESKTOP OVERRIDE */
+        @media (min-width: 800px) {
+            input[type="text"],
+            input[type="password"],
+            input[list] {
+                width: 300px;
+                padding: 12px;
+                font-size: 16px;
+                margin-bottom: 14px;
+            }
+
+            button {
+                width: 300px;
+                padding: 14px;
+                font-size: 18px;
+                font-weight: 700;
+            }
+
+            h2 {
+                font-size: 26px;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -9,8 +74,7 @@
 
 <form method="POST" autocomplete="off">
 
-    <!-- Username with hidden quick-select options -->
-    <input list="usernames" name="user" placeholder="Username" autocomplete="off" required><br>
+    <input list="usernames" name="user" placeholder="Username" autocomplete="off" required>
 
     <datalist id="usernames">
         <option value="steve">
@@ -18,10 +82,10 @@
         <option value="tamara">
     </datalist>
 
-    <input type="password" name="password" placeholder="Password" required><br>
+    <input type="password" name="password" placeholder="Password" required>
 
     {% if error %}
-        <div style="color:red;">{{ error }}</div>
+        <div style="color:red; margin-top:10px; font-size:20px;">{{ error }}</div>
     {% endif %}
 
     <button type="submit">Login</button>
