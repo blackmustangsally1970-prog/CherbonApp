@@ -11,32 +11,32 @@
         }
 
         h2 {
-            margin-bottom: 30px;
-            font-size: 32px;
+            margin-bottom: 40px;
+            font-size: 40px;
         }
 
-        /* MOBILE FIRST — huge fields */
+        /* MOBILE FIRST — TRIPLE SIZE */
         input[type="text"],
         input[type="password"],
         input[list] {
-            width: 90%;
-            padding: 22px;
-            font-size: 28px;
-            margin-bottom: 22px;
-            border: 3px solid #4a6bff;
-            border-radius: 14px;
+            width: 95%;
+            padding: 40px;                 /* TRIPLE HEIGHT */
+            font-size: 42px;               /* TRIPLE FONT SIZE */
+            margin-bottom: 40px;           /* TRIPLE SPACING */
+            border: 5px solid #4a6bff;
+            border-radius: 20px;
             box-sizing: border-box;
         }
 
         button {
-            width: 90%;
-            padding: 26px;
-            font-size: 30px;
+            width: 95%;
+            padding: 45px;                 /* TRIPLE HEIGHT */
+            font-size: 44px;               /* TRIPLE FONT SIZE */
             font-weight: 900;
             background: #4a6bff;
             color: white;
             border: none;
-            border-radius: 14px;
+            border-radius: 20px;
             cursor: pointer;
         }
 
@@ -85,7 +85,7 @@
     <input type="password" name="password" placeholder="Password" required>
 
     {% if error %}
-        <div style="color:red; margin-top:10px; font-size:20px;">{{ error }}</div>
+        <div style="color:red; margin-top:10px; font-size:28px;">{{ error }}</div>
     {% endif %}
 
     <button type="submit">Login</button>
@@ -93,3 +93,4 @@
 
 </body>
 </html>
+
