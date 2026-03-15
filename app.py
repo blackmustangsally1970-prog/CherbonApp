@@ -2586,8 +2586,10 @@ def create_app():
 
             # TIMESTAMP
             submission_created = sub.get("created_at") or sub.get("updated_at")
+
             try:
-                submission_dt = datetime.utcfromtimestamp(int(submission_created))
+                # JotForm sends ISO8601 strings, not epoch ints
+                submission_dt = datetime.fromisoformat(submission_created.replace("Z", ""))
             except Exception:
                 submission_dt = datetime.utcnow()
 
