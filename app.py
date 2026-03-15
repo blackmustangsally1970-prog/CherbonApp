@@ -13,7 +13,7 @@ from models import (
     Lesson, Time, Client, Horse, Teacher,
     LessonBlockTag, TeacherTime, TeacherHorse,
     BlockoutDate, BlockoutRange, IncomingSubmission,
-    LessonInvite, TeacherSlot
+    LessonInvite, TeacherSlot, DisclaimerState
 )
 import secrets
 import string
@@ -2595,8 +2595,10 @@ def create_app():
                     )
                 else:
                     submission_dt = datetime.utcnow()
-            except Exception:
+            except Exception as e:
+                print("TIMESTAMP ERROR:", e, "RAW VALUE:", submission_created)
                 submission_dt = datetime.utcnow()
+
 
 
             # CUTOFF
