@@ -130,14 +130,14 @@
 <body>
 
 <div style="margin-bottom:12px;" class="no-print" id="top-controls">
-    <a href="{{ url_for('index') }}" class="menu-btn">← Main Menu</a>
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
     <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
 </div>
 
 
 {% if client_obj %}
 <div style="margin:12px 0;">
-    <form action="{{ url_for('recalculate_client') }}" method="post">
+    <form action="{{ url_for('recalculate_client_cascade_route') }}" method="post">
         <input type="hidden" name="client" value="{{ client_obj.full_name }}">
         <button type="submit" class="btn btn-warning">
             Recalculate Lessons for {{ client_obj.full_name }}
@@ -194,175 +194,170 @@
 
 
 {% if client_obj %}
-    <div class="client-details">
+<div class="client-details">
+
+    <!-- ========================= -->
+    <!-- TWO-COLUMN CLIENT DETAILS -->
+    <!-- ========================= -->
+
+    <table class="client-details-table">
+
+        <tr>
+            <td><strong>Client:</strong></td>
+            <td>{{ client_obj.full_name }}</td>
+
+            <td><strong>Guardian:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="guardian_name"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.guardian_name or '' }}">
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>Mobile:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="mobile"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.mobile or '' }}">
+            </td>
+
+            <td><strong>Age:</strong></td>
+            <td>
+                <input type="number" class="client-edit"
+                       data-field="age"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.age or '' }}">
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>Weight (kg):</strong></td>
+            <td>
+                <input type="number" class="client-edit"
+                       data-field="weight_kg"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.weight_kg or '' }}">
+            </td>
+
+            <td><strong>Height (cm):</strong></td>
+            <td>
+                <input type="number" class="client-edit"
+                       data-field="height_cm"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.height_cm or '' }}">
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>Disclaimer:</strong></td>
+            <td>{{ client_obj.disclaimer }}</td>
+
+            <td><strong>Email Primary:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="email_primary"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.email_primary or '' }}">
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>Email Secondary:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="email_secondary"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.email_secondary or '' }}">
+            </td>
+
+            <td><strong>Guardian 2:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="guardian2_name"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.guardian2_name or '' }}">
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>Mobile 2:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="mobile2"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.mobile2 or '' }}">
+            </td>
+
+            <td><strong>Email Guardian 2:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="email_guardian2"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.email_guardian2 or '' }}">
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>NDIS Number:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="ndis_number"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.ndis_number or '' }}">
+            </td>
+
+            <td><strong>NDIS Code:</strong></td>
+            <td>
+                <input type="text" class="client-edit"
+                       data-field="ndis_code"
+                       data-id="{{ client_obj.client_id }}"
+                       value="{{ client_obj.ndis_code or '' }}">
+            </td>
+        </tr>
 
         <!-- ========================= -->
-        <!-- CLEAN TWO-COLUMN DETAILS  -->
+        <!-- FULL-WIDTH NOTES FIELDS   -->
         <!-- ========================= -->
 
-        <table class="client-details-table">
+        <tr>
+            <td colspan="4">
+                <strong>Notes:</strong><br>
+                <textarea class="client-edit"
+                          data-field="notes"
+                          data-id="{{ client_obj.client_id }}"
+                          style="width:100%; height:80px;">{{ client_obj.notes or '' }}</textarea>
+            </td>
+        </tr>
 
-            <tr>
-                <td><strong>Client:</strong></td>
-                <td>{{ client_obj.full_name }}</td>
-            </tr>
+        <tr>
+            <td colspan="4">
+                <strong>Notes 2:</strong><br>
+                <textarea class="client-edit"
+                          data-field="notes2"
+                          data-id="{{ client_obj.client_id }}"
+                          style="width:100%; height:80px;">{{ client_obj.notes2 or '' }}</textarea>
+            </td>
+        </tr>
 
-            <tr>
-                <td><strong>Guardian:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="guardian_name"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.guardian_name or '' }}">
-                </td>
-            </tr>
+    </table>
 
-            <tr>
-                <td><strong>Mobile:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="mobile"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.mobile or '' }}">
-                </td>
-            </tr>
+    <!-- ========================= -->
+    <!-- INVOICE CHECKBOX          -->
+    <!-- ========================= -->
 
-            <tr>
-                <td><strong>Age:</strong></td>
-                <td>
-                    <input type="number"
-                           class="client-edit"
-                           data-field="age"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.age or '' }}">
-                </td>
-            </tr>
+    <form action="/update_invoice_flag" method="post" style="margin-top: 12px;">
+        <input type="hidden" name="client_id" value="{{ client_obj.client_id }}">
+        <label>
+            <input type="checkbox" name="invoice_required" value="1"
+                   {% if client_obj.invoice_required %}checked{% endif %}>
+            Requires Invoice After Lesson
+        </label>
+        <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+    </form>
 
-            <tr>
-                <td><strong>Weight (kg):</strong></td>
-                <td>
-                    <input type="number"
-                           class="client-edit"
-                           data-field="weight_kg"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.weight_kg or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>Height (cm):</strong></td>
-                <td>
-                    <input type="number"
-                           class="client-edit"
-                           data-field="height_cm"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.height_cm or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>Disclaimer:</strong></td>
-                <td>{{ client_obj.disclaimer }}</td>
-            </tr>
-
-            <tr>
-                <td><strong>Email Primary:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="email_primary"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.email_primary or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>Email Secondary:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="email_secondary"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.email_secondary or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>Guardian 2:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="guardian2_name"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.guardian2_name or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>Mobile 2:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="mobile2"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.mobile2 or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>Email Guardian 2:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="email_guardian2"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.email_guardian2 or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>NDIS Number:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="ndis_number"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.ndis_number or '' }}">
-                </td>
-            </tr>
-
-            <tr>
-                <td><strong>NDIS Code:</strong></td>
-                <td>
-                    <input type="text"
-                           class="client-edit"
-                           data-field="ndis_code"
-                           data-id="{{ client_obj.client_id }}"
-                           value="{{ client_obj.ndis_code or '' }}">
-                </td>
-            </tr>
-
-
-            <tr>
-            </tr>
-
-        </table>
-
-        <!-- ========================= -->
-        <!-- INVOICE CHECKBOX (UNCHANGED) -->
-        <!-- ========================= -->
-
-        <form action="/update_invoice_flag" method="post" style="margin-top: 12px;">
-            <input type="hidden" name="client_id" value="{{ client_obj.client_id }}">
-            <label>
-                <input type="checkbox" name="invoice_required" value="1"
-                       {% if client_obj.invoice_required %}checked{% endif %}>
-                Requires Invoice After Lesson
-            </label>
-            <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
-        </form>
 {% endif %}
 
 
@@ -450,11 +445,12 @@
     <div style="display:flex; align-items:center; gap:12px;">
         <label class="form-label" style="min-width:110px;">New Horse:</label>
 
-        <select name="new_horse" style="width:180px; padding:4px;">
-            {% for horse in horses %}
-                <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
-            {% endfor %}
-        </select>
+<select name="new_horse" style="width:180px; padding:4px;">
+    <option value="" selected></option>
+    {% for horse in horses %}
+        <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
+    {% endfor %}
+</select>
 
         <button type="submit" class="btn btn-info btn-sm"
                 onclick="return confirm('Change horse for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
@@ -476,11 +472,12 @@
     <div style="display:flex; align-items:center; gap:12px;">
         <label class="form-label" style="min-width:110px;">Horse:</label>
 
-        <select name="new_horse" style="width:180px; padding:4px;">
-            {% for horse in horses %}
-                <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
-            {% endfor %}
-        </select>
+<select name="new_horse" style="width:180px; padding:4px;">
+    <option value="" selected></option>
+    {% for horse in horses %}
+        <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
+    {% endfor %}
+</select>
 
         <button type="submit" class="btn btn-success btn-sm"
                 onclick="return confirm('Assign horse ONLY where empty for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
@@ -536,6 +533,7 @@
                 <th style="width: 60px;">Payment</th>
                 <th style="width: 60px;">Price PL</th>
                 <th style="width: 60px;">Balance</th>
+                <th style="width: 20px; text-align:center;">F</th>
                 <th style="width: 36px;">GP</th>
                 <th>Type</th>
                 <th>Ends</th>
@@ -643,6 +641,9 @@
                 <td id="balance_display_{{ lesson.lesson_id }}">
                     {{ '$%.2f'|format(lesson.balance or 0) }}
                 </td>
+		<td style="text-align:center; width:20px;">
+		    {{ lesson.freq or '' }}
+		</td>
                 <td>{{ lesson.group_priv or '' }}</td>
                 <td>{{ lesson.lesson_type or '' }}</td>
                 <td>{{ lesson.block_ends or '' }}</td>

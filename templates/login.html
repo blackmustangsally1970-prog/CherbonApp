@@ -3,70 +3,81 @@
 <head>
     <title>Login</title>
 
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            text-align: center;
-        }
+<style>
+    /* BASE */
+    body {
+        font-family: sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
 
-        h2 {
-            margin-bottom: 40px;
-            font-size: 40px;
-        }
+    h2 {
+        margin-bottom: 40px;
+        font-size: 40px;
+    }
 
-        /* MOBILE FIRST — TRIPLE SIZE */
+    /* FORCE VERTICAL STACK ON MOBILE */
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    /* MOBILE FIRST — SUPER MASSIVE */
+    input[type="text"],
+    input[type="password"],
+    input[list] {
+        width: 100%;
+        padding: 55px;
+        font-size: 52px;
+        margin-bottom: 50px;
+        border: 6px solid #4a6bff;
+        border-radius: 24px;
+        box-sizing: border-box;
+        font-weight: 700;
+    }
+
+    button {
+        width: 100%;
+        padding: 60px;
+        font-size: 56px;
+        font-weight: 900;
+        background: #4a6bff;
+        color: white;
+        border: none;
+        border-radius: 24px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #3a56d6;
+    }
+
+    /* DESKTOP OVERRIDE */
+    @media (min-width: 800px) {
         input[type="text"],
         input[type="password"],
         input[list] {
-            width: 95%;
-            padding: 40px;                 /* TRIPLE HEIGHT */
-            font-size: 42px;               /* TRIPLE FONT SIZE */
-            margin-bottom: 40px;           /* TRIPLE SPACING */
-            border: 5px solid #4a6bff;
-            border-radius: 20px;
-            box-sizing: border-box;
+            width: 300px;
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 14px;
         }
 
         button {
-            width: 95%;
-            padding: 45px;                 /* TRIPLE HEIGHT */
-            font-size: 44px;               /* TRIPLE FONT SIZE */
-            font-weight: 900;
-            background: #4a6bff;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
+            width: 300px;
+            padding: 14px;
+            font-size: 18px;
+            font-weight: 700;
         }
 
-        button:hover {
-            background: #3a56d6;
+        h2 {
+            font-size: 26px;
         }
+    }
+</style>
 
-        /* DESKTOP OVERRIDE */
-        @media (min-width: 800px) {
-            input[type="text"],
-            input[type="password"],
-            input[list] {
-                width: 300px;
-                padding: 12px;
-                font-size: 16px;
-                margin-bottom: 14px;
-            }
-
-            button {
-                width: 300px;
-                padding: 14px;
-                font-size: 18px;
-                font-weight: 700;
-            }
-
-            h2 {
-                font-size: 26px;
-            }
-        }
-    </style>
 </head>
 <body>
 

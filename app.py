@@ -74,14 +74,10 @@ def get_static_teacher_time():
 
 
 
-def recalc_all_lessons():
-    """
-    Recalculate per-lesson balances for ALL lessons.
-    Simple model:
-        balance = carry_fwd + payment + adjust - price_pl (if attended/charged)
-    """
+def recalc_client_cascade(client_name: str):
     lessons = (
         Lesson.query
+        .filter_by(client=client_name)
         .order_by(
             db.func.date(Lesson.lesson_date).asc(),
             Lesson.lesson_id.asc()
@@ -89,18 +85,24 @@ def recalc_all_lessons():
         .all()
     )
 
+    running_balance = 0
+
     for l in lessons:
-        carry = l.carry_fwd or 0
-        payment = l.payment or 0
         price = l.price_pl or 0
+        payment = l.payment or 0
         adjust = l.adjust or 0
         att = (l.attendance or '').strip().upper()
 
+        carry = running_balance
         balance = carry + payment + adjust
+
         if att in ['Y', 'N']:
             balance -= price
 
+        l.carry_fwd = carry
         l.balance = balance
+
+        running_balance = balance
 
     db.session.commit()
 
@@ -1021,8 +1023,6 @@ def create_app():
         return f"User '{username}' deleted"
 
 
-
-
     @app.post("/recalculate_all")
     def recalculate_all():
         try:
@@ -1426,6 +1426,20 @@ def create_app():
                 f"Failed {len(failed_numbers)}."
             )
         })
+
+
+
+    @app.post("/recalculate_client_cascade")
+    def recalculate_client_cascade_route():
+        client = request.form.get("client")
+
+        try:
+            recalc_client_cascade(client)
+            flash(f"Cascading recalculation completed for {client}.", "success")
+        except Exception as e:
+            flash(f"Error during cascading recalculation: {e}", "danger")
+
+        return redirect(url_for("client_view", client_filter=client), code=303)
 
 
     @app.route('/api/teacher_times.json')
@@ -3831,7 +3845,7 @@ Cherbon Waters Admin
             db.session.commit()
         return redirect(url_for('client_view', client=client.full_name))
 
-
+    """
     @app.post("/recalculate_client")
     def recalculate_client():
         client = request.form.get("client")
@@ -3855,6 +3869,7 @@ Cherbon Waters Admin
 
         flash(f"Lessons recalculated for client: {client}", "success")
         return redirect(url_for('client_view', client_filter=client), code=303)
+    """
 
     @app.route('/notifications/clear_processed')
     def clear_processed():
@@ -4254,65 +4269,82 @@ Cherbon Waters Admin
             flash("New price is required.", "danger")
             return redirect(url_for("client_view", client_id=client_id))
 
-        # Update price_pl for all matching lessons from cutoff date
-        db.session.execute("""
-            UPDATE lessons
-            SET price_pl = :new_price
-            WHERE client_id = :client_id
-              AND group_priv = :group_priv
-              AND lesson_date >= :cutoff_date
-        """, {
-            "new_price": new_price,
-            "client_id": client_id,
-            "group_priv": group_priv,
-            "cutoff_date": cutoff_date
-        })
+        # Get client full name (lessons.client stores the name, not ID)
+        client_obj = Client.query.get(client_id)
+        client_name = client_obj.full_name
+
+        db.session.execute(
+            text("""
+                UPDATE lessons
+                SET price_pl = :new_price
+                WHERE client = :client_name
+                  AND group_priv = :group_priv
+                  AND lesson_date >= :cutoff_date
+            """),
+            {
+                "new_price": new_price,
+                "client_name": client_name,
+                "group_priv": group_priv,
+                "cutoff_date": cutoff_date
+            }
+        )
 
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
-
 
     @app.route("/client/<int:client_id>/change_horse", methods=["POST"])
     def change_client_horse(client_id):
         mode = request.form.get("mode")
         group_priv = request.form.get("group_priv")
         cutoff_date = request.form.get("cutoff_date")
-        new_horse = request.form.get("new_horse")
+        new_horse_id = request.form.get("new_horse")
 
         if not group_priv:
             flash("Group Priv is required.", "danger")
             return redirect(url_for("client_view", client_id=client_id))
 
+        # Get client full name (lessons.client stores the name)
+        client_obj = Client.query.get(client_id)
+        client_name = client_obj.full_name
+
+        # Get horse name (lessons.horse stores the name)
+        horse_obj = Horse.query.get(new_horse_id)
+        horse_name = horse_obj.horse
+
         if mode == "change_horse":
-            # Change horse for ALL matching lessons from cutoff date
-            db.session.execute("""
-                UPDATE lessons
-                SET horse_id = :new_horse
-                WHERE client_id = :client_id
-                  AND group_priv = :group_priv
-                  AND lesson_date >= :cutoff_date
-            """, {
-                "new_horse": new_horse,
-                "client_id": client_id,
-                "group_priv": group_priv,
-                "cutoff_date": cutoff_date
-            })
+            db.session.execute(
+                text("""
+                    UPDATE lessons
+                    SET horse = :horse_name
+                    WHERE client = :client_name
+                      AND group_priv = :group_priv
+                      AND lesson_date >= :cutoff_date
+                """),
+                {
+                    "horse_name": horse_name,
+                    "client_name": client_name,
+                    "group_priv": group_priv,
+                    "cutoff_date": cutoff_date
+                }
+            )
 
         elif mode == "assign_if_empty":
-            # Assign horse ONLY where horse_id is NULL or empty
-            db.session.execute("""
-                UPDATE lessons
-                SET horse_id = :new_horse
-                WHERE client_id = :client_id
-                  AND group_priv = :group_priv
-                  AND lesson_date >= :cutoff_date
-                  AND (horse_id IS NULL OR horse_id = '')
-            """, {
-                "new_horse": new_horse,
-                "client_id": client_id,
-                "group_priv": group_priv,
-                "cutoff_date": cutoff_date
-            })
+            db.session.execute(
+                text("""
+                    UPDATE lessons
+                    SET horse = :horse_name
+                    WHERE client = :client_name
+                      AND group_priv = :group_priv
+                      AND lesson_date >= :cutoff_date
+                      AND (horse IS NULL OR horse = '')
+                """),
+                {
+                    "horse_name": horse_name,
+                    "client_name": client_name,
+                    "group_priv": group_priv,
+                    "cutoff_date": cutoff_date
+                }
+            )
 
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
