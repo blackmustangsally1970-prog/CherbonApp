@@ -82,10 +82,10 @@
 
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
 
+        {# START OF NEW BLOCK #}
         {% if header != current_block %}
-            {# Close previous table #}
             {% if not loop.first %}
-                </tbody>
+                    </tbody>
                 </table>
             {% endif %}
 
@@ -130,6 +130,7 @@
             <td></td>
         </tr>
 
+        {# END OF ALL LESSONS #}
         {% if loop.last %}
                 </tbody>
             </table>
