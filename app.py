@@ -4432,6 +4432,12 @@ Cherbon Waters Admin
                 "disclaimer": client.disclaimer if client else 0,
             })
 
+        # Normalise core grouping fields
+        for d in data:
+                d["time_frame"] = (d.get("time_frame") or "").strip().replace("–", "-")
+                d["lesson_type"] = (d.get("lesson_type") or "").strip()
+                d["group_priv"] = (d.get("group_priv") or "").strip().upper()
+
         # Split Arena vs others
         arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
         others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
@@ -4453,6 +4459,24 @@ Cherbon Waters Admin
                 else:
                         flat_others.append(item)
         others = flat_others
+
+        # TEMP: inspect first few arena items in logs
+        print("ARENA RAW SAMPLE:", repr(arena[:10]))
+
+        # Sort by time_frame → lesson_type → group_priv → client_name
+        arena.sort(key=lambda x: (
+                x["time_frame"],
+                x["lesson_type"],
+                x["group_priv"],
+                x["client_name"].lower()
+        ))
+
+        others.sort(key=lambda x: (
+                x["time_frame"],
+                x["lesson_type"],
+                x["group_priv"],
+                x["client_name"].lower()
+        ))
 
 
 
