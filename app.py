@@ -4432,6 +4432,11 @@ Cherbon Waters Admin
                 "disclaimer": client.disclaimer if client else 0,
             })
 
+        # DEBUG: print true raw 16:00 data BEFORE any cleaning
+        for d in data:
+                if "16:00" in d.get("time_frame", ""):
+                        print("RAW 16:00 DATA:", repr(d))
+
         # Normalise core grouping fields
         for d in data:
                 d["time_frame"] = (d.get("time_frame") or "").strip().replace("–", "-")
@@ -4460,12 +4465,12 @@ Cherbon Waters Admin
                         flat_others.append(item)
         others = flat_others
 
-        # TEMP: inspect only the 16:00 - 17:30 block
+        # DEBUG: inspect only the 16:00 - 17:30 block AFTER split
         for d in arena:
                 if d["time_frame"] == "16:00 - 17:30":
                         print("ARENA 16:00 BLOCK:", repr(d))
 
-        # TEMP: inspect first few arena items
+        # DEBUG: inspect first few arena items
         print("ARENA RAW SAMPLE:", repr(arena[:10]))
 
         # Sort by time_frame → lesson_type → group_priv → client_name
