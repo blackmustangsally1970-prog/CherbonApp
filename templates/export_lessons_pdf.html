@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Lessons – {{ pretty_date }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            color: #000;
+        }
+
+        h1 {
+            font-size: 16pt;
+            margin: 0 0 10px 0;
+        }
+
+        h2 {
+            font-size: 14pt;
+            margin: 15px 0 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 4px 6px;
+        }
+
+        th {
+            text-align: left;
+        }
+
+        .client-red {
+            color: red;
+            font-weight: bold;
+        }
+
+        .payment-red {
+            background-color: #ffcccc;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
+
+{# ---------- ARENA PAGE ---------- #}
+{% if arena %}
+    {% set current_block = None %}
+    {% for l in arena %}
+        {% set header = l.time_frame ~ " " ~ l.lesson_type ~ " " ~ l.group_priv %}
+        {% if header != current_block %}
+            {% if not loop.first %}
+                </table>
+            {% endif %}
+            <h2>{{ header }}</h2>
+            <table>
+                <tr>
+                    <th>Client</th>
+                    <th>Age</th>
+                    <th>Guardian</th>
+                    <th>Mobile</th>
+                    <th>Freq</th>
+                    <th>Weight</th>
+                    <th>Height</th>
+                    <th>ATT</th>
+                    <th>Payment</th>
+                    <th>Price</th>
+                    <th>Balance</th>
+                    <th>Notes</th>
+                </tr>
+            {% set current_block = header %}
+        {% endif %}
+
+        {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
+        {% set payment_class = "payment-red" if l.balance < l.price else "" %}
+        <tr>
+            <td class="{{ client_class }}">{{ l.client_name }}</td>
+            <td>{{ l.age }}</td>
+            <td>{{ l.guardian }}</td>
+            <td>{{ l.mobile }}</td>
+            <td>{{ l.freq }}</td>
+            <td>{{ l.weight }}</td>
+            <td>{{ l.height }}</td>
+            <td>{{ "✓" if l.att else "X" }}</td>
+            <td class="{{ payment_class }}">{{ l.payment }}</td>
+            <td>{{ l.price }}</td>
+            <td>{{ l.balance }}</td>
+            <td>{{ l.notes }}</td>
+        </tr>
+
+        {% if loop.last %}
+            </table>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+<div class="page-break"></div>
+
+{# ---------- OTHER LESSON TYPES ---------- #}
+<h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
+
+{% if others %}
+    {% set current_block = None %}
+    {% for l in others %}
+        {% set header = l.time_frame ~ " " ~ l.lesson_type ~ " " ~ l.group_priv %}
+        {% if header != current_block %}
+            {% if not loop.first %}
+                </table>
+            {% endif %}
+            <h2>{{ header }}</h2>
+            <table>
+                <tr>
+                    <th>Client</th>
+                    <th>Age</th>
+                    <th>Guardian</th>
+                    <th>Mobile</th>
+                    <th>Freq</th>
+                    <th>Weight</th>
+                    <th>Height</th>
+                    <th>ATT</th>
+                    <th>Payment</th>
+                    <th>Price</th>
+                    <th>Balance</th>
+                    <th>Notes</th>
+                </tr>
+            {% set current_block = header %}
+        {% endif %}
+
+        {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
+        {% set payment_class = "payment-red" if l.balance < l.price else "" %}
+        <tr>
+            <td class="{{ client_class }}">{{ l.client_name }}</td>
+            <td>{{ l.age }}</td>
+            <td>{{ l.guardian }}</td>
+            <td>{{ l.mobile }}</td>
+            <td>{{ l.freq }}</td>
+            <td>{{ l.weight }}</td>
+            <td>{{ l.height }}</td>
+            <td>{{ "✓" if l.att else "X" }}</td>
+            <td class="{{ payment_class }}">{{ l.payment }}</td>
+            <td>{{ l.price }}</td>
+            <td>{{ l.balance }}</td>
+            <td>{{ l.notes }}</td>
+        </tr>
+
+        {% if loop.last %}
+            </table>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+</body>
+</html>
+

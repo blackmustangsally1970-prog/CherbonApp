@@ -17,6 +17,7 @@ from models import (
 )
 import secrets
 import string
+from weasyprint import HTML
 from urllib.parse import urlencode
 import re
 import subprocess
@@ -4389,6 +4390,71 @@ Cherbon Waters Admin
 
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
+
+
+    @app.route("/export_lessons_pdf/<date>")
+    def export_lessons_pdf(date):
+        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
+        dow = lesson_date.strftime("%A")
+        pretty_date = lesson_date.strftime("%d %B %Y")
+
+        # Fetch all lessons for the day
+        lessons = (Lesson.query
+                   .filter_by(lesson_date=lesson_date)
+                   .order_by(Lesson.time_frame)
+                   .all())
+
+        data = []
+        for l in lessons:
+
+            # Pull client details from Client DB
+            client = Client.query.filter_by(full_name=l.client).first()
+
+            data.append({
+                # LESSON FIELDS
+                "time_frame": l.time_frame,
+                "lesson_type": l.lesson_type,
+                "group_priv": l.group_priv,
+                "client_name": l.client,
+                "freq": l.freq,
+                "att": l.attendance,
+                "payment": l.payment,
+                "price": l.price_pl,
+                "balance": l.balance,
+
+                # CLIENT FIELDS
+                "age": client.age if client else "",
+                "guardian": client.guardian_name if client else "",
+                "mobile": client.mobile if client else "",
+                "weight": client.weight_kg if client else "",
+                "height": client.height_cm if client else "",
+                "notes": client.notes if client else "",
+                "disclaimer": client.disclaimer if client else 0,
+            })
+
+        # Split Arena vs others
+        arena = [d for d in data if d["lesson_type"].lower() == "arena"]
+        others = [d for d in data if d["lesson_type"].lower() != "arena"]
+
+        # Sort alphabetically inside each block
+        arena.sort(key=lambda x: x["client_name"].lower())
+        others.sort(key=lambda x: x["client_name"].lower())
+
+        html = render_template(
+            "lessons_pdf.html",
+            dow=dow,
+            pretty_date=pretty_date,
+            arena=arena,
+            others=others,
+        )
+
+        pdf = HTML(string=html).write_pdf()
+
+        resp = make_response(pdf)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = f"inline; filename=lessons_{date}.pdf"
+        return resp
+
 
 
     @app.route('/client_view')

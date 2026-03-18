@@ -807,7 +807,9 @@ select.teacher-dropdown {
     Book Lessons
 </button>
 
-
+<button type="button" id="export-pdf" class="btn btn-danger" style="margin-left:8px;">
+    Export PDF
+</button>
 
 
 </form>
@@ -3190,6 +3192,19 @@ window.addEventListener('load', function () {
         return "";
     });
 </script>
+
+<script>
+document.getElementById("export-pdf").addEventListener("click", function () {
+    const date = document.getElementById("date-picker").value;
+    if (!date) {
+        alert("No date selected.");
+        return;
+    }
+    window.open(`/export_lessons_pdf/${date}`, "_blank");
+});
+</script>
+
+
 
 
 </body>
