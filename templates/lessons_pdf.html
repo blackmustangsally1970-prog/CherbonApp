@@ -3,71 +3,93 @@
 <head>
     <meta charset="utf-8">
     <title>Lessons – {{ pretty_date }}</title>
+
     <style>
         @page {
             size: A4 landscape;
-            margin: 15mm;
+            margin: 6mm; /* tight as we can safely go */
         }
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11pt;
+            font-size: 8pt;
             color: #000;
         }
 
         h1 {
-            font-size: 16pt;
-            margin: 0 0 10px 0;
+            font-size: 12pt;
+            margin: 0 0 6px 0;
         }
 
         h2 {
-            font-size: 14pt;
-            margin: 15px 0 5px 0;
+            font-size: 10pt;
+            margin: 10px 0 4px 0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
-        }
-
-        th, td {
-            border: 1px solid #000;
-            padding: 4px 6px;
+            table-layout: fixed;
+            margin-bottom: 6px;
         }
 
         th {
-            text-align: left;
-        }
-
-        .client-red {
-            color: red;
+            font-size: 10pt;
             font-weight: bold;
+            text-align: left;
+            border-bottom: 1px solid #000;
+            padding: 2px 3px;
+            white-space: nowrap;
         }
 
-        .payment-red {
-            background-color: #ffcccc;
+        td {
+            font-size: 8pt;
+            padding: 2px 3px;
+            border-bottom: 1px solid #ccc;
+            vertical-align: top;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .page-break {
-            page-break-after: always;
-        }
+        /* Column widths tuned for operational density */
+        th:nth-child(1), td:nth-child(1) { width: 120px; } /* Client */
+        th:nth-child(2), td:nth-child(2) { width: 25px; }  /* Age */
+        th:nth-child(3), td:nth-child(3) { width: 110px; } /* Guardian */
+        th:nth-child(4), td:nth-child(4) { width: 80px; }  /* Mobile */
+        th:nth-child(5), td:nth-child(5) { width: 25px; }  /* Freq */
+        th:nth-child(6), td:nth-child(6) { width: 25px; }  /* Wgt */
+        th:nth-child(7), td:nth-child(7) { width: 25px; }  /* Hgt */
+        th:nth-child(8), td:nth-child(8) { width: 25px; }  /* ATT */
+        th:nth-child(9), td:nth-child(9) { width: 60px; }  /* Payment */
+        th:nth-child(10), td:nth-child(10) { width: 50px; } /* Price */
+        th:nth-child(11), td:nth-child(11) { width: 50px; } /* Balance */
+        th:nth-child(12), td:nth-child(12) { width: 200px; } /* Notes */
+        th:nth-child(13), td:nth-child(13) { width: 70px; } /* SignNoPayment */
+
+        .client-red { color: red; font-weight: bold; }
+        .payment-red { background-color: #ffcccc; }
+
+        .page-break { page-break-after: always; }
     </style>
 </head>
+
 <body>
 
-<h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
+<h1>Cherbon Waters – {{ dow }} {{ pretty_date }}</h1>
 
-{# ---------- ARENA PAGE ---------- #}
-{% if arena %}
+{# ---------- RENDER BLOCK FUNCTION ---------- #}
+{% macro render_block(lessons) %}
     {% set current_block = None %}
-    {% for l in arena %}
+    {% for l in lessons %}
         {% set header = l.time_frame ~ " " ~ l.lesson_type ~ " " ~ l.group_priv %}
+
         {% if header != current_block %}
             {% if not loop.first %}
                 </table>
             {% endif %}
+
             <h2>{{ header }}</h2>
+
             <table>
                 <tr>
                     <th>Client</th>
@@ -75,19 +97,22 @@
                     <th>Guardian</th>
                     <th>Mobile</th>
                     <th>Freq</th>
-                    <th>Weight</th>
-                    <th>Height</th>
+                    <th>Wgt</th>
+                    <th>Hgt</th>
                     <th>ATT</th>
                     <th>Payment</th>
                     <th>Price</th>
                     <th>Balance</th>
                     <th>Notes</th>
+                    <th>SignNoPayment</th>
                 </tr>
+
             {% set current_block = header %}
         {% endif %}
 
         {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
         {% set payment_class = "payment-red" if l.balance < l.price else "" %}
+
         <tr>
             <td class="{{ client_class }}">{{ l.client_name }}</td>
             <td>{{ l.age }}</td>
@@ -96,72 +121,41 @@
             <td>{{ l.freq }}</td>
             <td>{{ l.weight }}</td>
             <td>{{ l.height }}</td>
-            <td>{{ "✓" if l.att else "X" }}</td>
+
+            {# Attendance logic: blank unless Y/N/C #}
+            <td>
+                {% if l.attendance in ['Y', 'N', 'C'] %}
+                    {{ l.attendance }}
+                {% else %}
+                    <!-- blank -->
+                {% endif %}
+            </td>
+
             <td class="{{ payment_class }}">{{ l.payment }}</td>
             <td>{{ l.price }}</td>
             <td>{{ l.balance }}</td>
             <td>{{ l.notes }}</td>
+            <td></td>  {# SignNoPayment blank column #}
         </tr>
 
         {% if loop.last %}
             </table>
         {% endif %}
     {% endfor %}
+{% endmacro %}
+
+{# ---------- ARENA PAGE ---------- #}
+{% if arena %}
+    {{ render_block(arena) }}
 {% endif %}
 
 <div class="page-break"></div>
 
 {# ---------- OTHER LESSON TYPES ---------- #}
-<h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
+<h1>Cherbon Waters – {{ dow }} {{ pretty_date }}</h1>
 
 {% if others %}
-    {% set current_block = None %}
-    {% for l in others %}
-        {% set header = l.time_frame ~ " " ~ l.lesson_type ~ " " ~ l.group_priv %}
-        {% if header != current_block %}
-            {% if not loop.first %}
-                </table>
-            {% endif %}
-            <h2>{{ header }}</h2>
-            <table>
-                <tr>
-                    <th>Client</th>
-                    <th>Age</th>
-                    <th>Guardian</th>
-                    <th>Mobile</th>
-                    <th>Freq</th>
-                    <th>Weight</th>
-                    <th>Height</th>
-                    <th>ATT</th>
-                    <th>Payment</th>
-                    <th>Price</th>
-                    <th>Balance</th>
-                    <th>Notes</th>
-                </tr>
-            {% set current_block = header %}
-        {% endif %}
-
-        {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
-        {% set payment_class = "payment-red" if l.balance < l.price else "" %}
-        <tr>
-            <td class="{{ client_class }}">{{ l.client_name }}</td>
-            <td>{{ l.age }}</td>
-            <td>{{ l.guardian }}</td>
-            <td>{{ l.mobile }}</td>
-            <td>{{ l.freq }}</td>
-            <td>{{ l.weight }}</td>
-            <td>{{ l.height }}</td>
-            <td>{{ "✓" if l.att else "X" }}</td>
-            <td class="{{ payment_class }}">{{ l.payment }}</td>
-            <td>{{ l.price }}</td>
-            <td>{{ l.balance }}</td>
-            <td>{{ l.notes }}</td>
-        </tr>
-
-        {% if loop.last %}
-            </table>
-        {% endif %}
-    {% endfor %}
+    {{ render_block(others) }}
 {% endif %}
 
 </body>
