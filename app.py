@@ -74,6 +74,34 @@ def get_static_teacher_time():
 
 
 
+def recalc_all_lessons():
+    lessons = (
+        Lesson.query
+        .order_by(
+            db.func.date(Lesson.lesson_date).asc(),
+            Lesson.lesson_id.asc()
+        )
+        .all()
+    )
+
+    for l in lessons:
+        carry = l.carry_fwd or 0
+        payment = l.payment or 0
+        price = l.price_pl or 0
+        adjust = l.adjust or 0
+        att = (l.attendance or '').strip().upper()
+
+        balance = carry + payment + adjust
+        if att in ['Y', 'N']:
+            balance -= price
+
+        l.balance = balance
+
+    db.session.commit()
+
+
+
+
 def recalc_client_cascade(client_name: str):
     lessons = (
         Lesson.query
@@ -1462,6 +1490,7 @@ def create_app():
 
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
     def lessons_by_date():
+        db.session.rollback()
         selected_date, selected_date_str = parse_selected_date()
 
         # If no date was provided, default to Brisbane "today"
@@ -1499,7 +1528,7 @@ def create_app():
 
         teacher_names = [t.teacher for t in get_static_teachers()]
         block_tag_lookup = {}
-        invoice_clients = []  # ✅ ensure it’s always defined
+        invoice_clients = []  # ensure it’s always defined
 
         if selected_date:
             horse_schedule = defaultdict(list)
@@ -1513,7 +1542,6 @@ def create_app():
             for l in lesson_rows:
                 print(l.lesson_id, l.client, "price_pl:", repr(l.price_pl))
             print("=== END PRICE DEBUG ===")
-
 
             for lesson in lesson_rows:
                 horse_name = to_proper_case(lesson.horse)
@@ -1560,7 +1588,7 @@ def create_app():
                 try:
                     return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
                 except Exception:
-                    return time.min   # earliest possible time of day
+                    return time.min
 
             sorted_keys = sorted(
                 grouped.keys(),
@@ -1576,15 +1604,12 @@ def create_app():
                 block_key = norm_timerange_key(timerange)
                 saved_tags = block_tag_lookup.get(block_key)
 
-                # ⭐ Apply defaults ONLY if the block has never been saved before
                 if block_key not in block_tag_lookup:
                     if (lesson_type or '').lower() == 'arena':
                         block_tag_lookup[block_key] = ['T1']
                     else:
                         block_tag_lookup[block_key] = ['T2']
 
-
-            # Debug print to confirm
             print("block_tag_lookup (final):", block_tag_lookup)
 
             horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
@@ -1594,46 +1619,40 @@ def create_app():
                 c.client_id for c in db.session.query(Client).filter_by(invoice_required=True).all()
             ]
 
-            # Populate clients for the popup client dropdown
             clients = get_static_clients()
-            weekday_int = selected_date.weekday()            # Python’s 0=Monday … 6=Sunday
+            weekday_int = selected_date.weekday()
             print("teacher_times_map:", teacher_times_map())
             print("weekday_int passed:", weekday_int)
-            
+
             teacher_horse_usage = {}
-            # selected_date is already a datetime.date, so use it directly
             selected_date_obj = selected_date
 
             teacher_rows = db.session.query(TeacherHorse).filter(
-                        TeacherHorse.date == selected_date_obj
+                TeacherHorse.date == selected_date_obj
             ).all()
 
             for th in teacher_rows:
-                        bk = (th.block_key or "").strip()
-                        if len(bk) == 8 and bk.isdigit():
-                                    start, end = bk[:4], bk[4:]
-                                    time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
-                        else:
-                                    time_slot = bk or "??:??"
+                bk = (th.block_key or "").strip()
+                if len(bk) == 8 and bk.isdigit():
+                    start, end = bk[:4], bk[4:]
+                    time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
+                else:
+                    time_slot = bk or "??:??"
 
-                        for raw_h in (th.horse1, th.horse2):
-                                    if raw_h:
-                                                name = to_proper_case(str(raw_h).strip())
-                                                teacher_horse_usage.setdefault(name, []).append(time_slot)
+                for raw_h in (th.horse1, th.horse2):
+                    if raw_h:
+                        name = to_proper_case(str(raw_h).strip())
+                        teacher_horse_usage.setdefault(name, []).append(time_slot)
 
             for h, usage_times in teacher_horse_usage.items():
                 teacher_horse_usage[h] = sorted(set(usage_times))
 
-            # ⭐ Load saved teacher slots for this date
             slot_rows = (
                 db.session.query(TeacherSlot)
                 .filter_by(lesson_date=selected_date)
                 .all()
             )
             slot_map = {s.slot_number: s.teacher_name for s in slot_rows}
-
-
-
 
         print("teacher_times:", teacher_times_map())
         print("horse_schedule:", horse_schedule)
@@ -1660,7 +1679,7 @@ def create_app():
                 times=times,
                 get_static_teachers=get_static_teachers,
                 client_lookup=client_lookup,
-                slot_map=slot_map   # ⭐ NEW
+                slot_map=slot_map
             )
         except Exception as e:
             print("\n\n=== TEMPLATE ERROR ===")
@@ -3427,6 +3446,8 @@ def create_app():
         # EDIT EXISTING LESSON
         # ---------------------------------------------------------
         if lesson_id:
+            db.session.rollback()
+
             lesson = Lesson.query.get(int(lesson_id))
             if not lesson:
                 return redirect(url_for("lessons_by_date", date=lesson_date_str))
@@ -3570,10 +3591,17 @@ def create_app():
                 print(f"[DEBUG] skipped {d} due to blockout")
                 continue
 
+            payment_raw = request.form.get("payment", "").replace("$", "").strip()
+            try:
+                payment_val = float(payment_raw) if payment_raw else 0
+            except:
+                payment_val = 0
+
             lesson = Lesson(
                 lesson_date=d,
                 time_frame=time_frame,
                 price_pl=parse_money(price_pl),
+                payment=payment_val,
                 lesson_type=lesson_type,
                 group_priv=group_priv,
                 freq=freq,
@@ -3609,6 +3637,8 @@ def create_app():
             return {"status": "error", "message": "Missing date"}, 400
 
         try:
+            db.session.rollback()
+
             for item in lessons:
                 lesson_id = item.get("lesson_id")
                 if not lesson_id:
@@ -3621,8 +3651,9 @@ def create_app():
                 # ----------------------------------------------------
                 # SANITIZE MONEY FIELDS
                 # ----------------------------------------------------
-                payment_raw = (item.get("payment") or "").replace("$", "").strip()
-                price_raw   = (item.get("price_pl") or "").replace("$", "").strip()
+                import re
+                payment_raw = re.sub(r"[^\d.\-]", "", item.get("payment") or "")
+                price_raw   = re.sub(r"[^\d.\-]", "", item.get("price_pl") or "")
 
                 if payment_raw not in ("", None, "None"):
                     try:
@@ -3640,8 +3671,12 @@ def create_app():
                 # NORMAL FIELDS
                 # ----------------------------------------------------
                 horse_val = item.get("horse")
-                if horse_val not in ("", None, "None"):
-                    lesson.horse = horse_val
+                print("DEBUG HORSE RECEIVED:", repr(horse_val), "for lesson", lesson_id)
+
+                if horse_val in ("", None, "None"):
+                    horse_val = ""
+
+                lesson.horse = horse_val
 
                 att_val = item.get("attendance")
                 lesson.attendance = att_val or ""
@@ -3670,7 +3705,7 @@ def create_app():
 
                 # Always update times
                 lesson.start = item.get("start")
-                lesson.end = item.get("end")
+                lesson.end   = item.get("end")
 
                 # ----------------------------------------------------
                 # CARRY-FORWARD ENGINE (WEEKLY / FORTNIGHTLY)
@@ -3693,18 +3728,24 @@ def create_app():
                         delta = (fl.lesson_date - lesson.lesson_date).days
 
                         if delta % step == 0:
-                            # ⭐ PRESERVE ATTENDANCE — FIXES OVERWRITE BUG
                             old_att = fl.attendance
                             fl.horse = lesson.horse
                             fl.attendance = old_att
 
             # --------------------------------------------------------
-            # RECALCULATE BALANCES AFTER SAVE
+            # TEMP: DISABLE RECALC TO PROVE COMMIT
             # --------------------------------------------------------
-            recalc_all_lessons()
-            db.session.commit()
+            try:
+                recalc_all_lessons()
+                db.session.commit()
+            except Exception as e:
+                print("🔥 ORM COMMIT ERROR:", e)
+                db.session.rollback()
+                return {"status": "error", "message": str(e)}, 500
 
-            return {"status": "ok"}
+            db.session.commit()
+            print("✅ COMMIT OK (no recalc)")
+            return {"status": "ok"}, 200
 
         except Exception as e:
             db.session.rollback()
@@ -4032,7 +4073,7 @@ Cherbon Waters Admin
             # --- Pull all horses (ALWAYS include all horses) ---
             horses = [
                 (h.horse or "").strip()
-                for h in db.session.query(Horse).order_by(Horse.horse).all()
+                for h in db.session.query(Horse).order_by(Horse.orderpdk).all()
                 if (h.horse or "").strip()
             ]
 
@@ -4134,7 +4175,7 @@ Cherbon Waters Admin
             # --- Pull all horses ---
             horses = [
                 (h.horse or "").strip()
-                for h in db.session.query(Horse).order_by(Horse.horse).all()
+                for h in db.session.query(Horse).order_by(Horse.orderpdk).all()
                 if (h.horse or "").strip()
             ]
 

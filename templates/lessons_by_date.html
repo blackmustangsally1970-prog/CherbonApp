@@ -1027,7 +1027,8 @@ select.teacher-dropdown {
       <option>Trail Ride</option>
       <option>Go Gallop</option>
       <option>Party</option>
-
+      <option>Payment</option>
+      <option>Comp</option>
     </select>
 
     <label>Group Priv</label>
@@ -1232,6 +1233,7 @@ select.teacher-dropdown {
                     <th>Type</th>
                     <th>Group/Priv</th>
                     <th>Price</th>
+                    <th>Payment</th>
                     <th class="sms-only-header" style="display:none;">Riders</th>
                 </tr>
             </thead>
@@ -1409,7 +1411,7 @@ select.teacher-dropdown {
     {% set show_red = ((price_val or 0) > (bal_val or 0) and not pay_val) %}
     <input type="text"
            name="payment_{{ lesson.lesson_id }}"
-           value="{% if pay_val and pay_val > 0.001 %}${{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
+           value="{% if pay_val and pay_val > 0.001 %}{{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
            class="compact-money{% if show_red %} negative-balance{% endif %}"
            autocomplete="off" inputmode="decimal"
            oninput="recalculateBalance({{ lesson.lesson_id }})">
@@ -2478,25 +2480,6 @@ $(document).on('click', function (e) {
 
 
 <script>
-document.getElementById("recalc-btn").addEventListener("click", async () => {
-    const btn = document.getElementById("recalc-btn");
-    btn.disabled = true;
-    btn.textContent = "Recalculating...";
-
-    const resp = await fetch("/recalculate_all", { method: "POST" });
-
-    if (resp.ok) {
-        location.reload();
-    } else {
-        btn.disabled = false;
-        btn.textContent = "Recalculate Balances";
-        alert("Recalculation failed");
-    }
-});
-</script>
-
-
-<script>
 function prefixMatcher(params, data) {
     // If no search term, show all
     if ($.trim(params.term) === '') {
@@ -2652,6 +2635,11 @@ if (recurrence === "F") {
                 <td>
                     <input type="text" class="form-control price-field" placeholder="$0.00">
                 </td>
+                <td>
+                    <input type="text" class="form-control payment-field" placeholder="$0.00">
+               </td>
+
+
                 <td class="sms-only-cell" style="display:none;">
                     <select class="form-select riders-field">
                         {% for i in range(1, 11) %}
@@ -2742,6 +2730,7 @@ if (recurrence === "F") {
                 lesson_type: type,
                 group_priv:  gp,
                 price:       price,
+                payment:     row.querySelector(".payment-field")?.value?.trim() || "0",
                 riders:      riders
             });
         });
@@ -2829,8 +2818,8 @@ if (info.booking_type === "existing") {
         form.append("lesson_type", row.lesson_type);
         form.append("group_priv", row.group_priv);
         form.append("price_pl", row.price);
+        form.append("payment", row.payment);
         form.append("freq", freq);
-
         form.append("client_mode", "existing");
         form.append("client_id", info.client_id);
         form.append("respect_blockouts", "yes");
@@ -2867,8 +2856,8 @@ if (info.booking_type === "new") {
         form.append("lesson_type", row.lesson_type);
         form.append("group_priv", row.group_priv);
         form.append("price_pl", row.price);
+        form.append("payment", row.payment);
         form.append("freq", freq);
-
         form.append("client_mode", "new");
         form.append("client_name", info.new_client_name);
         form.append("client_phone", info.mobile);
@@ -2892,7 +2881,8 @@ if (info.booking_type === "new") {
                 return;
             }
 
-            const btn = document.getElementById("save-lessons-btn");
+            const btn = document.getElementById("save-button");
+            if (!btn) return;   // safety
             btn.disabled = true;
             btn.textContent = "Sending SMS Invites...";
 
@@ -2939,6 +2929,10 @@ document.getElementById("save-button").addEventListener("click", async () => {
         date: selectedDate,
         lessons: []
     };
+    // ⭐ ADD THIS BLOCK HERE
+    document.querySelectorAll("select.searchable-dropdown").forEach(sel => {
+        sel.dispatchEvent(new Event("change"));
+    });
 
     for (const row of rows) {
         const lessonId = row.dataset.lessonId;
@@ -2950,11 +2944,11 @@ document.getElementById("save-button").addEventListener("click", async () => {
             : null;
 
         const notesVal = notesField ? notesField.value : "";
-
+        console.log("HORSE READ:", lessonId, $(row).find(`select[name='horse_${lessonId}']`).val());
         payload.lessons.push({
             lesson_id: lessonId,
 
-            horse: row.querySelector(`select[name='horse_${lessonId}']`)?.value || "",
+            horse: $(`select[name='horse_${lessonId}']`).val() || "",
             attendance: row.querySelector(`select[name='attendance_${lessonId}']`)?.value || "",
             payment: row.querySelector(`input[name='payment_${lessonId}']`)?.value || "",
             price_pl: row.querySelector(`input[name='price_pl_${lessonId}']`)?.value || "",
@@ -3102,18 +3096,17 @@ function resetSaveLessonButton() {
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const btn = document.getElementById("save-lessons-btn");
+    const btn = document.getElementById("save-button");
+    if (!btn) return;
 
     btn.addEventListener("click", function () {
 
-        // VISUAL SIGN: change button state
         btn.disabled = true;
         btn.innerHTML = 'Saving… <span class="save-spinner"></span>';
 
-        // Reset after 1.5 seconds
         setTimeout(() => {
             btn.disabled = false;
-            btn.innerHTML = 'Save Lessons';
+            btn.innerHTML = 'Save';
         }, 1500);
     });
 });
@@ -3122,36 +3115,47 @@ document.addEventListener("DOMContentLoaded", function () {
 
 {% block scripts %}
 <script>
-    window.addEventListener('load', function () {
-        document.querySelectorAll('.lesson-block input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', function () {
+window.addEventListener('load', function () {
 
-                const blockDiv = this.closest('.lesson-block');
-                const blockKey = blockDiv.dataset.blockKey;
-                const date = "{{ selected_date_str }}";
+    const checkboxes = document.querySelectorAll('.lesson-block input[type="checkbox"]');
 
-                const selected = Array.from(
-                    blockDiv.querySelectorAll('input[type="checkbox"]:checked')
-                ).map(x => x.value);
+    // ⭐ SAFETY CHECK — prevents the crash
+    if (!checkboxes || checkboxes.length === 0) {
+        console.warn("No lesson-block checkboxes found — skipping tag listener setup.");
+        return;
+    }
 
-                fetch("/save_block_tags", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        block_key: blockKey,
-                        lesson_date: date,
-                        tags: selected
-                    })
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function () {
+
+            const blockDiv = this.closest('.lesson-block');
+            if (!blockDiv) return;  // extra safety
+
+            const blockKey = blockDiv.dataset.blockKey;
+            const date = "{{ selected_date_str }}";
+
+            const selected = Array.from(
+                blockDiv.querySelectorAll('input[type="checkbox"]:checked')
+            ).map(x => x.value);
+
+            fetch("/save_block_tags", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    block_key: blockKey,
+                    lesson_date: date,
+                    tags: selected
                 })
-                .then(r => r.json())
-                .then(data => {
-                    console.log("Saved:", data);
-                    blockDiv.style.outline = "2px solid #4CAF50";
-                    setTimeout(() => blockDiv.style.outline = "", 600);
-                });
+            })
+            .then(r => r.json())
+            .then(data => {
+                console.log("Saved:", data);
+                blockDiv.style.outline = "2px solid #4CAF50";
+                setTimeout(() => blockDiv.style.outline = "", 600);
             });
         });
     });
+});
 </script>
 {% endblock %}
 

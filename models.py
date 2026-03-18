@@ -107,6 +107,8 @@ class Horse(db.Model):
     __tablename__ = 'horses'
     horse_id = db.Column(db.Integer, primary_key=True)
     horse = db.Column(db.Text)
+    orderpdk = db.Column(db.Integer)   # ⭐ ADD THIS
+
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
@@ -150,8 +152,8 @@ class Lesson(db.Model):
     lesson_notes = db.Column(db.Text)
     lesson_type = db.Column(db.String)
     group_priv = db.Column(db.String)
-
-    # NEW: recurrence frequency
+    blockends = db.Column(db.Date)
+    lesson_no = db.Column(db.Text)
     freq = db.Column(db.String(2))   # "S", "F", "W"
 
 class TeacherHorse(db.Model):
