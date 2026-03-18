@@ -4477,15 +4477,13 @@ Cherbon Waters Admin
         arena.sort(key=lambda x: (
                 x["time_frame"],
                 x["lesson_type"],
-                x["group_priv"],
-                x["client_name"].lower()
+                x["group_priv"]
         ))
 
         others.sort(key=lambda x: (
                 x["time_frame"],
                 x["lesson_type"],
-                x["group_priv"],
-                x["client_name"].lower()
+                x["group_priv"]
         ))
 
 
