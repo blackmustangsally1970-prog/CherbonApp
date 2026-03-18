@@ -3159,6 +3159,38 @@ window.addEventListener('load', function () {
 </script>
 {% endblock %}
 
+<script>
+    let unsavedChanges = false;
+
+    // Detect ANY change on the page, including Select2, dropdowns, inputs, etc.
+    document.addEventListener("change", () => {
+        unsavedChanges = true;
+    });
+
+    document.addEventListener("input", () => {
+        unsavedChanges = true;
+    });
+
+    // Select2 fires its own event — catch it
+    $(document).on('select2:select select2:unselect', function () {
+        unsavedChanges = true;
+    });
+
+    // Save button resets the flag
+    document.getElementById("save-button").addEventListener("click", () => {
+        unsavedChanges = false;
+    });
+
+    // Warn on page leave
+    window.addEventListener("beforeunload", function (e) {
+        if (!unsavedChanges) return;
+
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+    });
+</script>
+
 
 </body>
 </html>
