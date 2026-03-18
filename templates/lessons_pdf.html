@@ -74,7 +74,7 @@
 
 <body>
 
-<h1>Cherbon Waters – {{ dow }} {{ pretty_date }}</h1>
+<h1>Cherbon Waters Equestrian – {{ dow }} {{ pretty_date }}</h1>
 
 {% macro render_block(lessons) %}
     {% set current_block = None %}
@@ -82,34 +82,36 @@
 
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
 
-        {# NEW BLOCK START #}
         {% if header != current_block %}
             {# Close previous table #}
             {% if not loop.first %}
+                </tbody>
                 </table>
             {% endif %}
 
             <h2>{{ header }}</h2>
 
             <table>
-                <tr>
-                    <th>Client</th>
-                    <th>Age</th>
-                    <th>Guardian</th>
-                    <th>Mobile</th>
-                    <th>Freq</th>
-                    <th>Wgt</th>
-                    <th>Hgt</th>
-                    <th>ATT</th>
-                    <th>Payment</th>
-                    <th>Price</th>
-                    <th>Balance</th>
-                    <th>Notes</th>
-                    <th>SignNoPayment</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Age</th>
+                        <th>Guardian</th>
+                        <th>Mobile</th>
+                        <th>Freq</th>
+                        <th>Wgt</th>
+                        <th>Hgt</th>
+                        <th>ATT</th>
+                        <th>Payment</th>
+                        <th>Price</th>
+                        <th>Balance</th>
+                        <th>Notes</th>
+                        <th>SignNoPayment</th>
+                    </tr>
+                </thead>
+                <tbody>
         {% endif %}
 
-        {# UPDATE CURRENT BLOCK #}
         {% set current_block = header %}
 
         <tr>
@@ -128,8 +130,8 @@
             <td></td>
         </tr>
 
-        {# CLOSE TABLE AT END OF BLOCK #}
         {% if loop.last %}
+                </tbody>
             </table>
         {% endif %}
 
