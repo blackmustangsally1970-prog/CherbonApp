@@ -4436,6 +4436,26 @@ Cherbon Waters Admin
         arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
         others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
 
+        # Flatten arena if nested
+        flat_arena = []
+        for item in arena:
+                if isinstance(item, list):
+                        flat_arena.extend(item)
+                else:
+                        flat_arena.append(item)
+        arena = flat_arena
+
+        # Flatten others if nested
+        flat_others = []
+        for item in others:
+                if isinstance(item, list):
+                        flat_others.extend(item)
+                else:
+                        flat_others.append(item)
+        others = flat_others
+
+
+
         # Sort by time_frame → lesson_type → group_priv → client_name
         arena.sort(key=lambda x: (
                 x["time_frame"],
