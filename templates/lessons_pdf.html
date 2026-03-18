@@ -124,8 +124,8 @@
 
             {# Attendance logic: blank unless Y/N/C #}
             <td>
-                {% if l.attendance in ['Y', 'N', 'C'] %}
-                    {{ l.attendance }}
+                {% if l.att in ['Y', 'N', 'C'] %}
+                    {{ l.att }}
                 {% else %}
                     <!-- blank -->
                 {% endif %}
