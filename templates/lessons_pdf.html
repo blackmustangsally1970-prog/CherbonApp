@@ -83,8 +83,6 @@
         {# NORMALISED HEADER #}
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
 
-        {{ header|tojson }}
-
         {# NEW BLOCK START #}
         {% if header != current_block %}
             {% if not loop.first %}
@@ -92,6 +90,9 @@
             {% endif %}
 
             <h2>{{ header }}</h2>
+
+            {# DEBUG: JSON header, now printed AFTER the header #}
+            {{ header|tojson }}
 
             <table>
                 <tr>
@@ -109,8 +110,10 @@
                     <th>Notes</th>
                     <th>SignNoPayment</th>
                 </tr>
-            {% set current_block = header %}
-        {% endif %}
+            {% endif %}
+
+        {# CRITICAL FIX: update current_block OUTSIDE the table block #}
+        {% set current_block = header %}
 
         {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
         {% set payment_class = "payment-red" if l.balance < l.price else "" %}
