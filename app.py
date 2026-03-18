@@ -4460,25 +4460,13 @@ Cherbon Waters Admin
                         flat_others.append(item)
         others = flat_others
 
-        # TEMP: inspect first few arena items in logs
+        # TEMP: inspect only the 16:00 - 17:30 block
+        for d in arena:
+                if d["time_frame"] == "16:00 - 17:30":
+                        print("ARENA 16:00 BLOCK:", repr(d))
+
+        # TEMP: inspect first few arena items
         print("ARENA RAW SAMPLE:", repr(arena[:10]))
-
-        # Sort by time_frame → lesson_type → group_priv → client_name
-        arena.sort(key=lambda x: (
-                x["time_frame"],
-                x["lesson_type"],
-                x["group_priv"],
-                x["client_name"].lower()
-        ))
-
-        others.sort(key=lambda x: (
-                x["time_frame"],
-                x["lesson_type"],
-                x["group_priv"],
-                x["client_name"].lower()
-        ))
-
-
 
         # Sort by time_frame → lesson_type → group_priv → client_name
         arena.sort(key=lambda x: (
