@@ -4433,8 +4433,8 @@ Cherbon Waters Admin
             })
 
         # Split Arena vs others
-        arena = [d for d in data if d["lesson_type"].lower() == "arena"]
-        others = [d for d in data if d["lesson_type"].lower() != "arena"]
+        arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
+        others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
 
         # Sort by time_frame → lesson_type → group_priv → client_name
         arena.sort(key=lambda x: (
@@ -4450,6 +4450,7 @@ Cherbon Waters Admin
                 x["group_priv"],
                 x["client_name"].lower()
         ))
+
 
         html = render_template(
             "lessons_pdf.html",
