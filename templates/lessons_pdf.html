@@ -80,18 +80,14 @@
     {% set current_block = None %}
     {% for l in lessons %}
 
-        {# NORMALISED HEADER #}
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
 
-        {# NEW BLOCK START #}
         {% if header != current_block %}
             {% if not loop.first %}
                 </table>
             {% endif %}
 
             <h2>{{ header }}</h2>
-
-            {# DEBUG: JSON header, now printed AFTER the header #}
             {{ header|tojson }}
 
             <table>
@@ -110,30 +106,20 @@
                     <th>Notes</th>
                     <th>SignNoPayment</th>
                 </tr>
-            {% endif %}
+        {% endif %}
 
-        {# CRITICAL FIX: update current_block OUTSIDE the table block #}
         {% set current_block = header %}
 
-        {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
-        {% set payment_class = "payment-red" if l.balance < l.price else "" %}
-
         <tr>
-            <td class="{{ client_class }}">{{ l.client_name }}</td>
+            <td>{{ l.client_name }}</td>
             <td>{{ l.age }}</td>
             <td>{{ l.guardian }}</td>
             <td>{{ l.mobile }}</td>
             <td>{{ l.freq }}</td>
             <td>{{ l.weight }}</td>
             <td>{{ l.height }}</td>
-
-            <td>
-                {% if l.att in ['Y', 'N', 'C'] %}
-                    {{ l.att }}
-                {% endif %}
-            </td>
-
-            <td class="{{ payment_class }}">{{ l.payment }}</td>
+            <td>{% if l.att in ['Y','N','C'] %}{{ l.att }}{% endif %}</td>
+            <td>{{ l.payment }}</td>
             <td>{{ l.price }}</td>
             <td>{{ l.balance }}</td>
             <td>{{ l.notes }}</td>
