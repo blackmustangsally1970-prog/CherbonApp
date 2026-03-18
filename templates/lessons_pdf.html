@@ -7,7 +7,7 @@
     <style>
         @page {
             size: A4 landscape;
-            margin: 6mm; /* tight as we can safely go */
+            margin: 6mm;
         }
 
         body {
@@ -51,20 +51,19 @@
             text-overflow: ellipsis;
         }
 
-        /* Column widths tuned for operational density */
-        th:nth-child(1), td:nth-child(1) { width: 120px; } /* Client */
-        th:nth-child(2), td:nth-child(2) { width: 25px; }  /* Age */
-        th:nth-child(3), td:nth-child(3) { width: 110px; } /* Guardian */
-        th:nth-child(4), td:nth-child(4) { width: 80px; }  /* Mobile */
-        th:nth-child(5), td:nth-child(5) { width: 25px; }  /* Freq */
-        th:nth-child(6), td:nth-child(6) { width: 25px; }  /* Wgt */
-        th:nth-child(7), td:nth-child(7) { width: 25px; }  /* Hgt */
-        th:nth-child(8), td:nth-child(8) { width: 25px; }  /* ATT */
-        th:nth-child(9), td:nth-child(9) { width: 60px; }  /* Payment */
-        th:nth-child(10), td:nth-child(10) { width: 50px; } /* Price */
-        th:nth-child(11), td:nth-child(11) { width: 50px; } /* Balance */
-        th:nth-child(12), td:nth-child(12) { width: 200px; } /* Notes */
-        th:nth-child(13), td:nth-child(13) { width: 70px; } /* SignNoPayment */
+        th:nth-child(1), td:nth-child(1) { width: 120px; }
+        th:nth-child(2), td:nth-child(2) { width: 25px; }
+        th:nth-child(3), td:nth-child(3) { width: 110px; }
+        th:nth-child(4), td:nth-child(4) { width: 80px; }
+        th:nth-child(5), td:nth-child(5) { width: 25px; }
+        th:nth-child(6), td:nth-child(6) { width: 25px; }
+        th:nth-child(7), td:nth-child(7) { width: 25px; }
+        th:nth-child(8), td:nth-child(8) { width: 25px; }
+        th:nth-child(9), td:nth-child(9) { width: 60px; }
+        th:nth-child(10), td:nth-child(10) { width: 50px; }
+        th:nth-child(11), td:nth-child(11) { width: 50px; }
+        th:nth-child(12), td:nth-child(12) { width: 200px; }
+        th:nth-child(13), td:nth-child(13) { width: 70px; }
 
         .client-red { color: red; font-weight: bold; }
         .payment-red { background-color: #ffcccc; }
@@ -77,11 +76,14 @@
 
 <h1>Cherbon Waters – {{ dow }} {{ pretty_date }}</h1>
 
-{# ---------- RENDER BLOCK FUNCTION ---------- #}
 {% macro render_block(lessons) %}
     {% set current_block = None %}
     {% for l in lessons %}
+
+        {# NORMALISED HEADER #}
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
+
+        {# NEW BLOCK START #}
         {% if header != current_block %}
             {% if not loop.first %}
                 </table>
@@ -105,7 +107,6 @@
                     <th>Notes</th>
                     <th>SignNoPayment</th>
                 </tr>
-
             {% set current_block = header %}
         {% endif %}
 
@@ -121,12 +122,9 @@
             <td>{{ l.weight }}</td>
             <td>{{ l.height }}</td>
 
-            {# Attendance logic: blank unless Y/N/C #}
             <td>
                 {% if l.att in ['Y', 'N', 'C'] %}
                     {{ l.att }}
-                {% else %}
-                    <!-- blank -->
                 {% endif %}
             </td>
 
@@ -134,23 +132,22 @@
             <td>{{ l.price }}</td>
             <td>{{ l.balance }}</td>
             <td>{{ l.notes }}</td>
-            <td></td>  {# SignNoPayment blank column #}
+            <td></td>
         </tr>
 
         {% if loop.last %}
             </table>
         {% endif %}
+
     {% endfor %}
 {% endmacro %}
 
-{# ---------- ARENA PAGE ---------- #}
 {% if arena %}
     {{ render_block(arena) }}
 {% endif %}
 
 <div class="page-break"></div>
 
-{# ---------- OTHER LESSON TYPES ---------- #}
 <h1>Cherbon Waters – {{ dow }} {{ pretty_date }}</h1>
 
 {% if others %}
