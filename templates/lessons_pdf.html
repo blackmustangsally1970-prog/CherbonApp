@@ -81,7 +81,7 @@
 {% macro render_block(lessons) %}
     {% set current_block = None %}
     {% for l in lessons %}
-        {% set header = l.time_frame ~ " " ~ l.lesson_type ~ " " ~ l.group_priv %}
+        {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
 
         {% if header != current_block %}
             {% if not loop.first %}
