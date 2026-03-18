@@ -87,9 +87,6 @@
                 </table>
             {% endif %}
 
-            <h2>{{ header }}</h2>
-            {{ header|tojson }}
-
             <table>
                 <tr>
                     <th>Client</th>
@@ -132,6 +129,7 @@
 
     {% endfor %}
 {% endmacro %}
+
 
 {% if arena %}
     {{ render_block(arena) }}
