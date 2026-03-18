@@ -82,7 +82,6 @@
     {% set current_block = None %}
     {% for l in lessons %}
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
-
         {% if header != current_block %}
             {% if not loop.first %}
                 </table>
