@@ -76,7 +76,7 @@
 
 <h1>Cherbon Waters Equestrian – {{ dow }} {{ pretty_date }}</h1>
 
-{% macro render_block(lessons) %}
+{% macro render_block_v3(lessons) %}
     {% set current_block = None %}
     {% for l in lessons %}
 
@@ -143,7 +143,7 @@
 
 
 {% if arena %}
-    {{ render_block(arena) }}
+    {{ render_block_v3(arena) }}
 {% endif %}
 
 <div class="page-break"></div>
