@@ -82,7 +82,9 @@
 
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
 
+        {# NEW BLOCK START #}
         {% if header != current_block %}
+            {# Close previous table #}
             {% if not loop.first %}
                 </table>
             {% endif %}
@@ -107,6 +109,7 @@
                 </tr>
         {% endif %}
 
+        {# UPDATE CURRENT BLOCK #}
         {% set current_block = header %}
 
         <tr>
@@ -125,12 +128,14 @@
             <td></td>
         </tr>
 
+        {# CLOSE TABLE AT END OF BLOCK #}
         {% if loop.last %}
             </table>
         {% endif %}
 
     {% endfor %}
 {% endmacro %}
+
 
 
 
