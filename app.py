@@ -4436,9 +4436,20 @@ Cherbon Waters Admin
         arena = [d for d in data if d["lesson_type"].lower() == "arena"]
         others = [d for d in data if d["lesson_type"].lower() != "arena"]
 
-        # Sort alphabetically inside each block
-        arena.sort(key=lambda x: (x["time_frame"], x["lesson_type"], x["group_priv"], x["client_name"].lower()))
-        others.sort(key=lambda x: (x["time_frame"], x["lesson_type"], x["group_priv"], x["client_name"].lower()))
+        # Sort by time_frame → lesson_type → group_priv → client_name
+        arena.sort(key=lambda x: (
+                x["time_frame"],
+                x["lesson_type"],
+                x["group_priv"],
+                x["client_name"].lower()
+        ))
+
+        others.sort(key=lambda x: (
+                x["time_frame"],
+                x["lesson_type"],
+                x["group_priv"],
+                x["client_name"].lower()
+        ))
 
         html = render_template(
             "lessons_pdf.html",
