@@ -1511,6 +1511,153 @@ def create_app():
         return resp
 
 
+    def build_lessons_context(selected_date, selected_date_str):
+        """
+        Takes a date + its string form and returns the full context
+        needed by lessons_by_date.html.
+        """
+        grouped_lessons = {}
+        horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
+        horse_schedule = defaultdict(list)
+        client_horse_history = defaultdict(list)
+        times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
+        teacher_names = [t.teacher for t in get_static_teachers()]
+        block_tag_lookup = {}
+        invoice_clients = []
+        if selected_date:
+            lesson_rows = (
+                db.session.query(Lesson)
+                .filter_by(lesson_date=selected_date)
+                .order_by(Lesson.time_frame)
+                .all()
+            )
+        else:
+            lesson_rows = []
+
+        # Populate horse_schedule from lesson_rows
+        for lesson in lesson_rows:
+            horse_name = to_proper_case(lesson.horse)
+            att = (lesson.attendance or '').strip().upper()
+            time_frame = (lesson.time_frame or '').strip()
+
+            if horse_name and time_frame and att != 'C':
+                horse_schedule[horse_name].append(time_frame)
+
+        # Build time lookup
+        time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
+
+        # Build client lookup
+        client_lookup = {}
+        clients = db.session.query(Client).all()
+
+        for c in clients:
+            full = c.full_name or ''
+            key = normalize_name_for_lookup(full)
+            client_lookup[key] = c
+            client_lookup[(full or '').lower().replace(' ', '')] = c
+
+        # Group lessons
+        grouped = defaultdict(list)
+        for lesson in lesson_rows:
+            time_key = norm(lesson.time_frame)
+            time_obj = time_lookup.get(time_key)
+            client_key = normalize_name_for_lookup(lesson.client or '')
+            client_obj = client_lookup.get(client_key)
+
+            if not client_obj:
+                alt_key = (lesson.client or '').lower().replace(' ', '')
+                client_obj = client_lookup.get(alt_key)
+
+            timerange_display = time_obj.timerange if time_obj else (lesson.time_frame or '—')
+            group_key = (timerange_display, lesson.lesson_type or '', lesson.group_priv or '')
+            grouped[group_key].append((lesson, client_obj))
+
+        # Sorting helper
+        def time_sort_key(timerange):
+            try:
+                return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
+            except Exception:
+                return time.min
+
+        sorted_keys = sorted(
+            grouped.keys(),
+            key=lambda k: (0 if (k[1] or '').lower() == 'arena' else 1, time_sort_key(k[0]))
+        )
+
+        grouped_lessons = {
+            k: sorted(grouped[k], key=lambda pair: ((pair[1].full_name if pair[1] else pair[0].client) or '').lower())
+            for k in sorted_keys
+        }
+
+        # Build block_tag_lookup from DB
+        block_tag_lookup = {}
+        rows = db.session.query(LessonBlockTag).filter_by(lesson_date=selected_date).all()
+        for r in rows:
+            key = norm_timerange_key(r.time_range)
+            tags = [t.strip() for t in (r.teacher_tags or '').split(',') if t.strip()]
+            block_tag_lookup[key] = tags
+
+        # Apply fallback tags based on lesson type
+        for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
+            block_key = norm_timerange_key(timerange)
+            if block_key not in block_tag_lookup:
+                if (lesson_type or '').lower() == 'arena':
+                    block_tag_lookup[block_key] = ['T1']
+                else:
+                    block_tag_lookup[block_key] = ['T2']
+
+        # Build teacher_horse_usage
+        teacher_horse_usage = {}
+        teacher_rows = db.session.query(TeacherHorse).filter(
+            TeacherHorse.date == selected_date
+        ).all()
+
+        for th in teacher_rows:
+            bk = (th.block_key or "").strip()
+            if len(bk) == 8 and bk.isdigit():
+                start, end = bk[:4], bk[4:]
+                time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
+            else:
+                time_slot = bk or "??:??"
+
+            for raw_h in (th.horse1, th.horse2):
+                if raw_h:
+                    name = to_proper_case(str(raw_h).strip())
+                    teacher_horse_usage.setdefault(name, []).append(time_slot)
+
+        # Deduplicate + sort
+        for h, usage_times in teacher_horse_usage.items():
+            teacher_horse_usage[h] = sorted(set(usage_times))
+
+        # Build slot_map
+        slot_rows = (
+            db.session.query(TeacherSlot)
+            .filter_by(lesson_date=selected_date)
+            .all()
+        )
+        slot_map = {s.slot_number: s.teacher_name for s in slot_rows}
+
+
+        return {
+            "grouped_lessons": grouped_lessons,
+            "horse_list": horse_list,
+            "horse_schedule": horse_schedule,
+            "client_horse_history": client_horse_history,
+            "times": times,
+            "teacher_names": teacher_names,
+            "block_tag_lookup": block_tag_lookup,
+            "invoice_clients": invoice_clients,
+            "lesson_rows": lesson_rows,
+            "time_lookup": time_lookup,
+            "client_lookup": client_lookup,
+            "clients": clients,
+            "teacher_horse_usage": teacher_horse_usage,
+            "slot_map": slot_map,             
+        }
+
+
+
+
 
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
     def lessons_by_date():
@@ -1537,174 +1684,59 @@ def create_app():
         except Exception as e:
             parsed = None
             print("parse error:", e)
-        # quick DB check for that parsed date
         rows = db.session.query(Lesson).filter(Lesson.lesson_date == parsed).limit(5).all() if parsed else []
         print("rows found (count):", len(rows))
         for r in rows:
             print("  sample:", r.lesson_id, getattr(r, 'client', None), getattr(r, 'lesson_date', None))
         print("=== END DEBUG ===")
 
-        grouped_lessons = {}
-        horse_list = []
-        horse_schedule = defaultdict(list)
-        client_horse_history = defaultdict(list)
-        times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
+        # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
+        ctx = build_lessons_context(selected_date, selected_date_str)
 
-        teacher_names = [t.teacher for t in get_static_teachers()]
-        block_tag_lookup = {}
-        invoice_clients = []  # ensure it’s always defined
+        grouped_lessons = ctx["grouped_lessons"]
+        horse_list = ctx["horse_list"]
+        horse_schedule = ctx["horse_schedule"]
+        client_horse_history = ctx["client_horse_history"]
+        times = ctx["times"]
+        teacher_names = ctx["teacher_names"]
+        block_tag_lookup = ctx["block_tag_lookup"]
+        invoice_clients = ctx["invoice_clients"]
+        lesson_rows = ctx["lesson_rows"]
+        time_lookup = ctx["time_lookup"]
+        client_lookup = ctx["client_lookup"]
+        clients = ctx["clients"]
+        teacher_horse_usage = ctx["teacher_horse_usage"]
+        slot_map = ctx["slot_map"]
+        # ⭐⭐ END INSERT ⭐⭐
 
-        if selected_date:
-            horse_schedule = defaultdict(list)
-            lesson_rows = (
-                db.session.query(Lesson)
-                .filter_by(lesson_date=selected_date)
-                .order_by(Lesson.time_frame)
-                .all()
-            )
-            print("=== PRICE DEBUG ===")
-            for l in lesson_rows:
-                print(l.lesson_id, l.client, "price_pl:", repr(l.price_pl))
-            print("=== END PRICE DEBUG ===")
+        print("=== PRICE DEBUG ===")
+        for l in lesson_rows:
+            print(l.lesson_id, l.client, "price_pl:", repr(l.price_pl))
+        print("=== END PRICE DEBUG ===")
 
-            for lesson in lesson_rows:
-                horse_name = to_proper_case(lesson.horse)
-                att = (lesson.attendance or '').strip().upper()
-                time_frame = (lesson.time_frame or '').strip()
-
-                if horse_name and time_frame and att != 'C':
-                    horse_schedule[horse_name].append(time_frame)
-
-            time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
-
-            client_lookup = {}
-            clients = db.session.query(Client).all()
-
-            for c in clients:
-                full = c.full_name or ''
-                key = normalize_name_for_lookup(full)
-                client_lookup[key] = c
-                client_lookup[(full or '').lower().replace(' ', '')] = c
-
-            block_tag_lookup = {}
-            rows = db.session.query(LessonBlockTag).filter_by(lesson_date=selected_date).all()
-            for r in rows:
-                key = norm_timerange_key(r.time_range)
-                tags = [t.strip() for t in (r.teacher_tags or '').split(',') if t.strip()]
-                block_tag_lookup[key] = tags
-
-            grouped = defaultdict(list)
-            for lesson in lesson_rows:
-                time_key = norm(lesson.time_frame)
-                time_obj = time_lookup.get(time_key)
-                client_key = normalize_name_for_lookup(lesson.client or '')
-                client_obj = client_lookup.get(client_key)
-
-                if not client_obj:
-                    alt_key = (lesson.client or '').lower().replace(' ', '')
-                    client_obj = client_lookup.get(alt_key)
-
-                timerange_display = time_obj.timerange if time_obj else (lesson.time_frame or '—')
-                group_key = (timerange_display, lesson.lesson_type or '', lesson.group_priv or '')
-                grouped[group_key].append((lesson, client_obj))
-
-            def time_sort_key(timerange):
-                try:
-                    return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
-                except Exception:
-                    return time.min
-
-            sorted_keys = sorted(
-                grouped.keys(),
-                key=lambda k: (0 if (k[1] or '').lower() == 'arena' else 1, time_sort_key(k[0]))
-            )
-
-            grouped_lessons = {
-                k: sorted(grouped[k], key=lambda pair: ((pair[1].full_name if pair[1] else pair[0].client) or '').lower())
-                for k in sorted_keys
-            }
-
-            for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
-                block_key = norm_timerange_key(timerange)
-                saved_tags = block_tag_lookup.get(block_key)
-
-                if block_key not in block_tag_lookup:
-                    if (lesson_type or '').lower() == 'arena':
-                        block_tag_lookup[block_key] = ['T1']
-                    else:
-                        block_tag_lookup[block_key] = ['T2']
-
-            print("block_tag_lookup (final):", block_tag_lookup)
-
-            horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
-            horse_schedule = {str(k): [str(t) for t in v] for k, v in horse_schedule.items()}
-
-            invoice_clients = [
-                c.client_id for c in db.session.query(Client).filter_by(invoice_required=True).all()
-            ]
-
-            clients = get_static_clients()
-            weekday_int = selected_date.weekday()
-            print("teacher_times_map:", teacher_times_map())
-            print("weekday_int passed:", weekday_int)
-
-            teacher_horse_usage = {}
-            selected_date_obj = selected_date
-
-            teacher_rows = db.session.query(TeacherHorse).filter(
-                TeacherHorse.date == selected_date_obj
-            ).all()
-
-            for th in teacher_rows:
-                bk = (th.block_key or "").strip()
-                if len(bk) == 8 and bk.isdigit():
-                    start, end = bk[:4], bk[4:]
-                    time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
-                else:
-                    time_slot = bk or "??:??"
-
-                for raw_h in (th.horse1, th.horse2):
-                    if raw_h:
-                        name = to_proper_case(str(raw_h).strip())
-                        teacher_horse_usage.setdefault(name, []).append(time_slot)
-
-            for h, usage_times in teacher_horse_usage.items():
-                teacher_horse_usage[h] = sorted(set(usage_times))
-
-            slot_rows = (
-                db.session.query(TeacherSlot)
-                .filter_by(lesson_date=selected_date)
-                .all()
-            )
-            slot_map = {s.slot_number: s.teacher_name for s in slot_rows}
-
-        print("teacher_times:", teacher_times_map())
-        print("horse_schedule:", horse_schedule)
-        print("teacher_horse_usage:", teacher_horse_usage)
-        print("invoice_clients:", invoice_clients)
         print("ABOUT TO RENDER TEMPLATE — ALL DATA LOADED OK")
 
-        import sys
-        try:
-            return render_template(
-                'lessons_by_date.html',
-                grouped_lessons=grouped_lessons,
-                selected_date=selected_date_str,
-                weekday_int=weekday_int,
-                horse_list=horse_list,
-                horse_schedule=horse_schedule,
-                teacher_names=teacher_names,
-                block_tag_lookup=block_tag_lookup,
-                client_horse_history=client_horse_history,
-                invoice_clients=invoice_clients,
-                clients=clients,
-                teacher_times=teacher_times_map(),
-                teacher_horse_usage=teacher_horse_usage,
-                times=times,
-                get_static_teachers=get_static_teachers,
-                client_lookup=client_lookup,
-                slot_map=slot_map
-            )
+        return render_template(
+            'lessons_by_date.html',
+            grouped_lessons=grouped_lessons,
+            selected_date=selected_date_str,
+            weekday_int=weekday_int,
+            horse_list=horse_list,
+            horse_schedule=horse_schedule,
+            teacher_names=teacher_names,
+            block_tag_lookup=block_tag_lookup,
+            client_horse_history=client_horse_history,
+            invoice_clients=invoice_clients,
+            clients=clients,
+            teacher_times=teacher_times_map(),
+            teacher_horse_usage=teacher_horse_usage,
+            times=times,
+            get_static_teachers=get_static_teachers,
+            client_lookup=client_lookup,
+            slot_map=slot_map,
+            norm_timerange_key=norm_timerange_key
+        )
+
         except Exception as e:
             print("\n\n=== TEMPLATE ERROR ===")
             print(e)
@@ -2012,6 +2044,52 @@ def create_app():
             return f"Processed {len(created_lessons)} riders into lessons; errors: {len(errors)}"
         return f"Processed {len(created_lessons)} riders into lessons"
 
+    @app.route('/lessons_by_date_pdf')
+    def lessons_by_date_pdf():
+        db.session.rollback()
+
+        # Parse date from query string
+        selected_date, selected_date_str = parse_selected_date()
+
+        if not selected_date:
+            selected_date = datetime.now(ZoneInfo("Australia/Brisbane")).date()
+            selected_date_str = selected_date.strftime('%Y-%m-%d')
+
+        # Build the SAME context as the HTML route
+        ctx = build_lessons_context(selected_date, selected_date_str)
+
+        # Render the SAME template into HTML
+        html = render_template(
+            'lessons_by_date.html',
+            grouped_lessons=ctx["grouped_lessons"],
+            selected_date=selected_date_str,
+            weekday_int=selected_date.weekday(),
+            horse_list=ctx["horse_list"],
+            horse_schedule=ctx["horse_schedule"],
+            teacher_names=ctx["teacher_names"],
+            block_tag_lookup=ctx["block_tag_lookup"],
+            client_horse_history=ctx["client_horse_history"],
+            invoice_clients=ctx["invoice_clients"],
+            clients=ctx["clients"],
+            teacher_times=teacher_times_map(),
+            teacher_horse_usage=ctx["teacher_horse_usage"],
+            times=ctx["times"],
+            get_static_teachers=get_static_teachers,
+            client_lookup=ctx["client_lookup"],
+            slot_map=ctx["slot_map"]
+        )
+
+        # Generate PDF
+        pdf = weasyprint.HTML(string=html).write_pdf()
+
+        # Return PDF response
+        return Response(
+            pdf,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'inline; filename=lessons_{selected_date_str}.pdf'
+            }
+        )
 
 
     @app.route('/notifications/invite_conflicts')
