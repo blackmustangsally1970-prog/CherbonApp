@@ -88,16 +88,16 @@
 
         {# START OF NEW BLOCK #}
         {% if header != current_block %}
-            {# Close previous block #}
+            {# Close previous block completely #}
             {% if not loop.first %}
                         </tbody>
                     </table>
                 </div>
             {% endif %}
 
+            {# OPEN NEW BLOCK WRAPPER #}
             <div class="lesson-block">
-                {# <h2>{{ header }}</h2> #}
-
+                <h2>{{ header }}</h2>
 
                 <table>
                     <thead>
