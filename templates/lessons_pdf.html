@@ -18,6 +18,13 @@
             display: table-header-group;
         }
 
+        .block-header {
+            display: block;
+            page-break-inside: avoid;
+        }
+
+
+
         .lesson-block {
             page-break-inside: avoid;
         }
@@ -97,18 +104,17 @@
 
         {% set header = l.time_frame|trim ~ " " ~ l.lesson_type|trim ~ " " ~ l.group_priv|trim %}
 
-        {# START OF NEW BLOCK #}
         {% if header != current_block %}
-            {# Close previous block completely #}
             {% if not loop.first %}
-                        </tbody>
-                    </table>
-                </div>
+                    </tbody>
+                </table>
+            </div>
             {% endif %}
 
-            {# OPEN NEW BLOCK WRAPPER #}
             <div class="lesson-block">
-                <h2>{{ header }}</h2>
+                <div class="block-header">
+                    <h2>{{ header }}</h2>
+                </div>
 
                 <table>
                     <thead>
@@ -149,7 +155,6 @@
             <td></td>
         </tr>
 
-        {# END OF ALL LESSONS #}
         {% if loop.last %}
                     </tbody>
                 </table>
