@@ -1737,11 +1737,6 @@ def create_app():
             norm_timerange_key=norm_timerange_key
         )
 
-        except Exception as e:
-            print("\n\n=== TEMPLATE ERROR ===")
-            print(e)
-            print("======================\n\n")
-            raise
 
 
     def detect_conflicts(riders):
