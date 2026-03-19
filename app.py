@@ -36,6 +36,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import Users
 from functools import wraps
 from zoneinfo import ZoneInfo
+from playwright.sync_api import sync_playwright
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -3830,6 +3831,36 @@ def create_app():
             flash(f'Reindexing failed: {str(e)}', 'danger')
             log_admin_action(f"Reindex failed: {str(e)}", user="system")
         return redirect(url_for('debug_page'))
+
+
+    @app.route("/pdf/<date>")
+    def pdf_for_date(date):
+        # 1. Build your data exactly like your normal page
+        arena, others, dow, pretty_date = get_lessons_for_date(date)
+
+        # 2. Render your existing HTML template
+        html = render_template(
+            "lessons_by_date.html",
+            arena=arena,
+            others=others,
+            dow=dow,
+            pretty_date=pretty_date
+        )
+
+        # 3. Generate PDF using Chromium
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.set_content(html)
+            pdf_bytes = page.pdf(format="A4", landscape=True)
+            browser.close()
+
+        # 4. Return PDF to browser
+        resp = make_response(pdf_bytes)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = f"inline; filename=lessons_{date}.pdf"
+        return resp
+
 
 
     @app.route('/send_invoice')
