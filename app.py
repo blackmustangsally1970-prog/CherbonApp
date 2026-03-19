@@ -4176,10 +4176,30 @@ Cherbon Waters Admin
                 if (h.horse or "").strip()
             ]
 
-            # --- Pull lessons for the day ---
             lessons = db.session.query(Lesson).filter(
                 Lesson.lesson_date == day
             ).order_by(Lesson.time_frame.asc()).all()
+
+            # --- Merge UI state into lessons (Option 1) ---
+            ui_state = request.get_json(silent=True) or {}
+            ui_lessons = {str(item["lesson_id"]): item for item in ui_state.get("lessons", [])}
+
+            for l in lessons:
+                lid = str(l.lesson_id)
+                if lid in ui_lessons:
+                    ui = ui_lessons[lid]
+
+                    if ui.get("horse"):
+                        l.horse = ui["horse"]
+
+                    if ui.get("time"):
+                        l.time_frame = ui["time"]
+
+                    if ui.get("attendance"):
+                        l.attendance = ui["attendance"]
+
+                    if ui.get("teacher"):
+                        l.teacher = ui["teacher"]
 
             # --- Build time slots ---
             time_slots = sorted({
@@ -4187,6 +4207,7 @@ Cherbon Waters Admin
                 for l in lessons
                 if l.time_frame
             })
+
 
             # --- Build empty schedule matrix ---
             schedule = {h: {slot: "" for slot in time_slots} for h in horses}
@@ -4255,11 +4276,6 @@ Cherbon Waters Admin
 
 
 
-
-        except Exception as e:
-            return {"error": str(e)}, 500
-
-
     @app.route('/save_xlsx', methods=['POST'])
     def save_xlsx():
         try:
@@ -4283,12 +4299,34 @@ Cherbon Waters Admin
                 Lesson.lesson_date == day
             ).order_by(Lesson.time_frame.asc()).all()
 
+            # --- Merge UI state into lessons (Option 1) ---
+            ui_state = request.get_json(silent=True) or {}
+            ui_lessons = {str(item["lesson_id"]): item for item in ui_state.get("lessons", [])}
+
+            for l in lessons:
+                lid = str(l.lesson_id)
+                if lid in ui_lessons:
+                    ui = ui_lessons[lid]
+
+                    if ui.get("horse"):
+                        l.horse = ui["horse"]
+
+                    if ui.get("time"):
+                        l.time_frame = ui["time"]
+
+                    if ui.get("attendance"):
+                        l.attendance = ui["attendance"]
+
+                    if ui.get("teacher"):
+                        l.teacher = ui["teacher"]
+
             # --- Build time slots ---
             time_slots = sorted({
                 (l.time_frame or "").split("-")[0].strip()
                 for l in lessons
                 if l.time_frame
             })
+
 
             # --- Build empty schedule ---
             schedule = {h: {slot: "" for slot in time_slots} for h in horses}

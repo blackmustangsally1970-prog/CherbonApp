@@ -2505,31 +2505,73 @@ function prefixMatcher(params, data) {
 }
 </script>
 
-<script>
-document.getElementById("download-txt-btn").addEventListener("click", function () {
-    const selectedDate = document.getElementById("date-picker").value;
-    const url = `/save_txt?selected_date=${selectedDate}`;
+function collectLessonState() {
+    const rows = document.querySelectorAll(".lesson-row");
+    const out = [];
 
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = url;
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
+    rows.forEach(row => {
+        const lessonId = row.dataset.lessonId;
+
+        const horse = row.querySelector(".horse-select")?.value || "";
+        const time = row.querySelector(".time-select")?.value || "";
+        const attendance = row.querySelector(".attendance-select")?.value || "";
+        const teacher = row.querySelector(".teacher-select")?.value || "";
+
+        out.push({
+            lesson_id: lessonId,
+            horse: horse,
+            time: time,
+            attendance: attendance,
+            teacher: teacher
+        });
+    });
+
+    return out;
+}
+
+document.getElementById("download-txt-btn").addEventListener("click", () => {
+    const payload = {
+        date: document.getElementById("date-picker").value,
+        lessons: collectLessonState()
+    };
+
+    fetch("/save_txt?selected_date=" + payload.date, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "lesson_schedule.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+    });
 });
 
-document.getElementById("download-xlsx-btn").addEventListener("click", function () {
-    const selectedDate = document.getElementById("date-picker").value;
-    const url = `/save_xlsx?selected_date=${selectedDate}`;
+document.getElementById("download-xlsx-btn").addEventListener("click", () => {
+    const payload = {
+        date: document.getElementById("date-picker").value,
+        lessons: collectLessonState()
+    };
 
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = url;
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
+    fetch("/save_xlsx?selected_date=" + payload.date, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "lesson_schedule.xlsx";
+        a.click();
+        URL.revokeObjectURL(url);
+    });
 });
-</script>
 
 
 <script>
