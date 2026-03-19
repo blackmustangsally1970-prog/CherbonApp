@@ -1490,6 +1490,36 @@ def create_app():
 
 
 
+    @app.route("/pdf/<date>")
+    def pdf_for_date(date):
+        # 1. Build your data exactly like your normal page
+        arena, others, dow, pretty_date = get_lessons_for_date(date)
+
+        # 2. Render your existing HTML template
+        html = render_template(
+            "lessons_by_date.html",
+            arena=arena,
+            others=others,
+            dow=dow,
+            pretty_date=pretty_date
+        )
+
+        # 3. Generate PDF using Chromium
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.set_content(html)
+            pdf_bytes = page.pdf(format="A4", landscape=True)
+            browser.close()
+
+        # 4. Return PDF to browser
+        resp = make_response(pdf_bytes)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = f"inline; filename=lessons_{date}.pdf"
+        return resp
+
+
+
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
     def lessons_by_date():
         db.session.rollback()
@@ -1688,7 +1718,6 @@ def create_app():
             print(e)
             print("======================\n\n")
             raise
-
 
 
     def detect_conflicts(riders):
@@ -3833,33 +3862,6 @@ def create_app():
         return redirect(url_for('debug_page'))
 
 
-    @app.route("/pdf/<date>")
-    def pdf_for_date(date):
-        # 1. Build your data exactly like your normal page
-        arena, others, dow, pretty_date = get_lessons_for_date(date)
-
-        # 2. Render your existing HTML template
-        html = render_template(
-            "lessons_by_date.html",
-            arena=arena,
-            others=others,
-            dow=dow,
-            pretty_date=pretty_date
-        )
-
-        # 3. Generate PDF using Chromium
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            page.set_content(html)
-            pdf_bytes = page.pdf(format="A4", landscape=True)
-            browser.close()
-
-        # 4. Return PDF to browser
-        resp = make_response(pdf_bytes)
-        resp.headers["Content-Type"] = "application/pdf"
-        resp.headers["Content-Disposition"] = f"inline; filename=lessons_{date}.pdf"
-        return resp
 
 
 
