@@ -84,32 +84,35 @@
 
         {# START OF NEW BLOCK #}
         {% if header != current_block %}
+            {# Close previous block #}
             {% if not loop.first %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             {% endif %}
 
-            <h2>{{ header }}</h2>
+            <div class="lesson-block">
+                <h2>{{ header }}</h2>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Client</th>
-                        <th>Age</th>
-                        <th>Guardian</th>
-                        <th>Mobile</th>
-                        <th>Freq</th>
-                        <th>Wgt</th>
-                        <th>Hgt</th>
-                        <th>ATT</th>
-                        <th>Payment</th>
-                        <th>Price</th>
-                        <th>Balance</th>
-                        <th>Notes</th>
-                        <th>SignNoPayment</th>
-                    </tr>
-                </thead>
-                <tbody>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Age</th>
+                            <th>Guardian</th>
+                            <th>Mobile</th>
+                            <th>Freq</th>
+                            <th>Wgt</th>
+                            <th>Hgt</th>
+                            <th>ATT</th>
+                            <th>Payment</th>
+                            <th>Price</th>
+                            <th>Balance</th>
+                            <th>Notes</th>
+                            <th>SignNoPayment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         {% endif %}
 
         {% set current_block = header %}
@@ -132,8 +135,9 @@
 
         {# END OF ALL LESSONS #}
         {% if loop.last %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         {% endif %}
 
     {% endfor %}
