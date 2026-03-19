@@ -1492,19 +1492,11 @@ def create_app():
 
     @app.route("/pdf/<date>")
     def pdf_for_date(date):
-        # 1. Build your data exactly like your normal page
-        arena, others, dow, pretty_date = get_lessons_for_date(date)
+        # 1. Render the HTML using the existing lessons_by_date logic
+        with app.test_request_context(f"/lessons_by_date?date={date}"):
+            html = lessons_by_date()
 
-        # 2. Render your existing HTML template
-        html = render_template(
-            "lessons_by_date.html",
-            arena=arena,
-            others=others,
-            dow=dow,
-            pretty_date=pretty_date
-        )
-
-        # 3. Generate PDF using Chromium
+        # 2. Generate PDF using Chromium
         with sync_playwright() as p:
             browser = p.chromium.launch()
             page = browser.new_page()
@@ -1512,7 +1504,7 @@ def create_app():
             pdf_bytes = page.pdf(format="A4", landscape=True)
             browser.close()
 
-        # 4. Return PDF to browser
+        # 3. Return PDF to browser
         resp = make_response(pdf_bytes)
         resp.headers["Content-Type"] = "application/pdf"
         resp.headers["Content-Disposition"] = f"inline; filename=lessons_{date}.pdf"
