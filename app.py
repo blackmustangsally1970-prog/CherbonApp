@@ -1797,6 +1797,7 @@ def create_app():
             client_lookup=client_lookup,
             slot_map=slot_map,
             lesson_overrides=lesson_overrides,
+            merged_tags=lesson_overrides,   # ← ADD THIS
             norm_timerange_key=norm_timerange_key
         )
 
