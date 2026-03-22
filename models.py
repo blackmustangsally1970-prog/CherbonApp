@@ -54,6 +54,24 @@ class LessonInvite(db.Model):
     status = db.Column(db.String, nullable=False)
     lesson_date = db.Column(db.Date, nullable=False)
 
+
+class LessonTeacherTag(db.Model):
+    __tablename__ = "lesson_teacher_tags"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lesson_id = db.Column(db.Integer, unique=True, nullable=False)
+    lesson_date = db.Column(db.Date, nullable=False)
+
+    t1 = db.Column(db.Boolean, default=False)
+    t2 = db.Column(db.Boolean, default=False)
+    t3 = db.Column(db.Boolean, default=False)
+    t4 = db.Column(db.Boolean, default=False)
+    t5 = db.Column(db.Boolean, default=False)
+
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+
+
 class DisclaimerState(db.Model):
     __tablename__ = 'disclaimer_state'
 

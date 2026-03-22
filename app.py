@@ -13,7 +13,7 @@ from models import (
     Lesson, Time, Client, Horse, Teacher,
     LessonBlockTag, TeacherTime, TeacherHorse,
     BlockoutDate, BlockoutRange, IncomingSubmission,
-    LessonInvite, TeacherSlot, DisclaimerState
+    LessonInvite, TeacherSlot, DisclaimerState, LessonTeacherTag
 )
 import secrets
 import string
@@ -1534,6 +1534,25 @@ def create_app():
         else:
             lesson_rows = []
 
+        # Load per-lesson T1–T5 overrides
+        override_rows = (
+            db.session.query(LessonTeacherTag)
+            .filter_by(lesson_date=selected_date)
+            .all()
+        )
+
+        lesson_tag_overrides = {
+            row.lesson_id: {
+                "T1": row.t1,
+                "T2": row.t2,
+                "T3": row.t3,
+                "T4": row.t4,
+                "T5": row.t5,
+            }
+            for row in override_rows
+        }
+
+
         # Populate horse_schedule from lesson_rows
         for lesson in lesson_rows:
             horse_name = to_proper_case(lesson.horse)
@@ -1606,6 +1625,33 @@ def create_app():
                 else:
                     block_tag_lookup[block_key] = ['T2']
 
+        # Merge lesson-level overrides with block defaults
+        merged_tags = {}
+
+        for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
+            for lesson, client_obj in lesson_group:
+                lid = lesson.lesson_id
+
+                # 1. Lesson-level override exists → highest priority
+                if lid in lesson_tag_overrides:
+                    merged_tags[lid] = [
+                        tag for tag, val in lesson_tag_overrides[lid].items() if val
+                    ]
+                    continue
+
+                # 2. Block-level tags
+                block_key = norm_timerange_key(timerange)
+                if block_key in block_tag_lookup:
+                    merged_tags[lid] = block_tag_lookup[block_key]
+                    continue
+
+                # 3. Fallback defaults (Arena → T1, others → T2)
+                if (lesson.lesson_type or '').lower() == 'arena':
+                    merged_tags[lid] = ['T1']
+                else:
+                    merged_tags[lid] = ['T2']
+
+
         # Build teacher_horse_usage
         teacher_horse_usage = {}
         teacher_rows = db.session.query(TeacherHorse).filter(
@@ -1652,7 +1698,8 @@ def create_app():
             "client_lookup": client_lookup,
             "clients": clients,
             "teacher_horse_usage": teacher_horse_usage,
-            "slot_map": slot_map,             
+            "slot_map": slot_map,
+            "merged_tags": merged_tags,             
         }
 
 
@@ -4638,7 +4685,49 @@ Cherbon Waters Admin
         resp.headers["Content-Disposition"] = f"inline; filename=lessons_{date}.pdf"
         return resp
 
+    @app.route("/save_teacher_tags", methods=["POST"])
+    def save_teacher_tags():
+        data = request.get_json(force=True)
 
+        # --- Extract date ---
+        date_str = data.get("date")
+        if not date_str:
+            return jsonify({"status": "error", "message": "Missing date"}), 400
+
+        try:
+            lesson_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except Exception:
+            return jsonify({"status": "error", "message": "Invalid date"}), 400
+
+        # --- Extract overrides ---
+        overrides = data.get("overrides", {})
+        if not isinstance(overrides, dict):
+            return jsonify({"status": "error", "message": "Invalid overrides"}), 400
+
+        # --- Delete existing overrides for this date ---
+        LessonTeacherTag.query.filter_by(lesson_date=lesson_date).delete()
+
+        # --- Insert new overrides ---
+        for lesson_id_str, tags in overrides.items():
+            try:
+                lid = int(lesson_id_str)
+            except ValueError:
+                continue
+
+            row = LessonTeacherTag(
+                lesson_id=lid,
+                lesson_date=lesson_date,
+                t1=("T1" in tags),
+                t2=("T2" in tags),
+                t3=("T3" in tags),
+                t4=("T4" in tags),
+                t5=("T5" in tags),
+            )
+            db.session.add(row)
+
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
 
     @app.route('/client_view')
     def client_view():

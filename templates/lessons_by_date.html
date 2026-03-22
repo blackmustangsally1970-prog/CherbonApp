@@ -1449,6 +1449,20 @@ select.teacher-dropdown {
       </td>
     {% endif %}
 
+
+{% set tags = merged_tags.get(lesson.lesson_id, []) %}
+
+<td class="lesson-tags">
+  <label><input type="checkbox" class="lesson-tag" data-tag="T1" {% if "T1" in tags %}checked{% endif %}> T1</label>
+  <label><input type="checkbox" class="lesson-tag" data-tag="T2" {% if "T2" in tags %}checked{% endif %}> T2</label>
+  <label><input type="checkbox" class="lesson-tag" data-tag="T3" {% if "T3" in tags %}checked{% endif %}> T3</label>
+  <label><input type="checkbox" class="lesson-tag" data-tag="T4" {% if "T4" in tags %}checked{% endif %}> T4</label>
+  <label><input type="checkbox" class="lesson-tag" data-tag="T5" {% if "T5" in tags %}checked{% endif %}> T5</label>
+</td>
+
+
+
+
     <td></td>
   </tr>
   {% endfor %}
@@ -2061,6 +2075,7 @@ if (typeof placeHeadersUnderTeachers === 'function') {
 }
 
 
+
   // 3) Keep data-saved-tags in sync when any tag checkbox changes,
   //    and re-run header placement to reflect updates immediately.
   qAll('.group-header .tag-box input[type="checkbox"]').forEach(cb => {
@@ -2086,6 +2101,63 @@ if (typeof placeHeadersUnderTeachers === 'function') {
 
 })();
 </script>
+
+
+<script>
+// --- LESSON-LEVEL TAG OVERRIDES COLLECTOR ---
+function collectLessonOverrides() {
+    const overrides = {};
+
+    document.querySelectorAll('tr[data-lesson-id]').forEach(row => {
+        const lid = row.getAttribute('data-lesson-id');
+        const tags = [];
+
+        row.querySelectorAll('.lesson-tag').forEach(cb => {
+            if (cb.checked) tags.push(cb.dataset.tag);
+        });
+
+        overrides[lid] = tags;
+    });
+
+    return overrides;
+}
+</script>
+
+<script>
+// --- LIVE SYNC: Update teacher timeline when lesson-level tags change ---
+document.addEventListener("change", function(e) {
+    if (!e.target.classList.contains("lesson-tag")) return;
+
+    // 1) Find the lesson row
+    const row = e.target.closest("tr[data-lesson-id]");
+    if (!row) return;
+
+    const lid = row.getAttribute("data-lesson-id");
+
+    // 2) Collect the updated tags for this lesson
+    const tags = [];
+    row.querySelectorAll(".lesson-tag").forEach(cb => {
+        if (cb.checked) tags.push(cb.dataset.tag);
+    });
+
+    // 3) Store them on the row for immediate use
+    row.dataset.liveTags = tags.join(",");
+
+    // 4) Rebuild teacher headers (block-level + lesson-level merged)
+    if (typeof placeHeadersUnderTeachers === "function") {
+        placeHeadersUnderTeachers();
+    }
+
+    // 5) Optional: visually mark overridden lessons
+    if (tags.length > 0) {
+        row.classList.add("lesson-overridden");
+    } else {
+        row.classList.remove("lesson-overridden");
+    }
+});
+</script>
+
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -3033,6 +3105,17 @@ document.getElementById("save-button").addEventListener("click", async () => {
             }
         })
     });
+
+// ⭐ NEW: Save lesson-level teacher tag overrides
+await fetch("/save_teacher_tags", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        date: selectedDate,
+        overrides: collectLessonOverrides()
+    })
+});
+
 
     statusBox.textContent = "Saved!";
 
