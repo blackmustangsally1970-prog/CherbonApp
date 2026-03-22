@@ -2507,16 +2507,21 @@ function prefixMatcher(params, data) {
 
 <script>
 function collectLessonState() {
-    const rows = document.querySelectorAll(".lesson-row");
+    const rows = document.querySelectorAll("tr[data-lesson-id]");
     const out = [];
 
     rows.forEach(row => {
         const lessonId = row.dataset.lessonId;
+        const time = row.dataset.time;
 
-        const horse = row.querySelector(".horse-select")?.value || "";
-        const time = row.querySelector(".time-select")?.value || "";
-        const attendance = row.querySelector(".attendance-select")?.value || "";
-        const teacher = row.querySelector(".teacher-select")?.value || "";
+        // Horse
+        const horse = row.querySelector("select.compact-horse")?.value || "";
+
+        // Attendance
+        const attendance = row.querySelector("select[name^='attendance_']")?.value || "";
+
+        // Teacher is NOT inside the row (by design)
+        const teacher = "";
 
         out.push({
             lesson_id: lessonId,
