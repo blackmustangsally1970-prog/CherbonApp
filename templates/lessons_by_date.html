@@ -1449,20 +1449,6 @@ select.teacher-dropdown {
       </td>
     {% endif %}
 
-
-{% set tags = merged_tags.get(lesson.lesson_id, []) %}
-
-<td class="lesson-tags">
-  <label><input type="checkbox" class="lesson-tag" data-tag="T1" {% if "T1" in tags %}checked{% endif %}> T1</label>
-  <label><input type="checkbox" class="lesson-tag" data-tag="T2" {% if "T2" in tags %}checked{% endif %}> T2</label>
-  <label><input type="checkbox" class="lesson-tag" data-tag="T3" {% if "T3" in tags %}checked{% endif %}> T3</label>
-  <label><input type="checkbox" class="lesson-tag" data-tag="T4" {% if "T4" in tags %}checked{% endif %}> T4</label>
-  <label><input type="checkbox" class="lesson-tag" data-tag="T5" {% if "T5" in tags %}checked{% endif %}> T5</label>
-</td>
-
-
-
-
     <td></td>
   </tr>
   {% endfor %}
