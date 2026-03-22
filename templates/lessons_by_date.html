@@ -2090,7 +2090,6 @@ if (typeof placeHeadersUnderTeachers === 'function') {
 
 
 <script>
-// --- LESSON-LEVEL TAG OVERRIDES COLLECTOR ---
 function collectLessonOverrides() {
     const overrides = {};
 
@@ -2098,11 +2097,14 @@ function collectLessonOverrides() {
         const lid = row.getAttribute('data-lesson-id');
         const tags = [];
 
-        row.querySelectorAll('.lesson-tag').forEach(cb => {
-            if (cb.checked) tags.push(cb.dataset.tag);
+        row.querySelectorAll('.lesson-tag:checked').forEach(cb => {
+            tags.push(cb.dataset.tag);
         });
 
-        overrides[lid] = tags;
+        // Only save if user actually set overrides
+        if (tags.length > 0) {
+            overrides[lid] = tags;
+        }
     });
 
     return overrides;
