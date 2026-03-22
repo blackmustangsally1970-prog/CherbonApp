@@ -1740,6 +1740,21 @@ def create_app():
         # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
         ctx = build_lessons_context(selected_date, selected_date_str)
 
+        # --- Load teacher override tags for this date ---
+        override_rows = LessonTeacherTag.query.filter_by(lesson_date=selected_date).all()
+
+        # Build lookup: { lesson_id: { "T1": bool, "T2": bool, ... } }
+        lesson_overrides = {}
+        for row in override_rows:
+            lesson_overrides[row.lesson_id] = {
+                "T1": row.t1,
+                "T2": row.t2,
+                "T3": row.t3,
+                "T4": row.t4,
+                "T5": row.t5,
+            }
+
+
         grouped_lessons = ctx["grouped_lessons"]
         horse_list = ctx["horse_list"]
         horse_schedule = ctx["horse_schedule"]
@@ -1781,6 +1796,7 @@ def create_app():
             get_static_teachers=get_static_teachers,
             client_lookup=client_lookup,
             slot_map=slot_map,
+            lesson_overrides=lesson_overrides,
             norm_timerange_key=norm_timerange_key
         )
 
