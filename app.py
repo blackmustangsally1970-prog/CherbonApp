@@ -4673,6 +4673,7 @@ Cherbon Waters Admin
     @app.route("/save_teacher_tags", methods=["POST"])
     def save_teacher_tags():
         data = request.get_json(force=True)
+        print("SAVE ROUTE HIT")
 
         # --- Extract date ---
         date_str = data.get("date")
@@ -4732,7 +4733,6 @@ Cherbon Waters Admin
         db.session.commit()
 
         return jsonify({"status": "ok"})
-
 
 
     @app.route('/client_view')
