@@ -4705,7 +4705,7 @@ Cherbon Waters Admin
             if not lesson:
                 continue
 
-            block_key = lesson.block_key or ""
+            block_key = lesson.time_frame or ""
 
             block_map.setdefault(block_key, set()).update(tags)
 
