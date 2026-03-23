@@ -1289,6 +1289,8 @@ select.teacher-dropdown {
             <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">
               {{ tag_name }}
               <input type="checkbox"
+                     class="lesson-tag"
+                     data-tag="{{ tag_name }}"
                      name="teacher_tag_{{ block_key }}"
                      value="{{ tag_name }}"
                      {% if checked %}checked{% endif %}>
