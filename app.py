@@ -4686,7 +4686,7 @@ Cherbon Waters Admin
 
         # --- Extract overrides ---
         overrides = data.get("overrides", {})
-        
+        print("OVERRIDES RECEIVED:", overrides)
         if not isinstance(overrides, dict):
             return jsonify({"status": "error", "message": "Invalid overrides"}), 400
 
