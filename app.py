@@ -4703,12 +4703,13 @@ Cherbon Waters Admin
             if not lesson:
                 continue
 
-            block_key = lesson.block_key
+            block_key = lesson.block_key or ""
+
             block_map.setdefault(block_key, set()).update(tags)
 
             block_meta[block_key] = {
-                "lesson_type": lesson.lesson_type,
-                "group_priv": lesson.group_priv
+                "lesson_type": lesson.lesson_type or "",
+                "group_priv": lesson.group_priv or ""
             }
 
         # --- Delete existing block tags for this date ---
@@ -4716,13 +4717,13 @@ Cherbon Waters Admin
 
         # --- Insert new block-level tags ---
         for block_key, tagset in block_map.items():
-            meta = block_meta[block_key]
+            meta = block_meta.get(block_key, {})
 
             row = LessonBlockTag(
                 lesson_date=lesson_date,
-                time_range=block_key,
-                lesson_type=meta["lesson_type"],
-                group_priv=meta["group_priv"],
+                time_range=block_key or "",
+                lesson_type=meta.get("lesson_type") or "",
+                group_priv=meta.get("group_priv") or "",
                 teacher_tags=",".join(sorted(tagset))
             )
             db.session.add(row)
@@ -4730,6 +4731,7 @@ Cherbon Waters Admin
         db.session.commit()
 
         return jsonify({"status": "ok"})
+
 
 
     @app.route('/client_view')
