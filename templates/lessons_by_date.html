@@ -2095,22 +2095,18 @@ if (typeof placeHeadersUnderTeachers === 'function') {
 function collectLessonOverrides() {
     const overrides = {};
 
-    document.querySelectorAll('tr[data-lesson-id]').forEach(row => {
-        const lid = row.getAttribute('data-lesson-id');
-        const tags = [];
+    document.querySelectorAll(".lesson-block").forEach(block => {
+        const blockTags = [...block.querySelectorAll(".lesson-tag:checked")]
+            .map(cb => cb.dataset.tag);
 
-        row.querySelectorAll('.lesson-tag:checked').forEach(cb => {
-            tags.push(cb.dataset.tag);
+        block.querySelectorAll("tr[data-lesson-id]").forEach(row => {
+            overrides[row.dataset.lessonId] = blockTags;
         });
-
-        // Only save if user actually set overrides
-        if (tags.length > 0) {
-            overrides[lid] = tags;
-        }
     });
 
     return overrides;
 }
+
 </script>
 
 <script>
