@@ -4706,14 +4706,14 @@ Cherbon Waters Admin
             block_map.setdefault(block_key, set()).update(tags)
 
         # --- Delete existing block tags for this date ---
-        LessonBlockTag.query.filter_by(date=lesson_date).delete()
+        LessonBlockTag.query.filter_by(lesson_date=lesson_date).delete()
 
         # --- Insert new block-level tags ---
         for block_key, tagset in block_map.items():
             row = LessonBlockTag(
-                date=lesson_date,
-                block_key=block_key,
-                tags=",".join(sorted(tagset))
+                lesson_date=lesson_date,
+                time_range=block_key,
+                teacher_tags=",".join(sorted(tagset))
             )
             db.session.add(row)
 
