@@ -159,9 +159,10 @@ class Lesson(db.Model):
     lesson_id = db.Column(db.Integer, primary_key=True)
     lesson_date = db.Column(db.Date)
     time_frame = db.Column(db.String)
+    block_key = db.Column(db.String)   # <— ADD THIS
     client = db.Column(db.String)
     horse = db.Column(db.String)
-    adjust = db.Column(db.Integer, default=0)   # <— NEW FIELD
+    adjust = db.Column(db.Integer, default=0)
     carry_fwd = db.Column(db.Float)
     payment = db.Column(db.Float)
     price_pl = db.Column(db.Float)
@@ -172,7 +173,7 @@ class Lesson(db.Model):
     group_priv = db.Column(db.String)
     blockends = db.Column(db.Date)
     lesson_no = db.Column(db.Text)
-    freq = db.Column(db.String(2))   # "S", "F", "W"
+    freq = db.Column(db.String(2))
 
 class TeacherHorse(db.Model):
     __tablename__ = 'teacher_horse'
