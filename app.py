@@ -3530,38 +3530,6 @@ def create_app():
             flash("Blockout range removed.", "success")
         return redirect(url_for('manage_blockout_ranges'))
 
-
-    @app.route('/save_block_tags', methods=['POST'])
-    def save_block_tags():
-        data = request.get_json()
-        block_key = data.get('block_key')
-        lesson_date = data.get('lesson_date')
-        tags = data.get('tags', [])
-
-        # Normalize tags into comma string
-        tag_string = ",".join(tags)
-
-        # Find existing row
-        row = LessonBlockTag.query.filter_by(
-            lesson_date=lesson_date,
-            time_range=block_key
-        ).first()
-
-        if row:
-            row.teacher_tags = tag_string
-        else:
-            row = LessonBlockTag(
-                lesson_date=lesson_date,
-                time_range=block_key,
-                teacher_tags=tag_string
-            )
-            db.session.add(row)
-
-        db.session.commit()
-
-        return jsonify({"status": "ok", "saved": tags})
-
-
     @app.route("/new_lesson", methods=["POST"])
     def new_lesson():
         import re
