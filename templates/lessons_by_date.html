@@ -3093,12 +3093,14 @@ document.getElementById("save-button").addEventListener("click", async () => {
     });
 
 // ⭐ NEW: Save lesson-level teacher tag overrides
+const overrides = collectLessonOverrides();
+
 await fetch("/save_teacher_tags", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
         date: selectedDate,
-        overrides: collectLessonOverrides()
+        overrides: overrides
     })
 });
 
