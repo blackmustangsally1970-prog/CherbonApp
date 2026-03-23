@@ -4721,24 +4721,31 @@ Cherbon Waters Admin
         if not isinstance(overrides, dict):
             return jsonify({"status": "error", "message": "Invalid overrides"}), 400
 
-        # --- Delete existing overrides for this date ---
-        LessonTeacherTag.query.filter_by(lesson_date=lesson_date).delete()
+        # --- Build block-level structure ---
+        block_map = {}
 
-        # --- Insert new overrides ---
         for lesson_id_str, tags in overrides.items():
             try:
                 lid = int(lesson_id_str)
             except ValueError:
                 continue
 
-            row = LessonTeacherTag(
-                lesson_id=lid,
-                lesson_date=lesson_date,
-                t1=("T1" in tags),
-                t2=("T2" in tags),
-                t3=("T3" in tags),
-                t4=("T4" in tags),
-                t5=("T5" in tags),
+            lesson = Lesson.query.get(lid)
+            if not lesson:
+                continue
+
+            block_key = lesson.block_key
+            block_map.setdefault(block_key, set()).update(tags)
+
+        # --- Delete existing block tags for this date ---
+        LessonBlockTag.query.filter_by(date=lesson_date).delete()
+
+        # --- Insert new block-level tags ---
+        for block_key, tagset in block_map.items():
+            row = LessonBlockTag(
+                date=lesson_date,
+                block_key=block_key,
+                tags=",".join(sorted(tagset))
             )
             db.session.add(row)
 
