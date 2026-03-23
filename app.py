@@ -4691,6 +4691,7 @@ Cherbon Waters Admin
 
         # --- Build block-level structure ---
         block_map = {}
+        block_meta = {}
 
         for lesson_id_str, tags in overrides.items():
             try:
@@ -4705,14 +4706,23 @@ Cherbon Waters Admin
             block_key = lesson.block_key
             block_map.setdefault(block_key, set()).update(tags)
 
+            block_meta[block_key] = {
+                "lesson_type": lesson.lesson_type,
+                "group_priv": lesson.group_priv
+            }
+
         # --- Delete existing block tags for this date ---
         LessonBlockTag.query.filter_by(lesson_date=lesson_date).delete()
 
         # --- Insert new block-level tags ---
         for block_key, tagset in block_map.items():
+            meta = block_meta[block_key]
+
             row = LessonBlockTag(
                 lesson_date=lesson_date,
                 time_range=block_key,
+                lesson_type=meta["lesson_type"],
+                group_priv=meta["group_priv"],
                 teacher_tags=",".join(sorted(tagset))
             )
             db.session.add(row)
@@ -4720,6 +4730,7 @@ Cherbon Waters Admin
         db.session.commit()
 
         return jsonify({"status": "ok"})
+
 
     @app.route('/client_view')
     def client_view():
