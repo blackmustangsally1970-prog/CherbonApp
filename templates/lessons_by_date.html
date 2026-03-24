@@ -2096,18 +2096,21 @@ function collectLessonOverrides() {
     const overrides = {};
 
     document.querySelectorAll(".lesson-block").forEach(block => {
+
+        // Collect ONLY the tags that are currently checked in this block
         const blockTags = [...block.querySelectorAll(".lesson-tag:checked")]
             .map(cb => cb.dataset.tag);
 
+        // Assign a *fresh copy* of the tags to each lesson in the block
         block.querySelectorAll("tr[data-lesson-id]").forEach(row => {
-            overrides[row.dataset.lessonId] = blockTags;
+            overrides[row.dataset.lessonId] = [...blockTags];
         });
     });
 
     return overrides;
 }
-
 </script>
+
 
 <script>
 // --- LIVE SYNC: Update teacher timeline when lesson-level tags change ---
