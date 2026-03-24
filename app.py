@@ -4687,7 +4687,7 @@ Cherbon Waters Admin
 
         # --- Extract overrides ---
         overrides = data.get("overrides", {})
-        print("OVERRIDES RECEIVED:", overrides)
+        print("RAW OVERRIDES:", overrides)   # 🔍 DEBUG #1
         if not isinstance(overrides, dict):
             return jsonify({"status": "error", "message": "Invalid overrides"}), 400
 
@@ -4696,6 +4696,10 @@ Cherbon Waters Admin
         block_meta = {}
 
         for lesson_id_str, tags in overrides.items():
+
+            # Normalise tags so None/undefined doesn't crash Python
+            tags = tags or []   # 🔧 prevents 502 on untick
+
             try:
                 lid = int(lesson_id_str)
             except ValueError:
@@ -4713,6 +4717,9 @@ Cherbon Waters Admin
                 "lesson_type": lesson.lesson_type or "",
                 "group_priv": lesson.group_priv or ""
             }
+
+        # --- Debug block_map BEFORE saving ---
+        print("FINAL BLOCK MAP:", block_map)   # 🔍 DEBUG #2
 
         # --- Delete existing block tags for this date ---
         LessonBlockTag.query.filter_by(lesson_date=lesson_date).delete()
