@@ -811,6 +811,7 @@ select.teacher-dropdown {
 <button type="button" id="export-pdf" class="btn btn-danger" style="margin-left:8px;">
     Export PDF
 </button>
+<button id="save-teachers" class="btn btn-primary">Save Teachers</button>
 
 
 </form>
@@ -2109,6 +2110,37 @@ function collectLessonOverrides() {
 
     return overrides;
 }
+    // ✅ ADD THIS DIRECTLY BELOW collectLessonOverrides()
+    function collectTeacherSlots() {
+        const lessons = [];
+
+        document.querySelectorAll('.lesson-row').forEach(row => {
+            const lessonId = row.getAttribute('data-lesson-id');
+            if (!lessonId) return;
+
+            const T1 = row.querySelector('.t1-checkbox')?.checked || false;
+            const T2 = row.querySelector('.t2-checkbox')?.checked || false;
+            const T3 = row.querySelector('.t3-checkbox')?.checked || false;
+            const T4 = row.querySelector('.t4-checkbox')?.checked || false;
+            const T5 = row.querySelector('.t5-checkbox')?.checked || false;
+
+            lessons.push({
+                lesson_id: parseInt(lessonId),
+                T1: T1,
+                T2: T2,
+                T3: T3,
+                T4: T4,
+                T5: T5
+            });
+        });
+
+        return {
+            date: CURRENT_DATE,
+            lessons: lessons
+        };
+    }
+
+
 </script>
 
 
@@ -3327,8 +3359,29 @@ document.getElementById("export-pdf").addEventListener("click", function () {
 });
 </script>
 
+<script>
+document.getElementById("save-teachers").addEventListener("click", function () {
+    const payload = collectTeacherSlots();
 
+    fetch("/save_t_slots", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(resp => {
+        console.log("T-slot save response:", resp);
+        // Optional: show a small green flash message
+    })
+    .catch(err => {
+        console.error("T-slot save error:", err);
+        // Optional: show a red flash message
+    });
+});
 
+</script>
 
 </body>
 </html>
