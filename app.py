@@ -4776,19 +4776,6 @@ Cherbon Waters Admin
     def other_tools():
         return render_template("other_tools.html")
 
-    @app.route("/manage_blockout_dates")
-    def manage_blockout_dates():
-        return render_template("manage_blockout_dates.html")
-
-    @app.route("/manage_blockout_ranges")
-    def manage_blockout_ranges():
-        return render_template("manage_blockout_ranges.html")
-
-    @app.route("/manage_teacher_times")
-    def manage_teacher_times():
-        return render_template("manage_teacher_times.html")
-
-
     @app.route('/client_view')
     def client_view():
         client_id = request.args.get('client', type=int) or request.args.get('client_filter', type=int)
