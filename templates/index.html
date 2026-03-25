@@ -104,13 +104,9 @@ ul.menu > li {
 
 <ul class="menu">
 
-  <li>
-    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
-    <ul class="submenu">
-      <li><a href="{{ url_for('manage_blockout_dates') }}">🚫 Manage Single‑Day Blockouts</a></li>
-      <li><a href="{{ url_for('manage_blockout_ranges') }}">📆 Manage Range Blockouts</a></li>
-    </ul>
-  </li>
+<li>
+  <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
+</li>
 
 <li>
   <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
