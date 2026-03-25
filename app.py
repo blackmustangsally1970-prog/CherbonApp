@@ -3482,8 +3482,13 @@ def create_app():
         return f"Cleared {count} processed invite submissions."
 
 
+    @app.route("/manage_blockout_dates")
+    def manage_blockout_dates_page():
+        return render_template("blockout_dates.html")
 
-
+    @app.route("/manage_blockout_ranges")
+    def manage_blockout_ranges_page():
+        return render_template("blockout_ranges.html")
 
     @app.route('/blockout_dates', methods=['GET','POST'])
     def manage_blockout_dates():
