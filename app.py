@@ -4767,6 +4767,10 @@ Cherbon Waters Admin
 
         return jsonify({"status": "ok"})
 
+    @app.route("/messages_menu")
+    def messages_menu():
+        return render_template("messages_menu.html")
+
 
     @app.route('/client_view')
     def client_view():

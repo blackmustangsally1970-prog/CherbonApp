@@ -129,14 +129,9 @@ ul.menu > li {
     <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
   </li>
 
-  <li>
-    <span class="menu-btn">✉️ Messages</span>
-    <ul class="submenu">
-      <li><a href="{{ url_for('wedding_sms') }}">💍 Wedding SMS Broadcast</a></li>
-      <li><a href="{{ url_for('equestrian_sms') }}">🐎 Equestrian SMS Broadcast</a></li>
-      <li><a href="{{ url_for('equestrian_bulk_sms') }}">📡 EQ Bulk Personalised SMS</a></li>
-    </ul>
-  </li>
+<li>
+  <a href="{{ url_for('messages_menu') }}" class="menu-btn">✉️ Messages</a>
+</li>
 
   <!-- Teacher moved to bottom -->
   <li>
