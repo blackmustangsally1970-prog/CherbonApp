@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Manage Teachers</title>
+
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+
+        .menu-btn-small {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+        .menu-btn-small:hover {
+            background: #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
+        th { background: #f2f2f2; }
+        form { margin: 0; }
+    </style>
+</head>
+
+<body>
+
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
+    <a href="{{ url_for('other_tools') }}" class="menu-btn-small">← Other Tools</a>
+</div>
+
+<h1>Manage Teachers</h1>
+
+<form method="POST" action="{{ url_for('add_teacher') }}">
+    <input type="text" name="name" placeholder="New teacher name" required>
+    <button type="submit">Add Teacher</button>
+</form>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Delete</th>
+    </tr>
+
+    {% for t in teachers %}
+    <tr>
+        <td>{{ t.name }}</td>
+        <td>
+            <form method="POST" action="{{ url_for('delete_teacher', tid=t.id) }}">
+                <button type="submit" onclick="return confirm('Delete teacher?')">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

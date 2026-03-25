@@ -3481,6 +3481,78 @@ def create_app():
 
         return f"Cleared {count} processed invite submissions."
 
+    @app.route("/manage_teachers")
+    def manage_teachers_page():
+        rows = db.session.query(Teacher).order_by(Teacher.name).all()
+        return render_template("manage_teachers.html", teachers=rows)
+
+    @app.route("/teachers", methods=["POST"])
+    def add_teacher():
+        name = request.form.get("name", "").strip()
+        if name:
+            db.session.add(Teacher(name=name))
+            db.session.commit()
+        return redirect(url_for("manage_teachers_page"))
+
+    @app.route("/teachers/delete/<int:tid>", methods=["POST"])
+    def delete_teacher(tid):
+        row = db.session.query(Teacher).get(tid)
+        if row:
+            db.session.delete(row)
+            db.session.commit()
+        return redirect(url_for("manage_teachers_page"))
+
+    @app.route("/manage_horses")
+    def manage_horses_page():
+        rows = db.session.query(Horse).order_by(Horse.name).all()
+        return render_template("manage_horses.html", horses=rows)
+
+    @app.route("/horses", methods=["POST"])
+    def add_horse():
+        name = request.form.get("name", "").strip()
+        weight = request.form.get("weight")
+        height = request.form.get("height")
+        notes = request.form.get("notes", "").strip()
+
+        db.session.add(Horse(name=name, weight=weight, height=height, notes=notes))
+        db.session.commit()
+        return redirect(url_for("manage_horses_page"))
+
+    @app.route("/horses/delete/<int:hid>", methods=["POST"])
+    def delete_horse(hid):
+        row = db.session.query(Horse).get(hid)
+        if row:
+            db.session.delete(row)
+            db.session.commit()
+        return redirect(url_for("manage_horses_page"))
+
+    @app.route("/horses/update/<int:hid>", methods=["POST"])
+    def update_horse_inline(hid):
+        row = db.session.query(Horse).get(hid)
+        if row:
+            row.weight = request.form.get("weight")
+            row.height = request.form.get("height")
+            row.notes = request.form.get("notes")
+            db.session.commit()
+        return redirect(url_for("manage_horses_page"))
+
+    @app.route("/horses/edit/<int:hid>")
+    def edit_horse_page(hid):
+        row = db.session.query(Horse).get(hid)
+        return render_template("edit_horse.html", horse=row)
+
+    @app.route("/horses/edit/<int:hid>", methods=["POST"])
+    def edit_horse_save(hid):
+        row = db.session.query(Horse).get(hid)
+        if row:
+            row.name = request.form.get("name")
+            row.weight = request.form.get("weight")
+            row.height = request.form.get("height")
+            row.notes = request.form.get("notes")
+            row.status = request.form.get("status")
+            db.session.commit()
+        return redirect(url_for("manage_horses_page"))
+
 
     @app.route("/manage_blockout_dates")
     def manage_blockout_dates_page():
