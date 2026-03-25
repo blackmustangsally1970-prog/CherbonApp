@@ -4076,22 +4076,30 @@ Cherbon Waters Admin
         db.session.commit()
         return jsonify({"status": "ok"})
 
-    @app.route("/save_t_slots", methods=["POST"])
-    def save_t_slots():
-        data = request.get_json() or {}
-
-        # Expected:
-        # {
-        #     "date": "2026-03-24",
-        #     "lessons": [
-        #         { "lesson_id": 123, "T1": True, "T2": False, "T3": False, "T4": False, "T5": False },
-        #         { "lesson_id": 124, "T1": False, "T2": True, "T3": False, "T4": False, "T5": False }
-        #     ]
-        # }
-
-        print("Received T-slot payload:", data)
-
-        return jsonify({"status": "ok"}), 200
+    # ---------------------------------------------------------
+    # INACTIVE ROUTE: SAVE T1–T5 TEACHER SLOT FLAGS
+    # Reason: System now fast; unified main Save button handles
+    #         all T1–T5 tag persistence. This route is parked
+    #         for future use if needed.
+    # ---------------------------------------------------------
+    # @app.route("/save_t_slots", methods=["POST"])
+    # def save_t_slots():
+    #     data = request.get_json() or {}
+    #
+    #     # Expected payload structure:
+    #     # {
+    #     #     "date": "2026-03-24",
+    #     #     "lessons": [
+    #     #         { "lesson_id": 123, "T1": True,  "T2": False,
+    #     #           "T3": False, "T4": False, "T5": False },
+    #     #         { "lesson_id": 124, "T1": False, "T2": True,
+    #     #           "T3": False, "T4": False, "T5": False }
+    #     #     ]
+    #     # }
+    #
+    #     print("Received T-slot payload:", data)
+    #
+    #     return jsonify({"status": "ok"}), 200
 
 
     @app.route('/manage_teacher_times', methods=['GET'])
