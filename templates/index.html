@@ -116,13 +116,14 @@ ul.menu > li {
     <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
   </li>
 
-  <li>
-    <span class="menu-btn" style="pointer-events:none; opacity:0.6;">🔔 Notifications</span>
-    <ul class="submenu">
-      <li><a href="{{ url_for('notifications') }}">📥 Disclaimers</a></li>
-      <li><a href="{{ url_for('pending_lessons') }}">⏳ Lessons Pending</a></li>
-    </ul>
-  </li>
+<li>
+  <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
+</li>
+
+<li>
+  <a href="{{ url_for('pending_lessons') }}" class="menu-btn">⏳ Lessons Pending</a>
+</li>
+
 
   <li>
     <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
