@@ -3481,6 +3481,39 @@ def create_app():
 
         return f"Cleared {count} processed invite submissions."
 
+    @app.route("/minus_balances")
+    def minus_balances_page():
+        # Ensure balances are fresh
+        recalc_all_lessons()
+
+        # Get all clients
+        clients = db.session.query(Client).order_by(Client.client).all()
+
+        results = []
+
+        for c in clients:
+            # Get latest lesson for this client
+            latest = (
+                db.session.query(Lesson)
+                .filter(Lesson.client == c.client)
+                .order_by(Lesson.lesson_date.desc())
+                .first()
+            )
+
+            if latest and latest.balance is not None and latest.balance < 0:
+                results.append({
+                    "client": c.client,
+                    "balance": latest.balance,
+                    "date": latest.lesson_date
+                })
+
+        # Sort by most negative first
+        results.sort(key=lambda x: x["balance"])
+
+        return render_template("minus_balances.html", rows=results)
+
+
+
     @app.route("/manage_teachers")
     def manage_teachers_page():
         rows = db.session.query(Teacher).order_by(Teacher.teacher).all()

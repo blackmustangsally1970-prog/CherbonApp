@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Minus Balances</title>
+
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+
+        .menu-btn-small {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+        .menu-btn-small:hover { background: #ddd; }
+
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
+        th { background: #f2f2f2; }
+    </style>
+</head>
+
+<body>
+
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
+</div>
+
+<h1>Clients With Negative Balances</h1>
+
+{% if rows %}
+<table>
+    <tr>
+        <th>Client</th>
+        <th>Balance</th>
+        <th>Last Lesson</th>
+    </tr>
+
+    {% for r in rows %}
+    <tr>
+        <td>{{ r.client }}</td>
+        <td style="color:red;">${{ "%.2f"|format(r.balance) }}</td>
+        <td>{{ r.date.strftime("%d-%m-%Y") }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% else %}
+<p>No clients currently owe money.</p>
+{% endif %}
+
+</body>
+</html>
