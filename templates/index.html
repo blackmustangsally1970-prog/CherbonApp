@@ -112,9 +112,9 @@ ul.menu > li {
     </ul>
   </li>
 
-  <li>
-    <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
-  </li>
+<li>
+  <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
+</li>
 
 <li>
   <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
@@ -124,22 +124,18 @@ ul.menu > li {
   <a href="{{ url_for('pending_lessons') }}" class="menu-btn">⏳ Lessons Pending</a>
 </li>
 
-
-  <li>
-    <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
-  </li>
-
 <li>
   <a href="{{ url_for('messages_menu') }}" class="menu-btn">✉️ Messages</a>
 </li>
 
-  <!-- Teacher moved to bottom -->
-  <li>
-    <span class="menu-btn">👩‍🏫 Teacher</span>
-    <ul class="submenu">
-      <li><a href="{{ url_for('manage_teacher_times') }}">🕒 Enter Set Times</a></li>
-    </ul>
-  </li>
+<li>
+  <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
+</li>
+
+<li>
+  <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
+</li>
+
 
 </ul>
 
