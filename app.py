@@ -3487,7 +3487,7 @@ def create_app():
         recalc_all_lessons()
 
         # Get all clients
-        clients = db.session.query(Client).order_by(Client.client).all()
+        clients = db.session.query(Client).order_by(Client.full_name).all()
 
         results = []
 
@@ -3495,14 +3495,14 @@ def create_app():
             # Get latest lesson for this client
             latest = (
                 db.session.query(Lesson)
-                .filter(Lesson.client == c.client)
+                .filter(Lesson.client == c.full_name)
                 .order_by(Lesson.lesson_date.desc())
                 .first()
             )
 
             if latest and latest.balance is not None and latest.balance < 0:
                 results.append({
-                    "client": c.client,
+                    "client": c.full_name,
                     "balance": latest.balance,
                     "date": latest.lesson_date
                 })
