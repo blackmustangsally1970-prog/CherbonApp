@@ -7,51 +7,63 @@
     <style>
         body { font-family: sans-serif; margin: 20px; }
 
-        .menu-btn-small {
-            display: inline-block;
-            background: #eee;
-            border: 1px solid #aaa;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #0645AD;
-            text-decoration: none;
-            margin-right: 12px;
+        .client-header {
+            font-size: 22px;
+            margin-top: 30px;
+            margin-bottom: 10px;
+            font-weight: bold;
         }
-        .menu-btn-small:hover { background: #ddd; }
 
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
         th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
         th { background: #f2f2f2; }
+        .neg { color: red; font-weight: bold; }
     </style>
 </head>
 
 <body>
 
-<div style="margin-bottom:12px;">
-    <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
-</div>
+<a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
 
 <h1>Clients With Negative Balances</h1>
 
-{% if rows %}
-<table>
-    <tr>
-        <th>Client</th>
-        <th>Balance</th>
-        <th>Last Lesson</th>
-    </tr>
+{% for row in rows %}
 
-    {% for r in rows %}
-    <tr>
-        <td>{{ r.client }}</td>
-        <td style="color:red;">${{ "%.2f"|format(r.balance) }}</td>
-        <td>{{ r.date.strftime("%d-%m-%Y") }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <div class="client-header">
+        {{ row.client }} — Owes ${{ "%.2f"|format(row.current_balance) }}
+    </div>
 
-{% else %}
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Att</th>
+            <th>Group</th>
+            <th>Payment</th>
+            <th>Price</th>
+            <th>Carry Fwd</th>
+            <th>Balance</th>
+        </tr>
+
+        {% for l in row.lessons %}
+        <tr>
+            <td>{{ l.lesson_date.strftime("%d-%m-%Y") }}</td>
+            <td>{{ l.lesson_type }}</td>
+            <td>{{ l.attendance }}</td>
+            <td>{{ l.group_priv }}</td>
+            <td>{{ "%.2f"|format(l.payment or 0) }}</td>
+            <td>{{ "%.2f"|format(l.price_pl or 0) }}</td>
+            <td>{{ "%.2f"|format(l.carry_fwd or 0) }}</td>
+            <td class="{% if l.balance < 0 %}neg{% endif %}">
+                {{ "%.2f"|format(l.balance) }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+{% endfor %}
+
+{% if rows|length == 0 %}
 <p>No clients currently owe money.</p>
 {% endif %}
 

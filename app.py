@@ -3489,7 +3489,7 @@ def create_app():
         # Get all clients
         clients = db.session.query(Client).order_by(Client.full_name).all()
 
-        results = []
+        final_output = []
 
         for c in clients:
             # Get latest lesson for this client
@@ -3500,17 +3500,32 @@ def create_app():
                 .first()
             )
 
-            if latest and latest.balance is not None and latest.balance < 0:
-                results.append({
-                    "client": c.full_name,
-                    "balance": latest.balance,
-                    "date": latest.lesson_date
-                })
+            # Only process if negative balance
+            if not latest or latest.balance is None or latest.balance >= 0:
+                continue
 
-        # Sort by most negative first
-        results.sort(key=lambda x: x["balance"])
+            # Fetch all lessons for this client, newest first
+            history = (
+                db.session.query(Lesson)
+                .filter(Lesson.client == c.full_name)
+                .order_by(Lesson.lesson_date.desc())
+                .all()
+            )
 
-        return render_template("minus_balances.html", rows=results)
+            # Build trimmed history until last zero balance
+            trimmed = []
+            for h in history:
+                trimmed.append(h)
+                if h.balance == 0:
+                    break
+
+            final_output.append({
+                "client": c.full_name,
+                "current_balance": latest.balance,
+                "lessons": trimmed
+            })
+
+        return render_template("minus_balances.html", rows=final_output)
 
 
 
