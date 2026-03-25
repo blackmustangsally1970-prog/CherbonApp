@@ -3481,6 +3481,7 @@ def create_app():
 
         return f"Cleared {count} processed invite submissions."
 
+
     @app.route("/minus_balances")
     def minus_balances_page():
         # Ensure balances are fresh
@@ -3492,27 +3493,27 @@ def create_app():
         final_output = []
 
         for c in clients:
-            # Get latest lesson for this client
+            # Latest lesson up to today
             latest = (
                 db.session.query(Lesson)
                 .filter(Lesson.client == c.full_name)
+                .filter(Lesson.lesson_date <= date.today())
                 .order_by(Lesson.lesson_date.desc())
                 .first()
             )
 
-            # Only process if negative balance
             if not latest or latest.balance is None or latest.balance >= 0:
                 continue
 
-            # Fetch all lessons for this client, newest first
+            # Full history up to today
             history = (
                 db.session.query(Lesson)
                 .filter(Lesson.client == c.full_name)
+                .filter(Lesson.lesson_date <= date.today())
                 .order_by(Lesson.lesson_date.desc())
                 .all()
             )
 
-            # Build trimmed history until last zero balance
             trimmed = []
             for h in history:
                 trimmed.append(h)
