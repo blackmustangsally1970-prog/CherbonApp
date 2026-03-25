@@ -20,14 +20,12 @@
         }
         .menu-btn-small:hover {
             background: #ddd;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
 
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
         th { background: #f2f2f2; }
-        input[type="text"], input[type="number"] { width: 100px; }
-        textarea { width: 200px; height: 60px; }
+        input[type="text"], input[type="number"] { width: 120px; }
         form { margin: 0; }
     </style>
 </head>
@@ -42,19 +40,19 @@
 <h1>Manage Horses</h1>
 
 <form method="POST" action="{{ url_for('add_horse') }}">
-    <input type="text" name="name" placeholder="Horse name" required>
-    <input type="number" name="weight" placeholder="Weight">
-    <input type="number" name="height" placeholder="Height">
-    <input type="text" name="notes" placeholder="Notes">
+    <input type="text" name="horse" placeholder="Horse name" required>
+    <input type="text" name="orderpdk" placeholder="Order PDK">
+    <input type="number" name="age" placeholder="Age">
+    <input type="text" name="sex" placeholder="Sex">
     <button type="submit">Add Horse</button>
 </form>
 
 <table>
     <tr>
         <th>Name</th>
-        <th>Weight</th>
-        <th>Height</th>
-        <th>Notes</th>
+        <th>OrderPDK</th>
+        <th>Age</th>
+        <th>Sex</th>
         <th>Save</th>
         <th>Edit</th>
         <th>Delete</th>
@@ -62,20 +60,20 @@
 
     {% for h in horses %}
     <tr>
-        <form method="POST" action="{{ url_for('update_horse_inline', hid=h.id) }}">
-            <td>{{ h.name }}</td>
-            <td><input type="number" name="weight" value="{{ h.weight }}"></td>
-            <td><input type="number" name="height" value="{{ h.height }}"></td>
-            <td><textarea name="notes">{{ h.notes }}</textarea></td>
+        <form method="POST" action="{{ url_for('update_horse_inline', hid=h.horse_id) }}">
+            <td><input type="text" name="horse" value="{{ h.horse }}"></td>
+            <td><input type="text" name="orderpdk" value="{{ h.orderpdk }}"></td>
+            <td><input type="number" name="age" value="{{ h.age }}"></td>
+            <td><input type="text" name="sex" value="{{ h.sex }}"></td>
             <td><button type="submit">Save</button></td>
         </form>
 
         <td>
-            <a href="{{ url_for('edit_horse_page', hid=h.id) }}">Edit</a>
+            <a href="{{ url_for('edit_horse_page', hid=h.horse_id) }}">Edit</a>
         </td>
 
         <td>
-            <form method="POST" action="{{ url_for('delete_horse', hid=h.id) }}">
+            <form method="POST" action="{{ url_for('delete_horse', hid=h.horse_id) }}">
                 <button type="submit" onclick="return confirm('Delete horse?')">Delete</button>
             </form>
         </td>

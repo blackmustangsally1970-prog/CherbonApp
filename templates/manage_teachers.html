@@ -20,7 +20,6 @@
         }
         .menu-btn-small:hover {
             background: #ddd;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
 
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
@@ -40,7 +39,7 @@
 <h1>Manage Teachers</h1>
 
 <form method="POST" action="{{ url_for('add_teacher') }}">
-    <input type="text" name="name" placeholder="New teacher name" required>
+    <input type="text" name="teacher" placeholder="New teacher name" required>
     <button type="submit">Add Teacher</button>
 </form>
 
@@ -52,9 +51,9 @@
 
     {% for t in teachers %}
     <tr>
-        <td>{{ t.name }}</td>
+        <td>{{ t.teacher }}</td>
         <td>
-            <form method="POST" action="{{ url_for('delete_teacher', tid=t.id) }}">
+            <form method="POST" action="{{ url_for('delete_teacher', tid=t.teacher_id) }}">
                 <button type="submit" onclick="return confirm('Delete teacher?')">Delete</button>
             </form>
         </td>

@@ -3483,14 +3483,14 @@ def create_app():
 
     @app.route("/manage_teachers")
     def manage_teachers_page():
-        rows = db.session.query(Teacher).order_by(Teacher.name).all()
+        rows = db.session.query(Teacher).order_by(Teacher.teacher).all()
         return render_template("manage_teachers.html", teachers=rows)
 
     @app.route("/teachers", methods=["POST"])
     def add_teacher():
-        name = request.form.get("name", "").strip()
+        name = request.form.get("teacher", "").strip()
         if name:
-            db.session.add(Teacher(name=name))
+            db.session.add(Teacher(teacher=name))
             db.session.commit()
         return redirect(url_for("manage_teachers_page"))
 
@@ -3502,19 +3502,20 @@ def create_app():
             db.session.commit()
         return redirect(url_for("manage_teachers_page"))
 
+
     @app.route("/manage_horses")
     def manage_horses_page():
-        rows = db.session.query(Horse).order_by(Horse.name).all()
+        rows = db.session.query(Horse).order_by(Horse.orderpdk).all()
         return render_template("manage_horses.html", horses=rows)
 
     @app.route("/horses", methods=["POST"])
     def add_horse():
-        name = request.form.get("name", "").strip()
-        weight = request.form.get("weight")
-        height = request.form.get("height")
-        notes = request.form.get("notes", "").strip()
+        horse = request.form.get("horse", "").strip()
+        orderpdk = request.form.get("orderpdk", "").strip()
+        age = request.form.get("age")
+        sex = request.form.get("sex", "").strip()
 
-        db.session.add(Horse(name=name, weight=weight, height=height, notes=notes))
+        db.session.add(Horse(horse=horse, orderpdk=orderpdk, age=age, sex=sex))
         db.session.commit()
         return redirect(url_for("manage_horses_page"))
 
@@ -3530,9 +3531,10 @@ def create_app():
     def update_horse_inline(hid):
         row = db.session.query(Horse).get(hid)
         if row:
-            row.weight = request.form.get("weight")
-            row.height = request.form.get("height")
-            row.notes = request.form.get("notes")
+            row.horse = request.form.get("horse")
+            row.orderpdk = request.form.get("orderpdk")
+            row.age = request.form.get("age")
+            row.sex = request.form.get("sex")
             db.session.commit()
         return redirect(url_for("manage_horses_page"))
 
@@ -3545,11 +3547,10 @@ def create_app():
     def edit_horse_save(hid):
         row = db.session.query(Horse).get(hid)
         if row:
-            row.name = request.form.get("name")
-            row.weight = request.form.get("weight")
-            row.height = request.form.get("height")
-            row.notes = request.form.get("notes")
-            row.status = request.form.get("status")
+            row.horse = request.form.get("horse")
+            row.orderpdk = request.form.get("orderpdk")
+            row.age = request.form.get("age")
+            row.sex = request.form.get("sex")
             db.session.commit()
         return redirect(url_for("manage_horses_page"))
 

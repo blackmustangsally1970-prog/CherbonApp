@@ -20,13 +20,9 @@
         }
         .menu-btn-small:hover {
             background: #ddd;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
 
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { padding: 8px; font-size: 14px; }
         input[type="text"], input[type="number"] { width: 200px; }
-        textarea { width: 300px; height: 120px; }
     </style>
 </head>
 
@@ -36,33 +32,28 @@
     <a href="{{ url_for('manage_horses_page') }}" class="menu-btn-small">← Back to Horses</a>
 </div>
 
-<h1>Edit Horse: {{ horse.name }}</h1>
+<h1>Edit Horse: {{ horse.horse }}</h1>
 
-<form method="POST" action="{{ url_for('edit_horse_save', hid=horse.id) }}">
+<form method="POST" action="{{ url_for('edit_horse_save', hid=horse.horse_id) }}">
 
     <p>
         <label>Name:</label><br>
-        <input type="text" name="name" value="{{ horse.name }}" required>
+        <input type="text" name="horse" value="{{ horse.horse }}" required>
     </p>
 
     <p>
-        <label>Weight:</label><br>
-        <input type="number" name="weight" value="{{ horse.weight }}">
+        <label>OrderPDK:</label><br>
+        <input type="text" name="orderpdk" value="{{ horse.orderpdk }}">
     </p>
 
     <p>
-        <label>Height:</label><br>
-        <input type="number" name="height" value="{{ horse.height }}">
+        <label>Age:</label><br>
+        <input type="number" name="age" value="{{ horse.age }}">
     </p>
 
     <p>
-        <label>Status:</label><br>
-        <input type="text" name="status" value="{{ horse.status }}">
-    </p>
-
-    <p>
-        <label>Notes:</label><br>
-        <textarea name="notes">{{ horse.notes }}</textarea>
+        <label>Sex:</label><br>
+        <input type="text" name="sex" value="{{ horse.sex }}">
     </p>
 
     <button type="submit">Save Changes</button>
