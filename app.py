@@ -3516,7 +3516,8 @@ def create_app():
             to_number = mobile
 
         # Use your configured sender ID
-        sender_id = current_app.config.get("EQUESTRIAN_SENDER", "")
+        sender_id = "+61417704671"
+
 
         payload = {
             "messages": [
