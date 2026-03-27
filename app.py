@@ -3,6 +3,7 @@ from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, make_response, after_this_request, flash, jsonify
 )
+from flask import current_app
 from flask import Response
 from config import Config
 from extensions import db
