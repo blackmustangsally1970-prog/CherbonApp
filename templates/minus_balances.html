@@ -7,18 +7,213 @@
     <style>
         body { font-family: sans-serif; margin: 20px; }
 
-        .client-header {
-            font-size: 22px;
-            margin-top: 30px;
-            margin-bottom: 10px;
+        .client-line {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            margin-bottom: 5px;
+            font-size: 16px;
             font-weight: bold;
+        }
+
+        .client-mobile,
+        .client-tc {
+            font-weight: normal;
+            font-size: 14px;
+        }
+
+        .tc-input {
+            width: 80px;
+        }
+
+        .sms-btn {
+            background: #007bff;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .sms-btn:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .sms-btn:hover:enabled { background: #0056b3; }
+
+        .sent {
+            color: green;
+            font-weight: bold;
+            margin-left: 10px;
         }
 
         table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
         th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
         th { background: #f2f2f2; }
         .neg { color: red; font-weight: bold; }
+
+        textarea {
+            width: 100%;
+            height: 70px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .template-block {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .test-mode {
+            margin: 10px 0 20px 0;
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal h3 {
+            margin-top: 0;
+        }
+
+        .modal pre {
+            background: #f5f5f5;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+
+        .modal-buttons {
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
     </style>
+
+    <script>
+        let currentClient = null;
+        let currentMobile = null;
+        let currentBalance = null;
+        let currentTcBalanceInputId = null;
+        let currentButtonId = null;
+
+        function getSelectedTemplateChoice() {
+            const radios = document.getElementsByName("template_choice");
+            for (let r of radios) {
+                if (r.checked) return r.value;
+            }
+            return "standard";
+        }
+
+        function openPreview(client, mobile, balance, tcInputId, buttonId) {
+            currentClient = client;
+            currentMobile = mobile;
+            currentBalance = balance;
+            currentTcBalanceInputId = tcInputId;
+            currentButtonId = buttonId;
+
+            const templateChoice = getSelectedTemplateChoice();
+            const msgStandard = document.getElementById("msg_standard").value;
+            const msgTerm = document.getElementById("msg_term").value;
+            const tcBalance = document.getElementById(tcInputId).value || "";
+
+            let template = (templateChoice === "term") ? msgTerm : msgStandard;
+
+            let preview = template
+                .replace("{client}", client)
+                .replace("{balance}", balance)
+                .replace("{tc_balance}", tcBalance);
+
+            document.getElementById("preview_to").textContent = mobile;
+            document.getElementById("preview_body").textContent = preview;
+
+            document.getElementById("preview_modal").style.display = "flex";
+        }
+
+        function closePreview() {
+            document.getElementById("preview_modal").style.display = "none";
+        }
+
+        function sendSMSConfirmed() {
+            const templateChoice = getSelectedTemplateChoice();
+            const msgStandard = document.getElementById("msg_standard").value;
+            const msgTerm = document.getElementById("msg_term").value;
+            const tcBalance = document.getElementById(currentTcBalanceInputId).value || "";
+            const testMode = document.getElementById("test_mode").checked;
+
+            const formData = new FormData();
+            formData.append("client_name", currentClient);
+            formData.append("mobile", currentMobile);
+            formData.append("balance", currentBalance);
+            formData.append("tc_balance", tcBalance);
+            formData.append("template_choice", templateChoice);
+            formData.append("msg_standard", msgStandard);
+            formData.append("msg_term", msgTerm);
+            formData.append("test_mode", testMode ? "true" : "false");
+
+            const btn = document.getElementById(currentButtonId);
+            btn.disabled = true;
+            let remaining = 5;
+            const originalText = btn.textContent;
+            btn.textContent = "Sending...";
+
+            fetch("/send_negative_balance_sms", {
+                method: "POST",
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    const sentSpan = document.getElementById("sent_" + currentButtonId);
+                    sentSpan.innerHTML = "SMS Sent ✔";
+                } else {
+                    alert("SMS failed: " + data.detail);
+                }
+            })
+            .catch(err => {
+                alert("SMS error: " + err);
+            })
+            .finally(() => {
+                closePreview();
+                const interval = setInterval(() => {
+                    remaining -= 1;
+                    if (remaining > 0) {
+                        btn.textContent = "Wait " + remaining + "s";
+                    } else {
+                        clearInterval(interval);
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                }, 1000);
+            });
+        }
+    </script>
 </head>
 
 <body>
@@ -27,10 +222,54 @@
 
 <h1>Clients With Negative Balances</h1>
 
+<div class="template-block">
+    <label>
+        <input type="radio" name="template_choice" value="standard" checked>
+        Standard Negative Balance Message
+    </label>
+    <textarea id="msg_standard">Hi {client}, your records show a negative balance of ${balance}. Please pay now to be up to date. Thank you, CW Admin</textarea>
+</div>
+
+<div class="template-block">
+    <label>
+        <input type="radio" name="template_choice" value="term">
+        Term Course Balance Message
+    </label>
+    <textarea id="msg_term">Hi {client}, your Term Course balance of ${tc_balance} is due. Please pay now to be up to date. Thank you, CW Admin</textarea>
+</div>
+
+<div class="test-mode">
+    <label>
+        <input type="checkbox" id="test_mode">
+        Test Mode (send SMS to admin number instead of client)
+    </label>
+</div>
+
 {% for row in rows %}
 
-    <div class="client-header">
-        {{ row.client }} — Owes ${{ "%.2f"|format(row.current_balance) }}
+    {% set btn_id = 'btn_' ~ loop.index %}
+    {% set tc_id = 'tc_' ~ loop.index %}
+
+    <div class="client-line">
+        <div class="client-name">
+            {{ row.client }} — Owes ${{ "%.2f"|format(row.current_balance) }}
+        </div>
+        <div class="client-mobile">
+            Mobile: {{ row.mobile }}
+        </div>
+        <div class="client-tc">
+            Term Course Balance:
+            <input type="text" id="{{ tc_id }}" class="tc-input" value="">
+        </div>
+        <button id="{{ btn_id }}" class="sms-btn"
+                onclick="openPreview('{{ row.client }}',
+                                     '{{ row.mobile }}',
+                                     '{{ '%.2f'|format(row.current_balance) }}',
+                                     '{{ tc_id }}',
+                                     '{{ btn_id }}')">
+            Send SMS
+        </button>
+        <span id="sent_{{ btn_id }}" class="sent"></span>
     </div>
 
     <table>
@@ -67,5 +306,19 @@
 <p>No clients currently owe money.</p>
 {% endif %}
 
+<!-- Preview Modal -->
+<div id="preview_modal" class="modal-backdrop">
+    <div class="modal">
+        <h3>Preview SMS</h3>
+        <p><strong>To:</strong> <span id="preview_to"></span></p>
+        <pre id="preview_body"></pre>
+        <div class="modal-buttons">
+            <button class="btn-secondary" onclick="closePreview()">Cancel</button>
+            <button class="sms-btn" onclick="sendSMSConfirmed()">Send</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
+

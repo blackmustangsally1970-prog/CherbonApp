@@ -27,6 +27,7 @@ import unicodedata
 import json
 import hashlib
 import clicksend_client
+import requests
 from clicksend_client import SmsMessage
 from clicksend_client.rest import ApiException
 from functools import lru_cache
@@ -3482,18 +3483,94 @@ def create_app():
         return f"Cleared {count} processed invite submissions."
 
 
+    @app.route("/send_negative_balance_sms", methods=["POST"])
+    def send_negative_balance_sms():
+        client_name = request.form.get("client_name")
+        mobile = request.form.get("mobile")
+        balance = request.form.get("balance")
+        tc_balance = request.form.get("tc_balance") or ""
+        template_choice = request.form.get("template_choice")
+        msg_standard = request.form.get("msg_standard")
+        msg_term = request.form.get("msg_term")
+        test_mode = request.form.get("test_mode") == "true"
+
+        # Choose template
+        if template_choice == "term":
+            message_template = msg_term
+        else:
+            message_template = msg_standard
+
+        # Replace placeholders
+        message = (
+            message_template
+            .replace("{client}", client_name)
+            .replace("{balance}", balance)
+            .replace("{tc_balance}", tc_balance)
+        )
+
+        # Test mode: redirect to admin number
+        if test_mode:
+            to_number = current_app.config.get("SMS_ADMIN_NUMBER", "<YOUR_ADMIN_MOBILE>")
+        else:
+            to_number = mobile
+
+        # Use your configured sender ID
+        sender_id = current_app.config.get("EQUESTRIAN_SENDER", "")
+
+        payload = {
+            "messages": [
+                {
+                    "source": "python",
+                    "from": sender_id,
+                    "body": message,
+                    "to": to_number
+                }
+            ]
+        }
+
+        # Use your configured ClickSend credentials
+        username = current_app.config.get("CLICKSEND_USERNAME", "")
+        api_key = current_app.config.get("CLICKSEND_API_KEY", "")
+
+        try:
+            response = requests.post(
+                "https://rest.clicksend.com/v3/sms/send",
+                json=payload,
+                auth=(username, api_key),
+                timeout=10
+            )
+            ok = response.status_code == 200
+        except Exception as e:
+            ok = False
+            response_text = str(e)
+        else:
+            response_text = response.text
+
+        # Log to file
+        log_line = (
+            f"{datetime.now().isoformat()} | "
+            f"{'TEST MODE' if test_mode else 'LIVE'} | "
+            f"{client_name} | {mobile} | balance={balance} | tc_balance={tc_balance} | "
+            f"template={template_choice} | status={'OK' if ok else 'ERROR'} | {response_text}\n"
+        )
+        os.makedirs("logs", exist_ok=True)
+        with open("logs/sms_log.txt", "a", encoding="utf-8") as f:
+            f.write(log_line)
+
+        if ok:
+            return jsonify({"status": "ok"})
+        else:
+            return jsonify({"status": "error", "detail": response_text}), 500
+
     @app.route("/minus_balances")
     def minus_balances_page():
         # Ensure balances are fresh
         recalc_all_lessons()
 
-        # Get all clients
         clients = db.session.query(Client).order_by(Client.full_name).all()
-
         final_output = []
 
         for c in clients:
-            # Latest lesson up to today
             latest = (
                 db.session.query(Lesson)
                 .filter(Lesson.client == c.full_name)
@@ -3505,7 +3582,6 @@ def create_app():
             if not latest or latest.balance is None or latest.balance >= 0:
                 continue
 
-            # Full history up to today
             history = (
                 db.session.query(Lesson)
                 .filter(Lesson.client == c.full_name)
@@ -3522,6 +3598,7 @@ def create_app():
 
             final_output.append({
                 "client": c.full_name,
+                "mobile": c.mobile,
                 "current_balance": latest.balance,
                 "lessons": trimmed
             })
