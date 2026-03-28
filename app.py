@@ -1117,7 +1117,7 @@ def create_app():
                 "weight": getattr(client, "weight_kg", "") or "",
                 "height": getattr(client, "height_cm", "") or "",
                 "notes": getattr(client, "notes", "") or "",
-                "disclaimer": getattr(client, "disclaimer", 99999) or 99999,
+                "disclaimer": int(str(getattr(client, "disclaimer", 99999)).strip() or 99999),
 
                 # HORSE
                 "horse": l.horse or "",
