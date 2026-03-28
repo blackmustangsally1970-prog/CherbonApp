@@ -1,61 +1,92 @@
-    @app.route("/print/lessons/<date>")
-    def print_lessons(date):
-        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
-        dow = lesson_date.strftime("%A")
-        pretty_date = lesson_date.strftime("%d %B %Y")
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lessons for {{ pretty_date }}</title>
 
-        lessons = (
-            Lesson.query
-            .filter_by(lesson_date=lesson_date)
-            .order_by(Lesson.time_frame)
-            .all()
-        )
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
 
-        # Build flat dicts
-        data = []
-        for l in lessons:
-            client = Client.query.filter_by(full_name=l.client).first()
-            data.append({
-                "time_frame": (l.time_frame or "").strip().replace("–", "-"),
-                "lesson_type": (l.lesson_type or "").strip(),
-                "group_priv": (l.group_priv or "").strip().upper(),
-                "client_name": l.client,
-                "horse": l.horse,
-                "notes": client.notes if client else "",
-            })
+        h1 {
+            margin-bottom: 5px;
+        }
 
-        # Split Arena vs Others
-        arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
-        others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
+        h2 {
+            margin-top: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+        }
 
-        # Sort by true chronological start time
-        arena.sort(key=lambda x: parse_start(x["time_frame"]))
-        others.sort(key=lambda x: parse_start(x["time_frame"]))
+        .block {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+        }
 
-        # Group blocks
-        def group_blocks(rows):
-            blocks = defaultdict(list)
-            for r in rows:
-                key = (r["time_frame"], r["lesson_type"], r["group_priv"])
-                blocks[key].append(r)
+        .time {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
 
-            grouped = []
-            for (time, ltype, gp), riders in sorted(blocks.items(), key=lambda k: parse_start(k[0][0])):
-                grouped.append({
-                    "time": time,
-                    "lesson_type": ltype,
-                    "group_priv": gp,
-                    "riders": sorted(riders, key=lambda x: x["client_name"].lower())
-                })
-            return grouped
+        .lesson-type {
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
 
-        arena_blocks = group_blocks(arena)
-        other_blocks = group_blocks(others)
+        .rider {
+            margin-left: 15px;
+            font-size: 0.95em;
+        }
 
-        return render_template(
-            "print_lessons.html",
-            dow=dow,
-            pretty_date=pretty_date,
-            arena_blocks=arena_blocks,
-            other_blocks=other_blocks,
-        )
+        @media print {
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>{{ dow }} — {{ pretty_date }}</h1>
+
+    <h2>Arena Lessons</h2>
+    {% for block in arena_blocks %}
+        <div class="block">
+            <div class="time">{{ block.time }}</div>
+            <div class="lesson-type">{{ block.lesson_type }} — {{ block.group_priv }}</div>
+
+            {% for rider in block.riders %}
+                <div class="rider">
+                    {{ rider.client_name }} — {{ rider.horse }}
+                    {% if rider.notes %}
+                        <span style="color:#555;">({{ rider.notes }})</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <h2>Other Lessons</h2>
+    {% for block in other_blocks %}
+        <div class="block">
+            <div class="time">{{ block.time }}</div>
+            <div class="lesson-type">{{ block.lesson_type }} — {{ block.group_priv }}</div>
+
+            {% for rider in block.riders %}
+                <div class="rider">
+                    {{ rider.client_name }} — {{ rider.horse }}
+                    {% if rider.notes %}
+                        <span style="color:#555;">({{ rider.notes }})</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+</body>
+</html>
