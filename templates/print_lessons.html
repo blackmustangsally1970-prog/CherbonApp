@@ -58,112 +58,97 @@
 
 <h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
 
-{# ---------- ARENA PAGE ---------- #}
-{% if arena %}
-    {% set current_block = None %}
-    {% for l in arena %}
-        {% set header = l.time_frame ~ " " ~ l.lesson_type ~ " " ~ l.group_priv %}
-        {% if header != current_block %}
-            {% if not loop.first %}
-                </table>
-            {% endif %}
-            <h2>{{ header }}</h2>
-            <table>
+{# ---------- ARENA BLOCKS ---------- #}
+{% if arena_blocks %}
+    {% for block in arena_blocks %}
+        <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
+
+        <table>
+            <tr>
+                <th>Client</th>
+                <th>Age</th>
+                <th>Guardian</th>
+                <th>Mobile</th>
+                <th>Freq</th>
+                <th>Weight</th>
+                <th>Height</th>
+                <th>ATT</th>
+                <th>Payment</th>
+                <th>Price</th>
+                <th>Balance</th>
+                <th>Notes</th>
+            </tr>
+
+            {% for l in block.riders %}
+                {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
+                {% set payment_class = "payment-red" if l.balance < l.price else "" %}
+
                 <tr>
-                    <th>Client</th>
-                    <th>Age</th>
-                    <th>Guardian</th>
-                    <th>Mobile</th>
-                    <th>Freq</th>
-                    <th>Weight</th>
-                    <th>Height</th>
-                    <th>ATT</th>
-                    <th>Payment</th>
-                    <th>Price</th>
-                    <th>Balance</th>
-                    <th>Notes</th>
+                    <td class="{{ client_class }}">{{ l.client_name }}</td>
+                    <td>{{ l.age }}</td>
+                    <td>{{ l.guardian }}</td>
+                    <td>{{ l.mobile }}</td>
+                    <td>{{ l.freq }}</td>
+                    <td>{{ l.weight }}</td>
+                    <td>{{ l.height }}</td>
+                    <td>{{ "✓" if l.att else "X" }}</td>
+                    <td class="{{ payment_class }}">{{ l.payment }}</td>
+                    <td>{{ l.price }}</td>
+                    <td>{{ l.balance }}</td>
+                    <td>{{ l.notes }}</td>
                 </tr>
-            {% set current_block = header %}
-        {% endif %}
-
-        {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
-        {% set payment_class = "payment-red" if l.balance < l.price else "" %}
-        <tr>
-            <td class="{{ client_class }}">{{ l.client_name }}</td>
-            <td>{{ l.age }}</td>
-            <td>{{ l.guardian }}</td>
-            <td>{{ l.mobile }}</td>
-            <td>{{ l.freq }}</td>
-            <td>{{ l.weight }}</td>
-            <td>{{ l.height }}</td>
-            <td>{{ "✓" if l.att else "X" }}</td>
-            <td class="{{ payment_class }}">{{ l.payment }}</td>
-            <td>{{ l.price }}</td>
-            <td>{{ l.balance }}</td>
-            <td>{{ l.notes }}</td>
-        </tr>
-
-        {% if loop.last %}
-            </table>
-        {% endif %}
+            {% endfor %}
+        </table>
     {% endfor %}
 {% endif %}
 
 <div class="page-break"></div>
 
-{# ---------- OTHER LESSON TYPES ---------- #}
 <h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
 
-{% if others %}
-    {% set current_block = None %}
-    {% for l in others %}
-        {% set header = l.time_frame ~ " " ~ l.lesson_type ~ " " ~ l.group_priv %}
-        {% if header != current_block %}
-            {% if not loop.first %}
-                </table>
-            {% endif %}
-            <h2>{{ header }}</h2>
-            <table>
+{# ---------- OTHER BLOCKS ---------- #}
+{% if other_blocks %}
+    {% for block in other_blocks %}
+        <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
+
+        <table>
+            <tr>
+                <th>Client</th>
+                <th>Age</th>
+                <th>Guardian</th>
+                <th>Mobile</th>
+                <th>Freq</th>
+                <th>Weight</th>
+                <th>Height</th>
+                <th>ATT</th>
+                <th>Payment</th>
+                <th>Price</th>
+                <th>Balance</th>
+                <th>Notes</th>
+            </tr>
+
+            {% for l in block.riders %}
+                {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
+                {% set payment_class = "payment-red" if l.balance < l.price else "" %}
+
                 <tr>
-                    <th>Client</th>
-                    <th>Age</th>
-                    <th>Guardian</th>
-                    <th>Mobile</th>
-                    <th>Freq</th>
-                    <th>Weight</th>
-                    <th>Height</th>
-                    <th>ATT</th>
-                    <th>Payment</th>
-                    <th>Price</th>
-                    <th>Balance</th>
-                    <th>Notes</th>
+                    <td class="{{ client_class }}">{{ l.client_name }}</td>
+                    <td>{{ l.age }}</td>
+                    <td>{{ l.guardian }}</td>
+                    <td>{{ l.mobile }}</td>
+                    <td>{{ l.freq }}</td>
+                    <td>{{ l.weight }}</td>
+                    <td>{{ l.height }}</td>
+                    <td>{{ "✓" if l.att else "X" }}</td>
+                    <td class="{{ payment_class }}">{{ l.payment }}</td>
+                    <td>{{ l.price }}</td>
+                    <td>{{ l.balance }}</td>
+                    <td>{{ l.notes }}</td>
                 </tr>
-            {% set current_block = header %}
-        {% endif %}
-
-        {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
-        {% set payment_class = "payment-red" if l.balance < l.price else "" %}
-        <tr>
-            <td class="{{ client_class }}">{{ l.client_name }}</td>
-            <td>{{ l.age }}</td>
-            <td>{{ l.guardian }}</td>
-            <td>{{ l.mobile }}</td>
-            <td>{{ l.freq }}</td>
-            <td>{{ l.weight }}</td>
-            <td>{{ l.height }}</td>
-            <td>{{ "✓" if l.att else "X" }}</td>
-            <td class="{{ payment_class }}">{{ l.payment }}</td>
-            <td>{{ l.price }}</td>
-            <td>{{ l.balance }}</td>
-            <td>{{ l.notes }}</td>
-        </tr>
-
-        {% if loop.last %}
-            </table>
-        {% endif %}
+            {% endfor %}
+        </table>
     {% endfor %}
 {% endif %}
 
 </body>
 </html>
-
