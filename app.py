@@ -236,6 +236,30 @@ def log_disclaimer_processed(names):
     except Exception as e:
         print("Failed to write disclaimer log:", e)
 
+def parse_start(tframe):
+    # "09:30 - 10:20" → datetime.time(9,30)
+    start = tframe.split("-")[0].strip()
+    return datetime.strptime(start, "%H:%M").time()
+
+def group_blocks(rows):
+    blocks = defaultdict(list)
+
+    for r in rows:
+        key = (r["time_frame"], r["lesson_type"], r["group_priv"])
+        blocks[key].append(r)
+
+    # Convert dict → sorted list of block dicts
+    grouped = []
+    for (time, ltype, gp), riders in sorted(blocks.items(), key=lambda k: parse_start(k[0][0])):
+        grouped.append({
+            "time": time,
+            "lesson_type": ltype,
+            "group_priv": gp,
+            "riders": sorted(riders, key=lambda x: x["client_name"].lower())
+        })
+
+    return grouped
+
 
 def log_wedding_sms(result, message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -4791,116 +4815,67 @@ Cherbon Waters Admin
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
 
-
-    @app.route("/export_lessons_pdf/<date>")
-    def export_lessons_pdf(date):
+    @app.route("/print/lessons/<date>")
+    def print_lessons(date):
         lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
         dow = lesson_date.strftime("%A")
         pretty_date = lesson_date.strftime("%d %B %Y")
 
-        # Fetch all lessons for the day
-        lessons = (Lesson.query
-                   .filter_by(lesson_date=lesson_date)
-                   .order_by(Lesson.time_frame)
-                   .all())
+        lessons = (
+            Lesson.query
+            .filter_by(lesson_date=lesson_date)
+            .order_by(Lesson.time_frame)
+            .all()
+        )
 
+        # Build flat dicts
         data = []
         for l in lessons:
-
-            # Pull client details from Client DB
             client = Client.query.filter_by(full_name=l.client).first()
-
             data.append({
-                # LESSON FIELDS
-                "time_frame": l.time_frame,
-                "lesson_type": l.lesson_type,
-                "group_priv": l.group_priv,
+                "time_frame": (l.time_frame or "").strip().replace("–", "-"),
+                "lesson_type": (l.lesson_type or "").strip(),
+                "group_priv": (l.group_priv or "").strip().upper(),
                 "client_name": l.client,
-                "freq": l.freq,
-                "att": l.attendance,
-                "payment": l.payment,
-                "price": l.price_pl,
-                "balance": l.balance,
-
-                # CLIENT FIELDS
-                "age": client.age if client else "",
-                "guardian": client.guardian_name if client else "",
-                "mobile": client.mobile if client else "",
-                "weight": client.weight_kg if client else "",
-                "height": client.height_cm if client else "",
+                "horse": l.horse,
                 "notes": client.notes if client else "",
-                "disclaimer": client.disclaimer if client else 0,
             })
 
-        # DEBUG: print true raw 16:00 data BEFORE any cleaning
-        for d in data:
-                if "16:00" in d.get("time_frame", ""):
-                        print("RAW 16:00 DATA:", repr(d))
-
-        # Normalise core grouping fields
-        for d in data:
-                d["time_frame"] = (d.get("time_frame") or "").strip().replace("–", "-")
-                d["lesson_type"] = (d.get("lesson_type") or "").strip()
-                d["group_priv"] = (d.get("group_priv") or "").strip().upper()
-
-        # Split Arena vs others
+        # Split Arena vs Others
         arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
         others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
 
-        # Flatten arena if nested
-        flat_arena = []
-        for item in arena:
-                if isinstance(item, list):
-                        flat_arena.extend(item)
-                else:
-                        flat_arena.append(item)
-        arena = flat_arena
+        # Sort by true chronological start time
+        arena.sort(key=lambda x: parse_start(x["time_frame"]))
+        others.sort(key=lambda x: parse_start(x["time_frame"]))
 
-        # Flatten others if nested
-        flat_others = []
-        for item in others:
-                if isinstance(item, list):
-                        flat_others.extend(item)
-                else:
-                        flat_others.append(item)
-        others = flat_others
+        # Group blocks
+        def group_blocks(rows):
+            blocks = defaultdict(list)
+            for r in rows:
+                key = (r["time_frame"], r["lesson_type"], r["group_priv"])
+                blocks[key].append(r)
 
-        # DEBUG: inspect only the 16:00 - 17:30 block AFTER split
-        for d in arena:
-                if d["time_frame"] == "16:00 - 17:30":
-                        print("ARENA 16:00 BLOCK:", repr(d))
+            grouped = []
+            for (time, ltype, gp), riders in sorted(blocks.items(), key=lambda k: parse_start(k[0][0])):
+                grouped.append({
+                    "time": time,
+                    "lesson_type": ltype,
+                    "group_priv": gp,
+                    "riders": sorted(riders, key=lambda x: x["client_name"].lower())
+                })
+            return grouped
 
-        # DEBUG: inspect first few arena items
-        print("ARENA RAW SAMPLE:", repr(arena[:10]))
+        arena_blocks = group_blocks(arena)
+        other_blocks = group_blocks(others)
 
-        # Sort by time_frame → lesson_type → group_priv → client_name
-        arena.sort(key=lambda x: (
-                x["time_frame"],
-                x["lesson_type"],
-                x["group_priv"]
-        ))
-
-        others.sort(key=lambda x: (
-                x["time_frame"],
-                x["lesson_type"],
-                x["group_priv"]
-        ))
-
-
-        html = render_template(
-            "lessons_pdf.html",
+        return render_template(
+            "print_lessons.html",
             dow=dow,
             pretty_date=pretty_date,
-            arena=arena,
-            others=others,
+            arena_blocks=arena_blocks,
+            other_blocks=other_blocks,
         )
-
-        pdf = HTML(string=html).write_pdf()
-
-        resp = make_response(pdf)
-        resp.headers["Content-Type"] = "application/pdf"
-        resp.headers["Content-Disposition"] = f"inline; filename=lessons_{date}.pdf"
-        return resp
 
     @app.route("/save_teacher_tags", methods=["POST"])
     def save_teacher_tags():

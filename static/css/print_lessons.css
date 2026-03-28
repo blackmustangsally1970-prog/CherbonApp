@@ -1,0 +1,42 @@
+@page {
+    margin: 12mm;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+}
+
+h1 {
+    font-size: 18pt;
+    margin-bottom: 10mm;
+}
+
+.lesson-block {
+    page-break-inside: avoid;
+    margin-bottom: 8mm;
+    padding-bottom: 4mm;
+    border-bottom: 1px solid #ccc;
+}
+
+.block-header {
+    font-weight: bold;
+    font-size: 13pt;
+    margin-bottom: 3mm;
+    display: flex;
+    gap: 10mm;
+}
+
+.rider-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.rider-table td {
+    padding: 2px 4px;
+    border-bottom: 1px dotted #ddd;
+}
+
+.page-break {
+    page-break-before: always;
+}
