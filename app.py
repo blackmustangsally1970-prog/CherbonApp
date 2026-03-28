@@ -1078,15 +1078,6 @@ def create_app():
         db.session.commit()
         return f"User '{username}' deleted"
 
-
-    @app.post("/recalculate_all")
-    def recalculate_all():
-        try:
-            recalc_all_lessons()
-            return jsonify(success=True, message="All lesson balances recalculated.")
-        except Exception as e:
-            return jsonify(success=False, error=str(e))
-
     @app.route("/print/lessons/<date>")
     def print_lessons(date):
         lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -1148,6 +1139,16 @@ def create_app():
             arena_blocks=arena_blocks,
             other_blocks=other_blocks,
         )
+
+
+    @app.post("/recalculate_all")
+    def recalculate_all():
+        try:
+            recalc_all_lessons()
+            return jsonify(success=True, message="All lesson balances recalculated.")
+        except Exception as e:
+            return jsonify(success=False, error=str(e))
+
 
 
     @app.post("/update_lesson_field")
