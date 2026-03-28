@@ -3351,18 +3351,6 @@ window.addEventListener('load', function () {
     });
 </script>
 
-<script>
-document.getElementById("export-pdf").addEventListener("click", function () {
-    const date = document.getElementById("date-picker").value;
-    if (!date) {
-        alert("No date selected.");
-        return;
-    }
-    window.open(`/export_lessons_pdf/${date}`, "_blank");
-});
-</script>
-
-
 <!--
 <script>
 document.getElementById("save-teachers").addEventListener("click", function () {
