@@ -43,6 +43,21 @@
             white-space: nowrap;
         }
 
+        /* FIXED COLUMN WIDTHS */
+        th:nth-child(1), td:nth-child(1) { width: 140px; } /* Client */
+        th:nth-child(2), td:nth-child(2) { width: 25px; }  /* Age */
+        th:nth-child(3), td:nth-child(3) { width: 90px; }  /* Guardian */
+        th:nth-child(4), td:nth-child(4) { width: 90px; }  /* Mobile */
+        th:nth-child(5), td:nth-child(5) { width: 25px; }  /* Freq */
+        th:nth-child(6), td:nth-child(6) { width: 30px; }  /* Wgt */
+        th:nth-child(7), td:nth-child(7) { width: 35px; }  /* Hgt */
+        th:nth-child(8), td:nth-child(8) { width: 30px; }  /* ATT */
+        th:nth-child(9), td:nth-child(9) { width: 55px; }  /* Payment */
+        th:nth-child(10), td:nth-child(10) { width: 55px; } /* Price */
+        th:nth-child(11), td:nth-child(11) { width: 55px; } /* Balance */
+        th:nth-child(12), td:nth-child(12) { width: 260px; } /* Notes */
+        th:nth-child(13), td:nth-child(13) { width: 80px; } /* SignNoPayment */
+
         .client-red {
             color: red;
             font-weight: bold;
@@ -101,8 +116,8 @@
                     <td>{{ l.height }}</td>
                     <td>{{ l.att }}</td>
                     <td class="{{ payment_class }}">{{ l.payment }}</td>
-                    <td>{{ l.price }}</td>
-                    <td>{{ l.balance }}</td>
+                    <td>{{ "%.2f"|format(l.price) }}</td>
+                    <td>{{ "%.2f"|format(l.balance) }}</td>
                     <td class="notes-cell">{{ l.notes }}</td>
                     <td></td>
                 </tr>
@@ -150,8 +165,8 @@
                     <td>{{ l.height }}</td>
                     <td>{{ l.att }}</td>
                     <td class="{{ payment_class }}">{{ l.payment }}</td>
-                    <td>{{ l.price }}</td>
-                    <td>{{ l.balance }}</td>
+                    <td>{{ "%.2f"|format(l.price) }}</td>
+                    <td>{{ "%.2f"|format(l.balance) }}</td>
                     <td class="notes-cell">{{ l.notes }}</td>
                     <td></td>
                 </tr>
