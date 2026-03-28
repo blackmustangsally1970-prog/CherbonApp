@@ -1087,6 +1087,68 @@ def create_app():
         except Exception as e:
             return jsonify(success=False, error=str(e))
 
+    @app.route("/print/lessons/<date>")
+    def print_lessons(date):
+        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
+        dow = lesson_date.strftime("%A")
+        pretty_date = lesson_date.strftime("%d %B %Y")
+
+        lessons = (
+            Lesson.query
+            .filter_by(lesson_date=lesson_date)
+            .order_by(Lesson.time_frame)
+            .all()
+        )
+
+        # Build flat dicts
+        data = []
+        for l in lessons:
+            client = Client.query.filter_by(full_name=l.client).first()
+            data.append({
+                "time_frame": (l.time_frame or "").strip().replace("–", "-"),
+                "lesson_type": (l.lesson_type or "").strip(),
+                "group_priv": (l.group_priv or "").strip().upper(),
+                "client_name": l.client,
+                "horse": l.horse,
+                "notes": client.notes if client else "",
+            })
+
+        # Split Arena vs Others
+        arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
+        others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
+
+        # Sort by true chronological start time
+        arena.sort(key=lambda x: parse_start(x["time_frame"]))
+        others.sort(key=lambda x: parse_start(x["time_frame"]))
+
+        # Group blocks
+        def group_blocks(rows):
+            blocks = defaultdict(list)
+            for r in rows:
+                key = (r["time_frame"], r["lesson_type"], r["group_priv"])
+                blocks[key].append(r)
+
+            grouped = []
+            for (time, ltype, gp), riders in sorted(blocks.items(), key=lambda k: parse_start(k[0][0])):
+                grouped.append({
+                    "time": time,
+                    "lesson_type": ltype,
+                    "group_priv": gp,
+                    "riders": sorted(riders, key=lambda x: x["client_name"].lower())
+                })
+            return grouped
+
+        arena_blocks = group_blocks(arena)
+        other_blocks = group_blocks(others)
+
+        return render_template(
+            "print_lessons.html",
+            dow=dow,
+            pretty_date=pretty_date,
+            arena_blocks=arena_blocks,
+            other_blocks=other_blocks,
+        )
+
 
     @app.post("/update_lesson_field")
     def update_lesson_field():
@@ -4815,67 +4877,6 @@ Cherbon Waters Admin
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
 
-    @app.route("/print/lessons/<date>")
-    def print_lessons(date):
-        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
-        dow = lesson_date.strftime("%A")
-        pretty_date = lesson_date.strftime("%d %B %Y")
-
-        lessons = (
-            Lesson.query
-            .filter_by(lesson_date=lesson_date)
-            .order_by(Lesson.time_frame)
-            .all()
-        )
-
-        # Build flat dicts
-        data = []
-        for l in lessons:
-            client = Client.query.filter_by(full_name=l.client).first()
-            data.append({
-                "time_frame": (l.time_frame or "").strip().replace("–", "-"),
-                "lesson_type": (l.lesson_type or "").strip(),
-                "group_priv": (l.group_priv or "").strip().upper(),
-                "client_name": l.client,
-                "horse": l.horse,
-                "notes": client.notes if client else "",
-            })
-
-        # Split Arena vs Others
-        arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
-        others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
-
-        # Sort by true chronological start time
-        arena.sort(key=lambda x: parse_start(x["time_frame"]))
-        others.sort(key=lambda x: parse_start(x["time_frame"]))
-
-        # Group blocks
-        def group_blocks(rows):
-            blocks = defaultdict(list)
-            for r in rows:
-                key = (r["time_frame"], r["lesson_type"], r["group_priv"])
-                blocks[key].append(r)
-
-            grouped = []
-            for (time, ltype, gp), riders in sorted(blocks.items(), key=lambda k: parse_start(k[0][0])):
-                grouped.append({
-                    "time": time,
-                    "lesson_type": ltype,
-                    "group_priv": gp,
-                    "riders": sorted(riders, key=lambda x: x["client_name"].lower())
-                })
-            return grouped
-
-        arena_blocks = group_blocks(arena)
-        other_blocks = group_blocks(others)
-
-        return render_template(
-            "print_lessons.html",
-            dow=dow,
-            pretty_date=pretty_date,
-            arena_blocks=arena_blocks,
-            other_blocks=other_blocks,
-        )
 
     @app.route("/save_teacher_tags", methods=["POST"])
     def save_teacher_tags():
