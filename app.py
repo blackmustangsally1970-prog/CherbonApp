@@ -1091,24 +1091,41 @@ def create_app():
             .all()
         )
 
-        # Build flat dicts
+        # Build full rider dictionaries
         data = []
         for l in lessons:
             client = Client.query.filter_by(full_name=l.client).first()
+
             data.append({
+                # grouping keys
                 "time_frame": (l.time_frame or "").strip().replace("–", "-"),
                 "lesson_type": (l.lesson_type or "").strip(),
                 "group_priv": (l.group_priv or "").strip().upper(),
+
+                # rider identity
                 "client_name": l.client,
-                "horse": l.horse,
+                "age": client.age if client else "",
+                "guardian": client.guardian if client else "",
+                "mobile": client.mobile if client else "",
+                "freq": client.freq if client else "",
+                "weight": client.weight if client else "",
+                "height": client.height if client else "",
+                "att": l.att,
+                "payment": l.payment,
+                "price": l.price,
+                "balance": l.balance,
                 "notes": client.notes if client else "",
+                "disclaimer": client.disclaimer if client else 99999,
+
+                # horse
+                "horse": l.horse,
             })
 
         # Split Arena vs Others
         arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
         others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
 
-        # Sort by true chronological start time
+        # Sort by chronological start time
         arena.sort(key=lambda x: parse_start(x["time_frame"]))
         others.sort(key=lambda x: parse_start(x["time_frame"]))
 
@@ -1120,7 +1137,10 @@ def create_app():
                 blocks[key].append(r)
 
             grouped = []
-            for (time, ltype, gp), riders in sorted(blocks.items(), key=lambda k: parse_start(k[0][0])):
+            for (time, ltype, gp), riders in sorted(
+                blocks.items(),
+                key=lambda k: parse_start(k[0][0])
+            ):
                 grouped.append({
                     "time": time,
                     "lesson_type": ltype,
