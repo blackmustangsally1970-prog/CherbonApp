@@ -3377,16 +3377,23 @@ document.getElementById("save-teachers").addEventListener("click", function () {
 </script>
 -->
 
-</script>
-document.getElementById("print-run-sheet").addEventListener("click", function () {
-    const date = document.getElementById("date-picker").value;
-    if (!date) {
-        alert("Please select a date first.");
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("print-run-sheet");
+    if (!btn) {
+        console.warn("Print Run Sheet button not found.");
         return;
     }
-    window.open(`/print/lessons/${date}`, "_blank");
-});
 
+    btn.addEventListener("click", function () {
+        const date = document.getElementById("date-picker").value;
+        if (!date) {
+            alert("Please select a date first.");
+            return;
+        }
+        window.open(`/print/lessons/${date}`, "_blank");
+    });
+});
 </script>
 
 
