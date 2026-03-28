@@ -1097,28 +1097,25 @@ def create_app():
             client = Client.query.filter_by(full_name=l.client).first()
 
             data.append({
-                # grouping keys
                 "time_frame": (l.time_frame or "").strip().replace("–", "-"),
                 "lesson_type": (l.lesson_type or "").strip(),
                 "group_priv": (l.group_priv or "").strip().upper(),
 
-                # rider identity
-                "client_name": l.client,
-                "age": client.age if client else "",
-                "guardian": client.guardian if client else "",
-                "mobile": client.mobile if client else "",
-                "freq": client.freq if client else "",
-                "weight": client.weight if client else "",
-                "height": client.height if client else "",
-                "att": l.att,
-                "payment": l.payment,
-                "price": l.price,
-                "balance": l.balance,
-                "notes": client.notes if client else "",
-                "disclaimer": client.disclaimer if client else 99999,
+                "client_name": l.client or "",
+                "age": getattr(client, "age", "") or "",
+                "guardian": getattr(client, "guardian", "") or "",
+                "mobile": getattr(client, "mobile", "") or "",
+                "freq": getattr(client, "freq", "") or "",
+                "weight": getattr(client, "weight", "") or "",
+                "height": getattr(client, "height", "") or "",
+                "att": getattr(l, "att", False),
+                "payment": getattr(l, "payment", "") or "",
+                "price": getattr(l, "price", "") or "",
+                "balance": getattr(l, "balance", "") or "",
+                "notes": getattr(client, "notes", "") or "",
+                "disclaimer": getattr(client, "disclaimer", 99999) or 99999,
 
-                # horse
-                "horse": l.horse,
+                "horse": l.horse or "",
             })
 
         # Split Arena vs Others
