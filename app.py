@@ -1107,8 +1107,8 @@ def create_app():
                 "freq": getattr(l, "freq", "") or "",
                 "att": getattr(l, "attendance", False),
                 "payment": getattr(l, "payment", "") or "",
-                "price": float((getattr(l, "price_pl", 0) or 0)),
-                "balance": float((getattr(l, "balance", 0) or 0)),
+                "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
+                "balance": float(str(getattr(l, "balance", 0)).strip() or 0),
 
                 # CLIENT FIELDS (correct names)
                 "age": getattr(client, "age", "") or "",
