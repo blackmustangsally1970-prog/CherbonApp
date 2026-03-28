@@ -1096,7 +1096,7 @@ def create_app():
         for l in lessons:
             client = Client.query.filter_by(full_name=l.client).first()
 
-
+            raw = str(getattr(client, "disclaimer", "")).strip()
             data.append({
                 "time_frame": (l.time_frame or "").strip().replace("–", "-"),
                 "lesson_type": (l.lesson_type or "").strip(),
@@ -1117,7 +1117,7 @@ def create_app():
                 "weight": getattr(client, "weight_kg", "") or "",
                 "height": getattr(client, "height_cm", "") or "",
                 "notes": getattr(client, "notes", "") or "",
-                "disclaimer": int(str(getattr(client, "disclaimer", 99999)).strip() or 99999),
+                "disclaimer": int(raw) if raw.isdigit() else 0,
 
                 # HORSE
                 "horse": l.horse or "",
