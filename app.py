@@ -1096,25 +1096,30 @@ def create_app():
         for l in lessons:
             client = Client.query.filter_by(full_name=l.client).first()
 
+
             data.append({
                 "time_frame": (l.time_frame or "").strip().replace("–", "-"),
                 "lesson_type": (l.lesson_type or "").strip(),
                 "group_priv": (l.group_priv or "").strip().upper(),
 
+                # LESSON FIELDS (correct names)
                 "client_name": l.client or "",
-                "age": getattr(client, "age", "") or "",
-                "guardian": getattr(client, "guardian", "") or "",
-                "mobile": getattr(client, "mobile", "") or "",
-                "freq": getattr(client, "freq", "") or "",
-                "weight": getattr(client, "weight", "") or "",
-                "height": getattr(client, "height", "") or "",
-                "att": getattr(l, "att", False),
+                "freq": getattr(l, "freq", "") or "",
+                "att": getattr(l, "attendance", False),
                 "payment": getattr(l, "payment", "") or "",
-                "price": getattr(l, "price", "") or "",
+                "price": getattr(l, "price_pl", "") or "",
                 "balance": getattr(l, "balance", "") or "",
+
+                # CLIENT FIELDS (correct names)
+                "age": getattr(client, "age", "") or "",
+                "guardian": getattr(client, "guardian_name", "") or "",
+                "mobile": getattr(client, "mobile", "") or "",
+                "weight": getattr(client, "weight_kg", "") or "",
+                "height": getattr(client, "height_cm", "") or "",
                 "notes": getattr(client, "notes", "") or "",
                 "disclaimer": getattr(client, "disclaimer", 99999) or 99999,
 
+                # HORSE
                 "horse": l.horse or "",
             })
 
