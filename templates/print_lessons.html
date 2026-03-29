@@ -75,6 +75,18 @@
         .page-break {
             page-break-after: always;
         }
+
+
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+
+
+
     </style>
 </head>
 <body>
