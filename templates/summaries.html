@@ -79,39 +79,45 @@
     <input type="hidden" name="fy" value="{{ selected_fy }}">
 
 <table>
-    <tr>
-        <th>Week Starting</th>
-        <th>Event 1</th>
-        <th>Event 2</th>
-        <th>Attendance</th>
-        <th>Payments</th>
-        <th>Running Total</th>
-        <th>YTD Total</th>
-    </tr>
+<tr>
+    <th>Week Starting</th>
+    <th>Y</th>
+    <th>N</th>
+    <th>C</th>
+    <th>Event 1</th>
+    <th>Event 2</th>
+    <th>Payments</th>
+    <th>Running Total</th>
+    <th>YTD Total</th>
+</tr>
+
 
     {% for w in weekly_data %}
-    <tr>
-        <td>{{ w.week_start }}</td>
+<tr>
+    <td>{{ w.week_start }}</td>
 
-        <td>
-            <input type="text"
-                   name="event1_{{ w.week_start }}"
-                   value="{{ w.event1 or '' }}"
-                   style="width: 90%; font-size: 22px; padding: 6px;">
-        </td>
+    <td>{{ w.y }}</td>
+    <td>{{ w.n }}</td>
+    <td>{{ w.c }}</td>
 
-        <td>
-            <input type="text"
-                   name="event2_{{ w.week_start }}"
-                   value="{{ w.event2 or '' }}"
-                   style="width: 90%; font-size: 22px; padding: 6px;">
-        </td>
+    <td>
+        <input type="text"
+               name="event1_{{ w.week_start }}"
+               value="{{ w.event1 or '' }}"
+               style="width: 90%; font-size: 22px; padding: 6px;">
+    </td>
 
-        <td>{{ w.attendance }}</td>
-        <td>${{ "%.2f"|format(w.payments) }}</td>
-        <td>${{ "%.2f"|format(w.running_total) }}</td>
-        <td>${{ "%.2f"|format(w.ytd_total) }}</td>
-    </tr>
+    <td>
+        <input type="text"
+               name="event2_{{ w.week_start }}"
+               value="{{ w.event2 or '' }}"
+               style="width: 90%; font-size: 22px; padding: 6px;">
+    </td>
+
+    <td>${{ "%.2f"|format(w.payments) }}</td>
+    <td>${{ "%.2f"|format(w.running_total) }}</td>
+    <td>${{ "%.2f"|format(w.ytd_total) }}</td>
+</tr>
     {% endfor %}
 </table>
 

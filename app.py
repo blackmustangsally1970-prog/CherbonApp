@@ -207,8 +207,21 @@ def build_weekly_summary(sundays, selected_fy):
     weekly_data = []
     running_total = 0
 
+    fy_start_year = int(selected_fy.split("-")[0])
+    fy_end_year = int(selected_fy.split("-")[1])
+
+    fy_start = datetime(fy_start_year, 7, 1).date()
+    fy_end = datetime(fy_end_year, 6, 30).date()
+
     for s in sundays:
         week_start, week_end = get_week_window(s)
+
+        # Clamp to FY
+        if week_start < fy_start:
+            week_start = fy_start
+        if week_end > fy_end:
+            week_end = fy_end
+
 
         saved = (
             WeeklyEvent.query
@@ -219,9 +232,30 @@ def build_weekly_summary(sundays, selected_fy):
         event1_name = saved.event1 if saved and saved.event1 else None
         event2_name = saved.event2 if saved and saved.event2 else None
 
-        attendance = (
+        y_count = (
             db.session.query(func.count(Lesson.lesson_id))
-            .filter(Lesson.lesson_date.between(week_start, week_end))
+            .filter(
+                Lesson.lesson_date.between(week_start, week_end),
+                Lesson.attendance == "Y"
+            )
+            .scalar()
+        ) or 0
+
+        n_count = (
+            db.session.query(func.count(Lesson.lesson_id))
+            .filter(
+                Lesson.lesson_date.between(week_start, week_end),
+                Lesson.attendance == "N"
+            )
+            .scalar()
+        ) or 0
+
+        c_count = (
+            db.session.query(func.count(Lesson.lesson_id))
+            .filter(
+                Lesson.lesson_date.between(week_start, week_end),
+                Lesson.attendance == "C"
+            )
             .scalar()
         ) or 0
 
@@ -240,7 +274,9 @@ def build_weekly_summary(sundays, selected_fy):
             "week_start": week_start,
             "event1": event1_name,
             "event2": event2_name,
-            "attendance": attendance,
+            "y": y_count,
+            "n": n_count,
+            "c": c_count,
             "payments": payments,
             "running_total": running_total,
             "ytd_total": running_total
