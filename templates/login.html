@@ -24,30 +24,36 @@
         width: 100%;
     }
 
-/* MOBILE FIRST — SUPER MASSIVE (matches print buttons) */
+/* MOBILE FIRST — GIANT BUTTONS (Safari-proof) */
 input[type="text"],
 input[type="password"],
 input[list] {
-    width: 100%;
-    padding: 60px;              /* same scale as print buttons */
-    font-size: 56px;            /* same scale as print buttons */
-    margin-bottom: 55px;
+    display: block;
+    width: 100vw;                 /* full device width */
+    max-width: 100%;              /* prevent overflow */
+    padding: 6vw;                 /* scales with screen */
+    font-size: 6vw;               /* giant text on phones/tablets */
+    margin-bottom: 6vw;
     border: 6px solid #4a6bff;
     border-radius: 24px;
     box-sizing: border-box;
     font-weight: 700;
+    -webkit-appearance: none;     /* iOS override */
 }
 
 button {
-    width: 100%;
-    padding: 60px;              /* identical to print buttons */
-    font-size: 56px;            /* identical to print buttons */
+    display: block;
+    width: 100vw;
+    max-width: 100%;
+    padding: 6vw;
+    font-size: 6vw;
     font-weight: 900;
     background: #4a6bff;
     color: white;
     border: none;
     border-radius: 24px;
     cursor: pointer;
+    -webkit-appearance: none;
 }
 
     button:hover {
