@@ -900,17 +900,17 @@ select.teacher-dropdown {
 
               {# sort and render #}
               {% for item in all_items|sort(attribute='time') %}
-{% if item.is_lesson %}
-<a href="#{{ item.block_key }}"
-   class="teacher-slot"
-   data-block-key="{{ item.block_key }}"
-   style="display:block; font-size:12px; margin-bottom:4px; font-weight:bold; color:#000;">
-   📘 {{ item.label }}
-{% for item in teacher_items %}
-
-        
+{% for item in all_items|sort(attribute='time') %}
+    <div class="teacher-slot-display"
+         style="display:block; font-size:12px; margin-bottom:4px; font-weight:bold; color:#000;">
+        {% if item.is_lesson %}
+            📘 {{ item.label }}
+        {% else %}
+            ⏰ {{ item.label }}
+        {% endif %}
     </div>
 {% endfor %}
+
 
 
 
