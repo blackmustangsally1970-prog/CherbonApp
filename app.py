@@ -3920,7 +3920,7 @@ def create_app():
     @app.route('/course_reference')
     def course_reference():
         courses = CourseReference.query.order_by(CourseReference.sort_order).all()
-        times = Times.query.order_by(Times.timerange).all()
+        times = Time.query.order_by(Time.timerange).all()
         return render_template('course_reference.html', courses=courses, times=times)
 
     @app.route('/update_course_field', methods=['POST'])
