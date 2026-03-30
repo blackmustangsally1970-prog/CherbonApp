@@ -48,6 +48,13 @@ th, td {
 
 <body>
 
+<div style="margin-bottom:12px;" class="no-print" id="top-controls">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
+</div>
+
+
+
 <h1>Summaries</h1>
 
 <form method="GET" action="/summaries" style="margin-bottom: 40px;">
