@@ -3,6 +3,9 @@
 <head>
     <title>Course Reference Table</title>
 
+    <!-- REQUIRED: jQuery (your missing piece) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <style>
         body { font-family: sans-serif; margin: 20px; }
 
@@ -48,7 +51,6 @@
 <h2>Course Reference Table</h2>
 
 <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
-
 <a href="{{ url_for('add_course_reference') }}" class="menu-btn">+ Add New Course</a>
 
 <table>
@@ -69,90 +71,100 @@
     <tbody>
         {% for row in courses %}
         <tr>
-<td>
-    <input type="text"
-           class="course-edit course-code-field"
-           data-id="{{ row.id }}"
-           data-field="course_code"
-           data-original="{{ row.course_code }}"
-           value="{{ row.course_code }}"
-           title="Changing this code affects linked systems. Be sure before editing."
-           style="width: 100px; border: 2px solid #d9534f; border-radius: 4px;">
-</td>
 
+            <!-- COURSE CODE -->
+            <td>
+                <input type="text"
+                       class="course-edit"
+                       data-id="{{ row.id }}"
+                       data-field="course_code"
+                       value="{{ row.course_code }}"
+                       style="width: 100px; border: 2px solid #d9534f; border-radius: 4px;">
+            </td>
+
+            <!-- DISPLAY LABEL (not editable) -->
             <td>{{ row.display_label }}</td>
-<td>
-    <select class="course-edit"
-            data-id="{{ row.id }}"
-            data-field="day_of_week">
-        <option value="Monday"    {% if row.day_of_week == 'Monday' %}selected{% endif %}>Monday</option>
-        <option value="Tuesday"   {% if row.day_of_week == 'Tuesday' %}selected{% endif %}>Tuesday</option>
-        <option value="Wednesday" {% if row.day_of_week == 'Wednesday' %}selected{% endif %}>Wednesday</option>
-        <option value="Thursday"  {% if row.day_of_week == 'Thursday' %}selected{% endif %}>Thursday</option>
-        <option value="Friday"    {% if row.day_of_week == 'Friday' %}selected{% endif %}>Friday</option>
-        <option value="Saturday"  {% if row.day_of_week == 'Saturday' %}selected{% endif %}>Saturday</option>
-        <option value="Sunday"    {% if row.day_of_week == 'Sunday' %}selected{% endif %}>Sunday</option>
-    </select>
-</td>
 
-<td>
-    <select class="course-edit"
-            data-id="{{ row.id }}"
-            data-field="timerange">
-        {% for t in times %}
-            <option value="{{ t.timerange }}"
-                {% if row.timerange == t.timerange %}selected{% endif %}>
-                {{ t.timerange }}
-            </option>
-        {% endfor %}
-    </select>
-</td>
-<td>
-    <input type="text" class="course-edit"
-           data-id="{{ row.id }}"
-           data-field="lesson_type"
-           value="Arena"
-           readonly>
-</td>
+            <!-- DAY -->
+            <td>
+                <select class="course-edit"
+                        data-id="{{ row.id }}"
+                        data-field="day_of_week">
+                    <option value="Monday"    {% if row.day_of_week == 'Monday' %}selected{% endif %}>Monday</option>
+                    <option value="Tuesday"   {% if row.day_of_week == 'Tuesday' %}selected{% endif %}>Tuesday</option>
+                    <option value="Wednesday" {% if row.day_of_week == 'Wednesday' %}selected{% endif %}>Wednesday</option>
+                    <option value="Thursday"  {% if row.day_of_week == 'Thursday' %}selected{% endif %}>Thursday</option>
+                    <option value="Friday"    {% if row.day_of_week == 'Friday' %}selected{% endif %}>Friday</option>
+                    <option value="Saturday"  {% if row.day_of_week == 'Saturday' %}selected{% endif %}>Saturday</option>
+                    <option value="Sunday"    {% if row.day_of_week == 'Sunday' %}selected{% endif %}>Sunday</option>
+                </select>
+            </td>
 
+            <!-- TIME RANGE -->
+            <td>
+                <select class="course-edit"
+                        data-id="{{ row.id }}"
+                        data-field="timerange">
+                    {% for t in times %}
+                        <option value="{{ t.timerange }}"
+                            {% if row.timerange == t.timerange %}selected{% endif %}>
+                            {{ t.timerange }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </td>
 
-<td>
-    <select class="course-edit"
-            data-id="{{ row.id }}"
-            data-field="group_priv">
-        <option value="CC" {% if row.group_priv == 'CC' %}selected{% endif %}>CC</option>
-        <option value="CT" {% if row.group_priv == 'CT' %}selected{% endif %}>CT</option>
-        <option value="D"  {% if row.group_priv == 'D'  %}selected{% endif %}>D</option>
-        <option value="GY" {% if row.group_priv == 'GY' %}selected{% endif %}>GY</option>
-        <option value="IC" {% if row.group_priv == 'IC' %}selected{% endif %}>IC</option>
-        <option value="J"  {% if row.group_priv == 'J'  %}selected{% endif %}>J</option>
-    </select>
-</td>
+            <!-- LESSON TYPE (readonly) -->
+            <td>
+                <input type="text"
+                       class="course-edit"
+                       data-id="{{ row.id }}"
+                       data-field="lesson_type"
+                       value="{{ row.lesson_type }}"
+                       readonly>
+            </td>
 
-<td>{{ row.sort_order }}</td>
+            <!-- GROUP/PRIV -->
+            <td>
+                <select class="course-edit"
+                        data-id="{{ row.id }}"
+                        data-field="group_priv">
+                    <option value="CC" {% if row.group_priv == 'CC' %}selected{% endif %}>CC</option>
+                    <option value="CT" {% if row.group_priv == 'CT' %}selected{% endif %}>CT</option>
+                    <option value="D"  {% if row.group_priv == 'D'  %}selected{% endif %}>D</option>
+                    <option value="GY" {% if row.group_priv == 'GY' %}selected{% endif %}>GY</option>
+                    <option value="IC" {% if row.group_priv == 'IC' %}selected{% endif %}>IC</option>
+                    <option value="J"  {% if row.group_priv == 'J'  %}selected{% endif %}>J</option>
+                </select>
+            </td>
 
+            <!-- SORT ORDER (readonly) -->
+            <td>{{ row.sort_order }}</td>
 
-<td>
-    <input type="checkbox"
-           class="course-edit"
-           data-id="{{ row.id }}"
-           data-field="active"
-           {% if row.active %}checked{% endif %}>
-</td>
-<td>
-    <button class="delete-btn"
-            data-id="{{ row.id }}"
-            style="background:#c00; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">
-        Delete
-    </button>
-</td>
+            <!-- ACTIVE -->
+            <td>
+                <input type="checkbox"
+                       class="course-edit"
+                       data-id="{{ row.id }}"
+                       data-field="active"
+                       {% if row.active %}checked{% endif %}>
+            </td>
 
+            <!-- DELETE -->
+            <td>
+                <button class="delete-btn"
+                        data-id="{{ row.id }}"
+                        style="background:#c00; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">
+                    Delete
+                </button>
+            </td>
 
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
+<!-- UPDATE HANDLER -->
 <script>
 $(document).on('change', '.course-edit', function () {
     const id = $(this).data('id');
@@ -174,11 +186,14 @@ $(document).on('change', '.course-edit', function () {
     .then(data => {
         if (!data.success) {
             alert("Update failed: " + data.error);
+        } else {
+            location.reload();  // ensures sort order refreshes
         }
     });
 });
 </script>
 
+<!-- DELETE HANDLER -->
 <script>
 $(document).on('click', '.delete-btn', function () {
     const id = $(this).data('id');
@@ -201,7 +216,5 @@ $(document).on('click', '.delete-btn', function () {
 });
 </script>
 
-
 </body>
 </html>
-
