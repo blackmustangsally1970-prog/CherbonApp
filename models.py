@@ -82,6 +82,30 @@ class LessonTeacherTag(db.Model):
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
 
+class CourseReference(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    course_code = db.Column(db.String(10), unique=True, nullable=False)
+    display_label = db.Column(db.String(120), nullable=False)
+
+    day_of_week = db.Column(db.String(10), nullable=False)
+
+    # NEW — replaces start_time + end_time
+    timerange = db.Column(db.String(20), nullable=False)
+
+    lesson_type = db.Column(db.String(20), nullable=False)
+    group_priv = db.Column(db.String(5), nullable=False)
+
+    sort_order = db.Column(db.Integer, default=0)
+    active = db.Column(db.Boolean, default=True)
+
+    # Pricing
+    price_weekly = db.Column(db.Float, default=0)
+    price_upfront = db.Column(db.Float, default=0)
+    discount_available = db.Column(db.Boolean, default=False)
+    discount_weekly = db.Column(db.Float, default=0)
+    discount_upfront = db.Column(db.Float, default=0)
+
 
 class DisclaimerState(db.Model):
     __tablename__ = 'disclaimer_state'

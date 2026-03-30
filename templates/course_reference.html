@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Course Reference Table</title>
+
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        .menu-btn {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+            margin-right: 12px;
+        }
+
+        .menu-btn:hover {
+            background: #ddd;
+            text-decoration: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Course Reference Table</h2>
+
+<a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+
+<a href="{{ url_for('add_course_reference') }}" class="menu-btn">+ Add New Course</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Course Code</th>
+            <th>Display Label</th>
+            <th>Day</th>
+            <th>Time Range</th>
+            <th>Lesson Type</th>
+            <th>Group/Priv</th>
+            <th>Sort</th>
+            <th>Active</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for row in courses %}
+        <tr>
+            <td>{{ row.course_code }}</td>
+            <td>{{ row.display_label }}</td>
+<td>
+    <select class="course-edit"
+            data-id="{{ row.id }}"
+            data-field="day_of_week">
+        <option value="Monday"    {% if row.day_of_week == 'Monday' %}selected{% endif %}>Monday</option>
+        <option value="Tuesday"   {% if row.day_of_week == 'Tuesday' %}selected{% endif %}>Tuesday</option>
+        <option value="Wednesday" {% if row.day_of_week == 'Wednesday' %}selected{% endif %}>Wednesday</option>
+        <option value="Thursday"  {% if row.day_of_week == 'Thursday' %}selected{% endif %}>Thursday</option>
+        <option value="Friday"    {% if row.day_of_week == 'Friday' %}selected{% endif %}>Friday</option>
+        <option value="Saturday"  {% if row.day_of_week == 'Saturday' %}selected{% endif %}>Saturday</option>
+        <option value="Sunday"    {% if row.day_of_week == 'Sunday' %}selected{% endif %}>Sunday</option>
+    </select>
+</td>
+
+<td>
+    <select class="course-edit"
+            data-id="{{ row.id }}"
+            data-field="timerange">
+        {% for t in times %}
+            <option value="{{ t.timerange }}"
+                {% if row.timerange == t.timerange %}selected{% endif %}>
+                {{ t.timerange }}
+            </option>
+        {% endfor %}
+    </select>
+</td>
+<td>
+    <input type="text" class="course-edit"
+           data-id="{{ row.id }}"
+           data-field="lesson_type"
+           value="Arena"
+           readonly>
+</td>
+
+
+<td>
+    <select class="course-edit"
+            data-id="{{ row.id }}"
+            data-field="group_priv">
+        <option value="CC" {% if row.group_priv == 'CC' %}selected{% endif %}>CC</option>
+        <option value="CT" {% if row.group_priv == 'CT' %}selected{% endif %}>CT</option>
+        <option value="D"  {% if row.group_priv == 'D'  %}selected{% endif %}>D</option>
+        <option value="GY" {% if row.group_priv == 'GY' %}selected{% endif %}>GY</option>
+        <option value="IC" {% if row.group_priv == 'IC' %}selected{% endif %}>IC</option>
+        <option value="J"  {% if row.group_priv == 'J'  %}selected{% endif %}>J</option>
+    </select>
+</td>
+
+<td>
+    <input type="number"
+           class="course-edit"
+           data-id="{{ row.id }}"
+           data-field="sort_order"
+           value="{{ row.sort_order }}"
+           style="width: 70px;">
+</td>
+
+<td>
+    <input type="checkbox"
+           class="course-edit"
+           data-id="{{ row.id }}"
+           data-field="active"
+           {% if row.active %}checked{% endif %}>
+</td>
+<td>
+    <button class="delete-btn"
+            data-id="{{ row.id }}"
+            style="background:#c00; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">
+        Delete
+    </button>
+</td>
+
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+$(document).on('change', '.course-edit', function () {
+    const id = $(this).data('id');
+    const field = $(this).data('field');
+    let value;
+
+    if (this.type === 'checkbox') {
+        value = this.checked ? 1 : 0;
+    } else {
+        value = $(this).val();
+    }
+
+    fetch('/update_course_field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, field, value })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert("Update failed: " + data.error);
+        }
+    });
+});
+</script>
+
+
+
+</body>
+</html>
+

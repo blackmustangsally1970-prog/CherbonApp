@@ -3915,6 +3915,63 @@ def create_app():
         db.session.commit()
         return redirect(url_for("manage_horses_page"))
 
+
+
+    @app.route('/course_reference')
+    def course_reference():
+        courses = CourseReference.query.order_by(CourseReference.sort_order).all()
+        times = Times.query.order_by(Times.timerange).all()
+        return render_template('course_reference.html', courses=courses, times=times)
+
+    @app.route('/update_course_field', methods=['POST'])
+    def update_course_field():
+        data = request.get_json()
+        cid = data.get('id')
+        field = data.get('field')
+        value = data.get('value')
+
+        course = CourseReference.query.get(cid)
+        if not course:
+            return jsonify(success=False, error="Course not found")
+
+        try:
+            if field == "active":
+                setattr(course, field, bool(int(value)))
+            else:
+                setattr(course, field, value)
+
+            db.session.commit()
+            return jsonify(success=True)
+        except Exception as e:
+            return jsonify(success=False, error=str(e))
+
+    @app.route('/add_course_reference')
+    def add_course_reference():
+        new_course = CourseReference(
+            course_code="NEW",
+            display_label="New Course",
+            day_of_week="Monday",
+            timerange="07:00 - 08:00",
+            lesson_type="Arena",
+            group_priv="CC",
+            sort_order=999,
+            active=True
+        )
+        db.session.add(new_course)
+        db.session.commit()
+        return redirect(url_for('course_reference'))
+
+    @app.route('/delete_course_reference', methods=['POST'])
+    def delete_course_reference():
+        course_id = request.json.get('id')
+        course = CourseReference.query.get(course_id)
+        if course:
+            db.session.delete(course)
+            db.session.commit()
+            return jsonify(success=True)
+        return jsonify(success=False, error="Course not found")
+
+
     @app.route("/horses/delete/<int:hid>", methods=["POST"])
     def delete_horse(hid):
         row = db.session.query(Horse).get(hid)
