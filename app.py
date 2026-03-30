@@ -158,6 +158,91 @@ def role_required(*roles):
         return wrapper
     return decorator
 
+def generate_financial_years(start_year=2022):
+    from datetime import date
+
+    today = date.today()
+
+    # Determine current FY based on Australian FY (1 July – 30 June)
+    if today.month >= 7:
+        current_fy_start = today.year
+    else:
+        current_fy_start = today.year - 1
+
+    # Build list from start_year up to next FY
+    fy_list = []
+    for y in range(start_year, current_fy_start + 2):
+        fy_list.append(f"{y}-{y+1}")
+
+    return fy_list
+
+def get_sundays_for_financial_year(fy_string):
+    start_year, end_year = map(int, fy_string.split("-"))
+
+    fy_start = datetime(start_year, 7, 1)
+    fy_end = datetime(end_year, 6, 30)
+
+    # Find the first Sunday on or before FY start
+    first_sunday = fy_start - timedelta(days=fy_start.weekday() + 1 if fy_start.weekday() != 6 else 0)
+
+    sundays = []
+    current = first_sunday
+
+    while current <= fy_end:
+        sundays.append(current.date())
+        current += timedelta(days=7)
+
+    return sundays
+
+def get_week_window(sunday_date):
+    from datetime import timedelta
+    start = sunday_date
+    end = sunday_date + timedelta(days=6)
+    return start, end
+
+
+def build_weekly_summary(sundays, selected_fy):
+    weekly_data = []
+    running_total = 0
+
+    for s in sundays:
+        week_start, week_end = get_week_window(s)
+
+        saved = (
+            WeeklyEvent.query
+            .filter_by(week_start=week_start, fy=selected_fy)
+            .first()
+        )
+
+        event1_name = saved.event1 if saved and saved.event1 else None
+        event2_name = saved.event2 if saved and saved.event2 else None
+
+        attendance = (
+            db.session.query(func.count(Lesson.lesson_id))
+            .filter(Lesson.lesson_date.between(week_start, week_end))
+            .scalar()
+        ) or 0
+
+        payments = (
+            db.session.query(func.sum(Lesson.payment))
+            .filter(Lesson.lesson_date.between(week_start, week_end))
+            .scalar()
+        ) or 0
+
+        running_total += payments
+
+        weekly_data.append({
+            "week_start": week_start,
+            "event1": event1_name,
+            "event2": event2_name,
+            "attendance": attendance,
+            "payments": payments,
+            "running_total": running_total,
+            "ytd_total": running_total
+        })
+
+    return weekly_data
+
 
 
 def log_lesson_changes(changes, user="system"):
@@ -1270,7 +1355,25 @@ def create_app():
         flash(result, "success")
         return redirect(url_for('notifications'))
 
+    @app.route("/summaries", methods=["GET"])
+    def summaries_page():
+        fy_list = generate_financial_years(start_year=2022)
+        selected_fy = request.args.get("fy")
 
+        sundays = None
+        weekly_data = None
+
+        if selected_fy:
+            sundays = get_sundays_for_financial_year(selected_fy)
+            weekly_data = build_weekly_summary(sundays, selected_fy)
+
+        return render_template(
+            "summaries.html",
+            fy_list=fy_list,
+            selected_fy=selected_fy,
+            sundays=sundays,
+            weekly_data=weekly_data
+        )
 
     @app.route('/invite_submissions')
     def invite_submissions():
@@ -4797,6 +4900,32 @@ Cherbon Waters Admin
             out.append(f"{l.lesson_id} | {l.lesson_date} | {l.time_frame}")
         return "<br>".join(out)
 
+    @app.route("/save_weekly_events", methods=["POST"])
+    def save_weekly_events():
+        fy = request.form.get("fy")
+
+        for key, value in request.form.items():
+            if key.startswith("event1_") or key.startswith("event2_"):
+                field, week_start_str = key.split("_")
+                week_start = datetime.strptime(week_start_str, "%Y-%m-%d").date()
+
+                row = (
+                    WeeklyEvent.query
+                    .filter_by(week_start=week_start, fy=fy)
+                    .first()
+                )
+
+                if not row:
+                    row = WeeklyEvent(
+                        week_start=week_start,
+                        fy=fy
+                    )
+                    db.session.add(row)
+
+                setattr(row, field, value)
+
+        db.session.commit()
+        return redirect(f"/summaries?fy={fy}")
 
 
     @app.route('/debug_payload/<int:id>')

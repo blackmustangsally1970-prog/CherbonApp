@@ -54,6 +54,16 @@ class LessonInvite(db.Model):
     status = db.Column(db.String, nullable=False)
     lesson_date = db.Column(db.Date, nullable=False)
 
+class WeeklyEvent(db.Model):
+    __tablename__ = "weekly_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    week_start = db.Column(db.Date, nullable=False)
+    fy = db.Column(db.String, nullable=False)
+
+    event1 = db.Column(db.String)
+    event2 = db.Column(db.String)
+
 
 class LessonTeacherTag(db.Model):
     __tablename__ = "lesson_teacher_tags"

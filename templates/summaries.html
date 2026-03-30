@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Summaries</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            margin: 0;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 40px;
+            font-weight: 900;
+        }
+
+        .placeholder {
+            font-size: 28px;
+            color: #666;
+            margin-top: 40px;
+        }
+
+        table {
+            margin: 40px auto;
+            border-collapse: collapse;
+            width: 90%;
+            font-size: 24px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background: #eee;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Summaries</h1>
+
+<form method="GET" action="/summaries" style="margin-bottom: 40px;">
+    <label for="fy" style="font-size: 32px; font-weight: 700;">Select Financial Year:</label>
+
+    <select id="fy" name="fy"
+            style="font-size: 32px; padding: 20px; margin-left: 20px; border-radius: 12px;">
+
+        {% for fy in fy_list %}
+            <option value="{{ fy }}" {% if selected_fy == fy %}selected{% endif %}>
+                {{ fy.replace('-', '–') }}
+            </option>
+        {% endfor %}
+
+    </select>
+
+    <button type="submit"
+            style="font-size: 32px; padding: 20px 40px; margin-left: 20px; border-radius: 12px;">
+        Load
+    </button>
+</form>
+
+{% if not weekly_data %}
+    <div class="placeholder">
+        Financial year summaries will appear here.
+    </div>
+{% endif %}
+
+{% if weekly_data %}
+
+<form method="POST" action="/save_weekly_events">
+    <input type="hidden" name="fy" value="{{ selected_fy }}">
+
+<table>
+    <tr>
+        <th>Week Starting</th>
+        <th>Event 1</th>
+        <th>Event 2</th>
+        <th>Attendance</th>
+        <th>Payments</th>
+        <th>Running Total</th>
+        <th>YTD Total</th>
+    </tr>
+
+    {% for w in weekly_data %}
+    <tr>
+        <td>{{ w.week_start }}</td>
+
+        <td>
+            <input type="text"
+                   name="event1_{{ w.week_start }}"
+                   value="{{ w.event1 or '' }}"
+                   style="width: 90%; font-size: 22px; padding: 6px;">
+        </td>
+
+        <td>
+            <input type="text"
+                   name="event2_{{ w.week_start }}"
+                   value="{{ w.event2 or '' }}"
+                   style="width: 90%; font-size: 22px; padding: 6px;">
+        </td>
+
+        <td>{{ w.attendance }}</td>
+        <td>${{ "%.2f"|format(w.payments) }}</td>
+        <td>${{ "%.2f"|format(w.running_total) }}</td>
+        <td>${{ "%.2f"|format(w.ytd_total) }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+    <button type="submit"
+            style="font-size: 28px; padding: 20px 40px; margin-top: 20px;">
+        Save Weekly Events
+    </button>
+
+
+
+
+</form>
+
+{% endif %}
+
+</body>
+</html>
