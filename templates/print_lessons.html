@@ -167,9 +167,13 @@
                     <td>{{ l.height }}</td>
                     <td class="{{ client_class }}">{{ l.client_name }}</td>
                     <td>{{ l.att }}</td>
-                    <td class="{{ payment_class }}">{{ l.payment }}</td>
-                    <td>{{ "%.2f"|format(l.price) }}</td>
-                    <td>{{ "%.2f"|format(l.balance) }}</td>
+<td class="{{ payment_class }}">
+    {% if l.payment and l.payment > 0 %}
+        ${{ "%.2f"|format(l.payment) }}
+    {% endif %}
+</td>
+                    <td>${{ "%.2f"|format(l.price) }}</td>
+                    <td>${{ "%.2f"|format(l.balance) }}</td>
                     <td></td>
                 </tr>
             {% endfor %}
