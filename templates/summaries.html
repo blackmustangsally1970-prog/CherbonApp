@@ -4,46 +4,48 @@
     <meta charset="utf-8">
     <title>Summaries</title>
 
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            margin: 0;
-            text-align: center;
-        }
+<style>
+    body {
+        font-family: sans-serif;
+        padding: 20px;
+        margin: 0;
+        text-align: center;
+    }
 
-        h1 {
-            font-size: 48px;
-            margin-bottom: 40px;
-            font-weight: 900;
-        }
+    h1 {
+        font-size: 32px;        /* was 48px */
+        margin-bottom: 30px;    /* was 40px */
+        font-weight: 900;
+    }
 
-        .placeholder {
-            font-size: 28px;
-            color: #666;
-            margin-top: 40px;
-        }
+    .placeholder {
+        font-size: 20px;        /* was 28px */
+        color: #666;
+        margin-top: 30px;       /* was 40px */
+    }
 
-table {
-    margin: 40px auto;
-    border-collapse: collapse;
-    width: 90%;
-    font-size: 12px;   /* was 24px */
-}
+    table {
+        margin: 30px auto;      /* was 40px */
+        border-collapse: collapse;
+        width: 90%;
+        font-size: 12px;        /* already reduced */
+    }
 
+    th, td {
+        padding: 6px;           /* already reduced */
+        border: 1px solid #ccc;
+    }
 
+    th {
+        background: #eee;
+        font-weight: bold;
+    }
 
-th, td {
-    padding: 6px;      /* was 12px */
-    border: 1px solid #ccc;
-}
-
-
-        th {
-            background: #eee;
-            font-weight: bold;
-        }
-    </style>
+    #top-controls {
+        text-align: left;
+        margin-bottom: 20px;
+    }
+</style>
 </head>
 
 <body>
@@ -55,13 +57,13 @@ th, td {
 
 
 
-<h1>Summaries</h1>
+<h1 style="font-size: 32px; font-weight: 900; margin-bottom: 30px;">Summaries</h1>
 
-<form method="GET" action="/summaries" style="margin-bottom: 40px;">
-    <label for="fy" style="font-size: 32px; font-weight: 700;">Select Financial Year:</label>
+<form method="GET" action="/summaries" style="margin-bottom: 30px;">
+    <label for="fy" style="font-size: 18px; font-weight: 700;">Select Financial Year:</label>
 
     <select id="fy" name="fy"
-            style="font-size: 32px; padding: 20px; margin-left: 20px; border-radius: 12px;">
+            style="font-size: 18px; padding: 10px; margin-left: 16px; border-radius: 10px;">
 
         {% for fy in fy_list %}
             <option value="{{ fy }}" {% if selected_fy == fy %}selected{% endif %}>
@@ -72,10 +74,11 @@ th, td {
     </select>
 
     <button type="submit"
-            style="font-size: 32px; padding: 20px 40px; margin-left: 20px; border-radius: 12px;">
+            style="font-size: 18px; padding: 10px 20px; margin-left: 16px; border-radius: 10px;">
         Load
     </button>
 </form>
+
 
 {% if not weekly_data %}
     <div class="placeholder">
