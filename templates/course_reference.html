@@ -72,13 +72,14 @@
 <td>
     <input type="text"
            class="course-edit course-code-field"
-           data-id="{{ course.id }}"
+           data-id="{{ row.id }}"
            data-field="course_code"
-           data-original="{{ course.course_code }}"
-           value="{{ course.course_code }}"
+           data-original="{{ row.course_code }}"
+           value="{{ row.course_code }}"
            title="Changing this code affects linked systems. Be sure before editing."
            style="width: 100px; border: 2px solid #d9534f; border-radius: 4px;">
 </td>
+
             <td>{{ row.display_label }}</td>
 <td>
     <select class="course-edit"
