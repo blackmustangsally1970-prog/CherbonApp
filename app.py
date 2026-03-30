@@ -3988,13 +3988,13 @@ def create_app():
                 return jsonify(success=False, error="Course code already exists")
 
         try:
-            # Handle checkbox boolean
+            # Apply the new value FIRST
             if field == "active":
                 setattr(course, field, bool(int(value)))
             else:
                 setattr(course, field, value)
 
-            # ALWAYS recompute sort order
+            # NOW recompute sort order using updated values
             course.sort_order = compute_sort_order(
                 course.day_of_week,
                 course.timerange
