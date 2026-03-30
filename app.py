@@ -2783,6 +2783,18 @@ def create_app():
 
     # ---------------- ROUTES ---------------- #
 
+    @app.route('/delete_client', methods=['POST'])
+    def delete_client():
+        client_id = request.form.get('client_id')
+        client = Client.query.get(client_id)
+
+        if client:
+            db.session.delete(client)
+            db.session.commit()
+
+        return redirect(url_for('client_view'))
+
+
     @app.post("/save_booking")
     def save_booking():
         data = request.get_json()
