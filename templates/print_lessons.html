@@ -76,6 +76,13 @@
             page-break-after: always;
         }
 
+        /* Prevent block splitting across pages */
+        .lesson-block {
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom: 20px;
+        }
+
         @media print {
             * {
                 -webkit-print-color-adjust: exact !important;
@@ -83,38 +90,37 @@
             }
         }
 
-.print-btn,
-.back-btn {
-    font-size: 24pt;          /* 4× larger text */
-    padding: 22px 30px;       /* 4× larger tap area */
-    margin-bottom: 20px;
-    background: #444;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-}
+        /* Mobile-friendly buttons */
+        .print-btn,
+        .back-btn {
+            font-size: 24pt;
+            padding: 22px 30px;
+            margin-bottom: 20px;
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
 
-.back-btn {
-    background: #666;
-}
+        .back-btn {
+            background: #666;
+        }
 
-.print-btn:active,
-.back-btn:active {
-    background: #222;
-}
+        .print-btn:active,
+        .back-btn:active {
+            background: #222;
+        }
 
-@media print {
-    .print-btn,
-    .back-btn {
-        display: none !important;
-    }
-}
-
-</style>
-
-
+        @media print {
+            .print-btn,
+            .back-btn {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
 <button class="back-btn" onclick="window.location.href='/lessons_by_date'">
@@ -127,6 +133,7 @@
 
 {% if arena_blocks %}
     {% for block in arena_blocks %}
+    <div class="lesson-block">
         <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
 
         <table>
@@ -167,6 +174,7 @@
                 </tr>
             {% endfor %}
         </table>
+    </div>
     {% endfor %}
 {% endif %}
 
@@ -176,6 +184,7 @@
 
 {% if other_blocks %}
     {% for block in other_blocks %}
+    <div class="lesson-block">
         <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
 
         <table>
@@ -216,6 +225,7 @@
                 </tr>
             {% endfor %}
         </table>
+    </div>
     {% endfor %}
 {% endif %}
 
