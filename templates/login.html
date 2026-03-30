@@ -15,7 +15,7 @@
 
     h2 {
         margin-bottom: 40px;
-        font-size: 10vw;          /* giant on mobile */
+        font-size: 12vw;          /* huge on mobile */
         font-weight: 900;
     }
 
@@ -29,35 +29,36 @@
         margin: 0 auto;
     }
 
-    /* MOBILE-FIRST GIANT INPUTS (Safari-proof) */
+    /* TRIPLE-GIANT INPUTS (physical size forced) */
     input[type="text"],
     input[type="password"],
     input[list] {
         display: block;
-        width: 100vw;                 /* full device width */
-        max-width: 100%;              /* prevent overflow */
-        padding: 6vw;                 /* scales with screen */
-        font-size: 6vw;               /* giant text */
-        margin-bottom: 6vw;
-        border: 6px solid #4a6bff;
-        border-radius: 24px;
+        width: 100%;
+        max-width: 100%;
+        padding: 80px;                 /* massive tap area */
+        font-size: 72px;               /* true giant text */
+        min-height: 180px;             /* forces physical size */
+        margin-bottom: 60px;
+        border: 8px solid #4a6bff;
+        border-radius: 30px;
         box-sizing: border-box;
         font-weight: 700;
-        -webkit-appearance: none;     /* iOS override */
+        -webkit-appearance: none;      /* Safari override */
     }
 
-    /* GIANT LOGIN BUTTON */
+    /* TRIPLE-GIANT LOGIN BUTTON */
     button {
         display: block;
-        width: 100vw;
+        width: 100%;
         max-width: 100%;
-        padding: 6vw;
-        font-size: 6vw;
+        padding: 80px;
+        font-size: 72px;
         font-weight: 900;
         background: #4a6bff;
         color: white;
         border: none;
-        border-radius: 24px;
+        border-radius: 30px;
         cursor: pointer;
         -webkit-appearance: none;
     }
@@ -78,6 +79,7 @@
             width: 300px;
             padding: 14px;
             font-size: 18px;
+            min-height: auto;
             margin-bottom: 18px;
         }
 
