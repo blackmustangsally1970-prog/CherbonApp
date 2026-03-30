@@ -92,7 +92,9 @@ th, td {
     <th>Payments</th>
     <th>Running Total</th>
     <th>YTD Total</th>
+    <th>Notes</th>
 </tr>
+
 
 
     {% for w in weekly_data %}
@@ -107,19 +109,28 @@ th, td {
         <input type="text"
                name="event1_{{ w.week_start }}"
                value="{{ w.event1 or '' }}"
-               style="width: 90%; font-size: 22px; padding: 6px;">
+               maxlength="5"
+               style="width: 60px; font-size: 12px; text-align: center;">
     </td>
 
     <td>
         <input type="text"
                name="event2_{{ w.week_start }}"
                value="{{ w.event2 or '' }}"
-               style="width: 90%; font-size: 22px; padding: 6px;">
+               maxlength="5"
+               style="width: 60px; font-size: 12px; text-align: center;">
     </td>
 
     <td>${{ "%.2f"|format(w.payments) }}</td>
     <td>${{ "%.2f"|format(w.running_total) }}</td>
     <td>${{ "%.2f"|format(w.ytd_total) }}</td>
+
+    <td>
+        <input type="text"
+               name="notes_{{ w.week_start }}"
+               value="{{ w.notes or '' }}"
+               style="width: 150px; font-size: 12px;">
+    </td>
 </tr>
     {% endfor %}
 </table>

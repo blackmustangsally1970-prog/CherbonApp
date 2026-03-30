@@ -63,6 +63,7 @@ class WeeklyEvent(db.Model):
 
     event1 = db.Column(db.String)
     event2 = db.Column(db.String)
+    notes = db.Column(db.String)
 
 
 class LessonTeacherTag(db.Model):

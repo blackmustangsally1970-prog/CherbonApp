@@ -222,7 +222,6 @@ def build_weekly_summary(sundays, selected_fy):
         if week_end > fy_end:
             week_end = fy_end
 
-
         saved = (
             WeeklyEvent.query
             .filter_by(week_start=week_start, fy=selected_fy)
@@ -231,6 +230,7 @@ def build_weekly_summary(sundays, selected_fy):
 
         event1_name = saved.event1 if saved and saved.event1 else None
         event2_name = saved.event2 if saved and saved.event2 else None
+        notes_val  = saved.notes if saved and saved.notes else None   # ⭐ ADDED
 
         y_count = (
             db.session.query(func.count(Lesson.lesson_id))
@@ -274,6 +274,7 @@ def build_weekly_summary(sundays, selected_fy):
             "week_start": week_start,
             "event1": event1_name,
             "event2": event2_name,
+            "notes": notes_val,          # ⭐ ADDED
             "y": y_count,
             "n": n_count,
             "c": c_count,
@@ -4948,7 +4949,7 @@ Cherbon Waters Admin
         fy = request.form.get("fy")
 
         for key, value in request.form.items():
-            if key.startswith("event1_") or key.startswith("event2_"):
+            if key.startswith("event1_") or key.startswith("event2_") or key.startswith("notes_"):
                 field, week_start_str = key.split("_")
                 week_start = datetime.strptime(week_start_str, "%Y-%m-%d").date()
 
@@ -4965,7 +4966,7 @@ Cherbon Waters Admin
                     )
                     db.session.add(row)
 
-                setattr(row, field, value)
+                setattr(row, field, value.strip())
 
         db.session.commit()
         return redirect(f"/summaries?fy={fy}")
