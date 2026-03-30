@@ -559,28 +559,29 @@ def extract_number(value):
     return int(digits) if digits else None
 
 def compute_sort_order(day_of_week, timerange):
-    day_map = {
-        'Monday': 1,
-        'Tuesday': 2,
-        'Wednesday': 3,
-        'Thursday': 4,
-        'Friday': 5,
-        'Saturday': 6,
-        'Sunday': 7
-    }
+    # Day ordering for global weekly sort
+    day_index = {
+        "Monday": 1,
+        "Tuesday": 2,
+        "Wednesday": 3,
+        "Thursday": 4,
+        "Friday": 5,
+        "Saturday": 6,
+        "Sunday": 7
+    }.get(day_of_week, 99)
 
-    # Default to bottom if invalid
-    day_num = day_map.get(day_of_week, 9)
-
-    # Extract start time from "08:00 - 09:00"
+    # Extract start time from "HH:MM - HH:MM"
     try:
-        start = timerange.split('-')[0].strip()   # "08:00"
-        hh, mm = start.split(':')
-        time_num = int(hh) * 100 + int(mm)
+        start_time = timerange.split(" - ")[0]
+        hours, minutes = map(int, start_time.split(":"))
+        total_minutes = hours * 60 + minutes
     except:
-        time_num = 9999
+        total_minutes = 9999  # fallback if bad data
 
-    return day_num * 10000 + time_num
+    # Return a sortable integer
+    # Example: Monday 07:00 → 1*10000 + 420 = 10420
+    # We'll renumber these later to 1,2,3...
+    return day_index * 10000 + total_minutes
 
 
 def normalise_full_name(name: str) -> str:
@@ -3972,28 +3973,32 @@ def create_app():
         if field not in allowed:
             return jsonify(success=False, error="Invalid field")
 
+        # Unique course_code check
         if field == "course_code":
             existing = CourseReference.query.filter_by(course_code=value).first()
             if existing and existing.id != course.id:
                 return jsonify(success=False, error="Course code already exists")
 
         try:
+            # Handle checkbox boolean
             if field == "active":
                 setattr(course, field, bool(int(value)))
             else:
                 setattr(course, field, value)
 
-            if field in ("day_of_week", "timerange"):
-                course.sort_order = compute_sort_order(
-                    course.day_of_week,
-                    course.timerange
-                )
+            # ALWAYS recompute sort order
+            course.sort_order = compute_sort_order(
+                course.day_of_week,
+                course.timerange
+            )
 
             db.session.commit()
             return jsonify(success=True)
 
         except Exception as e:
+            db.session.rollback()
             return jsonify(success=False, error=str(e))
+
 
 
     @app.route('/add_course_reference')
