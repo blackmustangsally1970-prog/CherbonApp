@@ -164,7 +164,7 @@
     </tbody>
 </table>
 
-<!-- UPDATE HANDLER -->
+
 <script>
 $(document).on('change', '.course-edit', function () {
     const id = $(this).data('id');
@@ -187,11 +187,14 @@ $(document).on('change', '.course-edit', function () {
         if (!data.success) {
             alert("Update failed: " + data.error);
         } else {
-            location.reload();  // ensures sort order refreshes
+            setTimeout(() => location.reload(), 150);
         }
     });
 });
+
+
 </script>
+
 
 <!-- DELETE HANDLER -->
 <script>
