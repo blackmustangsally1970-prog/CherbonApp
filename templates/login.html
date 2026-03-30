@@ -1,120 +1,84 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Login</title>
+/* BASE LAYOUT */
+body {
+    font-family: sans-serif;
+    padding: 20px;
+    margin: 0;
+    text-align: center;
+}
 
-<style>
-    /* BASE LAYOUT */
-    body {
-        font-family: sans-serif;
-        padding: 20px;
-        margin: 0;
-        text-align: center;
-    }
+h2 {
+    margin-bottom: 40px;
+    font-size: 60px;
+    font-weight: 900;
+}
 
+/* FORM CONTAINER */
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* GIANT INPUTS — SAME SIZE ON ALL DEVICES */
+input[type="text"],
+input[type="password"],
+input[list] {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    padding: 70px;            /* huge tap area */
+    font-size: 64px;          /* giant text */
+    min-height: 200px;        /* forces physical size */
+    margin-bottom: 60px;
+    border: 8px solid #4a6bff;
+    border-radius: 30px;
+    box-sizing: border-box;
+    font-weight: 700;
+    -webkit-appearance: none;
+}
+
+/* GIANT LOGIN BUTTON */
+button {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    padding: 70px;
+    font-size: 64px;
+    font-weight: 900;
+    background: #4a6bff;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    -webkit-appearance: none;
+}
+
+button:active {
+    background: #3a56d6;
+}
+
+/* DESKTOP OVERRIDE ONLY */
+@media (min-width: 1100px) {
     h2 {
-        margin-bottom: 40px;
-        font-size: 12vw;          /* huge on mobile */
-        font-weight: 900;
+        font-size: 40px;
     }
 
-    /* FORM CONTAINER */
-    form {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    /* TRIPLE-GIANT INPUTS (physical size forced) */
     input[type="text"],
     input[type="password"],
     input[list] {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        padding: 80px;                 /* massive tap area */
-        font-size: 72px;               /* true giant text */
-        min-height: 180px;             /* forces physical size */
-        margin-bottom: 60px;
-        border: 8px solid #4a6bff;
-        border-radius: 30px;
-        box-sizing: border-box;
-        font-weight: 700;
-        -webkit-appearance: none;      /* Safari override */
+        width: 350px;
+        padding: 16px;
+        font-size: 20px;
+        min-height: auto;
+        margin-bottom: 20px;
     }
 
-    /* TRIPLE-GIANT LOGIN BUTTON */
     button {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        padding: 80px;
-        font-size: 72px;
-        font-weight: 900;
-        background: #4a6bff;
-        color: white;
-        border: none;
-        border-radius: 30px;
-        cursor: pointer;
-        -webkit-appearance: none;
+        width: 350px;
+        padding: 18px;
+        font-size: 22px;
     }
-
-    button:active {
-        background: #3a56d6;
-    }
-
-    /* DESKTOP OVERRIDE */
-    @media (min-width: 800px) {
-        h2 {
-            font-size: 40px;
-        }
-
-        input[type="text"],
-        input[type="password"],
-        input[list] {
-            width: 300px;
-            padding: 14px;
-            font-size: 18px;
-            min-height: auto;
-            margin-bottom: 18px;
-        }
-
-        button {
-            width: 300px;
-            padding: 16px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-    }
-</style>
-
-</head>
-<body>
-
-<h2>Staff Login</h2>
-
-<form method="POST" autocomplete="off">
-
-    <input list="usernames" name="user" placeholder="Username" autocomplete="off" required>
-
-    <datalist id="usernames">
-        <option value="steve">
-        <option value="trevor">
-        <option value="tamara">
-    </datalist>
-
-    <input type="password" name="password" placeholder="Password" required>
-
-    {% if error %}
-        <div style="color:red; margin-top:10px; font-size:28px;">{{ error }}</div>
-    {% endif %}
-
-    <button type="submit">Login</button>
-</form>
-
-</body>
-</html>
+}
