@@ -808,9 +808,11 @@ select.teacher-dropdown {
     Book Lessons
 </button>
 
-<button type="button" id="export-pdf" class="btn btn-danger" style="margin-left:8px;">
-    Export PDF
+<button type="button" id="print-run-sheet" class="btn btn-danger" style="margin-left:8px;">
+    Print Run Sheet
 </button>
+
+
 <!-- <button id="save-teachers" class="btn btn-primary">Save Teachers</button> -->
 
 
@@ -3349,18 +3351,6 @@ window.addEventListener('load', function () {
     });
 </script>
 
-<script>
-document.getElementById("export-pdf").addEventListener("click", function () {
-    const date = document.getElementById("date-picker").value;
-    if (!date) {
-        alert("No date selected.");
-        return;
-    }
-    window.open(`/export_lessons_pdf/${date}`, "_blank");
-});
-</script>
-
-
 <!--
 <script>
 document.getElementById("save-teachers").addEventListener("click", function () {
@@ -3386,6 +3376,25 @@ document.getElementById("save-teachers").addEventListener("click", function () {
 
 </script>
 -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("print-run-sheet");
+    if (!btn) {
+        console.warn("Print Run Sheet button not found.");
+        return;
+    }
+
+    btn.addEventListener("click", function () {
+        const date = document.getElementById("date-picker").value;
+        if (!date) {
+            alert("Please select a date first.");
+            return;
+        }
+        window.open(`/print/lessons/${date}`, "_blank");
+    });
+});
+</script>
 
 
 </body>
