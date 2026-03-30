@@ -1,84 +1,119 @@
-/* BASE LAYOUT */
-body {
-    font-family: sans-serif;
-    padding: 20px;
-    margin: 0;
-    text-align: center;
-}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Login</title>
 
-h2 {
-    margin-bottom: 40px;
-    font-size: 60px;
-    font-weight: 900;
-}
-
-/* FORM CONTAINER */
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-/* GIANT INPUTS — SAME SIZE ON ALL DEVICES */
-input[type="text"],
-input[type="password"],
-input[list] {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    padding: 70px;            /* huge tap area */
-    font-size: 64px;          /* giant text */
-    min-height: 200px;        /* forces physical size */
-    margin-bottom: 60px;
-    border: 8px solid #4a6bff;
-    border-radius: 30px;
-    box-sizing: border-box;
-    font-weight: 700;
-    -webkit-appearance: none;
-}
-
-/* GIANT LOGIN BUTTON */
-button {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    padding: 70px;
-    font-size: 64px;
-    font-weight: 900;
-    background: #4a6bff;
-    color: white;
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    -webkit-appearance: none;
-}
-
-button:active {
-    background: #3a56d6;
-}
-
-/* DESKTOP OVERRIDE ONLY */
-@media (min-width: 1100px) {
-    h2 {
-        font-size: 40px;
+<style>
+    /* BASE LAYOUT */
+    body {
+        font-family: sans-serif;
+        padding: 20px;
+        margin: 0;
+        text-align: center;
     }
 
+    h2 {
+        margin-bottom: 40px;
+        font-size: 70px;
+        font-weight: 900;
+    }
+
+    /* FORM CONTAINER */
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* GIANT INPUTS — SAME SIZE ON ALL DEVICES */
     input[type="text"],
     input[type="password"],
     input[list] {
-        width: 350px;
-        padding: 16px;
-        font-size: 20px;
-        min-height: auto;
-        margin-bottom: 20px;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        padding: 80px;            /* huge tap area */
+        font-size: 70px;          /* giant text */
+        min-height: 220px;        /* forces physical size */
+        margin-bottom: 70px;
+        border: 8px solid #4a6bff;
+        border-radius: 30px;
+        box-sizing: border-box;
+        font-weight: 700;
+        -webkit-appearance: none;
     }
 
+    /* GIANT LOGIN BUTTON */
     button {
-        width: 350px;
-        padding: 18px;
-        font-size: 22px;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        padding: 80px;
+        font-size: 70px;
+        font-weight: 900;
+        background: #4a6bff;
+        color: white;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        -webkit-appearance: none;
     }
-}
+
+    button:active {
+        background: #3a56d6;
+    }
+
+    /* DESKTOP OVERRIDE ONLY */
+    @media (min-width: 1100px) {
+        h2 {
+            font-size: 40px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[list] {
+            width: 350px;
+            padding: 16px;
+            font-size: 20px;
+            min-height: auto;
+            margin-bottom: 20px;
+        }
+
+        button {
+            width: 350px;
+            padding: 18px;
+            font-size: 22px;
+        }
+    }
+</style>
+
+</head>
+<body>
+
+<h2>Staff Login</h2>
+
+<form method="POST" autocomplete="off">
+
+    <input list="usernames" name="user" placeholder="Username" autocomplete="off" required>
+
+    <datalist id="usernames">
+        <option value="steve">
+        <option value="trevor">
+        <option value="tamara">
+    </datalist>
+
+    <input type="password" name="password" placeholder="Password" required>
+
+    {% if error %}
+        <div style="color:red; margin-top:10px; font-size:40px;">{{ error }}</div>
+    {% endif %}
+
+    <button type="submit">Login</button>
+</form>
+
+</body>
+</html>
