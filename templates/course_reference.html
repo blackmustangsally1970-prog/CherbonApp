@@ -69,7 +69,16 @@
     <tbody>
         {% for row in courses %}
         <tr>
-            <td>{{ row.course_code }}</td>
+<td>
+    <input type="text"
+           class="course-edit course-code-field"
+           data-id="{{ course.id }}"
+           data-field="course_code"
+           data-original="{{ course.course_code }}"
+           value="{{ course.course_code }}"
+           title="Changing this code affects linked systems. Be sure before editing."
+           style="width: 100px; border: 2px solid #d9534f; border-radius: 4px;">
+</td>
             <td>{{ row.display_label }}</td>
 <td>
     <select class="course-edit"
@@ -119,14 +128,8 @@
     </select>
 </td>
 
-<td>
-    <input type="number"
-           class="course-edit"
-           data-id="{{ row.id }}"
-           data-field="sort_order"
-           value="{{ row.sort_order }}"
-           style="width: 70px;">
-</td>
+<td>{{ row.sort_order }}</td>
+
 
 <td>
     <input type="checkbox"
@@ -175,6 +178,46 @@ $(document).on('change', '.course-edit', function () {
 });
 </script>
 
+<script>
+document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('course-edit')) return;
+
+    const field = e.target.dataset.field;
+    const id = e.target.dataset.id;
+    const newValue = e.target.value;
+
+    // Special case: course_code requires confirmation
+    if (field === 'course_code') {
+        const ok = confirm("Changing the course code may affect linked systems. Are you sure?");
+        if (!ok) {
+            // Revert to original value
+            e.target.value = e.target.dataset.original;
+            return;
+        }
+    }
+
+    // Send update to backend
+    fetch('/update_course_field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, field, value: newValue })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            // Update stored original value
+            e.target.dataset.original = newValue;
+        } else {
+            alert("Save failed: " + data.message);
+            e.target.value = e.target.dataset.original;
+        }
+    })
+    .catch(err => {
+        alert("Network error saving field.");
+        e.target.value = e.target.dataset.original;
+    });
+});
+</script>
 
 
 </body>

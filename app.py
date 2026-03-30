@@ -558,6 +558,31 @@ def extract_number(value):
     digits = ''.join(ch for ch in str(value) if ch.isdigit())
     return int(digits) if digits else None
 
+def compute_sort_order(day_of_week, timerange):
+    day_map = {
+        'Monday': 1,
+        'Tuesday': 2,
+        'Wednesday': 3,
+        'Thursday': 4,
+        'Friday': 5,
+        'Saturday': 6,
+        'Sunday': 7
+    }
+
+    # Default to bottom if invalid
+    day_num = day_map.get(day_of_week, 9)
+
+    # Extract start time from "08:00 - 09:00"
+    try:
+        start = timerange.split('-')[0].strip()   # "08:00"
+        hh, mm = start.split(':')
+        time_num = int(hh) * 100 + int(mm)
+    except:
+        time_num = 9999
+
+    return day_num * 10000 + time_num
+
+
 def normalise_full_name(name: str) -> str:
     if not name:
         return ""
@@ -3923,42 +3948,76 @@ def create_app():
         return render_template('course_reference.html', courses=courses, times=times)
 
     @app.route('/update_course_field', methods=['POST'])
-    def update_course_field():
-        data = request.get_json()
-        cid = data.get('id')
-        field = data.get('field')
-        value = data.get('value')
+        def update_course_field():
+            data = request.get_json()
+            cid = data.get('id')
+            field = data.get('field')
+            value = data.get('value')
 
-        course = CourseReference.query.get(cid)
-        if not course:
-            return jsonify(success=False, error="Course not found")
+            course = CourseReference.query.get(cid)
+            if not course:
+                return jsonify(success=False, error="Course not found")
 
-        try:
-            if field == "active":
-                setattr(course, field, bool(int(value)))
-            else:
-                setattr(course, field, value)
+            # Allowed editable fields
+            allowed = {
+                "course_code",
+                "display_label",
+                "day_of_week",
+                "timerange",
+                "lesson_type",
+                "group_priv",
+                "active"
+            }
 
-            db.session.commit()
-            return jsonify(success=True)
-        except Exception as e:
-            return jsonify(success=False, error=str(e))
+            if field not in allowed:
+                return jsonify(success=False, error="Invalid field")
+
+            # Special case: course_code must remain unique
+            if field == "course_code":
+                existing = CourseReference.query.filter_by(course_code=value).first()
+                if existing and existing.id != course.id:
+                    return jsonify(success=False, error="Course code already exists")
+
+            try:
+                if field == "active":
+                    setattr(course, field, bool(int(value)))
+                else:
+                    setattr(course, field, value)
+
+                # Recalculate sort_order if day or time changed
+                if field in ("day_of_week", "timerange"):
+                    course.sort_order = compute_sort_order(
+                        course.day_of_week,
+                        course.timerange
+                    )
+
+                db.session.commit()
+                return jsonify(success=True)
+
+            except Exception as e:
+                return jsonify(success=False, error=str(e))
 
     @app.route('/add_course_reference')
-    def add_course_reference():
-        new_course = CourseReference(
-            course_code="NEW",
-            display_label="New Course",
-            day_of_week="Monday",
-            timerange="07:00 - 08:00",
-            lesson_type="Arena",
-            group_priv="CC",
-            sort_order=999,
-            active=True
-        )
-        db.session.add(new_course)
-        db.session.commit()
-        return redirect(url_for('course_reference'))
+        def add_course_reference():
+            new_course = CourseReference(
+                course_code="NEW",
+                display_label="New Course",
+                day_of_week="Monday",
+                timerange="07:00 - 08:00",
+                lesson_type="Arena",
+                group_priv="CC",
+                active=True
+            )
+
+            # Auto-sort on creation
+            new_course.sort_order = compute_sort_order(
+                new_course.day_of_week,
+                new_course.timerange
+            )
+
+            db.session.add(new_course)
+            db.session.commit()
+            return redirect(url_for('course_reference'))
 
     @app.route('/delete_course_reference', methods=['POST'])
     def delete_course_reference():
