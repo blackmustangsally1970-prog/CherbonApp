@@ -1,85 +1,91 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Login</title>
 
 <style>
-    /* BASE */
+    /* BASE LAYOUT */
     body {
         font-family: sans-serif;
         padding: 20px;
+        margin: 0;
         text-align: center;
     }
 
     h2 {
         margin-bottom: 40px;
-        font-size: 40px;
+        font-size: 10vw;          /* giant on mobile */
+        font-weight: 900;
     }
 
-    /* FORCE VERTICAL STACK ON MOBILE */
+    /* FORM CONTAINER */
     form {
         display: flex;
         flex-direction: column;
         align-items: center;
         width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
     }
 
-/* MOBILE FIRST — GIANT BUTTONS (Safari-proof) */
-input[type="text"],
-input[type="password"],
-input[list] {
-    display: block;
-    width: 100vw;                 /* full device width */
-    max-width: 100%;              /* prevent overflow */
-    padding: 6vw;                 /* scales with screen */
-    font-size: 6vw;               /* giant text on phones/tablets */
-    margin-bottom: 6vw;
-    border: 6px solid #4a6bff;
-    border-radius: 24px;
-    box-sizing: border-box;
-    font-weight: 700;
-    -webkit-appearance: none;     /* iOS override */
-}
+    /* MOBILE-FIRST GIANT INPUTS (Safari-proof) */
+    input[type="text"],
+    input[type="password"],
+    input[list] {
+        display: block;
+        width: 100vw;                 /* full device width */
+        max-width: 100%;              /* prevent overflow */
+        padding: 6vw;                 /* scales with screen */
+        font-size: 6vw;               /* giant text */
+        margin-bottom: 6vw;
+        border: 6px solid #4a6bff;
+        border-radius: 24px;
+        box-sizing: border-box;
+        font-weight: 700;
+        -webkit-appearance: none;     /* iOS override */
+    }
 
-button {
-    display: block;
-    width: 100vw;
-    max-width: 100%;
-    padding: 6vw;
-    font-size: 6vw;
-    font-weight: 900;
-    background: #4a6bff;
-    color: white;
-    border: none;
-    border-radius: 24px;
-    cursor: pointer;
-    -webkit-appearance: none;
-}
+    /* GIANT LOGIN BUTTON */
+    button {
+        display: block;
+        width: 100vw;
+        max-width: 100%;
+        padding: 6vw;
+        font-size: 6vw;
+        font-weight: 900;
+        background: #4a6bff;
+        color: white;
+        border: none;
+        border-radius: 24px;
+        cursor: pointer;
+        -webkit-appearance: none;
+    }
 
-    button:hover {
+    button:active {
         background: #3a56d6;
     }
 
     /* DESKTOP OVERRIDE */
     @media (min-width: 800px) {
+        h2 {
+            font-size: 40px;
+        }
+
         input[type="text"],
         input[type="password"],
         input[list] {
             width: 300px;
-            padding: 12px;
-            font-size: 16px;
-            margin-bottom: 14px;
+            padding: 14px;
+            font-size: 18px;
+            margin-bottom: 18px;
         }
 
         button {
             width: 300px;
-            padding: 14px;
-            font-size: 18px;
+            padding: 16px;
+            font-size: 20px;
             font-weight: 700;
-        }
-
-        h2 {
-            font-size: 26px;
         }
     }
 </style>
@@ -110,4 +116,3 @@ button {
 
 </body>
 </html>
-
