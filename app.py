@@ -225,7 +225,10 @@ def build_weekly_summary(sundays, selected_fy):
 
         payments = (
             db.session.query(func.sum(Lesson.payment))
-            .filter(Lesson.lesson_date.between(week_start, week_end))
+            .filter(
+                Lesson.lesson_date.between(week_start, week_end),
+                Lesson.payment.isnot(None)
+            )
             .scalar()
         ) or 0
 
@@ -242,6 +245,8 @@ def build_weekly_summary(sundays, selected_fy):
         })
 
     return weekly_data
+
+
 
 
 
