@@ -179,46 +179,6 @@ $(document).on('change', '.course-edit', function () {
 });
 </script>
 
-<script>
-document.addEventListener('change', function(e) {
-    if (!e.target.classList.contains('course-edit')) return;
-
-    const field = e.target.dataset.field;
-    const id = e.target.dataset.id;
-    const newValue = e.target.value;
-
-    // Special case: course_code requires confirmation
-    if (field === 'course_code') {
-        const ok = confirm("Changing the course code may affect linked systems. Are you sure?");
-        if (!ok) {
-            // Revert to original value
-            e.target.value = e.target.dataset.original;
-            return;
-        }
-    }
-
-    // Send update to backend
-    fetch('/update_course_field', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, field, value: newValue })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.status === 'ok') {
-            // Update stored original value
-            e.target.dataset.original = newValue;
-        } else {
-            alert("Save failed: " + data.message);
-            e.target.value = e.target.dataset.original;
-        }
-    })
-    .catch(err => {
-        alert("Network error saving field.");
-        e.target.value = e.target.dataset.original;
-    });
-});
-</script>
 
 
 </body>
