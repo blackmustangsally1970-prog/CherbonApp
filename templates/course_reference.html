@@ -179,6 +179,27 @@ $(document).on('change', '.course-edit', function () {
 });
 </script>
 
+<script>
+$(document).on('click', '.delete-btn', function () {
+    const id = $(this).data('id');
+
+    if (!confirm("Delete this course?")) return;
+
+    fetch('/delete_course_reference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert("Delete failed: " + data.error);
+        }
+    });
+});
+</script>
 
 
 </body>

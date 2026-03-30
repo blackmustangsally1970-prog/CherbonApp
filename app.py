@@ -559,15 +559,15 @@ def extract_number(value):
     return int(digits) if digits else None
 
 def compute_sort_order(day_of_week, timerange):
-    # Day ordering for global weekly sort
+    # Day ordering for global weekly sort (Sunday → Saturday)
     day_index = {
-        "Monday": 1,
-        "Tuesday": 2,
-        "Wednesday": 3,
-        "Thursday": 4,
-        "Friday": 5,
-        "Saturday": 6,
-        "Sunday": 7
+        "Sunday": 1,
+        "Monday": 2,
+        "Tuesday": 3,
+        "Wednesday": 4,
+        "Thursday": 5,
+        "Friday": 6,
+        "Saturday": 7
     }.get(day_of_week, 99)
 
     # Extract start time from "HH:MM - HH:MM"
@@ -582,6 +582,14 @@ def compute_sort_order(day_of_week, timerange):
     # Example: Monday 07:00 → 1*10000 + 420 = 10420
     # We'll renumber these later to 1,2,3...
     return day_index * 10000 + total_minutes
+
+def renumber_all_courses():
+    courses = CourseReference.query.order_by(CourseReference.sort_order).all()
+    counter = 1
+    for c in courses:
+        c.sort_order = counter
+        counter += 1
+    db.session.commit()
 
 
 def normalise_full_name(name: str) -> str:
@@ -3993,6 +4001,7 @@ def create_app():
             )
 
             db.session.commit()
+            renumber_all_courses()
             return jsonify(success=True)
 
         except Exception as e:
@@ -4020,6 +4029,7 @@ def create_app():
 
         db.session.add(new_course)
         db.session.commit()
+        renumber_all_courses()
         return redirect(url_for('course_reference'))
 
 
@@ -4030,6 +4040,7 @@ def create_app():
         if course:
             db.session.delete(course)
             db.session.commit()
+            renumber_all_courses()
             return jsonify(success=True)
         return jsonify(success=False, error="Course not found")
 
