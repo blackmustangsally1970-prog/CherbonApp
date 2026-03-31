@@ -902,36 +902,59 @@ select.teacher-dropdown {
                 {% set _ = all_items.append(l) %}
               {% endfor %}
 
-              {# sort and render #}
-              {% for item in all_items|sort(attribute='time') %}
-<div class="teacher-assignment-row" data-block-key="{{ item.block_key }}">
+{# sort and render #}
+{% for item in all_items|sort(attribute='time') %}
 
-    <!-- HORSE (behaves exactly like client horse) -->
-    <div class="horse-cell" data-time="{{ item.time }}">
-        <span class="horse-print-only">{{ item.horse }}</span>
+{% if item.is_lesson %}
 
-        <select class="compact-horse searchable-dropdown teacher-horse-select">
-            <option value=""></option>
-            {% for horse in horse_list %}
-                <option value="{{ horse }}" {% if horse == item.horse %}selected{% endif %}>{{ horse }}</option>
+    <div class="teacher-assignment-row" data-block-key="{{ item.block_key }}">
+
+        <!-- HORSE (behaves exactly like client horse) -->
+        <div class="horse-cell" data-time="{{ item.time }}">
+            <span class="horse-print-only">{{ item.horse }}</span>
+
+            <select class="compact-horse searchable-dropdown teacher-horse-select">
+                <option value=""></option>
+                {% for horse in horse_list %}
+                    <option value="{{ horse }}" {% if horse == item.horse %}selected{% endif %}>
+                        {{ horse }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <div class="tooltip-box"></div>
+        </div>
+
+        <!-- TEACHER NAME -->
+        <select class="teacher-name-select">
+            {% for t in teacher_names %}
+                <option value="{{ t }}" {% if t == key %}selected{% endif %}>
+                    {{ t }}
+                </option>
             {% endfor %}
         </select>
 
-        <div class="tooltip-box"></div>
+        <!-- SAVE + DELETE -->
+        <button class="save-teacher-row">Save</button>
+        <button class="delete-teacher-row">X</button>
+
     </div>
+    {% else %}
 
-    <!-- TEACHER NAME -->
-    <select class="teacher-name-select">
-        {% for t in teacher_names %}
-            <option value="{{ t }}" {% if t == key %}selected{% endif %}>{{ t }}</option>
-        {% endfor %}
-    </select>
+    <!-- SET-TIME (AVAILABLE) BLOCK -->
+    <a class="teacher-slot set-time-server"
+       data-server="1"
+       data-time="{{ item.label }}"
+       data-block-key="{{ item.block_key }}"
+       style="display:block; font-size:12px; margin-bottom:4px; background:#eef; color:#000; padding:2px 4px;"
+       href="#">
+       ⏰ Available: {{ item.label }}
+    </a>
 
-    <!-- SAVE + DELETE -->
-    <button class="save-teacher-row">Save</button>
-    <button class="delete-teacher-row">X</button>
+    {% endif %}
 
-</div>
+{% endfor %}
+
 
 {% else %}
 <a class="teacher-slot set-time-server" data-server="1" data-time="{{ item.label }}"
