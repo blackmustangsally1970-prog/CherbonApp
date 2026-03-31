@@ -3964,6 +3964,8 @@ def create_app():
         field = data.get('field')
         value = data.get('value')
 
+        print("UPDATE:", field, value)
+
         course = CourseReference.query.get(cid)
         if not course:
             return jsonify(success=False, error="Course not found")
