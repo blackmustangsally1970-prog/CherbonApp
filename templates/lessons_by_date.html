@@ -2357,36 +2357,50 @@ document.addEventListener('submit', function(e) {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-  // -------------------------------
-  // HORSE TOOLTIP LOGIC (unchanged)
-  // -------------------------------
-  function setTooltipForElement($container, horseName) {
-    const times = (window.horseSchedule && window.horseSchedule[horseName])
-                  ? window.horseSchedule[horseName]
-                  : [];
+function setTooltipForElement($container, horseName) {
+    const clientTimes = window.horseSchedule?.[horseName] || [];
+    const teacherItems = window.teacherHorseUsage?.[horseName] || [];
 
-    const html = times.length
-      ? '<strong>' + horseName + '</strong>' +
-        times.map(t => '<div>' + t + '</div>').join('')
-      : '';
+    const teacherBlocks = teacherItems.filter(
+        item => typeof item === "object" && item.type === "teacher"
+    );
+
+    let html = `<strong>${horseName}</strong>`;
+
+    if (clientTimes.length > 0) {
+        html += clientTimes.map(t => `<div>• ${t}</div>`).join('');
+    }
+
+    if (teacherBlocks.length > 0) {
+        html += `<div style="margin-top:4px;"><em>Teacher blocks:</em></div>`;
+        html += teacherBlocks.map(tb => {
+            let line = `• ${tb.block_key}`;
+            if (tb.teacher) line += ` — ${tb.teacher}`;
+            if (tb.notes) line += ` (${tb.notes})`;
+            return `<div>${line}</div>`;
+        }).join('');
+    }
+
+    if (clientTimes.length === 0 && teacherBlocks.length === 0) {
+        html += `<div><em>No other bookings today</em></div>`;
+    }
 
     const $tooltip = $container.find('.tooltip-box').first();
     if ($tooltip.length) {
-      $tooltip.html(html);
+        $tooltip.html(html);
 
-      $container.off('mouseenter.tooltip mouseleave.tooltip');
+        $container.off('mouseenter.tooltip mouseleave.tooltip');
 
-      $container.on('mouseenter.tooltip', function () {
-        if (html) {
-          $tooltip.css({ visibility: 'visible', opacity: 1 });
-        }
-      });
+        $container.on('mouseenter.tooltip', function () {
+            $tooltip.css({ visibility: 'visible', opacity: 1 });
+        });
 
-      $container.on('mouseleave.tooltip', function () {
-        $tooltip.css({ visibility: 'hidden', opacity: 0 });
-      });
+        $container.on('mouseleave.tooltip', function () {
+            $tooltip.css({ visibility: 'hidden', opacity: 0 });
+        });
     }
-  }
+}
+
 
   if (window.jQuery) {
     $('.horse-cell').each(function () {
