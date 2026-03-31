@@ -2053,8 +2053,8 @@ def create_app():
         # ---------------------------------------------------------
         # 4E: Load teacher block assignments for this date
         # ---------------------------------------------------------
-        assignments = TeacherBlockAssignment.query.filter_by(
-            date=selected_date_str
+        assignments = TeacherBlockAssignment.query.filter(
+            TeacherBlockAssignment.date == selected_date_str
         ).all()
 
         assignment_map = {}
