@@ -15,8 +15,9 @@ from models import (
     LessonBlockTag, TeacherTime, TeacherHorse,
     BlockoutDate, BlockoutRange, IncomingSubmission,
     LessonInvite, TeacherSlot, DisclaimerState, LessonTeacherTag,
-    WeeklyEvent, CourseReference
+    WeeklyEvent, CourseReference, TeacherBlockAssignment
 )
+
 import secrets
 import string
 from weasyprint import HTML
