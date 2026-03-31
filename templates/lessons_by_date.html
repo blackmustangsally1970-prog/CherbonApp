@@ -904,101 +904,35 @@ select.teacher-dropdown {
 
               {# sort and render #}
               {% for item in all_items|sort(attribute='time') %}
-{% if item.is_lesson %}
-<a href="#{{ item.block_key }}"
-   class="teacher-slot"
-   data-block-key="{{ item.block_key }}"
-   style="display:block; font-size:12px; margin-bottom:4px; font-weight:bold; color:#000;">
-   📘 {{ item.label }}
-</a>
+<div class="teacher-assignment-row" data-block-key="{{ item.block_key }}">
 
-<!-- Popup box hidden by default -->
-<div class="lesson-popup" data-block-key="{{ item.block_key }}" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:9000;">
-  <form method="POST" action="/new_lesson" class="sms-invite-form">
+    <!-- HORSE (behaves exactly like client horse) -->
+    <div class="horse-cell" data-time="{{ item.time }}">
+        <span class="horse-print-only">{{ item.horse }}</span>
 
-    <input type="hidden" name="date" value="{{ selected_date }}">
-    <input type="hidden" name="start" value="{{ item.time }}">
+        <select class="compact-horse searchable-dropdown teacher-horse-select">
+            <option value=""></option>
+            {% for horse in horse_list %}
+                <option value="{{ horse }}" {% if horse == item.horse %}selected{% endif %}>{{ horse }}</option>
+            {% endfor %}
+        </select>
 
-
-
-<label>Lesson Time</label>
-<select name="end" class="popup-end-select searchable-dropdown" style="min-width:200px;">
-  {% for t in times %}
-    {% set t_clean = t|trim %}
-    {% set start_time = t_clean.split(' - ')[0] %}
-    {% set end_time = t_clean.split(' - ')[1] %}
-    {% set full_frame = item.time ~ ' - ' ~ item.end %}
-    <option value="{{ end_time }}" {% if t_clean == full_frame %}selected{% endif %}>
-      {{ start_time }} - {{ end_time }}
-    </option>
-  {% endfor %}
-</select>
-
-    <label>Price (PL)</label>
-    <input type="text"
-           name="price_pl"
-           value="{{ item.price_pl or '$0.00' }}"
-           class="compact-money">
-
-    <label>Lesson Type</label>
-    <select name="lesson_type">
-      {% for opt in ['Arena','Roundyard','Trail Ride','Go Gallop','Party'] %}
-        <option value="{{ opt }}" {% if item.lesson_type == opt %}selected{% endif %}>{{ opt }}</option>
-      {% endfor %}
-    </select>
-
-    <label>Group Priv</label>
-    <select name="group_priv">
-      {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
-        <option value="{{ opt }}" {% if item.group_priv == opt %}selected{% endif %}>{{ opt }}</option>
-      {% endfor %}
-    </select>
-
-    <label>Frequency</label>
-    <select name="freq">
-      <option {% if item.freq == 'S' %}selected{% endif %}>S</option>
-      <option {% if item.freq == 'W' %}selected{% endif %}>W</option>
-      <option {% if item.freq == 'F' %}selected{% endif %}>F</option>
-    </select>
-
-    <label>Respect Blockouts?</label>
-<select name="respect_blockouts">
-  <option value="yes" {% if item.respect_blockouts == 'yes' %}selected{% endif %}>Yes</option>
-  <option value="no" {% if item.respect_blockouts != 'yes' %}selected{% endif %}>No (default)</option>
-</select>
-
-
-    <hr>
-
-    <label>Client</label>
-    <select name="client_id" class="searchable-dropdown" style="min-width:200px;">
-      <option value=""></option>
-      {% for c in clients %}
-        <option value="{{ c.client_id }}"
-    {% if c.full_name == item.client %}selected{% endif %}>
-    {{ c.full_name }}
-</option>
-
-
-      {% endfor %}
-    </select>
-
-    <label>Horse</label>
-    <select name="horse" class="searchable-dropdown" style="min-width:200px;">
-      <option value=""></option>
-      {% for horse in horse_list %}
-        <option value="{{ horse }}" {% if horse == item.horse %}selected{% endif %}>{{ horse }}</option>
-      {% endfor %}
-    </select>
-    <input type="hidden" name="booking_type" value="existing">
-    <div style="margin-top:8px; display:flex; gap:10px;">
-      <button type="button" class="save-lesson-btn">Save</button>
-      <button type="button" class="popup-close">× Close</button>
+        <div class="tooltip-box"></div>
     </div>
 
+    <!-- TEACHER NAME -->
+    <select class="teacher-name-select">
+        {% for t in teacher_names %}
+            <option value="{{ t }}" {% if t == key %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+    </select>
 
-  </form>
+    <!-- SAVE + DELETE -->
+    <button class="save-teacher-row">Save</button>
+    <button class="delete-teacher-row">X</button>
+
 </div>
+
 {% else %}
 <a class="teacher-slot set-time-server" data-server="1" data-time="{{ item.label }}"
    data-block-key="{{ item.block_key }}"
