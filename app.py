@@ -2111,7 +2111,7 @@ def create_app():
             get_static_teachers=get_static_teachers,
             client_lookup=client_lookup,
             slot_map=slot_map,
-            merged_tags=merged_tags,
+            merged_tags=ctx["merged_tags"],
             norm_timerange_key=norm_timerange_key,
             assignment_map=assignment_map
         )
