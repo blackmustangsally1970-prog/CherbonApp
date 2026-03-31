@@ -66,6 +66,18 @@ class WeeklyEvent(db.Model):
     notes = db.Column(db.String)
 
 
+class TeacherBlockAssignment(db.Model):
+    __tablename__ = "teacher_block_assignments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(20), nullable=False)
+    block_key = db.Column(db.String(50), nullable=False)
+    slot_number = db.Column(db.Integer, nullable=False)  # 1 or 2
+    teacher_name = db.Column(db.String(120))
+    horse = db.Column(db.String(120))
+    notes = db.Column(db.String(500))
+
+
 class LessonTeacherTag(db.Model):
     __tablename__ = "lesson_teacher_tags"
 

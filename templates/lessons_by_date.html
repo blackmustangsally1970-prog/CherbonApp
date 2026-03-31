@@ -1260,6 +1260,7 @@ select.teacher-dropdown {
 {% if grouped_lessons %}
   {% set arena_keys = grouped_lessons.items() | selectattr('0.1', 'equalto', 'Arena') | list %}
   {% set last_arena_key = arena_keys[-1][0] if arena_keys else None %}
+
   {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
     {% set block_key = norm_timerange_key(timerange) %}
     {% set has_saved = block_key in block_tag_lookup %}
@@ -1274,16 +1275,20 @@ select.teacher-dropdown {
          data-block-header="{{ timerange }} {{ lesson_type }} {{ group_priv }} ({{ active_count }})"
          data-saved-tags="{{ saved_tags|join(',') }}">
 
+      <!-- ⭐ BLOCK HEADER -->
       <div class="group-header"
            style="display:flex; align-items:center; gap:14px; margin:10px 0; flex-wrap:nowrap;">
 
+        <!-- Header text -->
         <div class="header-text{% if (saved_tags|length) != 0 %} header-assigned{% endif %}"
              style="white-space:nowrap;">
           {{ timerange }} {{ lesson_type }} {{ group_priv }} ({{ active_count }})
         </div>
 
+        <!-- Tag checkboxes -->
         <div class="tag-box" style="display:flex; gap:6px; white-space:nowrap;">
           <input type="hidden" name="teacher_tag_{{ block_key }}" value="">
+
           {% for i in range(1, 6) %}
             {% set tag_name = 'T' ~ i %}
             {% set saved_tags = block_tag_lookup.get(block_key) or [] %}
@@ -1302,7 +1307,19 @@ select.teacher-dropdown {
           {% endfor %}
         </div>
 
-      </div>
+      </div> <!-- end group-header -->
+
+      <!-- ⭐ NEW: Teacher assignment rows will be inserted HERE -->
+      <div class="block-teacher-rows" data-block-key="{{ block_key }}"></div>
+
+      <button type="button"
+              class="add-teacher-row-btn"
+              data-block-key="{{ block_key }}"
+              style="margin:4px 0; font-size:11px;">
+        + Add Teacher Assignment
+      </button>
+
+      <!-- ⭐ Your lesson-table continues below this point -->
 
 <div class="lesson-table">
     <div class="table-scroll">
@@ -1475,6 +1492,11 @@ select.teacher-dropdown {
 <div id="export-toast">TXT + Excel saved. Notepad++ opened.</div>
 
 <script>
+window.teacherAssignments = {{ assignment_map | tojson }};
+</script>
+
+
+<script>
   window.teacherTimes = {{ teacher_times|tojson }};
   window.horseSchedule = {{ horse_schedule|tojson }};
   window.teacherHorseUsage = {{ teacher_horse_usage|tojson }};
@@ -1578,10 +1600,39 @@ document.addEventListener('blur', function(e) {
       $tip.empty().css({visibility:'hidden', opacity:0, pointerEvents:'none'});
       return;
     }
-    const title = $('<div>').text(horse).html();
-    const body = times.map(t => '<div>' + $('<div>').text(t).html() + '</div>').join('');
-    $tip.html('<strong>' + title + '</strong>' + body);
-  }
+const title = $('<div>').text(horse).html();
+
+// Rider usage
+let body = times.map(t =>
+  '<div>' + $('<div>').text(t).html() + '</div>'
+).join('');
+
+// ---------------------------------------------------------
+// Add teacher assignments for this horse
+// ---------------------------------------------------------
+let teacherHtml = '';
+const horseKey = horse.trim().toLowerCase();
+
+if (window.teacherAssignments) {
+  Object.values(window.teacherAssignments).forEach(block => {
+    Object.values(block).forEach(t => {
+      if (t.horse && t.horse.trim().toLowerCase() === horseKey) {
+        teacherHtml += `
+          <div style="margin-top:4px; border-top:1px solid #ccc; padding-top:4px;">
+            <strong>${t.teacher_name}</strong>
+            ${t.notes ? ' — ' + t.notes : ''}
+            <div style="font-size:10px; color:#666;">
+              Block ${t.block_key}, Slot ${t.slot_number}
+            </div>
+          </div>
+        `;
+      }
+    });
+  });
+}
+
+$tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
+
 
   function positionAndShow($select) {
     const $td = $select.closest('td.horse-cell');
@@ -3395,6 +3446,162 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+
+<script>
+// ---------------------------------------------------------
+// STEP 3: Add Teacher Row (clone template)
+// ---------------------------------------------------------
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // When user clicks "+ Add Teacher Assignment"
+    $(document).on("click", ".add-teacher-row-btn", function () {
+
+        const blockKey = $(this).data("block-key");
+        const container = $(`.block-teacher-rows[data-block-key='${blockKey}']`);
+
+        // Count existing rows (max 2)
+        const existing = container.find(".teacher-row").length;
+        if (existing >= 2) {
+            alert("Maximum of 2 teacher assignments per block.");
+            return;
+        }
+
+        // Clone the hidden template
+        const newRow = $("#teacher-row-template .teacher-row").clone(true);
+
+        // Assign slot number (1 or 2)
+        newRow.attr("data-slot", existing + 1);
+
+        // Append into this block
+        container.append(newRow);
+
+        // Re-init Select2 for the horse dropdown
+        newRow.find(".teacher-horse-select").select2({
+            width: '100%',
+            dropdownAutoWidth: true
+        });
+    });
+
+});
+</script>
+
+<script>
+// ---------------------------------------------------------
+// STEP 4C: Save Teacher Row (AJAX → Flask)
+// ---------------------------------------------------------
+
+$(document).on("click", ".save-teacher-row", function () {
+
+    const row = $(this).closest(".teacher-row");
+    const container = row.closest(".block-teacher-rows");
+
+    const blockKey = container.data("block-key");
+    const slot = row.data("slot");
+
+    const teacher = row.find(".teacher-name-input").val();
+    const horse = row.find(".teacher-horse-select").val();
+    const notes = row.find(".teacher-notes-input").val();
+
+    const date = $("#date-picker").val();
+
+    fetch("/save_teacher_assignment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            date: date,
+            block_key: blockKey,
+            slot: slot,
+            teacher: teacher,
+            horse: horse,
+            notes: notes
+        })
+    })
+    .then(r => r.json())
+    .then(resp => {
+        // Visual confirmation
+        row.css("outline", "2px solid #4CAF50");
+        setTimeout(() => row.css("outline", ""), 600);
+    });
+});
+</script>
+
+<script>
+// ---------------------------------------------------------
+// STEP 4D: Delete Teacher Row
+// ---------------------------------------------------------
+
+$(document).on("click", ".delete-teacher-row", function () {
+
+    const row = $(this).closest(".teacher-row");
+    const container = row.closest(".block-teacher-rows");
+
+    const blockKey = container.data("block-key");
+    const slot = row.data("slot");
+    const date = $("#date-picker").val();
+
+    // Remove visually
+    row.remove();
+
+    // Notify backend
+    fetch("/delete_teacher_assignment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            date: date,
+            block_key: blockKey,
+            slot: slot
+        })
+    });
+});
+</script>
+
+
+<!-- ⭐ Hidden template for a teacher assignment row -->
+<div id="teacher-row-template" style="display:none;">
+
+  <div class="teacher-row"
+       data-slot=""
+       style="display:flex; align-items:center; gap:8px; margin:4px 0;">
+
+    <!-- Teacher name -->
+    <input type="text"
+           class="teacher-name-input"
+           placeholder="Teacher name"
+           style="width:140px; font-size:11px;">
+
+    <!-- Horse dropdown -->
+    <select class="teacher-horse-select"
+            style="width:120px; font-size:11px;">
+      <option value=""></option>
+      {% for horse in horse_list %}
+        <option value="{{ horse }}">{{ horse }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Notes -->
+    <input type="text"
+           class="teacher-notes-input"
+           placeholder="Notes"
+           style="width:200px; font-size:11px;">
+
+    <!-- Save -->
+    <button type="button"
+            class="save-teacher-row"
+            style="font-size:11px;">
+      Save
+    </button>
+
+    <!-- Delete -->
+    <button type="button"
+            class="delete-teacher-row"
+            style="font-size:11px; color:#900;">
+      ✕
+    </button>
+
+  </div>
+
+</div>
 
 
 </body>

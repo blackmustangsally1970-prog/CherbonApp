@@ -1966,6 +1966,25 @@ def create_app():
         for h, usage_times in teacher_horse_usage.items():
             teacher_horse_usage[h] = sorted(set(usage_times))
 
+        # ---------------------------------------------------------
+        # STEP 5A: Merge TeacherBlockAssignment into horse usage
+        # ---------------------------------------------------------
+        t_assignments = db.session.query(TeacherBlockAssignment).filter_by(
+            date=selected_date_str
+        ).all()
+
+        for t in t_assignments:
+            if t.horse:
+                horse_name = to_proper_case(t.horse.strip())
+                teacher_horse_usage.setdefault(horse_name, []).append({
+                    "type": "teacher",
+                    "teacher": t.teacher_name,
+                    "notes": t.notes,
+                    "block_key": t.block_key,
+                    "slot": t.slot_number
+                })
+
+
         # Build slot_map
         slot_rows = (
             db.session.query(TeacherSlot)
@@ -2030,6 +2049,18 @@ def create_app():
 
         # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
         ctx = build_lessons_context(selected_date, selected_date_str)
+
+        # ---------------------------------------------------------
+        # 4E: Load teacher block assignments for this date
+        # ---------------------------------------------------------
+        assignments = TeacherBlockAssignment.query.filter_by(
+            date=selected_date_str
+        ).all()
+
+        assignment_map = {}
+        for a in assignments:
+            assignment_map.setdefault(a.block_key, {})[a.slot_number] = a
+        # ---------------------------------------------------------
 
         # --- Load teacher override tags for this date ---
         override_rows = LessonTeacherTag.query.filter_by(lesson_date=selected_date).all()
@@ -4718,6 +4749,62 @@ Cherbon Waters Admin
     #     print("Received T-slot payload:", data)
     #
     #     return jsonify({"status": "ok"}), 200
+
+
+    @app.route("/save_teacher_assignment", methods=["POST"])
+    def save_teacher_assignment():
+        data = request.get_json()
+
+        date = data.get("date")
+        block_key = data.get("block_key")
+        slot = data.get("slot")
+        teacher = data.get("teacher")
+        horse = data.get("horse")
+        notes = data.get("notes")
+
+        # Look for an existing row
+        row = TeacherBlockAssignment.query.filter_by(
+            date=date,
+            block_key=block_key,
+            slot_number=slot
+        ).first()
+
+        # Create if missing
+        if not row:
+            row = TeacherBlockAssignment(
+                date=date,
+                block_key=block_key,
+                slot_number=slot
+            )
+            db.session.add(row)
+
+        # Update fields
+        row.teacher_name = teacher
+        row.horse = horse
+        row.notes = notes
+
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+    @app.route("/delete_teacher_assignment", methods=["POST"])
+    def delete_teacher_assignment():
+        data = request.get_json()
+
+        date = data.get("date")
+        block_key = data.get("block_key")
+        slot = data.get("slot")
+
+        TeacherBlockAssignment.query.filter_by(
+            date=date,
+            block_key=block_key,
+            slot_number=slot
+        ).delete()
+
+        db.session.commit()
+
+        return jsonify({"status": "deleted"})
+
 
 
     @app.route('/manage_teacher_times', methods=['GET'])
