@@ -1497,15 +1497,23 @@ window.teacherAssignments = {{ assignment_map | tojson }};
 
 
 <script>
-    // Core datasets — kept SEPARATE on purpose
-    window.teacherTimes = {{ teacher_times | tojson }};
-    window.horseSchedule = {{ horse_schedule | tojson }};
-    window.teacherHorseUsage = {{ teacher_horse_usage | tojson }};
-    window.invoiceClients = new Set({{ invoice_clients | tojson }});
+  window.teacherTimes = {{ teacher_times|tojson }};
+  window.horseSchedule = {{ horse_schedule|tojson }};
+  window.teacherHorseUsage = {{ teacher_horse_usage|tojson }};
+  window.invoiceClients = new Set({{ invoice_clients | tojson }});
 
-    // ❗ DO NOT MERGE teacherHorseUsage into horseSchedule
-    // Teacher entries contain objects (block_key, teacher, notes, etc.)
-    // Merging them corrupts horseSchedule and breaks tooltips.
+  // Merge teacherHorseUsage into horseSchedule
+  for (const [horse, times] of Object.entries(window.teacherHorseUsage || {})) {
+    if (!window.horseSchedule[horse]) {
+      window.horseSchedule[horse] = [];
+    }
+    for (const t of times) {
+      if (!window.horseSchedule[horse].includes(t)) {
+        window.horseSchedule[horse].push(t);
+      }
+    }
+    window.horseSchedule[horse].sort();
+  }
 </script>
 
 
