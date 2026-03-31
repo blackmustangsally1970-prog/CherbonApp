@@ -2059,22 +2059,14 @@ def create_app():
 
         assignment_map = {}
         for a in assignments:
-            assignment_map.setdefault(a.block_key, {})[a.slot_number] = a
-        # ---------------------------------------------------------
-
-        # --- Load teacher override tags for this date ---
-        override_rows = LessonTeacherTag.query.filter_by(lesson_date=selected_date).all()
-
-        # Build lookup: { lesson_id: { "T1": bool, "T2": bool, ... } }
-        lesson_overrides = {}
-        for row in override_rows:
-            lesson_overrides[row.lesson_id] = {
-                "T1": row.t1,
-                "T2": row.t2,
-                "T3": row.t3,
-                "T4": row.t4,
-                "T5": row.t5,
+            assignment_map.setdefault(a.block_key, {})[a.slot_number] = {
+                "teacher_name": a.teacher_name,
+                "horse": a.horse,
+                "notes": a.notes,
+                "block_key": a.block_key,
+                "slot_number": a.slot_number
             }
+        # ---------------------------------------------------------
 
 
         grouped_lessons = ctx["grouped_lessons"]
@@ -2120,7 +2112,8 @@ def create_app():
             slot_map=slot_map,
             lesson_overrides=lesson_overrides,
             merged_tags=lesson_overrides,   # ← ADD THIS
-            norm_timerange_key=norm_timerange_key
+            norm_timerange_key=norm_timerange_key,
+            assignment_map=assignment_map
         )
 
 
