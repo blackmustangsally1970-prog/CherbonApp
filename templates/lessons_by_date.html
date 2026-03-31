@@ -1363,16 +1363,16 @@ select.teacher-dropdown {
 
     <input type="hidden" name="carry_fwd_{{ lesson.lesson_id }}" value="{{ lesson.carry_fwd or 0 }}">
 
-    <td class="horse-cell">
-      <span class="horse-print-only">{{ lesson.horse }}</span>
-      <select name="horse_{{ lesson.lesson_id }}" class="compact-horse searchable-dropdown">
-        <option value="" {% if not lesson.horse %}selected{% endif %}></option>
-        {% for horse in horse_list %}
-          <option value="{{ horse }}" {% if horse == lesson.horse %}selected{% endif %}>{{ horse }}</option>
-        {% endfor %}
-      </select>
-      <div class="tooltip-box" aria-hidden="true"></div>
-    </td>
+<td class="horse-cell" data-time="{{ lesson.time_frame }}">
+  <span class="horse-print-only">{{ lesson.horse }}</span>
+  <select name="horse_{{ lesson.lesson_id }}" class="compact-horse searchable-dropdown">
+    <option value="" {% if not lesson.horse %}selected{% endif %}></option>
+    {% for horse in horse_list %}
+      <option value="{{ horse }}" {% if horse == lesson.horse %}selected{% endif %}>{{ horse }}</option>
+    {% endfor %}
+  </select>
+  <div class="tooltip-box" aria-hidden="true"></div>
+</td>
 
 {% set display_name = client.full_name if client else (lesson.client or '') %}
 {% set client_key = (display_name or '')|lower|replace(' ', '') %}
