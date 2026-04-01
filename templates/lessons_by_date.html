@@ -3581,15 +3581,15 @@ $(document).on("click", ".delete-teacher-row", function () {
        style="display:flex; align-items:center; gap:8px; margin:4px 0;">
 
     <!-- HORSE FIRST (Select2 + predictive + tooltip compatible) -->
-    <select class="compact-horse searchable-dropdown teacher-horse-select"
-            data-time=""
-            data-block-key=""
-            style="width:120px; font-size:11px;">
-      <option value=""></option>
-      {% for horse in horse_list %}
-        <option value="{{ horse }}">{{ horse }}</option>
-      {% endfor %}
-    </select>
+<select class="compact-horse searchable-dropdown teacher-horse-select"
+        data-time="{{ timerange.split(' - ')[0] }}"
+        data-block-key="{{ block_key }}"
+        style="width:120px; font-size:11px;">
+  <option value=""></option>
+  {% for horse in horse_list %}
+    <option value="{{ horse }}">{{ horse }}</option>
+  {% endfor %}
+</select>
 
     <!-- TEACHER NAME -->
     <input type="text"
