@@ -865,7 +865,7 @@ select.teacher-dropdown {
               {% set set_times = teacher_times.get(key, {}).get(weekday_int|string, []) %}
               {% set lesson_blocks = [] %}
               {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
-              {% set block_key = norm_timerange_key(timerange) %}
+              {% set block_key = norm_timerange_key(timerange) ~ '_' ~ lesson_type ~ '_' ~ group_priv %}
               {# detect whether a saved row exists for this block (even if it's explicitly empty) #}
               {% set has_saved = block_key in block_tag_lookup %}
               {% set saved_tags = block_tag_lookup.get(block_key, []) %}
@@ -1262,7 +1262,7 @@ select.teacher-dropdown {
   {% set last_arena_key = arena_keys[-1][0] if arena_keys else None %}
 
   {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
-    {% set block_key = norm_timerange_key(timerange) %}
+    {% set block_key = norm_timerange_key(timerange) ~ '_' ~ lesson_type ~ '_' ~ group_priv %}
     {% set has_saved = block_key in block_tag_lookup %}
     {% set saved_tags = block_tag_lookup.get(block_key, []) %}
     {% set check_t1 = lesson_type.strip().lower() in ['arena', 'gym go gall'] %}
