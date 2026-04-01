@@ -3467,7 +3467,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const container = $(`.block-teacher-rows[data-block-key='${blockKey}']`);
 
         // Count existing rows (max 2)
-        const existing = container.find(".teacher-row").length;
+        const existing = container.find(".teacher-row, .teacher-assignment-row").length;
         if (existing >= 2) {
             alert("Maximum of 2 teacher assignments per block.");
             return;
@@ -3570,14 +3570,10 @@ $(document).on("click", ".delete-teacher-row", function () {
        data-slot=""
        style="display:flex; align-items:center; gap:8px; margin:4px 0;">
 
-    <!-- Teacher name -->
-    <input type="text"
-           class="teacher-name-input"
-           placeholder="Teacher name"
-           style="width:140px; font-size:11px;">
-
-    <!-- Horse dropdown -->
-    <select class="teacher-horse-select"
+    <!-- HORSE FIRST (Select2 + predictive + tooltip compatible) -->
+    <select class="compact-horse searchable-dropdown teacher-horse-select"
+            data-time=""
+            data-block-key=""
             style="width:120px; font-size:11px;">
       <option value=""></option>
       {% for horse in horse_list %}
@@ -3585,20 +3581,26 @@ $(document).on("click", ".delete-teacher-row", function () {
       {% endfor %}
     </select>
 
-    <!-- Notes -->
+    <!-- TEACHER NAME -->
+    <input type="text"
+           class="teacher-name-input"
+           placeholder="Teacher name"
+           style="width:140px; font-size:11px;">
+
+    <!-- NOTES -->
     <input type="text"
            class="teacher-notes-input"
            placeholder="Notes"
            style="width:200px; font-size:11px;">
 
-    <!-- Save -->
+    <!-- SAVE -->
     <button type="button"
             class="save-teacher-row"
             style="font-size:11px;">
       Save
     </button>
 
-    <!-- Delete -->
+    <!-- DELETE -->
     <button type="button"
             class="delete-teacher-row"
             style="font-size:11px; color:#900;">
@@ -3608,6 +3610,17 @@ $(document).on("click", ".delete-teacher-row", function () {
   </div>
 
 </div>
+
+<script>
+$(document).ready(function () {
+    $(".teacher-horse-select").select2({
+        width: '100%',
+        dropdownAutoWidth: true
+    });
+});
+
+</script>
+
 
 
 </body>
