@@ -3460,7 +3460,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    // When user clicks "+ Add Teacher Assignment"
     $(document).on("click", ".add-teacher-row-btn", function () {
 
         const blockKey = $(this).data("block-key");
@@ -3473,16 +3472,26 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Clone the hidden template
+        // Clone template
         const newRow = $("#teacher-row-template .teacher-row").clone(true);
 
-        // Assign slot number (1 or 2)
+        // Extract time from the block header
+        const blockDiv = $(this).closest(".lesson-block");
+        const blockHeader = blockDiv.data("block-header");  // "12:00 - 12:50 Arena G (2)"
+        const time = blockHeader.split(" ")[0];             // "12:00"
+
+        // Inject correct attributes
+        newRow.find(".teacher-horse-select")
+            .attr("data-time", time)
+            .attr("data-block-key", blockKey);
+
+        // Assign slot
         newRow.attr("data-slot", existing + 1);
 
-        // Append into this block
+        // Append
         container.append(newRow);
 
-        // Re-init Select2 for the horse dropdown
+        // Select2
         newRow.find(".teacher-horse-select").select2({
             width: '100%',
             dropdownAutoWidth: true
@@ -3490,6 +3499,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
 </script>
 
 <script>
