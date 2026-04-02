@@ -7,26 +7,52 @@
     <style>
         body { font-family: sans-serif; margin: 20px; }
 
+        /* ============================
+           CLIENT HEADER ROW (CLICKABLE)
+           ============================ */
         .client-line {
             display: flex;
             align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
+            gap: 10px;
+            flex-wrap: nowrap;
             margin-top: 25px;
             margin-bottom: 5px;
             font-size: 16px;
             font-weight: bold;
-            cursor: pointer; /* <-- make clickable */
+            cursor: pointer;
         }
 
-        .client-mobile,
+        /* 40 characters for name */
+        .client-name {
+            width: 40ch;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 14 characters for owes */
+        .client-owes {
+            width: 14ch;
+            white-space: nowrap;
+        }
+
+        /* 20 characters for mobile */
+        .client-mobile {
+            width: 20ch;
+            white-space: nowrap;
+        }
+
+        /* Term Course Balance block */
         .client-tc {
-            font-weight: normal;
-            font-size: 14px;
+            width: 22ch;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
         }
 
         .tc-input {
-            width: 80px;
+            width: 60px;
         }
 
         .sms-btn {
@@ -36,6 +62,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .sms-btn:disabled {
@@ -51,6 +78,9 @@
             margin-left: 10px;
         }
 
+        /* ============================
+           TABLE + NEGATIVE BALANCE
+           ============================ */
         table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
         th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
         th { background: #f2f2f2; }
@@ -73,7 +103,20 @@
             margin: 10px 0 20px 0;
         }
 
-        /* Modal */
+        /* ============================
+           COLLAPSE LESSON TABLES
+           ============================ */
+        .lesson-table {
+            display: none;
+        }
+
+        .lesson-table.expanded {
+            display: table;
+        }
+
+        /* ============================
+           MODAL
+           ============================ */
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -91,9 +134,7 @@
             width: 90%;
         }
 
-        .modal h3 {
-            margin-top: 0;
-        }
+        .modal h3 { margin-top: 0; }
 
         .modal pre {
             background: #f5f5f5;
@@ -114,15 +155,6 @@
             border-radius: 4px;
             cursor: pointer;
             margin-right: 8px;
-        }
-
-        /* Collapse lesson tables by default */
-        .lesson-table {
-            display: none;
-        }
-
-        .lesson-table.expanded {
-            display: table;
         }
     </style>
 
@@ -224,12 +256,14 @@
             });
         }
 
-        /* Collapse/Expand Logic */
+        /* ============================
+           COLLAPSE / EXPAND LOGIC
+           ============================ */
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.client-line').forEach(header => {
                 const table = header.nextElementSibling;
                 if (table && table.tagName === "TABLE") {
-                    table.classList.add("lesson-table"); // mark it
+                    table.classList.add("lesson-table");
                 }
 
                 header.addEventListener('click', function () {
@@ -278,16 +312,24 @@
     {% set tc_id = 'tc_' ~ loop.index %}
 
     <div class="client-line">
+
         <div class="client-name">
-            {{ row.client }} — Owes ${{ "%.2f"|format(row.current_balance) }}
+            {{ row.client }}
         </div>
+
+        <div class="client-owes">
+            — Owes ${{ "%.2f"|format(row.current_balance) }}
+        </div>
+
         <div class="client-mobile">
             Mobile: {{ row.mobile }}
         </div>
+
         <div class="client-tc">
             Term Course Balance:
             <input type="text" id="{{ tc_id }}" class="tc-input" value="">
         </div>
+
         <button id="{{ btn_id }}" class="sms-btn"
                 onclick="openPreview('{{ row.client }}',
                                      '{{ row.mobile }}',
@@ -296,7 +338,9 @@
                                      '{{ btn_id }}')">
             Send SMS
         </button>
+
         <span id="sent_{{ btn_id }}" class="sent"></span>
+
     </div>
 
     <table>
