@@ -187,11 +187,10 @@ def match_existing_client(name, phone, email):
     if email:
         matches += q.filter(db.func.lower(Client.email_primary) == email).all()
 
-    # Remove duplicates
-    unique = {m.id: m for m in matches}.values()
+    # Remove duplicates using correct PK
+    unique = {m.client_id: m for m in matches}.values()
 
     return list(unique)
-
 
 
 def generate_financial_years(start_year=2022):
