@@ -3,147 +3,223 @@
 <head>
   <meta charset="utf-8">
   <title>Equestrian Menu</title>
+
   <style>
 
-    body { font-family: sans-serif; padding: 20px; }
-    h1 { margin-bottom: 20px; }
-    ul.menu { list-style: none; padding: 0; }
-    ul.menu > li { margin-bottom: 12px; }
-    ul.submenu {
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    ul.menu {
       list-style: none;
-      padding-left: 24px;   /* extra indent for offset */
-      font-size: 0.9em;     /* slightly smaller font */
-      color: #555;          /* lighter text color */
+      padding: 0;
     }
-    ul.submenu a {
-      color: #555;          /* lighter link color */
+
+    ul.menu > li {
+      margin-bottom: 16px;
     }
-    ul.submenu a:hover {
-      color: #0645AD;       /* highlight on hover */
-      text-decoration: underline;
+
+    /* SUPER MASSIVE iPhone menu buttons */
+    .menu-btn {
+      display: block;
+      width: 100%;
+      background: #dce6ff;
+      border: 4px solid #4a6bff;
+      padding: 40px 28px;
+      border-radius: 18px;
+      font-size: 34px;
+      font-weight: 900;
+      color: #001a66;
+      text-decoration: none;
+      text-align: center;
+      box-sizing: border-box;
+      margin-bottom: 28px;
+      letter-spacing: 1px;
+      line-height: 1.35;
+      transition: background 0.2s ease, transform 0.1s ease;
     }
-    a { text-decoration: none; color: #0645AD; }
-    a:hover { text-decoration: underline; }
 
+    .menu-btn:hover {
+      background: #c7d6ff;
+      transform: scale(1.04);
+      text-decoration: none;
+    }
 
-/* SUPER MASSIVE iPhone menu buttons */
-.menu-btn {
-  display: block;
-  width: 100%;
-  background: #dce6ff;
-  border: 4px solid #4a6bff;
-  padding: 40px 28px;              /* TRIPLE HEIGHT */
-  border-radius: 18px;
-  font-size: 34px;                 /* TRIPLE FONT SIZE */
-  font-weight: 900;                /* SUPER BOLD */
-  color: #001a66;
-  text-decoration: none;
-  text-align: center;
-  box-sizing: border-box;
-  margin-bottom: 28px;             /* big spacing between tiles */
-  letter-spacing: 1px;
-  line-height: 1.35;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-
-.menu-btn:hover {
-  background: #c7d6ff;
-  transform: scale(1.04);
-  text-decoration: none;
-}
-
-
-
-ul.submenu a {
-  font-size: 16px;
-  padding: 6px 0;
-  display: block;
-}
-
-
-/* Keep submenu links simple */
-ul.submenu {
-  list-style: none;
-  padding-left: 24px;
-  font-size: 0.9em;
-  color: #555;
-}
-
-ul.submenu a {
-  color: #555;
-}
-
-ul.submenu a:hover {
-  color: #0645AD;
-  text-decoration: underline;
-}
-
-/* Space between menu items */
-ul.menu > li {
-  margin-bottom: 16px;
-}
-
-/* Desktop / large-screen override */
-@media (min-width: 800px) {
-  .menu-btn {
-    padding: 20px 18px !important;   /* half the height */
-    font-size: 20px !important;      /* half the font size */
-    border-radius: 10px !important;
-    margin-bottom: 16px !important;
-  }
-}
-
-
-
-
+    /* Desktop override */
+    @media (min-width: 800px) {
+      .menu-btn {
+        padding: 20px 18px !important;
+        font-size: 20px !important;
+        border-radius: 10px !important;
+        margin-bottom: 16px !important;
+      }
+    }
 
   </style>
 </head>
+
 <body>
 
+<!-- ⭐ DAILY QUOTE BAR -->
+<div id="daily-quote" style="
+    padding: 12px;
+    margin-bottom: 16px;
+    background: #f0f8ff;
+    border-left: 4px solid #4a90e2;
+    font-size: 16px;
+    font-style: italic;
+    color: #333;
+">
+    Loading wisdom…
+</div>
+
+
+<!-- ⭐ MAIN MENU -->
 <ul class="menu">
 
-<li>
-  <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
-</li>
+  <li>
+    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
-</li>
+  <li>
+    <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
-</li>
+  <li>
+    <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
-</li>
+  <li>
+    <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('pending_lessons') }}" class="menu-btn">⏳ Lessons Pending</a>
-</li>
+  <li>
+    <a href="{{ url_for('pending_lessons') }}" class="menu-btn">⏳ Lessons Pending</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('messages_menu') }}" class="menu-btn">✉️ Messages</a>
-</li>
+  <li>
+    <a href="{{ url_for('messages_menu') }}" class="menu-btn">✉️ Messages</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
-</li>
+  <li>
+    <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
-</li>
+  <li>
+    <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
+  </li>
 
-<li>
-  <a href="{{ url_for('summaries_page') }}" class="menu-btn">📊 Summaries</a>
-</li>
-
-
-
-
+  <li>
+    <a href="{{ url_for('summaries_page') }}" class="menu-btn">📊 Summaries</a>
+  </li>
 
 </ul>
 
+
+<!-- ⭐ QUOTE SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const quotes = [
+        "“The only way to do great work is to love what you do.” — Steve Jobs",
+        "“Success is not final, failure is not fatal: it is the courage to continue that counts.” — Winston Churchill",
+        "“It always seems impossible until it’s done.” — Nelson Mandela",
+        "“Act as if what you do makes a difference. It does.” — William James",
+        "“In the middle of difficulty lies opportunity.” — Albert Einstein",
+        "“Do what you can, with what you have, where you are.” — Theodore Roosevelt",
+        "“The future depends on what you do today.” — Mahatma Gandhi",
+        "“Quality is not an act, it is a habit.” — Aristotle",
+        "“Believe you can and you’re halfway there.” — Theodore Roosevelt",
+        "“Fall seven times, stand up eight.” — Japanese Proverb",
+        "“Courage is grace under pressure.” — Ernest Hemingway",
+        "“Out of difficulties grow miracles.” — Jean de La Bruyère",
+        "“What lies behind us and what lies before us are tiny matters compared to what lies within us.” — Ralph Waldo Emerson",
+        "“He who has a why to live can bear almost any how.” — Friedrich Nietzsche",
+        "“Strength does not come from physical capacity. It comes from an indomitable will.” — Mahatma Gandhi",
+        "“Happiness depends upon ourselves.” — Aristotle",
+        "“The journey of a thousand miles begins with one step.” — Lao Tzu",
+        "“In three words I can sum up everything I’ve learned about life: it goes on.” — Robert Frost",
+        "“Life is really simple, but we insist on making it complicated.” — Confucius",
+        "“The only true wisdom is in knowing you know nothing.” — Socrates",
+        "“Be the change you wish to see in the world.” — Gandhi",
+        "“Integrity is doing the right thing, even when no one is watching.” — C.S. Lewis",
+        "“A leader is one who knows the way, goes the way, and shows the way.” — John C. Maxwell",
+        "“Character is destiny.” — Heraclitus",
+        "“The time is always right to do what is right.” — Martin Luther King Jr.",
+        "“Imagination rules the world.” — Napoleon Bonaparte",
+        "“Creativity is intelligence having fun.” — Albert Einstein",
+        "“Everything you can imagine is real.” — Pablo Picasso",
+        "“You can’t use up creativity. The more you use, the more you have.” — Maya Angelou",
+        "“No act of kindness, no matter how small, is ever wasted.” — Aesop",
+        "“Wherever there is a human being, there is an opportunity for kindness.” — Seneca",
+        "“We rise by lifting others.” — Robert Ingersoll",
+        "“Kindness is a language which the deaf can hear and the blind can see.” — Mark Twain",
+        "“Discipline is the bridge between goals and accomplishment.” — Jim Rohn",
+        "“What we think, we become.” — Buddha",
+        "“Small deeds done are better than great deeds planned.” — Peter Marshall",
+        "“Either you run the day or the day runs you.” — Jim Rohn",
+        "“Well done is better than well said.” — Benjamin Franklin",
+        "“The best way out is always through.” — Robert Frost",
+        "“Action is the foundational key to all success.” — Pablo Picasso",
+        "“The secret of getting ahead is getting started.” — Mark Twain",
+        "“Dream big and dare to fail.” — Norman Vaughan",
+        "“The harder I work, the luckier I get.” — Samuel Goldwyn",
+        "“Success usually comes to those who are too busy to be looking for it.” — Henry David Thoreau",
+        "“Don’t watch the clock; do what it does. Keep going.” — Sam Levenson",
+        "“What you do today can improve all your tomorrows.” — Ralph Marston",
+        "“A smooth sea never made a skilled sailor.” — Franklin D. Roosevelt",
+        "“The best way to predict the future is to create it.” — Peter Drucker",
+        "“You miss 100% of the shots you don’t take.” — Wayne Gretzky",
+        "“The mind is everything. What you think you become.” — Buddha",
+        "“Turn your wounds into wisdom.” — Oprah Winfrey",
+        "“The only limit to our realization of tomorrow is our doubts of today.” — Franklin D. Roosevelt",
+        "“If you’re going through hell, keep going.” — Winston Churchill",
+        "“The purpose of our lives is to be happy.” — Dalai Lama",
+        "“Life is either a daring adventure or nothing at all.” — Helen Keller",
+        "“Don’t count the days, make the days count.” — Muhammad Ali",
+        "“The best dreams happen when you’re awake.” — Cherie Gilderbloom",
+        "“If opportunity doesn’t knock, build a door.” — Milton Berle",
+        "“What you get by achieving your goals is not as important as what you become by achieving them.” — Zig Ziglar",
+        "“Happiness is not something ready made. It comes from your own actions.” — Dalai Lama",
+        "“The power of imagination makes us infinite.” — John Muir",
+        "“Keep your face always toward the sunshine—and shadows will fall behind you.” — Walt Whitman",
+        "“The best revenge is massive success.” — Frank Sinatra",
+        "“You are never too old to set another goal or to dream a new dream.” — C.S. Lewis",
+        "“Light tomorrow with today.” — Elizabeth Barrett Browning",
+        "“The only person you are destined to become is the person you decide to be.” — Ralph Waldo Emerson",
+        "“Everything has beauty, but not everyone sees it.” — Confucius",
+        "“What we achieve inwardly will change outer reality.” — Plutarch",
+        "“The greatest wealth is to live content with little.” — Plato",
+        "“Joy is not in things; it is in us.” — Richard Wagner",
+        "“The greatest glory in living lies not in never falling, but in rising every time we fall.” — Nelson Mandela",
+        "“Life is made of ever so many partings welded together.” — Charles Dickens",
+        "“The only impossible journey is the one you never begin.” — Tony Robbins",
+        "“Do not wait to strike till the iron is hot; but make it hot by striking.” — William Butler Yeats",
+        "“The way to get started is to quit talking and begin doing.” — Walt Disney",
+        "“Energy and persistence conquer all things.” — Benjamin Franklin",
+        "“If you want to lift yourself up, lift up someone else.” — Booker T. Washington",
+        "“The best preparation for tomorrow is doing your best today.” — H. Jackson Brown Jr.",
+        "“Life is short, and it is up to you to make it sweet.” — Sarah Louise Delany",
+        "“The greatest gift of life is friendship.” — Hubert H. Humphrey",
+        "“To improve is to change; to be perfect is to change often.” — Winston Churchill",
+        "“The measure of who we are is what we do with what we have.” — Vince Lombardi",
+        "“The greatest discovery of all time is that a person can change their future by merely changing their attitude.” — Oprah Winfrey",
+        "“A goal without a plan is just a wish.” — Antoine de Saint‑Exupéry",
+        "“The best way to cheer yourself is to try to cheer someone else up.” — Mark Twain",
+        "“Life is trying things to see if they work.” — Ray Bradbury"
+    ];
+
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+    document.getElementById("daily-quote").textContent = randomQuote;
+
+});
+</script>
+
 </body>
 </html>
+
