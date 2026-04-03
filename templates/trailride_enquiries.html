@@ -121,6 +121,17 @@
                     </select>
                 </div>
 
+<div>
+<label>Group Priv:</label><br>
+<select name="group_priv_{{ e.id }}" style="padding:4px; width:120px;">
+    <option value="P">P</option>
+    {% for i in range(1, 15) %}
+        <option value="SP{{ i }}">SP{{ i }}</option>
+    {% endfor %}
+</select>
+</div>
+
+
                 <div>
                     <label>Price (per rider):</label><br>
                     <input type="number"

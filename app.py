@@ -4801,6 +4801,7 @@ def create_app():
         lesson_type = request.form.get(f"lesson_type_{enquiry_id}") or "Trail Ride"
         price_per_rider = request.form.get(f"price_per_rider_{enquiry_id}") or "0"
         payment_per_rider = request.form.get(f"payment_per_rider_{enquiry_id}") or "0"
+        group_priv = request.form.get(f"group_priv_{enquiry_id}") or "P"
 
         # ---------------------------------------------------------
         # VALIDATE DATE + TIME (STAFF-PROOF)
@@ -4809,29 +4810,50 @@ def create_app():
             flash("Please select BOTH a date and a time before processing.", "danger")
             return redirect(url_for('trailride_enquiries'))
 
-
         # ---------------------------------------------------------
-        # CREATE LESSON ROWS (THIS IS THE REAL BOOKING)
+        # CREATE LESSON ROWS + ENSURE CLIENT EXISTS
         # ---------------------------------------------------------
         for idx in selected_riders:
             r = riders[idx - 1] if idx - 1 < len(riders) else None
             if not r:
                 continue
 
-            rider_name = r.get("name")
+            rider_name = r.get("name") or ""
+            rider_mobile = phone
+            rider_email = email
 
+            # -----------------------------------------------------
+            # ENSURE CLIENT EXISTS (FULL NAME MATCH)
+            # -----------------------------------------------------
+            client = Client.query.filter(
+                func.lower(Client.full_name) == rider_name.lower()
+            ).first()
+
+            if not client:
+                client = Client(
+                    full_name=rider_name,
+                    mobile=rider_mobile,
+                    email_primary=rider_email
+                )
+                db.session.add(client)
+                db.session.flush()   # ensures client.full_name is real
+
+            # -----------------------------------------------------
+            # CREATE LESSON (STRING NAME ONLY — YOUR ARCHITECTURE)
+            # -----------------------------------------------------
             lesson = Lesson(
                 lesson_date=booking_date,
                 time_frame=booking_time,
-                client=rider_name,
+                client=client.full_name,   # ✔ correct
                 horse="",
                 payment=float(payment_per_rider),
                 price_pl=float(price_per_rider),
                 attendance="",
                 balance=float(price_per_rider) - float(payment_per_rider),
-                lesson_notes="Trail Ride Enquiry import",
                 lesson_type=lesson_type,
                 group_priv="Trail Ride",
+                group_priv=group_priv,   # ✔ NOW CORRECT
+
                 block_key="",
             )
 
