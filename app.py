@@ -4742,110 +4742,110 @@ def create_app():
             )
 
 
-        @app.route('/trailride_enquiries/process', methods=['POST'])
-        def trailride_enquiries_process():
-            enquiry_id = request.form.get("process_enquiry")
+    @app.route('/trailride_enquiries/process', methods=['POST'])
+    def trailride_enquiries_process():
+        enquiry_id = request.form.get("process_enquiry")
 
-            if not enquiry_id:
-                flash("No enquiry selected.", "warning")
-                return redirect(url_for('trailride_enquiries'))
-
-            # Safe int converter
-            def to_int(val):
-                try:
-                    return int(val)
-                except:
-                    return None
-
-            enquiry = TrailRideSubmission.query.get(enquiry_id)
-            if not enquiry or enquiry.processed:
-                flash("Enquiry not found or already processed.", "warning")
-                return redirect(url_for('trailride_enquiries'))
-
-            payload = enquiry.raw_payload
-            riders = extract_riders_from_submission(payload)
-            contact = get_main_contact_fields(payload)
-
-            # ---------------------------------------------------------
-            # NORMALISE PHONE + EMAIL
-            # ---------------------------------------------------------
-            phone = contact.get("phone")
-            email = contact.get("email")
-
-            if isinstance(phone, dict):
-                phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
-            if isinstance(email, dict):
-                email = email.get("value") or email.get("text") or email.get("full") or ""
-
-            if phone:
-                phone = str(phone).replace("-", "").replace(" ", "").strip()
-
-            phone = phone or ""
-            email = email or ""
-
-            contact["phone"] = phone
-            contact["email"] = email
-
-            # ---------------------------------------------------------
-            # SELECTED RIDERS FROM CHECKBOXES
-            # ---------------------------------------------------------
-            selected_riders = []
-            for i in range(1, 15):
-                if request.form.get(f"process_rider_{enquiry_id}_{i}"):
-                    selected_riders.append(i)
-
-            if not selected_riders:
-                flash("No riders selected.", "warning")
-                return redirect(url_for('trailride_enquiries'))
-
-            # ---------------------------------------------------------
-            # BOOKING FIELDS FROM FORM (per enquiry)
-            # ---------------------------------------------------------
-            booking_date = request.form.get(f"booking_date_{enquiry_id}") or ""
-            booking_time = request.form.get(f"booking_time_{enquiry_id}") or ""
-            lesson_type = request.form.get(f"lesson_type_{enquiry_id}") or "Trail Ride"
-            price_per_rider = request.form.get(f"price_per_rider_{enquiry_id}") or "0"
-            payment_per_rider = request.form.get(f"payment_per_rider_{enquiry_id}") or "0"
-
-            # ---------------------------------------------------------
-            # CREATE LESSON ROWS (THIS IS THE REAL BOOKING)
-            # ---------------------------------------------------------
-            for idx in selected_riders:
-                r = riders[idx - 1] if idx - 1 < len(riders) else None
-                if not r:
-                    continue
-
-                rider_name = r.get("name")
-
-                lesson = Lesson(
-                    lesson_date=booking_date,
-                    time_frame=booking_time,
-                    client=rider_name,
-                    horse="",                     # assigned later
-                    payment=float(payment_per_rider),
-                    price_pl=float(price_per_rider),
-                    attendance="",
-                    balance=float(price_per_rider) - float(payment_per_rider),
-                    lesson_notes="Trail Ride Enquiry import",
-                    lesson_type=lesson_type,
-                    group_priv="Trail Ride",
-                    block_key="",                 # optional for trail rides
-                )
-
-                db.session.add(lesson)
-
-            # ---------------------------------------------------------
-            # MARK ENQUIRY AS PROCESSED
-            # ---------------------------------------------------------
-            enquiry.processed = True
-            enquiry.processed_at = datetime.utcnow()
-
-            # ---------------------------------------------------------
-            # COMMIT + REDIRECT
-            # ---------------------------------------------------------
-            db.session.commit()
-            flash("Selected riders processed and lessons created.", "success")
+        if not enquiry_id:
+            flash("No enquiry selected.", "warning")
             return redirect(url_for('trailride_enquiries'))
+
+        # Safe int converter
+        def to_int(val):
+            try:
+                return int(val)
+            except:
+                return None
+
+        enquiry = TrailRideSubmission.query.get(enquiry_id)
+        if not enquiry or enquiry.processed:
+            flash("Enquiry not found or already processed.", "warning")
+            return redirect(url_for('trailride_enquiries'))
+
+        payload = enquiry.raw_payload
+        riders = extract_riders_from_submission(payload)
+        contact = get_main_contact_fields(payload)
+
+        # ---------------------------------------------------------
+        # NORMALISE PHONE + EMAIL
+        # ---------------------------------------------------------
+        phone = contact.get("phone")
+        email = contact.get("email")
+
+        if isinstance(phone, dict):
+            phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
+        if isinstance(email, dict):
+            email = email.get("value") or email.get("text") or email.get("full") or ""
+
+        if phone:
+            phone = str(phone).replace("-", "").replace(" ", "").strip()
+
+        phone = phone or ""
+        email = email or ""
+
+        contact["phone"] = phone
+        contact["email"] = email
+
+        # ---------------------------------------------------------
+        # SELECTED RIDERS FROM CHECKBOXES
+        # ---------------------------------------------------------
+        selected_riders = []
+        for i in range(1, 15):
+            if request.form.get(f"process_rider_{enquiry_id}_{i}"):
+                selected_riders.append(i)
+
+        if not selected_riders:
+            flash("No riders selected.", "warning")
+            return redirect(url_for('trailride_enquiries'))
+
+        # ---------------------------------------------------------
+        # BOOKING FIELDS FROM FORM (per enquiry)
+        # ---------------------------------------------------------
+        booking_date = request.form.get(f"booking_date_{enquiry_id}") or ""
+        booking_time = request.form.get(f"booking_time_{enquiry_id}") or ""
+        lesson_type = request.form.get(f"lesson_type_{enquiry_id}") or "Trail Ride"
+        price_per_rider = request.form.get(f"price_per_rider_{enquiry_id}") or "0"
+        payment_per_rider = request.form.get(f"payment_per_rider_{enquiry_id}") or "0"
+
+        # ---------------------------------------------------------
+        # CREATE LESSON ROWS (THIS IS THE REAL BOOKING)
+        # ---------------------------------------------------------
+        for idx in selected_riders:
+            r = riders[idx - 1] if idx - 1 < len(riders) else None
+            if not r:
+                continue
+
+            rider_name = r.get("name")
+
+            lesson = Lesson(
+                lesson_date=booking_date,
+                time_frame=booking_time,
+                client=rider_name,
+                horse="",
+                payment=float(payment_per_rider),
+                price_pl=float(price_per_rider),
+                attendance="",
+                balance=float(price_per_rider) - float(payment_per_rider),
+                lesson_notes="Trail Ride Enquiry import",
+                lesson_type=lesson_type,
+                group_priv="Trail Ride",
+                block_key="",
+            )
+
+            db.session.add(lesson)
+
+        # ---------------------------------------------------------
+        # MARK ENQUIRY AS PROCESSED
+        # ---------------------------------------------------------
+        enquiry.processed = True
+        enquiry.processed_at = datetime.utcnow()
+
+        # ---------------------------------------------------------
+        # COMMIT + REDIRECT
+        # ---------------------------------------------------------
+        db.session.commit()
+        flash("Selected riders processed and lessons created.", "success")
+        return redirect(url_for('trailride_enquiries'))
 
 
     @app.route('/fetch_trailride_submissions')
