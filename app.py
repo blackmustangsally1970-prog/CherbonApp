@@ -4741,6 +4741,13 @@ def create_app():
             flash("No enquiries selected.", "warning")
             return redirect(url_for('trailride_enquiries'))
 
+        # Safe int converter
+        def to_int(val):
+            try:
+                return int(val)
+            except:
+                return None
+
         for eid in ids:
             enquiry = TrailRideSubmission.query.get(eid)
             if not enquiry or enquiry.processed:
@@ -4750,14 +4757,37 @@ def create_app():
             riders = extract_riders_from_submission(payload)
             contact = get_main_contact_fields(payload)
 
+            # ---------------------------------------------------------
+            # NORMALISE PHONE + EMAIL (JotForm returns dicts)
+            # ---------------------------------------------------------
+            phone = contact.get("phone")
+            email = contact.get("email")
+
+            if isinstance(phone, dict):
+                phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
+            if isinstance(email, dict):
+                email = email.get("value") or email.get("text") or email.get("full") or ""
+
+            if phone:
+                phone = str(phone).replace("-", "").replace(" ", "").strip()
+
+            phone = phone or ""
+            email = email or ""
+
+            contact["phone"] = phone
+            contact["email"] = email
+
+            # ---------------------------------------------------------
+            # CREATE CLIENT RECORDS FOR EACH RIDER
+            # ---------------------------------------------------------
             for r in riders:
                 client = Client(
-                    full_name=r["name"],
-                    age=r["age"],
-                    height_cm=r["height_cm"],
-                    weight_kg=r["weight_kg"],
-                    mobile=contact.get("phone"),
-                    email_primary=contact.get("email"),
+                    full_name=r.get("name"),
+                    age=to_int(r.get("age")),
+                    height_cm=to_int(r.get("height_cm")),
+                    weight_kg=to_int(r.get("weight_kg")),
+                    mobile=phone,
+                    email_primary=email,
                     jotform_submission_id=enquiry.submission_id,
                     notes="Trail Ride Enquiry import"
                 )
@@ -4769,7 +4799,6 @@ def create_app():
         db.session.commit()
         flash("Selected enquiries processed and saved to Clients.", "success")
         return redirect(url_for('trailride_enquiries'))
-
 
 
     @app.route('/fetch_trailride_submissions')
