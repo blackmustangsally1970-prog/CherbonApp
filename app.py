@@ -4634,131 +4634,140 @@ def create_app():
         return redirect(url_for('debug_page'))
 
 
-    @app.route('/trailride_enquiries', methods=['GET'])
-    def trailride_enquiries():
-        page = request.args.get('page', 1, type=int)
+        @app.route('/trailride_enquiries', methods=['GET'])
+        def trailride_enquiries():
+            page = request.args.get('page', 1, type=int)
 
-        pagination = (TrailRideSubmission.query
-                      .filter_by(processed=False, ignored=False)
-                      .order_by(TrailRideSubmission.received_at.desc())
-                      .paginate(page=page, per_page=20, error_out=False))
+            pagination = (TrailRideSubmission.query
+                          .filter_by(processed=False, ignored=False)
+                          .order_by(TrailRideSubmission.received_at.desc())
+                          .paginate(page=page, per_page=20, error_out=False))
 
-        display_rows = []
+            display_rows = []
 
-        # Filters
-        filter_name = request.args.get('name', '').strip().lower()
-        filter_phone = request.args.get('phone', '').strip()
-        filter_email = request.args.get('email', '').strip().lower()
-        filter_match = request.args.get('match', '')
+            # Filters
+            filter_name = request.args.get('name', '').strip().lower()
+            filter_phone = request.args.get('phone', '').strip()
+            filter_email = request.args.get('email', '').strip().lower()
+            filter_match = request.args.get('match', '')
 
-        for e in pagination.items:
-            payload = e.raw_payload
-            riders = extract_riders_from_submission(payload)
-            contact = get_main_contact_fields(payload)
+            # Track whether we need a single commit at the end
+            needs_commit = False
 
-            # ---------------------------------------------------------
-            # NORMALISE PHONE + EMAIL (JotForm returns weird formats)
-            # ---------------------------------------------------------
-            phone = contact.get("phone")
-            email = contact.get("email")
+            for e in pagination.items:
+                payload = e.raw_payload
+                riders = extract_riders_from_submission(payload)
+                contact = get_main_contact_fields(payload)
 
-            if isinstance(phone, dict):
-                phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
-            if isinstance(email, dict):
-                email = email.get("value") or email.get("text") or email.get("full") or ""
+                # ---------------------------------------------------------
+                # NORMALISE PHONE + EMAIL (JotForm returns weird formats)
+                # ---------------------------------------------------------
+                phone = contact.get("phone")
+                email = contact.get("email")
 
-            if phone:
-                phone = str(phone).replace("-", "").replace(" ", "").strip()
+                if isinstance(phone, dict):
+                    phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
+                if isinstance(email, dict):
+                    email = email.get("value") or email.get("text") or email.get("full") or ""
 
-            phone = phone or ""
-            email = email or ""
+                if phone:
+                    phone = str(phone).replace("-", "").replace(" ", "").strip()
 
-            contact["phone"] = phone
-            contact["email"] = email
+                phone = phone or ""
+                email = email or ""
 
-            # ---------------------------------------------------------
-            # SAFE MAIN NAME EXTRACTION
-            # ---------------------------------------------------------
-            if riders and isinstance(riders, list) and len(riders) > 0 and riders[0].get("name"):
-                main_name = riders[0]["name"]
-            else:
-                main_name = "(no riders)"
+                contact["phone"] = phone
+                contact["email"] = email
 
-            rider_count = len(riders)
+                # ---------------------------------------------------------
+                # SAFE MAIN NAME EXTRACTION
+                # ---------------------------------------------------------
+                if riders and isinstance(riders, list) and len(riders) > 0 and riders[0].get("name"):
+                    main_name = riders[0]["name"]
+                else:
+                    main_name = "(no riders)"
 
-            # Matching logic
-            matches = match_existing_client(
-                name=main_name,
-                phone=phone,
-                email=email
+                rider_count = len(riders)
+
+                # Matching logic
+                matches = match_existing_client(
+                    name=main_name,
+                    phone=phone,
+                    email=email
+                )
+
+                has_match = len(matches) > 0
+                multiple_matches = len(matches) > 1
+
+                # Update DB flag (commit later)
+                if e.needs_client_match != multiple_matches:
+                    e.needs_client_match = multiple_matches
+                    needs_commit = True
+
+                # Apply filters
+                if filter_name and filter_name not in main_name.lower():
+                    continue
+                if filter_phone and filter_phone not in phone:
+                    continue
+                if filter_email and filter_email not in email.lower():
+                    continue
+                if filter_match == "yes" and not has_match:
+                    continue
+                if filter_match == "no" and has_match:
+                    continue
+                if filter_match == "multi" and not multiple_matches:
+                    continue
+
+                display_rows.append({
+                    "id": e.id,
+                    "main_name": main_name,
+                    "phone": phone,
+                    "email": email,
+                    "rider_count": rider_count,
+                    "created_at": e.received_at.strftime("%d %b %Y %I:%M %p"),
+                    "riders": riders,
+                    "has_match": has_match,
+                    "multiple_matches": multiple_matches,
+                    "match_count": len(matches)
+                })
+
+            # Commit once if needed
+            if needs_commit:
+                db.session.commit()
+
+            return render_template(
+                'trailride_enquiries.html',
+                enquiries=display_rows,
+                pagination=pagination
             )
 
-            has_match = len(matches) > 0
-            multiple_matches = len(matches) > 1
 
-            # Update DB flag
-            e.needs_client_match = multiple_matches
-            db.session.commit()
+        @app.route('/trailride_enquiries/process', methods=['POST'])
+        def trailride_enquiries_process():
+            enquiry_id = request.form.get("process_enquiry")
 
-            # Apply filters
-            if filter_name and filter_name not in main_name.lower():
-                continue
-            if filter_phone and filter_phone not in phone:
-                continue
-            if filter_email and filter_email not in email.lower():
-                continue
-            if filter_match == "yes" and not has_match:
-                continue
-            if filter_match == "no" and has_match:
-                continue
-            if filter_match == "multi" and not multiple_matches:
-                continue
+            if not enquiry_id:
+                flash("No enquiry selected.", "warning")
+                return redirect(url_for('trailride_enquiries'))
 
-            display_rows.append({
-                "id": e.id,
-                "main_name": main_name,
-                "phone": phone,
-                "email": email,
-                "rider_count": rider_count,
-                "created_at": e.received_at.strftime("%d %b %Y %I:%M %p"),
-                "riders": riders,
-                "has_match": has_match,
-                "multiple_matches": multiple_matches,
-                "match_count": len(matches)
-            })
+            # Safe int converter
+            def to_int(val):
+                try:
+                    return int(val)
+                except:
+                    return None
 
-        return render_template(
-            'trailride_enquiries.html',
-            enquiries=display_rows,
-            pagination=pagination
-        )
-
-
-    @app.route('/trailride_enquiries/process', methods=['POST'])
-    def trailride_enquiries_process():
-        ids = request.form.getlist('process_ids')
-        if not ids:
-            flash("No enquiries selected.", "warning")
-            return redirect(url_for('trailride_enquiries'))
-
-        # Safe int converter
-        def to_int(val):
-            try:
-                return int(val)
-            except:
-                return None
-
-        for eid in ids:
-            enquiry = TrailRideSubmission.query.get(eid)
+            enquiry = TrailRideSubmission.query.get(enquiry_id)
             if not enquiry or enquiry.processed:
-                continue
+                flash("Enquiry not found or already processed.", "warning")
+                return redirect(url_for('trailride_enquiries'))
 
             payload = enquiry.raw_payload
             riders = extract_riders_from_submission(payload)
             contact = get_main_contact_fields(payload)
 
             # ---------------------------------------------------------
-            # NORMALISE PHONE + EMAIL (JotForm returns dicts)
+            # NORMALISE PHONE + EMAIL
             # ---------------------------------------------------------
             phone = contact.get("phone")
             email = contact.get("email")
@@ -4778,27 +4787,65 @@ def create_app():
             contact["email"] = email
 
             # ---------------------------------------------------------
-            # CREATE CLIENT RECORDS FOR EACH RIDER
+            # SELECTED RIDERS FROM CHECKBOXES
             # ---------------------------------------------------------
-            for r in riders:
-                client = Client(
-                    full_name=r.get("name"),
-                    age=to_int(r.get("age")),
-                    height_cm=to_int(r.get("height_cm")),
-                    weight_kg=to_int(r.get("weight_kg")),
-                    mobile=phone,
-                    email_primary=email,
-                    jotform_submission_id=enquiry.submission_id,
-                    notes="Trail Ride Enquiry import"
-                )
-                db.session.add(client)
+            selected_riders = []
+            for i in range(1, 15):
+                if request.form.get(f"process_rider_{enquiry_id}_{i}"):
+                    selected_riders.append(i)
 
+            if not selected_riders:
+                flash("No riders selected.", "warning")
+                return redirect(url_for('trailride_enquiries'))
+
+            # ---------------------------------------------------------
+            # BOOKING FIELDS FROM FORM (per enquiry)
+            # ---------------------------------------------------------
+            booking_date = request.form.get(f"booking_date_{enquiry_id}") or ""
+            booking_time = request.form.get(f"booking_time_{enquiry_id}") or ""
+            lesson_type = request.form.get(f"lesson_type_{enquiry_id}") or "Trail Ride"
+            price_per_rider = request.form.get(f"price_per_rider_{enquiry_id}") or "0"
+            payment_per_rider = request.form.get(f"payment_per_rider_{enquiry_id}") or "0"
+
+            # ---------------------------------------------------------
+            # CREATE LESSON ROWS (THIS IS THE REAL BOOKING)
+            # ---------------------------------------------------------
+            for idx in selected_riders:
+                r = riders[idx - 1] if idx - 1 < len(riders) else None
+                if not r:
+                    continue
+
+                rider_name = r.get("name")
+
+                lesson = Lesson(
+                    lesson_date=booking_date,
+                    time_frame=booking_time,
+                    client=rider_name,
+                    horse="",                     # assigned later
+                    payment=float(payment_per_rider),
+                    price_pl=float(price_per_rider),
+                    attendance="",
+                    balance=float(price_per_rider) - float(payment_per_rider),
+                    lesson_notes="Trail Ride Enquiry import",
+                    lesson_type=lesson_type,
+                    group_priv="Trail Ride",
+                    block_key="",                 # optional for trail rides
+                )
+
+                db.session.add(lesson)
+
+            # ---------------------------------------------------------
+            # MARK ENQUIRY AS PROCESSED
+            # ---------------------------------------------------------
             enquiry.processed = True
             enquiry.processed_at = datetime.utcnow()
 
-        db.session.commit()
-        flash("Selected enquiries processed and saved to Clients.", "success")
-        return redirect(url_for('trailride_enquiries'))
+            # ---------------------------------------------------------
+            # COMMIT + REDIRECT
+            # ---------------------------------------------------------
+            db.session.commit()
+            flash("Selected riders processed and lessons created.", "success")
+            return redirect(url_for('trailride_enquiries'))
 
 
     @app.route('/fetch_trailride_submissions')
@@ -4852,7 +4899,7 @@ def create_app():
                 submission_id=submission_id,
                 form_id=TRAIL_FORM_ID,
                 raw_payload=sub,
-                received_at=datetime.utcnow(),
+                received_at=created_at,
                 processed=False,
                 jotform_id=submission_id
             )

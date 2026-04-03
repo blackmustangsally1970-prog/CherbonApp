@@ -1,0 +1,319 @@
+        @app.route('/trailride_enquiries', methods=['GET'])
+        def trailride_enquiries():
+            page = request.args.get('page', 1, type=int)
+
+            pagination = (TrailRideSubmission.query
+                          .filter_by(processed=False, ignored=False)
+                          .order_by(TrailRideSubmission.received_at.desc())
+                          .paginate(page=page, per_page=20, error_out=False))
+
+            display_rows = []
+
+            # Filters
+            filter_name = request.args.get('name', '').strip().lower()
+            filter_phone = request.args.get('phone', '').strip()
+            filter_email = request.args.get('email', '').strip().lower()
+            filter_match = request.args.get('match', '')
+
+            # Track whether we need a single commit at the end
+            needs_commit = False
+
+            for e in pagination.items:
+                payload = e.raw_payload
+                riders = extract_riders_from_submission(payload)
+                contact = get_main_contact_fields(payload)
+
+                # ---------------------------------------------------------
+                # NORMALISE PHONE + EMAIL (JotForm returns weird formats)
+                # ---------------------------------------------------------
+                phone = contact.get("phone")
+                email = contact.get("email")
+
+                if isinstance(phone, dict):
+                    phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
+                if isinstance(email, dict):
+                    email = email.get("value") or email.get("text") or email.get("full") or ""
+
+                if phone:
+                    phone = str(phone).replace("-", "").replace(" ", "").strip()
+
+                phone = phone or ""
+                email = email or ""
+
+                contact["phone"] = phone
+                contact["email"] = email
+
+                # ---------------------------------------------------------
+                # SAFE MAIN NAME EXTRACTION
+                # ---------------------------------------------------------
+                if riders and isinstance(riders, list) and len(riders) > 0 and riders[0].get("name"):
+                    main_name = riders[0]["name"]
+                else:
+                    main_name = "(no riders)"
+
+                rider_count = len(riders)
+
+                # Matching logic
+                matches = match_existing_client(
+                    name=main_name,
+                    phone=phone,
+                    email=email
+                )
+
+                has_match = len(matches) > 0
+                multiple_matches = len(matches) > 1
+
+                # Update DB flag (commit later)
+                if e.needs_client_match != multiple_matches:
+                    e.needs_client_match = multiple_matches
+                    needs_commit = True
+
+                # Apply filters
+                if filter_name and filter_name not in main_name.lower():
+                    continue
+                if filter_phone and filter_phone not in phone:
+                    continue
+                if filter_email and filter_email not in email.lower():
+                    continue
+                if filter_match == "yes" and not has_match:
+                    continue
+                if filter_match == "no" and has_match:
+                    continue
+                if filter_match == "multi" and not multiple_matches:
+                    continue
+
+                display_rows.append({
+                    "id": e.id,
+                    "main_name": main_name,
+                    "phone": phone,
+                    "email": email,
+                    "rider_count": rider_count,
+                    "created_at": e.received_at.strftime("%d %b %Y %I:%M %p"),
+                    "riders": riders,
+                    "has_match": has_match,
+                    "multiple_matches": multiple_matches,
+                    "match_count": len(matches)
+                })
+
+            # Commit once if needed
+            if needs_commit:
+                db.session.commit()
+
+            return render_template(
+                'trailride_enquiries.html',
+                enquiries=display_rows,
+                pagination=pagination
+            )
+
+
+    @app.route('/trailride_enquiries/process', methods=['POST'])
+    def trailride_enquiries_process():
+        enquiry_id = request.form.get("process_enquiry")
+
+        if not enquiry_id:
+            flash("No enquiry selected.", "warning")
+            return redirect(url_for('trailride_enquiries'))
+
+        # Safe int converter
+        def to_int(val):
+            try:
+                return int(val)
+            except:
+                return None
+
+        enquiry = TrailRideSubmission.query.get(enquiry_id)
+        if not enquiry or enquiry.processed:
+            flash("Enquiry not found or already processed.", "warning")
+            return redirect(url_for('trailride_enquiries'))
+
+        payload = enquiry.raw_payload
+        riders = extract_riders_from_submission(payload)
+        contact = get_main_contact_fields(payload)
+
+        # ---------------------------------------------------------
+        # NORMALISE PHONE + EMAIL
+        # ---------------------------------------------------------
+        phone = contact.get("phone")
+        email = contact.get("email")
+
+        if isinstance(phone, dict):
+            phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
+        if isinstance(email, dict):
+            email = email.get("value") or email.get("text") or email.get("full") or ""
+
+        if phone:
+            phone = str(phone).replace("-", "").replace(" ", "").strip()
+
+        phone = phone or ""
+        email = email or ""
+
+        contact["phone"] = phone
+        contact["email"] = email
+
+        # ---------------------------------------------------------
+        # SELECTED RIDERS FROM CHECKBOXES
+        # ---------------------------------------------------------
+        selected_riders = []
+        for i in range(1, 15):
+            if request.form.get(f"process_rider_{enquiry_id}_{i}"):
+                selected_riders.append(i)
+
+        # ---------------------------------------------------------
+        # BOOKING FIELDS FROM FORM
+        # ---------------------------------------------------------
+        booking_date = request.form.get("booking_date") or ""
+        booking_time = request.form.get("booking_time") or ""
+        booking_type = request.form.get("booking_type") or ""
+        booking_price = request.form.get("booking_price") or ""
+        booking_payment = request.form.get("booking_payment") or ""
+
+        # ---------------------------------------------------------
+        # CREATE BOOKING RECORD
+        # ---------------------------------------------------------
+        booking = Booking(
+            booking_date=booking_date,
+            booking_time=booking_time,
+            booking_type=booking_type,
+            price=booking_price,
+            payment_status=booking_payment,
+            contact_name=contact.get("name"),
+            contact_phone=phone,
+            contact_email=email,
+            source_enquiry_id=enquiry.id,
+            notes="Created from Trail Ride Enquiry"
+        )
+        db.session.add(booking)
+        db.session.flush()  # ensures booking.id is available
+
+        # ---------------------------------------------------------
+        # CREATE CLIENT RECORDS + ATTACH TO BOOKING
+        # ---------------------------------------------------------
+        for idx in selected_riders:
+            r = riders[idx - 1] if idx - 1 < len(riders) else None
+            if not r:
+                continue
+
+            client = Client(
+                full_name=r.get("name"),
+                age=to_int(r.get("age")),
+                height_cm=to_int(r.get("height_cm")),
+                weight_kg=to_int(r.get("weight_kg")),
+                mobile=phone,
+                email_primary=email,
+                jotform_submission_id=enquiry.submission_id,
+                notes="Trail Ride Enquiry import"
+            )
+            db.session.add(client)
+            db.session.flush()
+
+            # Link rider to booking
+            booking_rider = BookingRider(
+                booking_id=booking.id,
+                client_id=client.id
+            )
+            db.session.add(booking_rider)
+
+        # ---------------------------------------------------------
+        # MARK ENQUIRY AS PROCESSED
+        # ---------------------------------------------------------
+        enquiry.processed = True
+        enquiry.processed_at = datetime.utcnow()
+
+        # ---------------------------------------------------------
+        # COMMIT + REDIRECT
+        # ---------------------------------------------------------
+        db.session.commit()
+        flash("Selected riders processed and booking created.", "success")
+        return redirect(url_for('trailride_enquiries'))
+
+
+    @app.route('/fetch_trailride_submissions')
+    def fetch_trailride_submissions():
+        api_key = os.getenv("JOTFORM_API_KEY")
+        if not api_key:
+            flash("Missing JOTFORM_API_KEY", "danger")
+            return redirect(url_for('trailride_enquiries'))
+
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
+
+        latest = (TrailRideSubmission.query
+                  .order_by(TrailRideSubmission.received_at.desc())
+                  .first())
+
+        latest_ts = latest.received_at if latest else cutoff_date
+
+        url = (
+            f"https://api.jotform.com/form/{TRAIL_FORM_ID}/submissions"
+            f"?apiKey={api_key}"
+            f"&limit=1000"
+            f"&filter[created_at][gt]={latest_ts.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+
+        response = requests.get(url)
+        data = response.json()
+
+        submissions = data.get("content", [])
+
+        imported = 0
+        skipped = 0
+
+        for sub in submissions:
+            submission_id = sub.get("id")
+            if not submission_id:
+                continue
+
+            existing = TrailRideSubmission.query.filter_by(submission_id=submission_id).first()
+            if existing:
+                skipped += 1
+                continue
+
+            created_at_str = sub.get("created_at")
+            if created_at_str:
+                created_at = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")
+                if created_at < cutoff_date:
+                    skipped += 1
+                    continue
+
+            incoming = TrailRideSubmission(
+                submission_id=submission_id,
+                form_id=TRAIL_FORM_ID,
+                raw_payload=sub,
+                received_at=datetime.utcnow(),
+                processed=False,
+                jotform_id=submission_id
+            )
+
+            db.session.add(incoming)
+            imported += 1
+
+        db.session.commit()
+
+        flash(f"Imported {imported} new submissions, skipped {skipped}.", "success")
+        return redirect(url_for('trailride_enquiries'))
+
+
+    @app.route('/trailride_enquiries/ignore/<int:id>')
+    def trailride_enquiries_ignore(id):
+        enquiry = TrailRideSubmission.query.get(id)
+        if not enquiry:
+            flash("Enquiry not found.", "danger")
+            return redirect(url_for('trailride_enquiries'))
+
+        enquiry.ignored = True
+        db.session.commit()
+
+        flash("Enquiry ignored.", "info")
+        return redirect(url_for('trailride_enquiries'))
+
+
+    @app.route('/trailride_enquiry/details/<int:id>')
+    def trailride_enquiry_details(id):
+        enquiry = TrailRideSubmission.query.get(id)
+        if not enquiry:
+            return jsonify({"error": "Not found"}), 404
+
+        return jsonify({
+            "id": enquiry.id,
+            "received_at": enquiry.received_at.strftime("%d %b %Y %I:%M %p"),
+            "payload": enquiry.raw_payload
+        })

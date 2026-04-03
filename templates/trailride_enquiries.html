@@ -32,89 +32,168 @@
 
 
 <form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
-  <table>
-    <tr>
-      <th>Process</th>
-      <th>View</th>
-      <th>Main Name</th>
-      <th>Phone</th>
-      <th>Email</th>
-      <th>Riders</th>
-      <th>Submitted</th>
-      <th>Match</th>
-      <th>Ignore</th>
-    </tr>
-
-    {% for e in enquiries %}
-    <tr style="
-      {% if e.multiple_matches %} background:#ffcccc;
-      {% elif e.has_match %} background:#d4ffd4;
+{% for e in enquiries %}
+<div class="tr-card" style="
+    border:1px solid #ccc;
+    border-radius:8px;
+    padding:16px;
+    margin-bottom:18px;
+    background:
+      {% if e.multiple_matches %} #ffcccc;
+      {% elif e.has_match %} #d4ffd4;
+      {% else %} #ffffff;
       {% endif %}
-    ">
+">
 
-      <!-- PROCESS -->
-      <td>
-        <input type="checkbox" name="process_ids" value="{{ e.id }}">
-      </td>
+    <!-- HEADER -->
+    <div style="font-weight:bold; font-size:18px; margin-bottom:4px;">
+        {{ e.main_name }} • {{ e.phone }} • {{ e.email }}
+    </div>
 
-      <!-- VIEW -->
-      <td>
-        <button type="button" onclick="openDetailsModal({{ e.id }})">
-          View
-        </button>
-      </td>
+    <!-- META -->
+    <div style="color:#555; font-size:14px; margin-bottom:12px;">
+        {{ e.rider_count }} Riders • {{ e.created_at }}
 
-      <!-- MAIN NAME -->
-      <td>{{ e.main_name }}</td>
-
-      <!-- PHONE -->
-      <td>{{ e.phone }}</td>
-
-      <!-- EMAIL -->
-      <td>{{ e.email }}</td>
-
-      <!-- RIDERS -->
-      <td>
-        {{ e.rider_count }}
-        <div class="riders-details">
-          {% for r in e.riders %}
-            Rider {{ r.index }}: {{ r.name }}
-            {% if r.age is not none %} (Age: {{ r.age }}){% endif %}
-            {% if r.height_cm is not none %} H: {{ r.height_cm }}cm{% endif %}
-            {% if r.weight_kg is not none %} W: {{ r.weight_kg }}kg{% endif %}
-            <br>
-          {% endfor %}
-        </div>
-      </td>
-
-      <!-- SUBMITTED -->
-      <td>{{ e.created_at }}</td>
-
-      <!-- MATCH STATUS -->
-      <td>
         {% if e.multiple_matches %}
-          ⚠️ Multiple
+            • ⚠ Multiple Matches
         {% elif e.has_match %}
-          ✔️ Yes
+            • ✔ Match Found
         {% else %}
-          —
+            • — No Matches
         {% endif %}
-      </td>
+    </div>
 
-      <!-- IGNORE -->
-      <td>
-        <a href="{{ url_for('trailride_enquiries_ignore', id=e.id) }}"
-           onclick="return confirm('Ignore this enquiry?');">
-           Ignore
-        </a>
-      </td>
+    <!-- CARD BODY -->
+    <div class="tr-card-body">
 
-    </tr>
-    {% endfor %}
-  </table>
+        <!-- BOOKING DETAILS -->
+        <div class="booking-details" style="
+            border:1px solid #ddd;
+            padding:12px;
+            border-radius:6px;
+            margin-bottom:16px;
+            background:#f9f9f9;
+        ">
+            <div style="font-weight:bold; margin-bottom:8px;">
+                Booking Details
+            </div>
 
-  <button type="submit">Save Selected</button>
-</form>
+            <label>Date:</label>
+            <input type="date"
+                   name="booking_date_{{ e.id }}"
+                   value="{{ current_date }}"
+                   style="margin-bottom:8px; display:block;">
+
+            <label>Time:</label>
+            <select name="booking_time_{{ e.id }}"
+                    style="margin-bottom:8px; display:block;">
+                {% for t in times %}
+                    <option value="{{ t.timerange }}">{{ t.timerange }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Lesson Type:</label>
+            <select name="lesson_type_{{ e.id }}"
+                    style="margin-bottom:8px; display:block;">
+                <option value="Trail Ride" selected>Trail Ride</option>
+                <option value="Private Trail Ride">Private Trail Ride</option>
+                <option value="Group Trail Ride">Group Trail Ride</option>
+            </select>
+
+            <label>Price (per rider):</label>
+            <input type="number"
+                   step="0.01"
+                   name="price_per_rider_{{ e.id }}"
+                   value="120.00"
+                   style="margin-bottom:8px; display:block;">
+
+            <label>Payment (per rider):</label>
+            <input type="number"
+                   step="0.01"
+                   name="payment_per_rider_{{ e.id }}"
+                   value="0.00"
+                   style="margin-bottom:8px; display:block;">
+        </div>
+
+        <!-- RIDER LIST -->
+        <div class="rider-list" style="
+            border:1px solid #ddd;
+            padding:12px;
+            border-radius:6px;
+            background:#ffffff;
+            margin-bottom:16px;
+        ">
+            <div style="font-weight:bold; margin-bottom:8px;">
+                Riders
+            </div>
+
+            {% for r in e.riders %}
+                <div style="
+                    padding:8px;
+                    border-bottom:1px solid #eee;
+                    display:flex;
+                    align-items:center;
+                ">
+
+                    <input type="checkbox"
+                           name="process_rider_{{ e.id }}_{{ r.index }}"
+                           value="1"
+                           checked
+                           style="margin-right:10px;">
+
+                    <div style="flex-grow:1;">
+                        <strong>Rider {{ r.index }}:</strong>
+                        {{ r.name }}
+
+                        {% if r.age %} ({{ r.age }}){% endif %}
+                        {% if r.height_cm %} — {{ r.height_cm }}cm{% endif %}
+                        {% if r.weight_kg %} / {{ r.weight_kg }}kg{% endif %}
+                    </div>
+
+                    <div style="margin-left:10px; font-size:14px;">
+                        {% if r.multiple_matches %}
+                            ⚠ Multiple
+                        {% elif r.has_match %}
+                            ✔ Match
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- IGNORE -->
+        <div style="margin-bottom:12px;">
+            <label>
+                <input type="checkbox"
+                       name="ignore_{{ e.id }}"
+                       value="1">
+                Ignore this enquiry
+            </label>
+        </div>
+
+        <!-- PROCESS BUTTON -->
+        <button type="submit"
+                name="process_enquiry"
+                value="{{ e.id }}"
+                style="
+                    padding:10px 16px;
+                    background:#007bff;
+                    color:white;
+                    border:none;
+                    border-radius:6px;
+                    cursor:pointer;
+                ">
+            PROCESS SELECTED RIDERS
+        </button>
+
+    </div> <!-- end card body -->
+
+</div>
+{% endfor %}
+
 
 <!-- PAGINATION (if enabled) -->
 {% if pagination %}
