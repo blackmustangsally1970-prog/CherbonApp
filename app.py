@@ -4657,14 +4657,45 @@ def create_app():
             riders = extract_riders_from_submission(payload)
             contact = get_main_contact_fields(payload)
 
-            main_name = riders[0]["name"] if riders else "(no riders)"
+            # ---------------------------------------------------------
+            # NORMALISE PHONE + EMAIL (JotForm returns weird formats)
+            # ---------------------------------------------------------
+            phone = contact.get("phone")
+            email = contact.get("email")
+
+            # If JotForm returns dicts instead of strings
+            if isinstance(phone, dict):
+                phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
+            if isinstance(email, dict):
+                email = email.get("value") or email.get("text") or email.get("full") or ""
+
+            # Strip hyphens/spaces from phone (JF formats like 0000-000000)
+            if phone:
+                phone = str(phone).replace("-", "").replace(" ", "").strip()
+
+            # Ensure final values are strings
+            phone = phone or ""
+            email = email or ""
+
+            # Save back into contact dict
+            contact["phone"] = phone
+            contact["email"] = email
+
+            # ---------------------------------------------------------
+            # SAFE MAIN NAME EXTRACTION
+            # ---------------------------------------------------------
+            if riders and riders[0].get("name"):
+                main_name = riders[0]["name"]
+            else:
+                main_name = "(no riders)"
+
             rider_count = len(riders)
 
             # Matching logic
             matches = match_existing_client(
                 name=main_name,
-                phone=contact.get("phone"),
-                email=contact.get("email")
+                phone=phone,
+                email=email
             )
 
             has_match = len(matches) > 0
@@ -4677,9 +4708,9 @@ def create_app():
             # Apply filters
             if filter_name and filter_name not in main_name.lower():
                 continue
-            if filter_phone and filter_phone not in (contact.get("phone") or ""):
+            if filter_phone and filter_phone not in phone:
                 continue
-            if filter_email and filter_email not in (contact.get("email") or "").lower():
+            if filter_email and filter_email not in email.lower():
                 continue
             if filter_match == "yes" and not has_match:
                 continue
@@ -4691,8 +4722,8 @@ def create_app():
             display_rows.append({
                 "id": e.id,
                 "main_name": main_name,
-                "phone": contact.get("phone"),
-                "email": contact.get("email"),
+                "phone": phone,
+                "email": email,
                 "rider_count": rider_count,
                 "created_at": e.received_at.strftime("%d %b %Y %I:%M %p"),
                 "riders": riders,
@@ -4706,7 +4737,6 @@ def create_app():
             enquiries=display_rows,
             pagination=pagination
         )
-
 
     @app.route('/trailride_enquiries/process', methods=['POST'])
     def trailride_enquiries_process():
