@@ -259,10 +259,9 @@ function startTimeMatcher(params, data) {
         return null;
     }
 
-    // Extract the start time: "HH:MM - HH:MM"
-    let start = data.text.split('-')[0].trim();   // "10:00"
+    // Extract the start time: "HH:MM - HH:HH"
+    let start = data.text.split('-')[0].trim();
 
-    // Prefix match only
     if (start.startsWith(params.term)) {
         return data;
     }
@@ -278,9 +277,16 @@ $(document).ready(function() {
         width: '100%',
         matcher: startTimeMatcher
     });
+
+    // ⭐ Auto-focus search box on open (1-click behaviour)
+    $('.searchable-dropdown.time-field').on('select2:open', function() {
+        let searchField = document.querySelector('.select2-container--open .select2-search__field');
+        if (searchField) {
+            searchField.focus();
+        }
+    });
 });
 </script>
-
 
 </body>
 </html>
