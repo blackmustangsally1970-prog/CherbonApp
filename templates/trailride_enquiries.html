@@ -250,15 +250,37 @@
 {% endif %}
 
 <script>
+function startTimeMatcher(params, data) {
+    if ($.trim(params.term) === '') {
+        return data;
+    }
+
+    if (typeof data.text === 'undefined') {
+        return null;
+    }
+
+    // Extract the start time: "HH:MM - HH:MM"
+    let start = data.text.split('-')[0].trim();   // "10:00"
+
+    // Prefix match only
+    if (start.startsWith(params.term)) {
+        return data;
+    }
+
+    return null;
+}
+
 $(document).ready(function() {
     $('.searchable-dropdown.time-field').select2({
         tags: true,
         placeholder: "Select or type a time",
         allowClear: true,
-        width: '100%'
+        width: '100%',
+        matcher: startTimeMatcher
     });
 });
 </script>
+
 
 </body>
 </html>
