@@ -4729,6 +4729,12 @@ def create_app():
         if needs_commit:
             db.session.commit()
 
+        # Ensure newest first after filtering
+        display_rows.sort(
+            key=lambda x: datetime.strptime(x["created_at"], "%d %b %Y %I:%M %p"),
+            reverse=True
+        )
+
         return render_template(
             'trailride_enquiries.html',
             enquiries=display_rows,
