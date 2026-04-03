@@ -1,46 +1,54 @@
-
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    send_file, make_response, after_this_request, flash, jsonify
+    send_file, make_response, after_this_request, flash,
+    jsonify, current_app, Response, session
 )
-from flask import current_app
-from flask import Response
+
 from config import Config
 from extensions import db
-from collections import defaultdict
-from sqlalchemy import func, text
-from datetime import date, datetime, time, timedelta
 from models import (
     Lesson, Time, Client, Horse, Teacher,
     LessonBlockTag, TeacherTime, TeacherHorse,
     BlockoutDate, BlockoutRange, IncomingSubmission,
-    LessonInvite, TeacherSlot, DisclaimerState, LessonTeacherTag,
-    WeeklyEvent, CourseReference, TeacherBlockAssignment
+    LessonInvite, TeacherSlot, DisclaimerState,
+    LessonTeacherTag, WeeklyEvent, CourseReference,
+    TeacherBlockAssignment, Users
 )
 
-import secrets
-import string
-from weasyprint import HTML
-from urllib.parse import urlencode
-import re
-import subprocess
-import tempfile
+# Core libs
 import os
-import unicodedata
+import re
 import json
 import hashlib
-import clicksend_client
+import secrets
+import string
+import tempfile
+import subprocess
+import unicodedata
+from datetime import date, datetime, time, timedelta
+from functools import lru_cache, wraps
+from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
+
+# Third‑party libs
 import requests
+import clicksend_client
 from clicksend_client import SmsMessage
 from clicksend_client.rest import ApiException
-from functools import lru_cache
+from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
-from flask import session
-from werkzeug.security import generate_password_hash, check_password_hash
-from models import Users
-from functools import wraps
-from zoneinfo import ZoneInfo
+from weasyprint import HTML
 from playwright.sync_api import sync_playwright
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# JotForm helpers
+from helpers_jf import (
+    extract_riders_from_submission,
+    get_main_contact_fields,
+    TRAIL_FORM_ID
+)
+
+
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -159,6 +167,32 @@ def role_required(*roles):
             return f(*args, **kwargs)
         return wrapper
     return decorator
+
+def match_existing_client(name, phone, email):
+    q = Client.query
+
+    # Normalise
+    name = name.strip().lower() if name else None
+    phone = phone.strip() if phone else None
+    email = email.strip().lower() if email else None
+
+    matches = []
+
+    if name:
+        matches += q.filter(db.func.lower(Client.full_name) == name).all()
+
+    if phone:
+        matches += q.filter(Client.mobile == phone).all()
+
+    if email:
+        matches += q.filter(db.func.lower(Client.email_primary) == email).all()
+
+    # Remove duplicates
+    unique = {m.id: m for m in matches}.values()
+
+    return list(unique)
+
+
 
 def generate_financial_years(start_year=2022):
     from datetime import date
@@ -4601,6 +4635,165 @@ def create_app():
         return redirect(url_for('debug_page'))
 
 
+    @app.route('/trailride_enquiries', methods=['GET'])
+    def trailride_enquiries():
+        page = request.args.get('page', 1, type=int)
+
+        pagination = (IncomingSubmission.query
+                      .filter_by(form_id=TRAIL_FORM_ID, processed=False, ignored=False)
+                      .order_by(IncomingSubmission.received_at.desc())
+                      .paginate(page=page, per_page=20, error_out=False))
+
+        display_rows = []
+
+        for e in pagination.items:
+            payload = e.raw_payload
+            riders = extract_riders_from_submission(payload)
+            contact = get_main_contact_fields(payload)
+
+            main_name = riders[0]["name"] if riders else "(no riders)"
+            rider_count = len(riders)
+
+            # --- MATCHING LOGIC ---
+            matches = match_existing_client(
+                name=main_name,
+                phone=contact.get("phone"),
+                email=contact.get("email")
+            )
+
+            has_match = len(matches) > 0
+            multiple_matches = len(matches) > 1
+
+            # Update DB flag for ambiguous cases
+            e.needs_client_match = multiple_matches
+            db.session.commit()
+
+            display_rows.append({
+                "id": e.id,
+                "main_name": main_name,
+                "phone": contact.get("phone"),
+                "email": contact.get("email"),
+                "rider_count": rider_count,
+                "created_at": e.received_at.strftime("%d %b %Y %I:%M %p"),
+                "riders": riders,
+                "has_match": has_match,
+                "multiple_matches": multiple_matches,
+                "match_count": len(matches)
+            })
+
+        return render_template(
+            'trailride_enquiries.html',
+            enquiries=display_rows,
+            pagination=pagination
+        )
+
+
+    @app.route('/trailride_enquiries/process', methods=['POST'])
+    def trailride_enquiries_process():
+        ids = request.form.getlist('process_ids')
+        if not ids:
+            flash("No enquiries selected.", "warning")
+            return redirect(url_for('trailride_enquiries'))
+
+        for eid in ids:
+            enquiry = IncomingSubmission.query.get(eid)
+            if not enquiry or enquiry.processed:
+                continue
+
+            payload = enquiry.raw_payload
+            riders = extract_riders_from_submission(payload)
+            contact = get_main_contact_fields(payload)
+
+            for r in riders:
+                client = Client(
+                    full_name=r["name"],
+                    age=r["age"],
+                    height_cm=r["height_cm"],
+                    weight_kg=r["weight_kg"],
+                    mobile=contact.get("phone"),
+                    email_primary=contact.get("email"),
+                    jotform_submission_id=enquiry.submission_id,
+                    notes="Trail Ride Enquiry import"
+                )
+                db.session.add(client)
+
+            enquiry.processed = True
+            enquiry.processed_at = datetime.utcnow()
+
+        db.session.commit()
+        flash("Selected enquiries processed and saved to Clients.", "success")
+        return redirect(url_for('trailride_enquiries'))
+
+
+
+    @app.route('/fetch_trailride_submissions')
+    def fetch_trailride_submissions():
+        api_key = os.getenv("JOTFORM_API_KEY")
+        if not api_key:
+            return "Missing JOTFORM_API_KEY", 500
+
+        url = f"https://api.jotform.com/form/{TRAIL_FORM_ID}/submissions?apiKey={api_key}&limit=1000"
+        response = requests.get(url)
+        data = response.json()
+
+        submissions = data.get("content", [])
+
+        imported = 0
+        skipped = 0
+
+        for sub in submissions:
+            submission_id = sub.get("id")
+            if not submission_id:
+                continue
+
+            # Check if already stored
+            existing = IncomingSubmission.query.filter_by(submission_id=submission_id).first()
+            if existing:
+                skipped += 1
+                continue
+
+            incoming = IncomingSubmission(
+                submission_id=submission_id,
+                form_id=TRAIL_FORM_ID,
+                raw_payload=sub,
+                received_at=datetime.utcnow(),
+                processed=False,
+                jotform_id=submission_id
+            )
+
+            db.session.add(incoming)
+            imported += 1
+
+        db.session.commit()
+
+        return f"Imported {imported} new submissions, skipped {skipped} existing."
+
+
+    @app.route('/trailride_enquiries/ignore/<int:id>')
+    def trailride_enquiries_ignore(id):
+        enquiry = IncomingSubmission.query.get(id)
+        if not enquiry:
+            flash("Enquiry not found.", "danger")
+            return redirect(url_for('trailride_enquiries'))
+
+        enquiry.ignored = True
+        db.session.commit()
+
+        flash("Enquiry ignored.", "info")
+        return redirect(url_for('trailride_enquiries'))
+
+
+    @app.route('/trailride_enquiry/details/<int:id>')
+    def trailride_enquiry_details(id):
+        enquiry = IncomingSubmission.query.get(id)
+        if not enquiry:
+            return jsonify({"error": "Not found"}), 404
+
+        return jsonify({
+            "id": enquiry.id,
+            "received_at": enquiry.received_at.strftime("%d %b %Y %I:%M %p"),
+            "payload": enquiry.raw_payload
+        })
 
 
 

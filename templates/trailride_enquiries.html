@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Trail Ride Enquiries</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .riders-details { font-size: 0.9em; color: #444; }
+  </style>
+</head>
+<body>
+
+<h1>Trail Ride Enquiries</h1>
+
+<form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
+  <table>
+    <tr>
+      <th>Process</th>
+      <th>View</th>
+      <th>Main Name</th>
+      <th>Phone</th>
+      <th>Email</th>
+      <th>Riders</th>
+      <th>Submitted</th>
+      <th>Match</th>
+      <th>Ignore</th>
+    </tr>
+
+    {% for e in enquiries %}
+    <tr style="
+      {% if e.multiple_matches %} background:#ffcccc;
+      {% elif e.has_match %} background:#d4ffd4;
+      {% endif %}
+    ">
+
+      <!-- PROCESS -->
+      <td>
+        <input type="checkbox" name="process_ids" value="{{ e.id }}">
+      </td>
+
+      <!-- VIEW -->
+      <td>
+        <button type="button" onclick="openDetailsModal({{ e.id }})">
+          View
+        </button>
+      </td>
+
+      <!-- MAIN NAME -->
+      <td>{{ e.main_name }}</td>
+
+      <!-- PHONE -->
+      <td>{{ e.phone }}</td>
+
+      <!-- EMAIL -->
+      <td>{{ e.email }}</td>
+
+      <!-- RIDERS -->
+      <td>
+        {{ e.rider_count }}
+        <div class="riders-details">
+          {% for r in e.riders %}
+            Rider {{ r.index }}: {{ r.name }}
+            {% if r.age is not none %} (Age: {{ r.age }}){% endif %}
+            {% if r.height_cm is not none %} H: {{ r.height_cm }}cm{% endif %}
+            {% if r.weight_kg is not none %} W: {{ r.weight_kg }}kg{% endif %}
+            <br>
+          {% endfor %}
+        </div>
+      </td>
+
+      <!-- SUBMITTED -->
+      <td>{{ e.created_at }}</td>
+
+      <!-- MATCH STATUS -->
+      <td>
+        {% if e.multiple_matches %}
+          ⚠️ Multiple
+        {% elif e.has_match %}
+          ✔️ Yes
+        {% else %}
+          —
+        {% endif %}
+      </td>
+
+      <!-- IGNORE -->
+      <td>
+        <a href="{{ url_for('trailride_enquiries_ignore', id=e.id) }}"
+           onclick="return confirm('Ignore this enquiry?');">
+           Ignore
+        </a>
+      </td>
+
+    </tr>
+    {% endfor %}
+  </table>
+
+  <button type="submit">Save Selected</button>
+</form>
+
+<!-- PAGINATION (if enabled) -->
+{% if pagination %}
+<div style="margin-top:20px; font-size:18px;">
+  {% if pagination.has_prev %}
+    <a href="{{ url_for('trailride_enquiries', page=pagination.prev_num) }}">« Prev</a>
+  {% endif %}
+
+  <span style="margin:0 10px;">
+    Page {{ pagination.page }} of {{ pagination.pages }}
+  </span>
+
+  {% if pagination.has_next %}
+    <a href="{{ url_for('trailride_enquiries', page=pagination.next_num) }}">Next »</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- MODAL -->
+<div id="detailsModal" style="
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.6);
+    padding:40px;
+">
+  <div style="
+      background:white;
+      padding:20px;
+      max-width:800px;
+      margin:0 auto;
+      border-radius:8px;
+      overflow-y:auto;
+      max-height:90vh;
+  ">
+    <h2>Submission Details</h2>
+    <pre id="detailsContent" style="white-space:pre-wrap;"></pre>
+    <button onclick="closeDetailsModal()">Close</button>
+  </div>
+</div>
+
+<script>
+function openDetailsModal(id) {
+    fetch(`/trailride_enquiry/details/${id}`)
+        .then(r => r.json())
+        .then(data => {
+            const pretty = JSON.stringify(data.payload, null, 2);
+            document.getElementById("detailsContent").textContent = pretty;
+            document.getElementById("detailsModal").style.display = "block";
+        });
+}
+
+function closeDetailsModal() {
+    document.getElementById("detailsModal").style.display = "none";
+}
+</script>
+
+</body>
+</html>
