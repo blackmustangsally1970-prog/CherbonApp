@@ -4,6 +4,7 @@ from flask import (
     jsonify, current_app, Response, session
 )
 
+from collections import defaultdict
 from config import Config
 from extensions import db
 from models import (
