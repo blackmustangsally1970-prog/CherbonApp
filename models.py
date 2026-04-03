@@ -65,6 +65,20 @@ class WeeklyEvent(db.Model):
     event2 = db.Column(db.String)
     notes = db.Column(db.String)
 
+class TrailRideSubmission(db.Model):
+    __tablename__ = 'trail_ride_submissions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(255), unique=True, nullable=False)
+    form_id = db.Column(db.String(255), nullable=False)
+    raw_payload = db.Column(db.JSON, nullable=False)
+    received_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    processed = db.Column(db.Boolean, nullable=False, default=False)
+    ignored = db.Column(db.Boolean, nullable=False, default=False)
+    needs_client_match = db.Column(db.Boolean, nullable=False, default=False)
+    jotform_id = db.Column(db.String(255))
+
+
 
 class TeacherBlockAssignment(db.Model):
     __tablename__ = "teacher_block_assignments"

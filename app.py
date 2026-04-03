@@ -12,7 +12,7 @@ from models import (
     BlockoutDate, BlockoutRange, IncomingSubmission,
     LessonInvite, TeacherSlot, DisclaimerState,
     LessonTeacherTag, WeeklyEvent, CourseReference,
-    TeacherBlockAssignment, Users
+    TeacherBlockAssignment, Users, TrailRideSubmission
 )
 
 # Core libs
@@ -4639,12 +4639,18 @@ def create_app():
     def trailride_enquiries():
         page = request.args.get('page', 1, type=int)
 
-        pagination = (IncomingSubmission.query
-                      .filter_by(form_id=TRAIL_FORM_ID, processed=False, ignored=False)
-                      .order_by(IncomingSubmission.received_at.desc())
+        pagination = (TrailRideSubmission.query
+                      .filter_by(processed=False, ignored=False)
+                      .order_by(TrailRideSubmission.received_at.desc())
                       .paginate(page=page, per_page=20, error_out=False))
 
         display_rows = []
+
+        # Filters
+        filter_name = request.args.get('name', '').strip().lower()
+        filter_phone = request.args.get('phone', '').strip()
+        filter_email = request.args.get('email', '').strip().lower()
+        filter_match = request.args.get('match', '')
 
         for e in pagination.items:
             payload = e.raw_payload
@@ -4654,7 +4660,7 @@ def create_app():
             main_name = riders[0]["name"] if riders else "(no riders)"
             rider_count = len(riders)
 
-            # --- MATCHING LOGIC ---
+            # Matching logic
             matches = match_existing_client(
                 name=main_name,
                 phone=contact.get("phone"),
@@ -4664,9 +4670,23 @@ def create_app():
             has_match = len(matches) > 0
             multiple_matches = len(matches) > 1
 
-            # Update DB flag for ambiguous cases
+            # Update DB flag
             e.needs_client_match = multiple_matches
             db.session.commit()
+
+            # Apply filters
+            if filter_name and filter_name not in main_name.lower():
+                continue
+            if filter_phone and filter_phone not in (contact.get("phone") or ""):
+                continue
+            if filter_email and filter_email not in (contact.get("email") or "").lower():
+                continue
+            if filter_match == "yes" and not has_match:
+                continue
+            if filter_match == "no" and has_match:
+                continue
+            if filter_match == "multi" and not multiple_matches:
+                continue
 
             display_rows.append({
                 "id": e.id,
@@ -4696,7 +4716,7 @@ def create_app():
             return redirect(url_for('trailride_enquiries'))
 
         for eid in ids:
-            enquiry = IncomingSubmission.query.get(eid)
+            enquiry = TrailRideSubmission.query.get(eid)
             if not enquiry or enquiry.processed:
                 continue
 
@@ -4730,9 +4750,24 @@ def create_app():
     def fetch_trailride_submissions():
         api_key = os.getenv("JOTFORM_API_KEY")
         if not api_key:
-            return "Missing JOTFORM_API_KEY", 500
+            flash("Missing JOTFORM_API_KEY", "danger")
+            return redirect(url_for('trailride_enquiries'))
 
-        url = f"https://api.jotform.com/form/{TRAIL_FORM_ID}/submissions?apiKey={api_key}&limit=1000"
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
+
+        latest = (TrailRideSubmission.query
+                  .order_by(TrailRideSubmission.received_at.desc())
+                  .first())
+
+        latest_ts = latest.received_at if latest else cutoff_date
+
+        url = (
+            f"https://api.jotform.com/form/{TRAIL_FORM_ID}/submissions"
+            f"?apiKey={api_key}"
+            f"&limit=1000"
+            f"&filter[created_at][gt]={latest_ts.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+
         response = requests.get(url)
         data = response.json()
 
@@ -4746,13 +4781,19 @@ def create_app():
             if not submission_id:
                 continue
 
-            # Check if already stored
-            existing = IncomingSubmission.query.filter_by(submission_id=submission_id).first()
+            existing = TrailRideSubmission.query.filter_by(submission_id=submission_id).first()
             if existing:
                 skipped += 1
                 continue
 
-            incoming = IncomingSubmission(
+            created_at_str = sub.get("created_at")
+            if created_at_str:
+                created_at = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")
+                if created_at < cutoff_date:
+                    skipped += 1
+                    continue
+
+            incoming = TrailRideSubmission(
                 submission_id=submission_id,
                 form_id=TRAIL_FORM_ID,
                 raw_payload=sub,
@@ -4766,12 +4807,13 @@ def create_app():
 
         db.session.commit()
 
-        return f"Imported {imported} new submissions, skipped {skipped} existing."
+        flash(f"Imported {imported} new submissions, skipped {skipped}.", "success")
+        return redirect(url_for('trailride_enquiries'))
 
 
     @app.route('/trailride_enquiries/ignore/<int:id>')
     def trailride_enquiries_ignore(id):
-        enquiry = IncomingSubmission.query.get(id)
+        enquiry = TrailRideSubmission.query.get(id)
         if not enquiry:
             flash("Enquiry not found.", "danger")
             return redirect(url_for('trailride_enquiries'))
@@ -4785,7 +4827,7 @@ def create_app():
 
     @app.route('/trailride_enquiry/details/<int:id>')
     def trailride_enquiry_details(id):
-        enquiry = IncomingSubmission.query.get(id)
+        enquiry = TrailRideSubmission.query.get(id)
         if not enquiry:
             return jsonify({"error": "Not found"}), 404
 
@@ -4794,7 +4836,6 @@ def create_app():
             "received_at": enquiry.received_at.strftime("%d %b %Y %I:%M %p"),
             "payload": enquiry.raw_payload
         })
-
 
 
     @app.route('/send_invoice')
