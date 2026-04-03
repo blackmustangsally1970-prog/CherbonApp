@@ -687,82 +687,62 @@
 {% endif %}
 
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-    function select2PrefixMatcher(params, data) {
-        if (!params.term || !data.text) return data;
-        const term = params.term.trim().toLowerCase();
-        const text = (data.text || '').toLowerCase();
-        return text.indexOf(term) === 0 ? data : null;
-    }
+function select2PrefixMatcher(params, data) {
+    if (!params.term || !data.text) return data;
+    const term = params.term.trim().toLowerCase();
+    const text = (data.text || '').toLowerCase();
+    return text.indexOf(term) === 0 ? data : null;
+}
 
-    $(document).ready(function () {
+$(document).ready(function () {
 
-        // -------------------------------
-        // SELECT2 CLIENT DROPDOWN
-        // -------------------------------
-        const $clientSelect = $('#client-select');
-        const $wrapper = $('#client-select-wrapper');
+    // -------------------------------
+    // SELECT2 CLIENT DROPDOWN
+    // -------------------------------
+    const $clientSelect = $('#client-select');
+    const $wrapper = $('#client-select-wrapper');
 
-        $clientSelect.select2({
-            width: 'resolve',
-            allowClear: true,
-            minimumResultsForSearch: 0,
-            matcher: select2PrefixMatcher,
-            dropdownParent: $wrapper
-        });
+    $clientSelect.select2({
+        width: 'resolve',
+        allowClear: true,
+        minimumResultsForSearch: 0,
+        matcher: select2PrefixMatcher,
+        dropdownParent: $wrapper
+    });
 
-        // Instant-open behaviour
-        $clientSelect.one('mousedown', function (ev) {
-            ev.preventDefault();
-            setTimeout(function () {
-                $clientSelect.select2('open');
-            }, 12);
-        });
+    $clientSelect.one('mousedown', function (ev) {
+        ev.preventDefault();
+        setTimeout(() => $clientSelect.select2('open'), 12);
+    });
 
-        $clientSelect.on('select2:open', function () {
-            const sf = document.querySelector('.select2-container--open .select2-search__field');
-            if (sf) {
-                sf.focus();
-                try { sf.setSelectionRange(sf.value.length, sf.value.length); } catch(e) {}
-            }
-        });
-
-        $clientSelect.on('change', function () {
-            if ($(this).val()) {
-                this.form.submit();
-            }
-        });
-
-
-        // -------------------------------
-        // SCROLL TO TODAY / MOST RECENT
-        // -------------------------------
-function scrollToToday() {
-    const today = "{{ today_str }}";
-    const mostRecent = "{{ most_recent }}";
-
-    const rows = document.querySelectorAll('#lesson-container table tbody tr');
-    let targetRow = null;
-
-    // Try to find today's row
-    rows.forEach(row => {
-        const dateCell = row.querySelector('td').innerText.trim();
-        if (!dateCell) return;
-
-        const parts = dateCell.split("-");
-        if (parts.length !== 3) return;
-
-        const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
-
-        if (iso === today && !targetRow) {
-            targetRow = row;
+    $clientSelect.on('select2:open', function () {
+        const sf = document.querySelector('.select2-container--open .select2-search__field');
+        if (sf) {
+            sf.focus();
+            try { sf.setSelectionRange(sf.value.length, sf.value.length); } catch(e) {}
         }
     });
 
-    // If no today → fallback to most recent
-    if (!targetRow) {
+    $clientSelect.on('change', function () {
+        if ($(this).val()) this.form.submit();
+    });
+
+
+    // -------------------------------
+    // SCROLL TO CLOSEST DATE TO TODAY
+    // -------------------------------
+    function scrollToToday() {
+        const rows = document.querySelectorAll('#lesson-container table tbody tr');
+        if (!rows.length) return;
+
+        const today = new Date();
+        let closestRow = null;
+        let smallestDiff = Infinity;
+
         rows.forEach(row => {
             const dateCell = row.querySelector('td').innerText.trim();
             if (!dateCell) return;
@@ -771,78 +751,35 @@ function scrollToToday() {
             if (parts.length !== 3) return;
 
             const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            const rowDate = new Date(iso);
+            if (isNaN(rowDate)) return;
 
-            if (iso === mostRecent && !targetRow) {
-                targetRow = row;
+            const diff = Math.abs(rowDate - today);
+            if (diff < smallestDiff) {
+                smallestDiff = diff;
+                closestRow = row;
             }
         });
-    }
 
-    if (targetRow) {
-        // Scroll smoothly to the row
-        targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
-
-        // Flash highlight
-        targetRow.classList.add("flash-today");
-        setTimeout(() => {
-            targetRow.classList.remove("flash-today");
-        }, 5000);
-    }
-}
-
-        // Wire the button
-        $('#scroll-to-today').on('click', function () {
-            scrollToToday();
-        });
-
-
-        // -------------------------------
-        // INFINITE SCROLL
-        // -------------------------------
-        let currentPage = {{ page }};
-        const totalPages = {{ (total // per_page) + (1 if total % per_page else 0) }};
-        let isLoading = false;
-
-        function loadNextPage() {
-            if (isLoading || currentPage >= totalPages) return;
-            isLoading = true;
-            $('#loading-text').show();
-
-            const params = new URLSearchParams({
-                client: '{{ client_filter }}',
-                start_date: '{{ start_date }}',
-                end_date: '{{ end_date }}',
-                page: currentPage + 1
-            });
-
-            fetch('/client_view?' + params.toString())
-                .then(res => res.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-
-                    // Get new rows
-                    const newRows = doc.querySelectorAll('#lesson-container table tbody tr');
-
-                    // Append to existing table
-                    const tbody = document.querySelector('#lesson-container table tbody');
-                    newRows.forEach(row => tbody.appendChild(row));
-
-                    currentPage += 1;
-                    isLoading = false;
-                    $('#loading-text').hide();
-                });
+        if (closestRow) {
+            closestRow.scrollIntoView({ behavior: "smooth", block: "center" });
+            closestRow.classList.add("flash-today");
+            setTimeout(() => closestRow.classList.remove("flash-today"), 5000);
         }
+    }
 
-        // Scroll listener
-        window.addEventListener('scroll', () => {
-            const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
-            if (nearBottom) loadNextPage();
-        });
-
+    // 🔥 WIRE THE BUTTON
+    $('#scroll-to-today').on('click', function () {
+        scrollToToday();
     });
+
+}); // END document.ready
 </script>
 
+
+<!-- ========================= -->
+<!-- LESSON FIELD LIVE UPDATE -->
+<!-- ========================= -->
 <script>
 $(document).on('input', '.lesson-edit', function () {
     const lessonId = $(this).data('id');
@@ -867,6 +804,10 @@ $(document).on('input', '.lesson-edit', function () {
 });
 </script>
 
+
+<!-- ========================= -->
+<!-- CLIENT FIELD LIVE UPDATE -->
+<!-- ========================= -->
 <script>
 $(document).on('change', '.client-edit', function () {
     const clientId = $(this).data('id');
@@ -892,6 +833,9 @@ $(document).on('change', '.client-edit', function () {
 </script>
 
 
+<!-- ========================= -->
+<!-- BALANCE RECALCULATION -->
+<!-- ========================= -->
 <script>
 function recalculateBalance(lessonId) {
     const paymentField = document.querySelector(`input[data-field="payment"][data-id="${lessonId}"]`);
@@ -906,20 +850,10 @@ function recalculateBalance(lessonId) {
     const carry   = parseFloat(carryField?.value || 0) || 0;
     const att     = attField?.value || "";
 
-    // -------------------------
-    // ATTENDANCE RULES
-    // Y = charge full
-    // C = no charge
-    // N = charge full
-    // blank = no charge
-    // -------------------------
     if (att === "C" || att === "") {
         price = 0;
     }
 
-    // -------------------------
-    // BALANCE FORMULA
-    // -------------------------
     const balance = carry + payment - price + adjust;
 
     const display = document.getElementById(`balance_display_${lessonId}`);
@@ -928,7 +862,6 @@ function recalculateBalance(lessonId) {
     }
 }
 </script>
-
 
 </body>
 </html>
