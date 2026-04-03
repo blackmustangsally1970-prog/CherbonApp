@@ -4634,112 +4634,105 @@ def create_app():
         return redirect(url_for('debug_page'))
 
 
-        @app.route('/trailride_enquiries', methods=['GET'])
-        def trailride_enquiries():
-            page = request.args.get('page', 1, type=int)
+    @app.route('/trailride_enquiries', methods=['GET'])
+    def trailride_enquiries():
+        page = request.args.get('page', 1, type=int)
 
-            pagination = (TrailRideSubmission.query
-                          .filter_by(processed=False, ignored=False)
-                          .order_by(TrailRideSubmission.received_at.desc())
-                          .paginate(page=page, per_page=20, error_out=False))
+        pagination = (TrailRideSubmission.query
+                      .filter_by(processed=False, ignored=False)
+                      .order_by(TrailRideSubmission.received_at.desc())
+                      .paginate(page=page, per_page=20, error_out=False))
 
-            display_rows = []
+        display_rows = []
 
-            # Filters
-            filter_name = request.args.get('name', '').strip().lower()
-            filter_phone = request.args.get('phone', '').strip()
-            filter_email = request.args.get('email', '').strip().lower()
-            filter_match = request.args.get('match', '')
+        # Filters
+        filter_name = request.args.get('name', '').strip().lower()
+        filter_phone = request.args.get('phone', '').strip()
+        filter_email = request.args.get('email', '').strip().lower()
+        filter_match = request.args.get('match', '')
 
-            # Track whether we need a single commit at the end
-            needs_commit = False
+        needs_commit = False
 
-            for e in pagination.items:
-                payload = e.raw_payload
-                riders = extract_riders_from_submission(payload)
-                contact = get_main_contact_fields(payload)
+        for e in pagination.items:
+            payload = e.raw_payload
+            riders = extract_riders_from_submission(payload)
+            contact = get_main_contact_fields(payload)
 
-                # ---------------------------------------------------------
-                # NORMALISE PHONE + EMAIL (JotForm returns weird formats)
-                # ---------------------------------------------------------
-                phone = contact.get("phone")
-                email = contact.get("email")
+            # NORMALISE PHONE + EMAIL
+            phone = contact.get("phone")
+            email = contact.get("email")
 
-                if isinstance(phone, dict):
-                    phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
-                if isinstance(email, dict):
-                    email = email.get("value") or email.get("text") or email.get("full") or ""
+            if isinstance(phone, dict):
+                phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
+            if isinstance(email, dict):
+                email = email.get("value") or email.get("text") or email.get("full") or ""
 
-                if phone:
-                    phone = str(phone).replace("-", "").replace(" ", "").strip()
+            if phone:
+                phone = str(phone).replace("-", "").replace(" ", "").strip()
 
-                phone = phone or ""
-                email = email or ""
+            phone = phone or ""
+            email = email or ""
 
-                contact["phone"] = phone
-                contact["email"] = email
+            contact["phone"] = phone
+            contact["email"] = email
 
-                # ---------------------------------------------------------
-                # SAFE MAIN NAME EXTRACTION
-                # ---------------------------------------------------------
-                if riders and isinstance(riders, list) and len(riders) > 0 and riders[0].get("name"):
-                    main_name = riders[0]["name"]
-                else:
-                    main_name = "(no riders)"
+            # SAFE MAIN NAME EXTRACTION
+            if riders and isinstance(riders, list) and len(riders) > 0 and riders[0].get("name"):
+                main_name = riders[0]["name"]
+            else:
+                main_name = "(no riders)"
 
-                rider_count = len(riders)
+            rider_count = len(riders)
 
-                # Matching logic
-                matches = match_existing_client(
-                    name=main_name,
-                    phone=phone,
-                    email=email
-                )
-
-                has_match = len(matches) > 0
-                multiple_matches = len(matches) > 1
-
-                # Update DB flag (commit later)
-                if e.needs_client_match != multiple_matches:
-                    e.needs_client_match = multiple_matches
-                    needs_commit = True
-
-                # Apply filters
-                if filter_name and filter_name not in main_name.lower():
-                    continue
-                if filter_phone and filter_phone not in phone:
-                    continue
-                if filter_email and filter_email not in email.lower():
-                    continue
-                if filter_match == "yes" and not has_match:
-                    continue
-                if filter_match == "no" and has_match:
-                    continue
-                if filter_match == "multi" and not multiple_matches:
-                    continue
-
-                display_rows.append({
-                    "id": e.id,
-                    "main_name": main_name,
-                    "phone": phone,
-                    "email": email,
-                    "rider_count": rider_count,
-                    "created_at": e.received_at.strftime("%d %b %Y %I:%M %p"),
-                    "riders": riders,
-                    "has_match": has_match,
-                    "multiple_matches": multiple_matches,
-                    "match_count": len(matches)
-                })
-
-            # Commit once if needed
-            if needs_commit:
-                db.session.commit()
-
-            return render_template(
-                'trailride_enquiries.html',
-                enquiries=display_rows,
-                pagination=pagination
+            # MATCHING LOGIC
+            matches = match_existing_client(
+                name=main_name,
+                phone=phone,
+                email=email
             )
+
+            has_match = len(matches) > 0
+            multiple_matches = len(matches) > 1
+
+            if e.needs_client_match != multiple_matches:
+                e.needs_client_match = multiple_matches
+                needs_commit = True
+
+            # FILTERS
+            if filter_name and filter_name not in main_name.lower():
+                continue
+            if filter_phone and filter_phone not in phone:
+                continue
+            if filter_email and filter_email not in email.lower():
+                continue
+            if filter_match == "yes" and not has_match:
+                continue
+            if filter_match == "no" and has_match:
+                continue
+            if filter_match == "multi" and not multiple_matches:
+                continue
+
+            display_rows.append({
+                "id": e.id,
+                "main_name": main_name,
+                "phone": phone,
+                "email": email,
+                "rider_count": rider_count,
+                "created_at": e.received_at.strftime("%d %b %Y %I:%M %p"),
+                "riders": riders,
+                "has_match": has_match,
+                "multiple_matches": multiple_matches,
+                "match_count": len(matches)
+            })
+
+        if needs_commit:
+            db.session.commit()
+
+        return render_template(
+            'trailride_enquiries.html',
+            enquiries=display_rows,
+            pagination=pagination
+        )
 
 
     @app.route('/trailride_enquiries/process', methods=['POST'])
