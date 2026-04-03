@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8">
   <title>Trail Ride Enquiries</title>
+
+  <!-- Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+  <!-- Your page styles -->
   <style>
     body { font-family: sans-serif; padding: 20px; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
@@ -10,14 +15,20 @@
     th { background: #f0f0f0; }
     .riders-details { font-size: 0.9em; color: #444; }
   </style>
+
+  <!-- jQuery (required for Select2) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Select2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
+
 <body>
 
 <div style="margin-bottom:12px;" class="no-print" id="top-controls">
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
     <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
 </div>
-
 
 <h1>Trail Ride Enquiries</h1>
 
@@ -28,8 +39,6 @@
      🔄 Fetch Latest JotForm Submissions
   </a>
 </p>
-
-
 
 <form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
 {% for e in enquiries %}
@@ -78,41 +87,59 @@
                 Booking Details
             </div>
 
-            <label>Date:</label>
-            <input type="date"
-                   name="booking_date_{{ e.id }}"
-                   value="{{ current_date }}"
-                   style="margin-bottom:8px; display:block;">
+            <!-- ONE-LINE LAYOUT -->
+            <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
 
-            <label>Time:</label>
-            <select name="booking_time_{{ e.id }}"
-                    style="margin-bottom:8px; display:block;">
-                {% for t in times %}
-                    <option value="{{ t.timerange }}">{{ t.timerange }}</option>
-                {% endfor %}
-            </select>
+                <div>
+                    <label>Date:</label><br>
+                    <input type="date"
+                           name="booking_date_{{ e.id }}"
+                           value="{{ current_date }}"
+                           style="padding:4px; width:140px;">
+                </div>
 
-            <label>Lesson Type:</label>
-            <select name="lesson_type_{{ e.id }}"
-                    style="margin-bottom:8px; display:block;">
-                <option value="Trail Ride" selected>Trail Ride</option>
-                <option value="Private Trail Ride">Private Trail Ride</option>
-                <option value="Group Trail Ride">Group Trail Ride</option>
-            </select>
+                <div>
+                    <label>Time:</label><br>
+                    <select name="booking_time_{{ e.id }}"
+                            id="booking_time_{{ e.id }}"
+                            class="form-select time-field searchable-dropdown"
+                            style="width:140px;">
+                        <option value=""></option>
+                        {% for t in times %}
+                            <option value="{{ t.timerange }}">{{ t.timerange }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <label>Price (per rider):</label>
-            <input type="number"
-                   step="0.01"
-                   name="price_per_rider_{{ e.id }}"
-                   value="120.00"
-                   style="margin-bottom:8px; display:block;">
+                <div>
+                    <label>Lesson Type:</label><br>
+                    <select name="lesson_type_{{ e.id }}"
+                            style="padding:4px; width:150px;">
+                        <option value="Trail Ride" selected>Trail Ride</option>
+                        <option value="Private Trail Ride">Private Trail Ride</option>
+                        <option value="Group Trail Ride">Group Trail Ride</option>
+                    </select>
+                </div>
 
-            <label>Payment (per rider):</label>
-            <input type="number"
-                   step="0.01"
-                   name="payment_per_rider_{{ e.id }}"
-                   value="0.00"
-                   style="margin-bottom:8px; display:block;">
+                <div>
+                    <label>Price (per rider):</label><br>
+                    <input type="number"
+                           step="1.00"
+                           name="price_per_rider_{{ e.id }}"
+                           value="0.00"
+                           style="padding:4px; width:90px;">
+                </div>
+
+                <div>
+                    <label>Payment (per rider):</label><br>
+                    <input type="number"
+                           step="1.00"
+                           name="payment_per_rider_{{ e.id }}"
+                           value="0.00"
+                           style="padding:4px; width:90px;">
+                </div>
+
+            </div>
         </div>
 
         <!-- RIDER LIST -->
@@ -194,8 +221,7 @@
 </div>
 {% endfor %}
 
-
-<!-- PAGINATION (if enabled) -->
+<!-- PAGINATION -->
 {% if pagination %}
 <div style="margin-top:20px; font-size:18px;">
   {% if pagination.has_prev %}
@@ -212,43 +238,15 @@
 </div>
 {% endif %}
 
-<!-- MODAL -->
-<div id="detailsModal" style="
-    display:none;
-    position:fixed;
-    top:0; left:0; right:0; bottom:0;
-    background:rgba(0,0,0,0.6);
-    padding:40px;
-">
-  <div style="
-      background:white;
-      padding:20px;
-      max-width:800px;
-      margin:0 auto;
-      border-radius:8px;
-      overflow-y:auto;
-      max-height:90vh;
-  ">
-    <h2>Submission Details</h2>
-    <pre id="detailsContent" style="white-space:pre-wrap;"></pre>
-    <button onclick="closeDetailsModal()">Close</button>
-  </div>
-</div>
-
 <script>
-function openDetailsModal(id) {
-    fetch(`/trailride_enquiry/details/${id}`)
-        .then(r => r.json())
-        .then(data => {
-            const pretty = JSON.stringify(data.payload, null, 2);
-            document.getElementById("detailsContent").textContent = pretty;
-            document.getElementById("detailsModal").style.display = "block";
-        });
-}
-
-function closeDetailsModal() {
-    document.getElementById("detailsModal").style.display = "none";
-}
+$(document).ready(function() {
+    $('.searchable-dropdown.time-field').select2({
+        tags: true,
+        placeholder: "Select or type a time",
+        allowClear: true,
+        width: '100%'
+    });
+});
 </script>
 
 </body>

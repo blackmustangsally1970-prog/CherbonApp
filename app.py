@@ -4731,7 +4731,8 @@ def create_app():
         return render_template(
             'trailride_enquiries.html',
             enquiries=display_rows,
-            pagination=pagination
+            pagination=pagination,
+            times=Times.query.order_by(Times.timerange).all()
         )
 
 
@@ -4799,6 +4800,14 @@ def create_app():
         lesson_type = request.form.get(f"lesson_type_{enquiry_id}") or "Trail Ride"
         price_per_rider = request.form.get(f"price_per_rider_{enquiry_id}") or "0"
         payment_per_rider = request.form.get(f"payment_per_rider_{enquiry_id}") or "0"
+
+        # ---------------------------------------------------------
+        # VALIDATE DATE + TIME (STAFF-PROOF)
+        # ---------------------------------------------------------
+        if not booking_date or not booking_time:
+            flash("Please select BOTH a date and a time before processing.", "danger")
+            return redirect(url_for('trailride_enquiries'))
+
 
         # ---------------------------------------------------------
         # CREATE LESSON ROWS (THIS IS THE REAL BOOKING)
@@ -4918,19 +4927,6 @@ def create_app():
 
         flash("Enquiry ignored.", "info")
         return redirect(url_for('trailride_enquiries'))
-
-
-    @app.route('/trailride_enquiry/details/<int:id>')
-    def trailride_enquiry_details(id):
-        enquiry = TrailRideSubmission.query.get(id)
-        if not enquiry:
-            return jsonify({"error": "Not found"}), 404
-
-        return jsonify({
-            "id": enquiry.id,
-            "received_at": enquiry.received_at.strftime("%d %b %Y %I:%M %p"),
-            "payload": enquiry.raw_payload
-        })
 
 
     @app.route('/send_invoice')
