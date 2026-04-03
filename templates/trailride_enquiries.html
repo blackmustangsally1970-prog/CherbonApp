@@ -13,7 +13,23 @@
 </head>
 <body>
 
+<div style="margin-bottom:12px;" class="no-print" id="top-controls">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
+</div>
+
+
 <h1>Trail Ride Enquiries</h1>
+
+<p>
+  <a href="{{ url_for('fetch_trailride_submissions') }}"
+     class="menu-btn"
+     style="display:inline-block; padding:10px 15px; background:#007bff; color:white; border-radius:6px; text-decoration:none;">
+     🔄 Fetch Latest JotForm Submissions
+  </a>
+</p>
+
+
 
 <form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
   <table>
