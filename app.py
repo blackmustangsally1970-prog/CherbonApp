@@ -4662,32 +4662,27 @@ def create_app():
             phone = contact.get("phone")
             email = contact.get("email")
 
-            # If JotForm returns dicts instead of strings
             if isinstance(phone, dict):
                 phone = phone.get("full") or phone.get("value") or phone.get("text") or ""
             if isinstance(email, dict):
                 email = email.get("value") or email.get("text") or email.get("full") or ""
 
-            # Strip hyphens/spaces from phone (JF formats like 0000-000000)
             if phone:
                 phone = str(phone).replace("-", "").replace(" ", "").strip()
 
-            # Ensure final values are strings
             phone = phone or ""
             email = email or ""
 
-            # Save back into contact dict
             contact["phone"] = phone
             contact["email"] = email
 
             # ---------------------------------------------------------
             # SAFE MAIN NAME EXTRACTION
             # ---------------------------------------------------------
-            if riders and riders[0].get("name"):
+            if riders and isinstance(riders, list) and len(riders) > 0 and riders[0].get("name"):
                 main_name = riders[0]["name"]
             else:
                 main_name = "(no riders)"
-
 
             rider_count = len(riders)
 
@@ -4737,6 +4732,7 @@ def create_app():
             enquiries=display_rows,
             pagination=pagination
         )
+
 
     @app.route('/trailride_enquiries/process', methods=['POST'])
     def trailride_enquiries_process():
