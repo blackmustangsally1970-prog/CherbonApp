@@ -4689,6 +4689,7 @@ def create_app():
             else:
                 main_name = "(no riders)"
 
+
             rider_count = len(riders)
 
             # Matching logic
