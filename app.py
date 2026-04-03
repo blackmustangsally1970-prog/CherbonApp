@@ -4732,7 +4732,7 @@ def create_app():
             'trailride_enquiries.html',
             enquiries=display_rows,
             pagination=pagination,
-            times=Times.query.order_by(Times.timerange).all()
+            times = Time.query.order_by(Time.timerange).all()
         )
 
 
