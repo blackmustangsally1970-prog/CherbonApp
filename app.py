@@ -4851,7 +4851,6 @@ def create_app():
                 attendance="",
                 balance=float(price_per_rider) - float(payment_per_rider),
                 lesson_type=lesson_type,
-                group_priv="Trail Ride",
                 group_priv=group_priv,   # ✔ NOW CORRECT
 
                 block_key="",
