@@ -4763,6 +4763,17 @@ def create_app():
             flash("Enquiry not found or already processed.", "warning")
             return redirect(url_for('trailride_enquiries'))
 
+        # ---------------------------------------------------------
+        # IGNORE BRANCH — permanently hide this enquiry
+        # ---------------------------------------------------------
+        if request.form.get(f"ignore_{enquiry_id}") == "1":
+            enquiry.ignored = True
+            enquiry.processed = True
+            enquiry.processed_at = datetime.utcnow()
+            db.session.commit()
+            flash("Enquiry ignored.", "info")
+            return redirect(url_for('trailride_enquiries'))
+
         payload = enquiry.raw_payload
         riders = extract_riders_from_submission(payload)
         contact = get_main_contact_fields(payload)

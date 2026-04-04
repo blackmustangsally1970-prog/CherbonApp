@@ -40,7 +40,11 @@
   </a>
 </p>
 
-<form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
+<form method="POST"
+      action="{{ url_for('trailride_enquiries_process') }}"
+      class="trailride-process-form">
+
+
 {% for e in enquiries %}
 <div class="tr-card" style="
     border:1px solid #ccc;
@@ -287,6 +291,28 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("form.trailride-process-form").forEach(form => {
+        form.addEventListener("submit", function (e) {
+
+            // Find the ignore checkbox inside THIS form
+            const ignoreBox = form.querySelector("input[type='checkbox'][name^='ignore_']");
+
+            if (ignoreBox && ignoreBox.checked) {
+                const ok = confirm("Are you sure you want to ignore this enquiry? This cannot be undone.");
+
+                if (!ok) {
+                    e.preventDefault(); // Stop form submission
+                    return false;
+                }
+            }
+        });
+    });
+});
+</script>
+
 
 </body>
 </html>
