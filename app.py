@@ -13,7 +13,7 @@ from models import (
     BlockoutDate, BlockoutRange, IncomingSubmission,
     LessonInvite, TeacherSlot, DisclaimerState,
     LessonTeacherTag, WeeklyEvent, CourseReference,
-    TeacherBlockAssignment, Users, TrailRideSubmission
+    Users, TrailRideSubmission
 )
 
 # Core libs

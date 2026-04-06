@@ -1,0 +1,339 @@
+[main 583903c] TOOLTIP1
+ 3 files changed, 147 insertions(+), 190 deletions(-)
+PS C:\github\cherbonapp> git push
+Enumerating objects: 11, done.
+Counting objects: 100% (11/11), done.
+Delta compression using up to 18 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 2.33 KiB | 595.00 KiB/s, done.
+Total 6 (delta 5), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (5/5), completed with 5 local objects.
+To https://github.com/blackmustangsally1970-prog/CherbonApp.git
+   7a9ee5f..583903c  main -> main
+PS C:\github\cherbonapp> cd c:\users\jands\.ssh
+PS C:\users\jands\.ssh> ssh -i steve-master-key.pem ec2-user@3.104.221.38 -p 22022
+
+A newer release of "Amazon Linux" is available.
+  Version 2023.10.20260216:
+  Version 2023.10.20260302:
+  Version 2023.10.20260325:
+  Version 2023.10.20260330:
+Run "/usr/bin/dnf check-release-update" for full release and version update info
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+Last login: Sat Apr  4 07:06:34 2026 from 150.228.141.95
+[ec2-user@ip-172-31-28-43 ~]$ cd CherbonApp
+[ec2-user@ip-172-31-28-43 CherbonApp]$ git pull && sudo systemctl restart cherbonapp
+remote: Enumerating objects: 11, done.
+remote: Counting objects: 100% (11/11), done.
+remote: Compressing objects: 100% (1/1), done.
+remote: Total 6 (delta 5), reused 6 (delta 5), pack-reused 0 (from 0)
+Unpacking objects: 100% (6/6), 2.31 KiB | 262.00 KiB/s, done.
+From https://github.com/blackmustangsally1970-prog/CherbonApp
+   7a9ee5f..583903c  main       -> origin/main
+Successfully rebased and updated refs/heads/main.
+[ec2-user@ip-172-31-28-43 CherbonApp]$ sudo systemctl status gunicorn
+Unit gunicorn.service could not be found.
+[ec2-user@ip-172-31-28-43 CherbonApp]$ sudo systemctl list-units --type=service | grep -i cherbon
+● cherbon.service                                       loaded failed failed  Cherbon Gunicorn Service
+  cherbonapp.service                                    loaded active running Gunicorn for CherbonApp
+[ec2-user@ip-172-31-28-43 CherbonApp]$ grep -R "cherbon" /etc/nginx -n
+/etc/nginx/conf.d/cherbonapp.conf:4:    server_name cherbonapp.click www.cherbonapp.click;
+/etc/nginx/conf.d/cherbonapp.conf:12:    server_name cherbonapp.click www.cherbonapp.click;
+/etc/nginx/conf.d/cherbonapp.conf:14:    ssl_certificate /etc/letsencrypt/live/cherbonapp.click/fullchain.pem;
+/etc/nginx/conf.d/cherbonapp.conf:15:    ssl_certificate_key /etc/letsencrypt/live/cherbonapp.click/privkey.pem;
+/etc/nginx/conf.d/cherbonapp.conf.save:4:    server_name cherbonapp.click www.cherbonapp.click;
+/etc/nginx/conf.d/cherbonapp.conf.save:12:    server_name cherbonapp.click www.cherbonapp.click;
+/etc/nginx/conf.d/cherbonapp.conf.save:14:    ssl_certificate /etc/letsencrypt/live/cherbonapp.click/fullchain.pem;
+/etc/nginx/conf.d/cherbonapp.conf.save:15:    ssl_certificate_key /etc/letsencrypt/live/cherbonapp.click/privkey.pem;
+[ec2-user@ip-172-31-28-43 CherbonApp]$ sudo cat /etc/nginx/conf.d/cherbonapp.conf
+# Redirect all HTTP → HTTPS
+server {
+    listen 80;
+    server_name cherbonapp.click www.cherbonapp.click;
+
+    return 301 https://$host$request_uri;
+}
+
+# Real HTTPS server
+server {
+    listen 443 ssl;
+    server_name cherbonapp.click www.cherbonapp.click;
+
+    ssl_certificate /etc/letsencrypt/live/cherbonapp.click/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/cherbonapp.click/privkey.pem;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        include /etc/nginx/proxy_params;
+    }
+}
+[ec2-user@ip-172-31-28-43 CherbonApp]$ sudo journalctl -u cherbonapp.service --no-pager -n 50
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]: [2026-04-06 00:26:56 +0000] [514518] [ERROR] Worker (pid:514521) exited with code 3
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]: Traceback (most recent call last):
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 208, in run
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     self.sleep()
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 359, in sleep
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     ready = select.select([self.PIPE[0]], [], [], 1.0)
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 241, in handle_chld
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     self.reap_workers()
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 529, in reap_workers
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     raise HaltServer(reason, self.WORKER_BOOT_ERROR)
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]: gunicorn.errors.HaltServer: <HaltServer 'Worker failed to boot.' 3>
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]: During handling of the above exception, another exception occurred:
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]: Traceback (most recent call last):
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/bin/gunicorn", line 6, in <module>
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     sys.exit(run())
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 66, in run
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]", prog=prog).run()
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 235, in run
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     super().run()
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 71, in run
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     Arbiter(self).run()
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 228, in run
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     self.halt(reason=inst.reason, exit_status=inst.exit_status)
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 341, in halt
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     self.stop()
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 395, in stop
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     time.sleep(0.1)
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 241, in handle_chld
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     self.reap_workers()
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 529, in reap_workers
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]:     raise HaltServer(reason, self.WORKER_BOOT_ERROR)
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514518]: gunicorn.errors.HaltServer: <HaltServer 'Worker failed to boot.' 3>
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514525]: [2026-04-06 00:26:56 +0000] [514525] [INFO] Worker exiting (pid: 514525)
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Main process exited, code=exited, status=1/FAILURE
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Failed with result 'exit-code'.
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Consumed 10.840s CPU time.
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Scheduled restart job, restart counter is at 34.
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: Stopped cherbonapp.service - Gunicorn for CherbonApp.
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Consumed 10.840s CPU time.
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: Started cherbonapp.service - Gunicorn for CherbonApp.
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514526]: [2026-04-06 00:26:56 +0000] [514526] [INFO] Starting gunicorn 23.0.0
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514526]: [2026-04-06 00:26:56 +0000] [514526] [INFO] Listening at: http://0.0.0.0:5000 (514526)
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514526]: [2026-04-06 00:26:56 +0000] [514526] [INFO] Using worker: gevent
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514527]: [2026-04-06 00:26:56 +0000] [514527] [INFO] Booting worker with pid: 514527
+Apr 06 00:26:56 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514528]: [2026-04-06 00:26:56 +0000] [514528] [INFO] Booting worker with pid: 514528
+Apr 06 00:26:57 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514529]: [2026-04-06 00:26:57 +0000] [514529] [INFO] Booting worker with pid: 514529
+Apr 06 00:26:57 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514530]: [2026-04-06 00:26:57 +0000] [514530] [INFO] Booting worker with pid: 514530
+Apr 06 00:26:57 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514531]: [2026-04-06 00:26:57 +0000] [514531] [INFO] Booting worker with pid: 514531
+Apr 06 00:26:57 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514532]: [2026-04-06 00:26:57 +0000] [514532] [INFO] Booting worker with pid: 514532
+Apr 06 00:26:57 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514533]: [2026-04-06 00:26:57 +0000] [514533] [INFO] Booting worker with pid: 514533
+[ec2-user@ip-172-31-28-43 CherbonApp]$
+[ec2-user@ip-172-31-28-43 CherbonApp]$ sudo journalctl -u cherbonapp.service --no-pager -n 200
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     worker.init_process()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     super().init_process()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     self.load_wsgi()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     self.wsgi = self.app.wsgi()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     self.callable = self.load()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     return self.load_wsgiapp()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     return util.import_app(self.app_uri)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     mod = importlib.import_module(module)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     return _bootstrap._gcd_import(name[level:], package, level)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:   File "/home/ec2-user/CherbonApp/app.py", line 10, in <module>
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]:     from models import (
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]: ImportError: cannot import name 'TeacherBlockAssignment' from 'models' (/home/ec2-user/CherbonApp/models.py)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514654]: [2026-04-06 00:27:54 +0000] [514654] [INFO] Worker exiting (pid: 514654)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]: [2026-04-06 00:27:54 +0000] [514656] [ERROR] Exception in worker process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]: Traceback (most recent call last):
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     worker.init_process()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     super().init_process()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     self.load_wsgi()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     self.wsgi = self.app.wsgi()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     self.callable = self.load()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     return self.load_wsgiapp()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     return util.import_app(self.app_uri)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     mod = importlib.import_module(module)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     return _bootstrap._gcd_import(name[level:], package, level)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:   File "/home/ec2-user/CherbonApp/app.py", line 10, in <module>
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]:     from models import (
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]: ImportError: cannot import name 'TeacherBlockAssignment' from 'models' (/home/ec2-user/CherbonApp/models.py)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514656]: [2026-04-06 00:27:54 +0000] [514656] [INFO] Worker exiting (pid: 514656)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]: [2026-04-06 00:27:54 +0000] [514658] [ERROR] Exception in worker process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]: Traceback (most recent call last):
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     worker.init_process()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     super().init_process()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     self.load_wsgi()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     self.wsgi = self.app.wsgi()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     self.callable = self.load()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     return self.load_wsgiapp()
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     return util.import_app(self.app_uri)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     mod = importlib.import_module(module)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     return _bootstrap._gcd_import(name[level:], package, level)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:   File "/home/ec2-user/CherbonApp/app.py", line 10, in <module>
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]:     from models import (
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]: ImportError: cannot import name 'TeacherBlockAssignment' from 'models' (/home/ec2-user/CherbonApp/models.py)
+Apr 06 00:27:54 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: [2026-04-06 00:27:54 +0000] [514651] [ERROR] Worker (pid:514653) exited with code 3
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: [2026-04-06 00:27:55 +0000] [514651] [ERROR] Worker (pid:514656) was sent SIGTERM!
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514658]: [2026-04-06 00:27:55 +0000] [514658] [INFO] Worker exiting (pid: 514658)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]: [2026-04-06 00:27:54 +0000] [514655] [ERROR] Exception in worker process
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]: Traceback (most recent call last):
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     worker.init_process()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     super().init_process()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     self.load_wsgi()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     self.wsgi = self.app.wsgi()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     self.callable = self.load()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     return self.load_wsgiapp()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     return util.import_app(self.app_uri)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     mod = importlib.import_module(module)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     return _bootstrap._gcd_import(name[level:], package, level)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:   File "/home/ec2-user/CherbonApp/app.py", line 10, in <module>
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]:     from models import (
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]: ImportError: cannot import name 'TeacherBlockAssignment' from 'models' (/home/ec2-user/CherbonApp/models.py)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514655]: [2026-04-06 00:27:55 +0000] [514655] [INFO] Worker exiting (pid: 514655)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: [2026-04-06 00:27:55 +0000] [514651] [ERROR] Worker (pid:514654) was sent SIGTERM!
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: [2026-04-06 00:27:55 +0000] [514651] [ERROR] Worker (pid:514652) was sent SIGTERM!
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]: [2026-04-06 00:27:55 +0000] [514657] [ERROR] Exception in worker process
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]: Traceback (most recent call last):
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     worker.init_process()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     super().init_process()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     self.load_wsgi()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     self.wsgi = self.app.wsgi()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     self.callable = self.load()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     return self.load_wsgiapp()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     return util.import_app(self.app_uri)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     mod = importlib.import_module(module)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     return _bootstrap._gcd_import(name[level:], package, level)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:   File "/home/ec2-user/CherbonApp/app.py", line 10, in <module>
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]:     from models import (
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]: ImportError: cannot import name 'TeacherBlockAssignment' from 'models' (/home/ec2-user/CherbonApp/models.py)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514657]: [2026-04-06 00:27:55 +0000] [514657] [INFO] Worker exiting (pid: 514657)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: [2026-04-06 00:27:55 +0000] [514651] [ERROR] Worker (pid:514658) exited with code 3
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: Traceback (most recent call last):
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 208, in run
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     self.sleep()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 359, in sleep
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     ready = select.select([self.PIPE[0]], [], [], 1.0)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 241, in handle_chld
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     self.reap_workers()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 529, in reap_workers
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     raise HaltServer(reason, self.WORKER_BOOT_ERROR)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: gunicorn.errors.HaltServer: <HaltServer 'Worker failed to boot.' 3>
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: During handling of the above exception, another exception occurred:
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: Traceback (most recent call last):
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/bin/gunicorn", line 6, in <module>
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     sys.exit(run())
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 66, in run
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]", prog=prog).run()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 235, in run
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     super().run()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/app/base.py", line 71, in run
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     Arbiter(self).run()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 228, in run
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     self.halt(reason=inst.reason, exit_status=inst.exit_status)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 341, in halt
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     self.stop()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 395, in stop
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     time.sleep(0.1)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 241, in handle_chld
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     self.reap_workers()
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 529, in reap_workers
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]:     raise HaltServer(reason, self.WORKER_BOOT_ERROR)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514651]: gunicorn.errors.HaltServer: <HaltServer 'Worker failed to boot.' 3>
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Main process exited, code=exited, status=1/FAILURE
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Failed with result 'exit-code'.
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Consumed 10.826s CPU time.
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Scheduled restart job, restart counter is at 44.
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: Stopped cherbonapp.service - Gunicorn for CherbonApp.
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: cherbonapp.service: Consumed 10.826s CPU time.
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal systemd[1]: Started cherbonapp.service - Gunicorn for CherbonApp.
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514659]: [2026-04-06 00:27:55 +0000] [514659] [INFO] Starting gunicorn 23.0.0
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514659]: [2026-04-06 00:27:55 +0000] [514659] [INFO] Listening at: http://0.0.0.0:5000 (514659)
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514659]: [2026-04-06 00:27:55 +0000] [514659] [INFO] Using worker: gevent
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514660]: [2026-04-06 00:27:55 +0000] [514660] [INFO] Booting worker with pid: 514660
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514661]: [2026-04-06 00:27:55 +0000] [514661] [INFO] Booting worker with pid: 514661
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514662]: [2026-04-06 00:27:55 +0000] [514662] [INFO] Booting worker with pid: 514662
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514663]: [2026-04-06 00:27:55 +0000] [514663] [INFO] Booting worker with pid: 514663
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514664]: [2026-04-06 00:27:55 +0000] [514664] [INFO] Booting worker with pid: 514664
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514665]: [2026-04-06 00:27:55 +0000] [514665] [INFO] Booting worker with pid: 514665
+Apr 06 00:27:55 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[514666]: [2026-04-06 00:27:55 +0000] [514666] [INFO] Booting worker with pid: 514666
+[ec2-user@ip-172-31-28-43 CherbonApp]$
