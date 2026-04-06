@@ -1,0 +1,384 @@
+    @app.route("/new_lesson", methods=["POST"])
+    def new_lesson():
+        import re
+        from datetime import datetime, timedelta, date
+
+        lesson_date_str = request.form.get("date")
+        lesson_id       = request.form.get("lesson_id")
+        start_raw       = request.form.get("start", "")
+        end_raw         = request.form.get("end", "")
+        price_pl        = request.form.get("price_pl", "$0.00")
+        lesson_type     = request.form.get("lesson_type", "Arena")
+        group_priv      = request.form.get("group_priv", "")
+        freq            = request.form.get("freq", "")
+        respect_blockouts = request.form.get("respect_blockouts", "yes")
+
+        client_mode   = request.form.get("client_mode", "existing")
+        client_id_raw = request.form.get("client_id")
+        client_name   = request.form.get("client_name", "").strip()
+        client_phone  = request.form.get("client_phone", "").strip()
+        horse         = request.form.get("horse", "").strip()
+
+        print("DEBUG FORM:", dict(request.form))
+
+        def _parse_times(start_label, end_form):
+            if end_form and str(end_form).strip():
+                start_token = (str(start_label).split('-')[0]).strip() if start_label else ''
+                return start_token, str(end_form).strip()
+
+            m = re.match(r'^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})', str(start_label or ''))
+            if m:
+                return m.group(1), m.group(2)
+
+            return (str(start_label or '').strip(), str(end_form or '').strip())
+
+        def _clean_time_range(time_range):
+            parts = [p.strip() for p in str(time_range or "").split('-') if p.strip()]
+            if len(parts) >= 2:
+                return f"{parts[0]} - {parts[-1]}"
+            return str(time_range or "").strip()
+
+        # ---------------------------------------------------------
+        # EDIT EXISTING LESSON
+        # ---------------------------------------------------------
+        if lesson_id:
+            db.session.rollback()
+
+            lesson = Lesson.query.get(int(lesson_id))
+            if not lesson:
+                return redirect(url_for("lessons_by_date", date=lesson_date_str))
+
+            end_effective   = end_raw.strip()
+            start_effective = start_raw.strip()
+
+            if not end_effective:
+                existing_tf = lesson.time_frame or ""
+                m = re.match(r'^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})', existing_tf)
+                if m:
+                    if not start_effective:
+                        start_effective = m.group(1)
+                    end_effective = m.group(2)
+
+            start_token, end_token = _parse_times(start_effective or lesson.time_frame, end_effective)
+            time_range = _clean_time_range(f"{start_token} - {end_token}")
+            time_frame = time_range
+
+            existing_range = db.session.query(Time).filter_by(timerange=time_range).first()
+            if not existing_range:
+                db.session.add(Time(timerange=time_range))
+                db.session.commit()
+
+            if client_mode == "new":
+                if client_name:
+                    new_client = Client(full_name=client_name, mobile=client_phone)
+                    db.session.add(new_client)
+                    db.session.flush()
+                    client_id = new_client.client_id
+                else:
+                    client_id = lesson.client_id
+            else:
+                client_id = int(client_id_raw) if client_id_raw and str(client_id_raw).isdigit() else None
+
+            lesson.lesson_date = datetime.strptime(lesson_date_str, "%Y-%m-%d").date() if lesson_date_str else lesson.lesson_date
+            lesson.time_frame  = time_frame
+            lesson.price_pl    = parse_money(price_pl)
+            lesson.lesson_type = lesson_type
+            lesson.group_priv  = group_priv
+            # ⭐ FIX: Only overwrite freq if the form actually sent one
+            if freq:
+                lesson.freq = freq
+            lesson.horse       = horse
+
+            db.session.commit()
+
+            # ⭐ CASCADE FORWARD LOGIC — update future lessons for weekly/fortnightly riders
+            try:
+                if freq in ["W", "F"] and group_priv not in ["J", "CT", "CC", "D"]:
+                    future_lessons = Lesson.query.filter(
+                        Lesson.client == lesson.client,
+                        Lesson.lesson_date > lesson.lesson_date
+                    ).order_by(Lesson.lesson_date).all()
+
+                    for fl in future_lessons:
+                        fl.horse = horse
+
+                    db.session.commit()
+            except Exception as e:
+                print("[DEBUG] Cascade error:", e)
+
+            return redirect(url_for("lessons_by_date", date=lesson_date_str))
+
+
+
+        # ---------------------------------------------------------
+        # CREATE NEW LESSON(S)
+        # ---------------------------------------------------------
+        start_token, end_token = _parse_times(start_raw, end_raw)
+        time_range = _clean_time_range(f"{start_token} - {end_token}")
+
+        if not start_token or not end_token or "-" not in time_range:
+            print("[DEBUG] Missing or invalid time range for NEW lesson, rejecting.")
+            return redirect(url_for("lessons_by_date", date=lesson_date_str))
+
+        time_frame = time_range
+
+        existing_range = db.session.query(Time).filter_by(timerange=time_range).first()
+        if not existing_range:
+            db.session.add(Time(timerange=time_range))
+            db.session.commit()
+
+        # Determine client_id
+        if client_mode == "new":
+            if client_name:
+                new_client = Client(full_name=client_name, mobile=client_phone)
+                db.session.add(new_client)
+                db.session.flush()
+                client_id = new_client.client_id
+            else:
+                client_id = None
+        else:
+            client_id = int(client_id_raw) if client_id_raw and str(client_id_raw).isdigit() else None
+
+        # Canonical client name (CRITICAL FIX)
+        if client_id:
+            client_obj = Client.query.get(client_id)
+            canonical_name = client_obj.full_name if client_obj else client_name
+        else:
+            canonical_name = client_name
+
+        # Blockouts
+        block_dates  = {b.block_date for b in db.session.query(BlockoutDate).all()}
+        block_ranges = [(r.start_date, r.end_date) for r in db.session.query(BlockoutRange).all()]
+
+        def is_blocked(d):
+            if d in block_dates:
+                return True
+            for start_d, end_d in block_ranges:
+                if start_d <= d <= end_d:
+                    return True
+            return False
+
+        start_date = datetime.strptime(lesson_date_str, "%Y-%m-%d").date()
+        end_of_year = date(start_date.year, 12, 31)
+
+        if freq == "S":
+            dates = [start_date]
+        elif freq == "F":
+            dates = []
+            d = start_date
+            while d <= end_of_year:
+                dates.append(d)
+                d += timedelta(days=14)
+        elif freq == "W":
+            dates = []
+            d = start_date
+            while d <= end_of_year:
+                dates.append(d)
+                d += timedelta(days=7)
+        else:
+            dates = [start_date]
+
+        added = 0
+        for d in dates:
+            blocked = is_blocked(d)
+            print(f"[DEBUG] candidate={d} blocked={blocked} respect_blockouts={respect_blockouts}")
+
+            if respect_blockouts == "yes" and blocked:
+                print(f"[DEBUG] skipped {d} due to blockout")
+                continue
+
+            payment_raw = request.form.get("payment", "").replace("$", "").strip()
+            try:
+                payment_val = float(payment_raw) if payment_raw else 0
+            except:
+                payment_val = 0
+
+            lesson = Lesson(
+                lesson_date=d,
+                time_frame=time_frame,
+                price_pl=parse_money(price_pl),
+                payment=payment_val,
+                lesson_type=lesson_type,
+                group_priv=group_priv,
+                freq=freq,
+                client=canonical_name,
+                horse=horse,
+            )
+            db.session.add(lesson)
+            added += 1
+            print(f"[DEBUG] added lesson for {d} client={canonical_name} horse={horse}")
+
+        db.session.commit()
+        print(f"[DEBUG] commit done, total lessons added={added}")
+
+
+
+        # If this was an AJAX save (Save button), do NOT redirect
+        if request.headers.get("X-Requested-With") == "fetch":
+            return "OK", 200
+
+        # Otherwise behave normally (booking panel, manual form submits)
+        return redirect(url_for("lessons_by_date", date=lesson_date_str))
+
+
+    @app.route("/save_all_lessons", methods=["POST"])
+    def save_all_lessons():
+        data = request.get_json()
+        print("RAW JSON RECEIVED:", data)
+
+        date = data.get("date")
+        lessons = data.get("lessons", [])
+        teacher_blocks = data.get("teacher_blocks", [])
+
+        if not date:
+            return {"status": "error", "message": "Missing date"}, 400
+
+        try:
+            # Always start clean
+            db.session.rollback()
+
+            # --------------------------------------------------------
+            # SAVE LESSONS
+            # --------------------------------------------------------
+            for item in lessons:
+                lesson_id = item.get("lesson_id")
+                if not lesson_id:
+                    continue  # safety: never create lessons
+
+                lesson = Lesson.query.get(lesson_id)
+                if not lesson:
+                    continue
+
+                # ---------------------------
+                # SANITIZE MONEY FIELDS
+                # ---------------------------
+                import re
+                payment_raw = re.sub(r"[^\d.\-]", "", item.get("payment") or "")
+                price_raw   = re.sub(r"[^\d.\-]", "", item.get("price_pl") or "")
+
+                if payment_raw not in ("", None, "None"):
+                    try:
+                        lesson.payment = float(payment_raw)
+                    except ValueError:
+                        pass
+
+                if price_raw not in ("", None, "None"):
+                    try:
+                        lesson.price_pl = float(price_raw)
+                    except ValueError:
+                        pass
+
+                # ---------------------------
+                # NORMAL FIELDS
+                # ---------------------------
+                horse_val = item.get("horse")
+                print("DEBUG HORSE RECEIVED:", repr(horse_val), "for lesson", lesson_id)
+
+                if horse_val in ("", None, "None"):
+                    horse_val = ""
+
+                lesson.horse = horse_val
+                lesson.attendance = (item.get("attendance") or "")
+
+                gp_val = item.get("group_priv")
+                if gp_val not in ("", None, "None"):
+                    lesson.group_priv = gp_val
+
+                lt_val = item.get("lesson_type")
+                if lt_val not in ("", None, "None"):
+                    lesson.lesson_type = lt_val
+
+                teacher_val = item.get("teacher")
+                if teacher_val not in ("", None, "None"):
+                    lesson.teacher = teacher_val
+
+                # ---------------------------
+                # CLIENT NOTES
+                # ---------------------------
+                notes_val = item.get("notes")
+                if notes_val not in ("", None, "None"):
+                    if lesson.client:
+                        client_obj = Client.query.filter_by(full_name=lesson.client).first()
+                        if client_obj:
+                            client_obj.notes = notes_val
+
+                # Always update times
+                lesson.start = item.get("start")
+                lesson.end   = item.get("end")
+
+                # ---------------------------
+                # CARRY-FORWARD ENGINE
+                # ---------------------------
+                if lesson.freq in ("W", "F") and lesson.horse not in ("", None, "None"):
+
+                    future_lessons = (
+                        Lesson.query
+                        .filter(
+                            Lesson.client == lesson.client,
+                            Lesson.lesson_date > lesson.lesson_date
+                        )
+                        .order_by(Lesson.lesson_date)
+                        .all()
+                    )
+
+                    step = 7 if lesson.freq == "W" else 14
+
+                    for fl in future_lessons:
+                        delta = (fl.lesson_date - lesson.lesson_date).days
+
+                        if delta % step == 0:
+                            old_att = fl.attendance
+                            fl.horse = lesson.horse
+                            fl.attendance = old_att
+
+            # --------------------------------------------------------
+            # SAVE TEACHER BLOCKS
+            # --------------------------------------------------------
+            incoming_ids = set()
+
+            for tb in teacher_blocks:
+                tb_id = tb.get("id")
+                block_key = tb.get("block_key") or ""
+                horse = tb.get("horse") or ""
+                teacher_name = tb.get("teacher_name") or ""
+                notes = tb.get("notes") or ""
+
+                if tb_id:
+                    # UPDATE EXISTING
+                    incoming_ids.add(int(tb_id))
+                    obj = TeacherBlock.query.get(int(tb_id))
+                    if obj:
+                        obj.block_key = block_key
+                        obj.horse = horse
+                        obj.teacher_name = teacher_name
+                        obj.notes = notes
+                else:
+                    # CREATE NEW
+                    new_tb = TeacherBlock(
+                        block_key=block_key,
+                        horse=horse,
+                        teacher_name=teacher_name,
+                        notes=notes,
+                        date=date
+                    )
+                    db.session.add(new_tb)
+                    db.session.flush()  # get new ID
+                    incoming_ids.add(new_tb.id)
+
+            # DELETE REMOVED BLOCKS
+            existing = TeacherBlock.query.filter_by(date=date).all()
+            for obj in existing:
+                if obj.id not in incoming_ids:
+                    db.session.delete(obj)
+
+            # --------------------------------------------------------
+            # FINAL COMMIT
+            # --------------------------------------------------------
+            db.session.commit()
+            print("✅ COMMIT OK")
+            return {"status": "ok"}, 200
+
+        except Exception as e:
+            db.session.rollback()
+            print("🔥 ERROR:", e)
+            return {"status": "error", "message": str(e)}, 500

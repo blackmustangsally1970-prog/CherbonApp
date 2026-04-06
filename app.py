@@ -4180,6 +4180,8 @@ def create_app():
             flash("Blockout range removed.", "success")
         return redirect(url_for('manage_blockout_ranges'))
 
+
+
     @app.route("/new_lesson", methods=["POST"])
     def new_lesson():
         import re
@@ -4194,6 +4196,15 @@ def create_app():
         group_priv      = request.form.get("group_priv", "")
         freq            = request.form.get("freq", "")
         respect_blockouts = request.form.get("respect_blockouts", "yes")
+
+        # ⭐ Accept time_frame directly from modal (Option A)
+        time_frame_raw = request.form.get("time_frame")
+
+        if time_frame_raw:
+            try:
+                start_raw, end_raw = [s.strip() for s in time_frame_raw.split("-")]
+            except Exception:
+                return "Invalid time_frame format", 400
 
         client_mode   = request.form.get("client_mode", "existing")
         client_id_raw = request.form.get("client_id")
