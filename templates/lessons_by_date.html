@@ -1492,11 +1492,6 @@ select.teacher-dropdown {
 <div id="export-toast">TXT + Excel saved. Notepad++ opened.</div>
 
 <script>
-window.teacherAssignments = {{ assignment_map | tojson }};
-</script>
-
-
-<script>
     // Core datasets — kept SEPARATE on purpose
     window.teacherTimes = {{ teacher_times | tojson }};
     window.horseSchedule = {{ horse_schedule | tojson }};
