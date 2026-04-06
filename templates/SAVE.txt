@@ -1,3 +1,4 @@
+
     def extract_start(t):
         if not t:
             return ""
@@ -12,6 +13,7 @@
 
             day = datetime.strptime(selected_date, "%Y-%m-%d").date()
             today_str = day.strftime("%d-%m-%y")
+            selected_date_str = selected_date
             filename = f"lesson_schedule_{today_str}.txt"
 
             # --- Pull all horses ---
@@ -144,11 +146,6 @@
 
         except Exception as e:
             return {"error": str(e)}, 500
-
-    def extract_start(t):
-        if not t:
-            return ""
-        return t.split("-")[0].strip()
 
     @app.route('/save_xlsx', methods=['POST'])
     def save_xlsx():
