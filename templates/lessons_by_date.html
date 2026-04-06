@@ -1048,7 +1048,7 @@ select.teacher-dropdown {
 
     <label>Group Priv</label>
     <select name="group_priv">
-      {% for opt in ['CC','CT','G','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+      {% for opt in ['CC','CT','G','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
         <option>{{ opt }}</option>
       {% endfor %}
     </select>
@@ -1202,9 +1202,10 @@ select.teacher-dropdown {
                     </td>
 
                     <td>
+                        <!-- ⭐ FIXED: Sorted, correct ID, Select2-ready -->
                         <select id="top_existing_client" class="searchable-dropdown">
                             <option value=""></option>
-                            {% for c in clients %}
+                            {% for c in clients|sort(attribute='full_name') %}
                                 <option value="{{ c.client_id }}">{{ c.full_name }}</option>
                             {% endfor %}
                         </select>
@@ -1224,11 +1225,11 @@ select.teacher-dropdown {
 
                     <td>
                         <label class="form-label fw-bold">Recurrence</label>
-                    <select id="recurrence_type" class="form-select">
-                        <option value="S" selected>Single</option>
-                        <option value="W">Weekly</option>
-                        <option value="F">Fortnightly</option>
-                    </select>
+                        <select id="recurrence_type" class="form-select">
+                            <option value="S" selected>Single</option>
+                            <option value="W">Weekly</option>
+                            <option value="F">Fortnightly</option>
+                        </select>
 
                         <div id="recurrence_options" class="mt-2" style="display:none;">
                             <label class="form-label">Number of Occurrences</label>
@@ -1262,7 +1263,6 @@ select.teacher-dropdown {
         </div>
     </div>
 </div>
-
 
 
 {% if grouped_lessons %}
@@ -3075,146 +3075,158 @@ if (recurrence === "F") {
 
 
 
-    // ⭐ Unified Save Handler (supports all booking types structurally)
-    document.getElementById("save-lessons-btn").addEventListener("click", async () => {
+// ⭐ Unified Save Handler (Option A — send time_frame only)
+document.getElementById("save-lessons-btn").addEventListener("click", async () => {
 
-        const info = collectBookingInfo();
-        const lessons = collectLessonRows();
+    const info = collectBookingInfo();
+    const lessons = collectLessonRows();
 
-        if (lessons.length === 0) {
-            alert("No lessons to save.");
+    if (lessons.length === 0) {
+        alert("No lessons to save.");
+        return;
+    }
+
+    // ⭐ Validate rows
+    for (const row of lessons) {
+
+        if (!row.lesson_date || !row.time_frame) {
+            alert("Each lesson requires a date and time.");
             return;
         }
 
-        // ⭐ Validate rows
-        for (const row of lessons) {
+        if (!isValidDate(row.lesson_date)) {
+            alert("One or more dates are invalid.");
+            return;
+        }
+    }
 
-            if (!row.lesson_date || !row.time_frame) {
-                alert("Each lesson requires a date and time.");
-                return;
-            }
+    const freq = document.getElementById("recurrence_type").value;
 
-            if (!isValidDate(row.lesson_date)) {
-                alert("One or more dates are invalid.");
-                return;
-            }
+    // ============================================================
+    // ⭐ EXISTING CLIENT MODE
+    // ============================================================
+    if (info.booking_type === "existing") {
+
+        if (!info.client_id) {
+            alert("Please select an existing client.");
+            return;
         }
 
-        // ⭐ EXISTING CLIENT MODE
-if (info.booking_type === "existing") {
+        for (const row of lessons) {
 
-    if (!info.client_id) {
-        alert("Please select an existing client.");
+            const form = new FormData();
+            form.append("date", row.lesson_date);
+
+            // ⭐ Send full time frame (backend splits)
+            form.append("time_frame", row.time_frame);
+
+            form.append("lesson_type", row.lesson_type);
+            form.append("group_priv", row.group_priv);
+            form.append("price_pl", row.price);
+            form.append("payment", row.payment);
+            form.append("freq", freq);
+
+            form.append("client_mode", "existing");
+            form.append("client_id", info.client_id);
+
+            form.append("respect_blockouts", "yes");
+
+            await fetch("/new_lesson", {
+                method: "POST",
+                body: form
+            });
+        }
+
+        alert("Existing client booking saved!");
         return;
     }
 
-    const freq = document.getElementById("recurrence_type").value;
+    // ============================================================
+    // ⭐ NEW CLIENT MODE
+    // ============================================================
+    if (info.booking_type === "new") {
 
-    for (const row of lessons) {
-        const form = new FormData();
-        form.append("date", row.lesson_date);
+        if (!info.new_client_name) {
+            alert("Please enter the new client's name.");
+            return;
+        }
 
-        const [start, end] = row.time_frame.split("-").map(s => s.trim());
-        form.append("start", start);
-        form.append("end", end);
+        for (const row of lessons) {
 
-        form.append("lesson_type", row.lesson_type);
-        form.append("group_priv", row.group_priv);
-        form.append("price_pl", row.price);
-        form.append("payment", row.payment);
-        form.append("freq", freq);
-        form.append("client_mode", "existing");
-        form.append("client_id", info.client_id);
-        form.append("respect_blockouts", "yes");
+            const form = new FormData();
+            form.append("date", row.lesson_date);
 
-        await fetch("/new_lesson", {
-            method: "POST",
-            body: form
-        });
-    }
+            // ⭐ Send full time frame
+            form.append("time_frame", row.time_frame);
 
-    alert("Existing client booking saved!");
-    return;
-}
+            form.append("lesson_type", row.lesson_type);
+            form.append("group_priv", row.group_priv);
+            form.append("price_pl", row.price);
+            form.append("payment", row.payment);
+            form.append("freq", freq);
 
+            form.append("client_mode", "new");
+            form.append("client_name", info.new_client_name);
+            form.append("client_phone", info.mobile);
 
-        // ⭐ NEW CLIENT MODE
-if (info.booking_type === "new") {
+            form.append("respect_blockouts", "yes");
 
-    if (!info.new_client_name) {
-        alert("Please enter the new client's name.");
+            await fetch("/new_lesson", {
+                method: "POST",
+                body: form
+            });
+        }
+
+        alert("New client booking saved!");
         return;
     }
 
-    const freq = document.getElementById("recurrence_type").value;
+    // ============================================================
+    // ⭐ SMS MODE
+    // ============================================================
+    if (info.booking_type === "sms") {
 
-    for (const row of lessons) {
-        const form = new FormData();
-        form.append("date", row.lesson_date);
+        if (!info.mobile) {
+            alert("Mobile number is required for SMS invites.");
+            return;
+        }
 
-        const [start, end] = row.time_frame.split("-").map(s => s.trim());
-        form.append("start", start);
-        form.append("end", end);
-
-        form.append("lesson_type", row.lesson_type);
-        form.append("group_priv", row.group_priv);
-        form.append("price_pl", row.price);
-        form.append("payment", row.payment);
-        form.append("freq", freq);
-        form.append("client_mode", "new");
-        form.append("client_name", info.new_client_name);
-        form.append("client_phone", info.mobile);
-        form.append("respect_blockouts", "yes");
-
-        await fetch("/new_lesson", {
-            method: "POST",
-            body: form
-        });
-    }
-
-    alert("New client booking saved!");
-    return;
-}
-
-        // ⭐ SMS MODE (fully functional)
-        if (info.booking_type === "sms") {
-
-            if (!info.mobile) {
-                alert("Mobile number is required for SMS invites.");
-                return;
-            }
-
-            const btn = document.getElementById("save-button");
-            if (!btn) return;   // safety
+        const btn = document.getElementById("save-lessons-btn");
+        if (btn) {
             btn.disabled = true;
             btn.textContent = "Sending SMS Invites...";
+        }
 
-            for (const row of lessons) {
-                const payload = new FormData();
-                payload.append("lesson_date", row.lesson_date);
-                payload.append("time_frame", row.time_frame);
-                payload.append("lesson_type", row.lesson_type);
-                payload.append("group_priv", row.group_priv);
-                payload.append("mobile", info.mobile);
-                payload.append("riders", row.riders);
-                payload.append("price", row.price);
+        for (const row of lessons) {
 
-                await fetch("/send_invite", {
-                    method: "POST",
-                    body: payload
-                });
-            }
+            const payload = new FormData();
+            payload.append("lesson_date", row.lesson_date);
+            payload.append("time_frame", row.time_frame);
+            payload.append("lesson_type", row.lesson_type);
+            payload.append("group_priv", row.group_priv);
+            payload.append("mobile", info.mobile);
+            payload.append("riders", row.riders);
+            payload.append("price", row.price);
 
+            await fetch("/send_invite", {
+                method: "POST",
+                body: payload
+            });
+        }
+
+        if (btn) {
             btn.textContent = "Invites Sent!";
             setTimeout(() => {
                 btn.disabled = false;
                 btn.textContent = "Save Lessons";
             }, 1500);
-
-            return;
         }
 
-    });
+        return;
+    }
+
+});
+
 
 });
 </script>
