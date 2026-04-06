@@ -1544,8 +1544,30 @@ window.savedTeacherBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
 
 function extractPrettyTime(blockKey) {
     if (!blockKey) return "";
-    const first = blockKey.split("_")[0].trim();
-    return first.replace("-", " - ");
+
+    // Take only the first segment before underscore
+    let first = blockKey.split("_")[0].trim();
+
+    // Remove all spaces
+    first = first.replace(/\s+/g, "");
+
+    // CASE 1: Already has hyphen (12:30-13:20)
+    if (first.includes("-")) {
+        const parts = first.split("-");
+        if (parts.length === 2) {
+            return parts[0] + " - " + parts[1];
+        }
+    }
+
+    // CASE 2: Smashed format (12:3013:20)
+    if (first.length === 9 && first[2] === ":" && first[5] === ":") {
+        const start = first.slice(0, 5);   // 12:30
+        const end   = first.slice(5);      // 13:20
+        return start + " - " + end;
+    }
+
+    // Fallback
+    return first;
 }
 
 function aggregateTimesForHorse(horseName) {
