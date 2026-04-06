@@ -2067,6 +2067,18 @@ def create_app():
         ctx = build_lessons_context(selected_date, selected_date_str)
 
         teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+        teacher_blocks_json = [
+            {
+                "id": tb.id,
+                "date": tb.date,
+                "block_key": tb.block_key,
+                "horse": tb.horse,
+                "teacher_name": tb.teacher_name,
+                "notes": tb.notes
+            }
+            for tb in teacher_blocks
+        ]
+
         grouped_lessons = ctx["grouped_lessons"]
         horse_list = ctx["horse_list"]
         horse_schedule = ctx["horse_schedule"]
@@ -2110,9 +2122,8 @@ def create_app():
             slot_map=slot_map,
             merged_tags=ctx["merged_tags"],
             norm_timerange_key=norm_timerange_key,
-            teacher_blocks=teacher_blocks,
+            teacher_blocks=teacher_blocks_json,
         )
-
 
 
     def detect_conflicts(riders):
