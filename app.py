@@ -5286,11 +5286,27 @@ Cherbon Waters Admin
 
 
 
-    def extract_start(t):
-        if not t:
+    def get_start_from_block_key(block_key):
+        # 1. Extract the first segment before "_"
+        raw = block_key.split("_")[0]
+
+        # 2. Extract digits
+        digits = "".join(ch for ch in raw if ch.isdigit())
+        if len(digits) < 4:
             return ""
-        # t is always "HH:MM - HH:MM"
-        return t.split("-")[0].strip()
+
+        hhmm = digits[:4]
+        formatted = hhmm[:2] + ":" + hhmm[2:]
+
+        # 3. Look up the real timerange in the times table
+        all_times = Time.query.all()
+        for t in all_times:
+            t_digits = "".join(ch for ch in t.timerange if ch.isdigit())
+            if t_digits.startswith(hhmm):
+                return t.timerange.split("-")[0].strip()
+
+        # fallback
+        return formatted
 
     @app.route('/save_txt', methods=['POST'])
     def save_txt():
@@ -5343,7 +5359,7 @@ Cherbon Waters Admin
 
             teacher_block_times = []
             for tb in teacher_blocks:
-                start = extract_start(tb.timerange)
+                start = get_start_from_block_key(tb.block_key)
                 if start and tb.horse:
                     teacher_block_times.append((tb.horse.strip(), start + "*"))
 
@@ -5482,7 +5498,7 @@ Cherbon Waters Admin
 
             teacher_block_times = []
             for tb in teacher_blocks:
-                start = extract_start(tb.timerange)
+                start = get_start_from_block_key(tb.block_key)
                 if start and tb.horse:
                     teacher_block_times.append((tb.horse.strip(), start + "*"))
 
