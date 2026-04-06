@@ -5284,6 +5284,11 @@ Cherbon Waters Admin
         db.session.commit()
         return f"Seed complete. Updated {updated} clients."
 
+    def extract_start(t):
+        if not t:
+            return ""
+        # Lessons always use "HH:MM - HH:MM"
+        return t.split("-")[0].strip()
 
 
     def get_start_from_block_key(block_key):
