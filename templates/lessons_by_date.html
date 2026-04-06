@@ -1542,6 +1542,12 @@ window.savedTeacherBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
     return 0;
   }
 
+function extractPrettyTime(blockKey) {
+    if (!blockKey) return "";
+    const first = blockKey.split("_")[0].trim();
+    return first.replace("-", " - ");
+}
+
 function aggregateTimesForHorse(horseName) {
     const key = canon(horseName);
     const set = new Set();
@@ -1556,22 +1562,22 @@ function aggregateTimesForHorse(horseName) {
         }
     });
 
-    // 2. Saved TeacherBlock times (from DB)
-    savedTeacherBlocks.forEach(tb => {
-        if (tb.horse && canon(tb.horse) === key) {
-            set.add(tb.block_key.trim());
-        }
-    });
+// 2. Saved TeacherBlock times (from DB)
+savedTeacherBlocks.forEach(tb => {
+    if (tb.horse && canon(tb.horse) === key) {
+        set.add(extractPrettyTime(tb.block_key));
+    }
+});
 
-    // 3. Live (unsaved) teacher block rows
-    document.querySelectorAll(".teacher-block-row").forEach(row => {
-        const h = row.querySelector(".teacher-block-horse")?.value?.trim().toLowerCase();
-        const keyRaw = row.querySelector(".teacher-block-key")?.value?.trim();
+// 3. Live (unsaved) teacher block rows
+document.querySelectorAll(".teacher-block-row").forEach(row => {
+    const h = row.querySelector(".teacher-block-horse")?.value?.trim().toLowerCase();
+    const keyRaw = row.querySelector(".teacher-block-key")?.value?.trim();
 
-        if (h && h === key && keyRaw) {
-            set.add(keyRaw);
-        }
-    });
+    if (h && h === key && keyRaw) {
+        set.add(extractPrettyTime(keyRaw));
+    }
+});
 
     // 4. Rider lesson rows in DOM (live)
     document.querySelectorAll('tbody tr').forEach(row => {
