@@ -1547,35 +1547,45 @@ function aggregateTimesForHorse(horseName) {
     const set = new Set();
     if (!key) return [];
 
+    // 1. Rider lesson times (from window.horseSchedule)
     Object.keys(window.horseSchedule || {}).forEach(k => {
-      if (canon(k) === key) {
-        (window.horseSchedule[k] || []).forEach(t => {
-          if (t && String(t).trim()) set.add(String(t).trim());
-        });
-      }
+        if (canon(k) === key) {
+            (window.horseSchedule[k] || []).forEach(t => {
+                if (t && String(t).trim()) set.add(String(t).trim());
+            });
+        }
     });
 
-    // ⭐ Add Teacher Block times
+    // 2. Saved TeacherBlock times (from DB)
     savedTeacherBlocks.forEach(tb => {
         if (tb.horse && canon(tb.horse) === key) {
-            // Extract "11:30 - 12:30" from block_key
-            const raw = tb.block_key.split("_")[0];
-            const pretty = raw.replace("-", " - ");
             set.add(tb.block_key.trim());
         }
     });
 
-    document.querySelectorAll('tbody tr').forEach(row => {
-      const horseSel = row.querySelector('select[name^="horse_"], input[name^="horse_"]');
-      const timeAttr = (row.getAttribute('data-time') || '').trim();
-      const rowHorse = horseSel ? (horseSel.value || '').trim() : '';
-      const rowAtt = (row.getAttribute('data-att') || '').trim().toUpperCase();
+    // 3. Live (unsaved) teacher block rows
+    document.querySelectorAll(".teacher-block-row").forEach(row => {
+        const h = row.querySelector(".teacher-block-horse")?.value?.trim().toLowerCase();
+        const keyRaw = row.querySelector(".teacher-block-key")?.value?.trim();
 
-      if (rowHorse && canon(rowHorse) === key && rowAtt !== 'C' && timeAttr) {
-        set.add(timeAttr);
-      }
+        if (h && h === key && keyRaw) {
+            set.add(keyRaw);
+        }
     });
 
+    // 4. Rider lesson rows in DOM (live)
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const horseSel = row.querySelector('select[name^="horse_"], input[name^="horse_"]');
+        const timeAttr = (row.getAttribute('data-time') || '').trim();
+        const rowHorse = horseSel ? (horseSel.value || '').trim() : '';
+        const rowAtt = (row.getAttribute('data-att') || '').trim().toUpperCase();
+
+        if (rowHorse && canon(rowHorse) === key && rowAtt !== 'C' && timeAttr) {
+            set.add(timeAttr);
+        }
+    });
+
+    // Sort and return
     const out = Array.from(set);
     out.sort((a, b) => parseMins(a) - parseMins(b));
     return out;
