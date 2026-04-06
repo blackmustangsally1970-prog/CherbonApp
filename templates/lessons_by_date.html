@@ -1587,6 +1587,8 @@ function aggregateTimesForHorse(horseName) {
 // 2. Saved TeacherBlock times (from DB)
 savedTeacherBlocks.forEach(tb => {
     if (tb.horse && canon(tb.horse) === key) {
+        console.log("SAVED TB RAW:", tb.block_key,
+                    "PRETTY:", extractPrettyTime(tb.block_key));
         set.add(extractPrettyTime(tb.block_key));
     }
 });
@@ -1596,9 +1598,14 @@ document.querySelectorAll(".teacher-block-row").forEach(row => {
     const h = row.querySelector(".teacher-block-horse")?.value?.trim().toLowerCase();
     const keyRaw = row.querySelector(".teacher-block-key")?.value?.trim();
 
-    if (h && h === key && keyRaw) {
-        set.add(extractPrettyTime(keyRaw));
-    }
+if (h && h === key && keyRaw) {
+
+    console.log("LIVE TB RAW:", keyRaw,
+                "PRETTY:", extractPrettyTime(keyRaw));
+
+    set.add(extractPrettyTime(keyRaw));
+}
+
 });
 
     // 4. Rider lesson rows in DOM (live)
