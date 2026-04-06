@@ -5117,62 +5117,52 @@ Cherbon Waters Admin
     #
     #     return jsonify({"status": "ok"}), 200
 
-
-    @app.route("/save_teacher_assignment", methods=["POST"])
-    def save_teacher_assignment():
+    @app.route("/save_teacher_blocks", methods=["POST"])
+    def save_teacher_blocks():
         data = request.get_json()
-
         date = data.get("date")
-        block_key = data.get("block_key")
-        slot = data.get("slot")
-        teacher = data.get("teacher")
-        horse = data.get("horse")
-        notes = data.get("notes")
+        incoming = data.get("teacher_blocks", [])
 
-        # Look for an existing row
-        row = TeacherBlockAssignment.query.filter_by(
-            date=date,
-            block_key=block_key,
-            slot_number=slot
-        ).first()
+        # Load existing rows for this date
+        existing = TeacherBlock.query.filter_by(date=date).all()
+        existing_by_id = {tb.id: tb for tb in existing}
 
-        # Create if missing
-        if not row:
-            row = TeacherBlockAssignment(
-                date=date,
-                block_key=block_key,
-                slot_number=slot
-            )
-            db.session.add(row)
+        incoming_ids = []
 
-        # Update fields
-        row.teacher_name = teacher
-        row.horse = horse
-        row.notes = notes
+        # Process incoming rows
+        for item in incoming:
+            tb_id = item.get("id")
+
+            if tb_id and tb_id in existing_by_id:
+                # Update existing
+                tb = existing_by_id[tb_id]
+                tb.block_key = item["block_key"]
+                tb.horse = item["horse"]
+                tb.teacher_name = item["teacher_name"]
+                tb.notes = item["notes"]
+                incoming_ids.append(tb_id)
+
+            else:
+                # Insert new
+                tb = TeacherBlock(
+                    date=date,
+                    block_key=item["block_key"],
+                    horse=item["horse"],
+                    teacher_name=item["teacher_name"],
+                    notes=item["notes"]
+                )
+                db.session.add(tb)
+                db.session.flush()  # get ID
+                incoming_ids.append(tb.id)
+
+        # Delete rows removed in UI
+        for tb in existing:
+            if tb.id not in incoming_ids:
+                db.session.delete(tb)
 
         db.session.commit()
 
         return jsonify({"status": "ok"})
-
-    @app.route("/delete_teacher_assignment", methods=["POST"])
-    def delete_teacher_assignment():
-        data = request.get_json()
-
-        date = data.get("date")
-        block_key = data.get("block_key")
-        slot = data.get("slot")
-
-        TeacherBlockAssignment.query.filter_by(
-            date=date,
-            block_key=block_key,
-            slot_number=slot
-        ).delete()
-
-        db.session.commit()
-
-        return jsonify({"status": "deleted"})
-
-
 
     @app.route('/manage_teacher_times', methods=['GET'])
     def manage_teacher_times():

@@ -80,16 +80,19 @@ class TrailRideSubmission(db.Model):
 
 
 
-class TeacherBlockAssignment(db.Model):
-    __tablename__ = "teacher_block_assignments"
+class TeacherBlock(db.Model):
+    __tablename__ = "teacher_blocks"
 
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(20), nullable=False)
-    block_key = db.Column(db.String(50), nullable=False)
-    slot_number = db.Column(db.Integer, nullable=False)  # 1 or 2
-    teacher_name = db.Column(db.String(120))
-    horse = db.Column(db.String(120))
-    notes = db.Column(db.String(500))
+    date = db.Column(db.String, nullable=False)
+    block_key = db.Column(db.String, nullable=False)
+
+    horse = db.Column(db.String, nullable=True)
+    teacher_name = db.Column(db.String, nullable=True)
+    notes = db.Column(db.String, nullable=True)
+
+    # Optional: timestamp for debugging
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class LessonTeacherTag(db.Model):

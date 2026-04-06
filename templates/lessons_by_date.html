@@ -1312,12 +1312,12 @@ select.teacher-dropdown {
       <!-- ⭐ NEW: Teacher assignment rows will be inserted HERE -->
       <div class="block-teacher-rows" data-block-key="{{ block_key }}"></div>
 
-      <button type="button"
-              class="add-teacher-row-btn"
-              data-block-key="{{ block_key }}"
-              style="margin:4px 0; font-size:11px;">
-        + Add Teacher Assignment
-      </button>
+<button type="button"
+        class="add-teacher-block-btn"
+        data-block-key="{{ block_key }}"
+        style="margin:4px 0; font-size:11px;">
+  ➕ Add Teacher Block
+</button>
 
       <!-- ⭐ Your lesson-table continues below this point -->
 
@@ -1526,7 +1526,9 @@ document.addEventListener('blur', function(e) {
 </script>
 
 
-
+<script>
+const savedTeacherBlocks = {{ teacher_blocks|tojson }};
+</script>
 
 <script>
 // --- HORSE TOOLTIP LOGIC ---
@@ -1544,7 +1546,7 @@ document.addEventListener('blur', function(e) {
     return 0;
   }
 
-  function aggregateTimesForHorse(horseName) {
+function aggregateTimesForHorse(horseName) {
     const key = canon(horseName);
     const set = new Set();
     if (!key) return [];
@@ -1555,6 +1557,16 @@ document.addEventListener('blur', function(e) {
           if (t && String(t).trim()) set.add(String(t).trim());
         });
       }
+    });
+
+    // ⭐ Add Teacher Block times
+    savedTeacherBlocks.forEach(tb => {
+        if (tb.horse && canon(tb.horse) === key) {
+            // Extract "11:30 - 12:30" from block_key
+            const raw = tb.block_key.split("_")[0];
+            const pretty = raw.replace("-", " - ");
+            set.add(pretty.trim());
+        }
     });
 
     document.querySelectorAll('tbody tr').forEach(row => {
@@ -1571,7 +1583,7 @@ document.addEventListener('blur', function(e) {
     const out = Array.from(set);
     out.sort((a, b) => parseMins(a) - parseMins(b));
     return out;
-  }
+}
 
   function refreshTooltipForElement(el) {
     const $el = $(el);
@@ -3121,6 +3133,26 @@ if (info.booking_type === "new") {
 </script>
 
 <script>
+function collectTeacherBlocks() {
+    const blocks = [];
+
+    $(".teacher-block-row").each(function () {
+        const row = $(this);
+
+        blocks.push({
+            id: row.attr("data-id") || null,
+            block_key: row.find(".teacher-block-key").val(),
+            horse: row.find(".teacher-block-horse").val(),
+            teacher_name: row.find(".teacher-block-name").val(),
+            notes: row.find(".teacher-block-notes").val()
+        });
+    });
+
+    return blocks;
+}
+</script>
+
+<script>
 document.getElementById("save-button").addEventListener("click", async () => {
 
     const statusBox = document.getElementById("save-status");
@@ -3131,6 +3163,7 @@ document.getElementById("save-button").addEventListener("click", async () => {
 
     const payload = {
         date: selectedDate,
+        teacher_blocks: collectTeacherBlocks()   // ⭐ ADD THIS LINE
         lessons: []
     };
     // ⭐ ADD THIS BLOCK HERE
@@ -3454,183 +3487,114 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
-// ---------------------------------------------------------
-// STEP 3: Add Teacher Row (clone template)
-// ---------------------------------------------------------
-
 document.addEventListener("DOMContentLoaded", function () {
 
-    $(document).on("click", ".add-teacher-row-btn", function () {
+  // Handle Add Teacher Block
+  $(document).on("click", ".add-teacher-block-btn", function () {
 
-        const blockKey = $(this).data("block-key");
-        const container = $(`.block-teacher-rows[data-block-key='${blockKey}']`);
+    const blockKey = $(this).data("block-key");
+    const container = $(`.block-teacher-rows[data-block-key='${blockKey}']`);
 
-        // Count existing rows (max 2)
-        const existing = container.find(".teacher-row, .teacher-assignment-row").length;
-        if (existing >= 2) {
-            alert("Maximum of 2 teacher assignments per block.");
-            return;
-        }
+    // Clone the new template
+    const newRow = $("#teacher-block-template .teacher-block-row").clone(true);
+
+    // Set block key
+    newRow.find(".teacher-block-key").val(blockKey);
+
+    // Append into this block
+    container.append(newRow);
+
+    // Init Select2 on horse dropdown
+    newRow.find(".teacher-block-horse").select2({
+      width: '100%',
+      dropdownAutoWidth: true
+    });
+  });
+
+  // Handle delete
+  $(document).on("click", ".teacher-block-delete", function () {
+    $(this).closest(".teacher-block-row").remove();
+  });
+
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // These come from Flask: teacher_blocks = TeacherBlock.query.filter_by(date=...).all()
+    const savedBlocks = {{ teacher_blocks|tojson }};
+
+    savedBlocks.forEach(tb => {
+
+        // Find the correct block container
+        const container = $(`.block-teacher-rows[data-block-key='${tb.block_key}']`);
+        if (!container.length) return;
 
         // Clone template
-        const newRow = $("#teacher-row-template .teacher-row").clone(true);
+        const row = $("#teacher-block-template .teacher-block-row").clone(true);
 
-        // Extract time from the block header
-        const blockDiv = $(this).closest(".lesson-block");
-        const blockHeader = blockDiv.data("block-header");  // "12:00 - 12:50 Arena G (2)"
-        const time = blockHeader.split(" ")[0];             // "12:00"
+        // Fill values
+        row.attr("data-id", tb.id);
+        row.find(".teacher-block-key").val(tb.block_key);
+        row.find(".teacher-block-horse").val(tb.horse);
+        row.find(".teacher-block-name").val(tb.teacher_name);
+        row.find(".teacher-block-notes").val(tb.notes);
 
-        // Inject correct attributes
-        newRow.find(".teacher-horse-select")
-            .attr("data-time", time)
-            .attr("data-block-key", blockKey);
+        // Append into block
+        container.append(row);
 
-        // Assign slot
-        newRow.attr("data-slot", existing + 1);
-
-        // Append
-        container.append(newRow);
-
-        // Select2
-        newRow.find(".teacher-horse-select").select2({
+        // Re-init Select2 for horse dropdown
+        row.find(".teacher-block-horse").select2({
             width: '100%',
             dropdownAutoWidth: true
         });
     });
 
 });
-
 </script>
 
-<script>
-// ---------------------------------------------------------
-// STEP 4C: Save Teacher Row (AJAX → Flask)
-// ---------------------------------------------------------
+<!-- ⭐ Hidden template for a Teacher Block row -->
+<div id="teacher-block-template" style="display:none;">
 
-$(document).on("click", ".save-teacher-row", function () {
-
-    const row = $(this).closest(".teacher-row");
-    const container = row.closest(".block-teacher-rows");
-
-    const blockKey = container.data("block-key");
-    const slot = row.data("slot");
-
-    const teacher = row.find(".teacher-name-input").val();
-    const horse = row.find(".teacher-horse-select").val();
-    const notes = row.find(".teacher-notes-input").val();
-
-    const date = $("#date-picker").val();
-
-    fetch("/save_teacher_assignment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            date: date,
-            block_key: blockKey,
-            slot: slot,
-            teacher: teacher,
-            horse: horse,
-            notes: notes
-        })
-    })
-    .then(r => r.json())
-    .then(resp => {
-        // Visual confirmation
-        row.css("outline", "2px solid #4CAF50");
-        setTimeout(() => row.css("outline", ""), 600);
-    });
-});
-</script>
-
-<script>
-// ---------------------------------------------------------
-// STEP 4D: Delete Teacher Row
-// ---------------------------------------------------------
-
-$(document).on("click", ".delete-teacher-row", function () {
-
-    const row = $(this).closest(".teacher-row");
-    const container = row.closest(".block-teacher-rows");
-
-    const blockKey = container.data("block-key");
-    const slot = row.data("slot");
-    const date = $("#date-picker").val();
-
-    // Remove visually
-    row.remove();
-
-    // Notify backend
-    fetch("/delete_teacher_assignment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            date: date,
-            block_key: blockKey,
-            slot: slot
-        })
-    });
-});
-</script>
-
-
-<!-- ⭐ Hidden template for a teacher assignment row -->
-<div id="teacher-row-template" style="display:none;">
-
-  <div class="teacher-row"
-       data-slot=""
+  <div class="teacher-block-row"
        style="display:flex; align-items:center; gap:8px; margin:4px 0;">
 
-    <!-- HORSE FIRST (Select2 + predictive + tooltip compatible) -->
-<select class="compact-horse searchable-dropdown teacher-horse-select"
-        data-time=""
-        data-block-key=""
-        style="width:120px; font-size:11px;">
-  <option value=""></option>
-  {% for horse in horse_list %}
-    <option value="{{ horse }}">{{ horse }}</option>
-  {% endfor %}
-</select>
-
+    <!-- HORSE -->
+    <select class="compact-horse teacher-block-horse"
+            style="width:120px; font-size:11px;">
+      <option value=""></option>
+      {% for horse in horse_list %}
+        <option value="{{ horse }}">{{ horse }}</option>
+      {% endfor %}
+    </select>
 
     <!-- TEACHER NAME -->
     <input type="text"
-           class="teacher-name-input"
+           class="teacher-block-name"
            placeholder="Teacher name"
            style="width:140px; font-size:11px;">
 
     <!-- NOTES -->
     <input type="text"
-           class="teacher-notes-input"
+           class="teacher-block-notes"
            placeholder="Notes"
            style="width:200px; font-size:11px;">
 
-    <!-- SAVE -->
-    <button type="button"
-            class="save-teacher-row"
-            style="font-size:11px;">
-      Save
-    </button>
-
     <!-- DELETE -->
     <button type="button"
-            class="delete-teacher-row"
+            class="teacher-block-delete"
             style="font-size:11px; color:#900;">
       ✕
     </button>
 
+    <!-- Hidden block key -->
+    <input type="hidden" class="teacher-block-key" value="">
   </div>
 
 </div>
 
-<script>
-$(document).ready(function () {
-    $(".teacher-horse-select").select2({
-        width: '100%',
-        dropdownAutoWidth: true
-    });
-});
 
-</script>
 
 
 
