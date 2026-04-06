@@ -2001,25 +2001,6 @@ def create_app():
         for h, usage_times in teacher_horse_usage.items():
             teacher_horse_usage[h] = sorted(set(usage_times))
 
-        # ---------------------------------------------------------
-        # STEP 5A: Merge TeacherBlockAssignment into horse usage
-        # ---------------------------------------------------------
-        t_assignments = db.session.query(TeacherBlockAssignment).filter_by(
-            date=selected_date_str
-        ).all()
-
-        for t in t_assignments:
-            if t.horse:
-                horse_name = to_proper_case(t.horse.strip())
-                teacher_horse_usage.setdefault(horse_name, []).append({
-                    "type": "teacher",
-                    "teacher": t.teacher_name,
-                    "notes": t.notes,
-                    "block_key": t.block_key,
-                    "slot": t.slot_number
-                })
-
-
         # Build slot_map
         slot_rows = (
             db.session.query(TeacherSlot)
