@@ -3589,37 +3589,70 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
+
+// ------------------------------------------------------------
+// NORMALISE BLOCK KEY → match the container's data-block-key
+// ------------------------------------------------------------
+function normalizeBlockKey(raw) {
+    if (!raw) return "";
+
+    raw = raw.replace(/\s+/g, "");
+
+    if (/^\d{8}$/.test(raw)) {
+        const start = raw.slice(0,2) + ":" + raw.slice(2,4);
+        const end   = raw.slice(4,6) + ":" + raw.slice(6,8);
+        return `${start}-${end}`;
+    }
+
+    if (/^\d{2}:\d{2}\d{2}:\d{2}$/.test(raw)) {
+        return raw.slice(0,5) + "-" + raw.slice(5);
+    }
+
+    return raw.replace(" - ", "-");
+}
+
+
+// ------------------------------------------------------------
+// BUILD A TEACHER BLOCK ROW FROM TEMPLATE
+// ------------------------------------------------------------
+function buildTeacherBlockRow(tb) {
+    const row = $("#teacher-block-template .teacher-block-row").clone(true);
+
+    row.attr("data-id", tb.id || "");
+    row.find(".teacher-block-key").val(tb.block_key || "");
+    row.find(".teacher-block-horse").val(tb.horse || "");
+    row.find(".teacher-block-name").val(tb.teacher_name || "");
+    row.find(".teacher-block-notes").val(tb.notes || "");
+
+    row.find(".teacher-block-horse").select2({
+        width: '100%',
+        dropdownAutoWidth: true
+    });
+
+    return row;
+}
+
+
+// ------------------------------------------------------------
+// MAIN LOADER — RUNS ON PAGE LOAD
+// ------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
 
-    // These come from Flask: teacher_blocks = TeacherBlock.query.filter_by(date=...).all()
     const savedBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
+
     savedBlocks.forEach(tb => {
 
-        // Find the correct block container
-        const container = $(`.block-teacher-rows[data-block-key='${tb.block_key}']`);
+        const prettyKey = normalizeBlockKey(tb.block_key);
+
+        const container = $(`.block-teacher-rows[data-block-key='${prettyKey}']`);
         if (!container.length) return;
 
-        // Clone template
-        const row = $("#teacher-block-template .teacher-block-row").clone(true);
-
-        // Fill values
-        row.attr("data-id", tb.id);
-        row.find(".teacher-block-key").val(tb.block_key);
-        row.find(".teacher-block-horse").val(tb.horse);
-        row.find(".teacher-block-name").val(tb.teacher_name);
-        row.find(".teacher-block-notes").val(tb.notes);
-
-        // Append into block
+        const row = buildTeacherBlockRow(tb);
         container.append(row);
-
-        // Re-init Select2 for horse dropdown
-        row.find(".teacher-block-horse").select2({
-            width: '100%',
-            dropdownAutoWidth: true
-        });
     });
 
 });
+
 </script>
 
 <!-- ⭐ Hidden template for a Teacher Block row -->

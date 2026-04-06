@@ -2066,7 +2066,7 @@ def create_app():
         # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
         ctx = build_lessons_context(selected_date, selected_date_str)
 
-        teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+        teacher_blocks = TeacherBlock.query.filter_by(date=selected_date).all()
         grouped_lessons = ctx["grouped_lessons"]
         horse_list = ctx["horse_list"]
         horse_schedule = ctx["horse_schedule"]
@@ -4399,25 +4399,30 @@ def create_app():
 
         date = data.get("date")
         lessons = data.get("lessons", [])
+        teacher_blocks = data.get("teacher_blocks", [])
 
         if not date:
             return {"status": "error", "message": "Missing date"}, 400
 
         try:
+            # Always start clean
             db.session.rollback()
 
+            # --------------------------------------------------------
+            # SAVE LESSONS
+            # --------------------------------------------------------
             for item in lessons:
                 lesson_id = item.get("lesson_id")
                 if not lesson_id:
-                    continue    # safety: never create lessons
+                    continue  # safety: never create lessons
 
                 lesson = Lesson.query.get(lesson_id)
                 if not lesson:
                     continue
 
-                # ----------------------------------------------------
+                # ---------------------------
                 # SANITIZE MONEY FIELDS
-                # ----------------------------------------------------
+                # ---------------------------
                 import re
                 payment_raw = re.sub(r"[^\d.\-]", "", item.get("payment") or "")
                 price_raw   = re.sub(r"[^\d.\-]", "", item.get("price_pl") or "")
@@ -4434,9 +4439,9 @@ def create_app():
                     except ValueError:
                         pass
 
-                # ----------------------------------------------------
+                # ---------------------------
                 # NORMAL FIELDS
-                # ----------------------------------------------------
+                # ---------------------------
                 horse_val = item.get("horse")
                 print("DEBUG HORSE RECEIVED:", repr(horse_val), "for lesson", lesson_id)
 
@@ -4444,9 +4449,7 @@ def create_app():
                     horse_val = ""
 
                 lesson.horse = horse_val
-
-                att_val = item.get("attendance")
-                lesson.attendance = att_val or ""
+                lesson.attendance = (item.get("attendance") or "")
 
                 gp_val = item.get("group_priv")
                 if gp_val not in ("", None, "None"):
@@ -4460,9 +4463,9 @@ def create_app():
                 if teacher_val not in ("", None, "None"):
                     lesson.teacher = teacher_val
 
-                # ----------------------------------------------------
+                # ---------------------------
                 # CLIENT NOTES
-                # ----------------------------------------------------
+                # ---------------------------
                 notes_val = item.get("notes")
                 if notes_val not in ("", None, "None"):
                     if lesson.client:
@@ -4474,9 +4477,9 @@ def create_app():
                 lesson.start = item.get("start")
                 lesson.end   = item.get("end")
 
-                # ----------------------------------------------------
-                # CARRY-FORWARD ENGINE (WEEKLY / FORTNIGHTLY)
-                # ----------------------------------------------------
+                # ---------------------------
+                # CARRY-FORWARD ENGINE
+                # ---------------------------
                 if lesson.freq in ("W", "F") and lesson.horse not in ("", None, "None"):
 
                     future_lessons = (
@@ -4500,22 +4503,55 @@ def create_app():
                             fl.attendance = old_att
 
             # --------------------------------------------------------
-            # TEMP: DISABLE RECALC TO PROVE COMMIT
+            # SAVE TEACHER BLOCKS
             # --------------------------------------------------------
-            try:
-                recalc_all_lessons()
-                db.session.commit()
-            except Exception as e:
-                print("🔥 ORM COMMIT ERROR:", e)
-                db.session.rollback()
-                return {"status": "error", "message": str(e)}, 500
+            incoming_ids = set()
 
+            for tb in teacher_blocks:
+                tb_id = tb.get("id")
+                block_key = tb.get("block_key") or ""
+                horse = tb.get("horse") or ""
+                teacher_name = tb.get("teacher_name") or ""
+                notes = tb.get("notes") or ""
+
+                if tb_id:
+                    # UPDATE EXISTING
+                    incoming_ids.add(int(tb_id))
+                    obj = TeacherBlock.query.get(int(tb_id))
+                    if obj:
+                        obj.block_key = block_key
+                        obj.horse = horse
+                        obj.teacher_name = teacher_name
+                        obj.notes = notes
+                else:
+                    # CREATE NEW
+                    new_tb = TeacherBlock(
+                        block_key=block_key,
+                        horse=horse,
+                        teacher_name=teacher_name,
+                        notes=notes,
+                        date=date
+                    )
+                    db.session.add(new_tb)
+                    db.session.flush()  # get new ID
+                    incoming_ids.add(new_tb.id)
+
+            # DELETE REMOVED BLOCKS
+            existing = TeacherBlock.query.filter_by(date=date).all()
+            for obj in existing:
+                if obj.id not in incoming_ids:
+                    db.session.delete(obj)
+
+            # --------------------------------------------------------
+            # FINAL COMMIT
+            # --------------------------------------------------------
             db.session.commit()
-            print("✅ COMMIT OK (no recalc)")
+            print("✅ COMMIT OK")
             return {"status": "ok"}, 200
 
         except Exception as e:
             db.session.rollback()
+            print("🔥 ERROR:", e)
             return {"status": "error", "message": str(e)}, 500
 
 
