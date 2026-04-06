@@ -5289,6 +5289,7 @@ Cherbon Waters Admin
     def extract_start(t):
         if not t:
             return ""
+        # t is always "HH:MM - HH:MM"
         return t.split("-")[0].strip()
 
     @app.route('/save_txt', methods=['POST'])
@@ -5342,7 +5343,7 @@ Cherbon Waters Admin
 
             teacher_block_times = []
             for tb in teacher_blocks:
-                start = tb.block_key[:5]
+                start = extract_start(tb.timerange)
                 if start and tb.horse:
                     teacher_block_times.append((tb.horse.strip(), start + "*"))
 
@@ -5481,7 +5482,7 @@ Cherbon Waters Admin
 
             teacher_block_times = []
             for tb in teacher_blocks:
-                start = tb.block_key[:5]
+                start = extract_start(tb.timerange)
                 if start and tb.horse:
                     teacher_block_times.append((tb.horse.strip(), start + "*"))
 
