@@ -1560,7 +1560,7 @@ function aggregateTimesForHorse(horseName) {
             // Extract "11:30 - 12:30" from block_key
             const raw = tb.block_key.split("_")[0];
             const pretty = raw.replace("-", " - ");
-            set.add(pretty.trim());
+            set.add(tb.block_key.trim());
         }
     });
 
