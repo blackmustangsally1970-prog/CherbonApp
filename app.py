@@ -5313,6 +5313,22 @@ Cherbon Waters Admin
         # fallback
         return formatted
 
+    def rebuild_full_timerange(start_time):
+        # start_time = "HH:MM"
+        digits = "".join(ch for ch in start_time if ch.isdigit())
+        if len(digits) < 4:
+            return start_time
+
+        hhmm = digits[:4]
+
+        # Look up in Time table
+        all_times = Time.query.all()
+        for t in all_times:
+            t_digits = "".join(ch for ch in t.timerange if ch.isdigit())
+            if t_digits.startswith(hhmm):
+                return t.timerange  # full "HH:MM - HH:MM"
+
+
     @app.route('/save_txt', methods=['POST'])
     def save_txt():
         try:
@@ -5350,7 +5366,7 @@ Cherbon Waters Admin
                         l.horse = ui["horse"]
 
                     if ui.get("time"):
-                        l.time_frame = ui["time"]
+                        l.time_frame = rebuild_full_timerange(ui["time"])
 
                     if ui.get("attendance"):
                         l.attendance = ui["attendance"]
@@ -5492,7 +5508,7 @@ Cherbon Waters Admin
                     if ui.get("horse"):
                         l.horse = ui["horse"]
                     if ui.get("time"):
-                        l.time_frame = ui["time"]
+                        l.time_frame = rebuild_full_timerange(ui["time"])
                     if ui.get("attendance"):
                         l.attendance = ui["attendance"]
                     if ui.get("teacher"):
