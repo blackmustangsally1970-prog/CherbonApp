@@ -2066,25 +2066,6 @@ def create_app():
         # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
         ctx = build_lessons_context(selected_date, selected_date_str)
 
-        # ---------------------------------------------------------
-        # 4E: Load teacher block assignments for this date
-        # ---------------------------------------------------------
-        assignments = TeacherBlockAssignment.query.filter(
-            TeacherBlockAssignment.date == selected_date_str
-        ).all()
-
-        assignment_map = {}
-        for a in assignments:
-            assignment_map.setdefault(a.block_key, {})[a.slot_number] = {
-                "teacher_name": a.teacher_name,
-                "horse": a.horse,
-                "notes": a.notes,
-                "block_key": a.block_key,
-                "slot_number": a.slot_number
-            }
-        # ---------------------------------------------------------
-
-
         grouped_lessons = ctx["grouped_lessons"]
         horse_list = ctx["horse_list"]
         horse_schedule = ctx["horse_schedule"]
@@ -2127,8 +2108,7 @@ def create_app():
             client_lookup=client_lookup,
             slot_map=slot_map,
             merged_tags=ctx["merged_tags"],
-            norm_timerange_key=norm_timerange_key,
-            assignment_map=assignment_map
+            norm_timerange_key=norm_timerange_key
         )
 
 
