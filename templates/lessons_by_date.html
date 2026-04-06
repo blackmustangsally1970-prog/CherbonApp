@@ -1522,8 +1522,9 @@ document.addEventListener('blur', function(e) {
 
 
 <script>
-const savedTeacherBlocks = {{ teacher_blocks|tojson }};
+window.savedTeacherBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
 </script>
+
 
 <script>
 // --- HORSE TOOLTIP LOGIC ---
@@ -3537,8 +3538,7 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
 
     // These come from Flask: teacher_blocks = TeacherBlock.query.filter_by(date=...).all()
-    const savedBlocks = {{ teacher_blocks|tojson }};
-
+    const savedBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
     savedBlocks.forEach(tb => {
 
         // Find the correct block container
