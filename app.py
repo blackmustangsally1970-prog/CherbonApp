@@ -5342,7 +5342,7 @@ Cherbon Waters Admin
 
             teacher_block_times = []
             for tb in teacher_blocks:
-                start = extract_start(tb.block_key)
+                start = tb.block_key[:5]
                 if start and tb.horse:
                     teacher_block_times.append((tb.horse.strip(), start + "*"))
 
@@ -5481,7 +5481,7 @@ Cherbon Waters Admin
 
             teacher_block_times = []
             for tb in teacher_blocks:
-                start = extract_start(tb.block_key)
+                start = tb.block_key[:5]
                 if start and tb.horse:
                     teacher_block_times.append((tb.horse.strip(), start + "*"))
 
