@@ -1,0 +1,298 @@
+    def extract_start(t):
+        if not t:
+            return ""
+        return t.split("-")[0].strip()
+
+    @app.route('/save_txt', methods=['POST'])
+    def save_txt():
+        try:
+            selected_date = request.args.get("selected_date")
+            if not selected_date:
+                return {"error": "Missing selected_date"}, 400
+
+            day = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            today_str = day.strftime("%d-%m-%y")
+            filename = f"lesson_schedule_{today_str}.txt"
+
+            # --- Pull all horses ---
+            horses = [
+                (h.horse or "").strip()
+                for h in db.session.query(Horse).order_by(Horse.orderpdk).all()
+                if (h.horse or "").strip()
+            ]
+
+            # --- Pull lessons ---
+            lessons = db.session.query(Lesson).filter(
+                Lesson.lesson_date == day
+            ).order_by(Lesson.time_frame.asc()).all()
+
+            # --- Merge UI state into lessons ---
+            ui_state = request.get_json(silent=True) or {}
+            ui_lessons = {str(item["lesson_id"]): item for item in ui_state.get("lessons", [])}
+
+            for l in lessons:
+                lid = str(l.lesson_id)
+                if lid in ui_lessons:
+                    ui = ui_lessons[lid]
+
+                    if ui.get("horse"):
+                        l.horse = ui["horse"]
+
+                    if ui.get("time"):
+                        l.time_frame = ui["time"]
+
+                    if ui.get("attendance"):
+                        l.attendance = ui["attendance"]
+
+                    if ui.get("teacher"):
+                        l.teacher = ui["teacher"]
+
+            # --- Pull teacher blocks ---
+            teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+
+
+            teacher_block_times = []
+            for tb in teacher_blocks:
+                start = extract_start(tb.block_key)
+                if start:
+                    teacher_block_times.append((tb.horse.strip(), start + "*"))
+
+            # --- Build time slots (include teacher block times) ---
+            lesson_times = {
+                extract_start(l.time_frame)
+                for l in lessons
+                if l.time_frame
+            }
+
+            block_times = {
+                t.replace("*", "")
+                for (_, t) in teacher_block_times
+            }
+
+            time_slots = sorted(lesson_times | block_times)
+
+            # --- Build empty schedule matrix ---
+            schedule = {h: {slot: "" for slot in time_slots} for h in horses}
+
+            # --- Fill schedule with lessons ---
+            for l in lessons:
+                h = (l.horse or "").strip()
+                if not h or h not in schedule:
+                    continue
+
+                if (l.attendance or "").upper() == "C":
+                    continue
+
+                slot = extract_start(l.time_frame)
+                if slot not in time_slots:
+                    continue
+
+                if (l.lesson_type or "").strip() == "Trail Ride":
+                    disp = f"{slot}T"
+                else:
+                    disp = slot
+
+                schedule[h][slot] = disp
+
+            # --- Insert teacher block times ---
+            for horse, t in teacher_block_times:
+                base = t.replace("*", "")
+                if horse in schedule and base in schedule[horse]:
+                    existing = schedule[horse][base]
+                    if existing:
+                        schedule[horse][base] = existing + "*"
+                    else:
+                        schedule[horse][base] = t
+
+            # --- Build TXT output ---
+            columns = ["Horse"] + time_slots
+
+            col_widths = []
+            for col in columns:
+                if col == "Horse":
+                    max_len = max(len(h) for h in horses)
+                else:
+                    max_len = max(len(schedule[h].get(col, "")) for h in horses)
+                    max_len = max(max_len, len(col))
+                col_widths.append(max(max_len, 5))
+
+            def fmt_row(cells):
+                return "| " + " | ".join(
+                    str(c).ljust(col_widths[i]) for i, c in enumerate(cells)
+                ) + " |"
+
+            header = f"Lesson Schedule for {today_str}"
+            header_line = fmt_row(columns)
+            underline = "|" + "|".join("_" * (w + 2) for w in col_widths) + "|"
+
+            lines = [header, "", header_line, underline]
+
+            for h in horses:
+                row = [h] + [schedule[h][slot] for slot in time_slots]
+                lines.append(fmt_row(row))
+                lines.append(underline)
+
+            full_text = "\n".join(lines)
+
+            return Response(
+                full_text,
+                mimetype="text/plain",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}"
+                }
+            )
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+    def extract_start(t):
+        if not t:
+            return ""
+        return t.split("-")[0].strip()
+
+    @app.route('/save_xlsx', methods=['POST'])
+    def save_xlsx():
+        try:
+            selected_date = request.args.get("selected_date")
+            if not selected_date:
+                return {"error": "Missing selected_date"}, 400
+
+            day = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            selected_date_str = selected_date  # TeacherBlock stores date as string
+            today_str = day.strftime("%d-%m-%y")
+            filename = f"lesson_schedule_{today_str}.xlsx"
+
+            # --- Pull all horses ---
+            horses = [
+                (h.horse or "").strip()
+                for h in db.session.query(Horse).order_by(Horse.orderpdk).all()
+                if (h.horse or "").strip()
+            ]
+
+            # --- Pull lessons ---
+            lessons = db.session.query(Lesson).filter(
+                Lesson.lesson_date == day
+            ).order_by(Lesson.time_frame.asc()).all()
+
+            # --- Merge UI state ---
+            ui_state = request.get_json(silent=True) or {}
+            ui_lessons = {str(item["lesson_id"]): item for item in ui_state.get("lessons", [])}
+
+            for l in lessons:
+                lid = str(l.lesson_id)
+                if lid in ui_lessons:
+                    ui = ui_lessons[lid]
+
+                    if ui.get("horse"):
+                        l.horse = ui["horse"]
+                    if ui.get("time"):
+                        l.time_frame = ui["time"]
+                    if ui.get("attendance"):
+                        l.attendance = ui["attendance"]
+                    if ui.get("teacher"):
+                        l.teacher = ui["teacher"]
+
+            # --- Pull teacher blocks ---
+            teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+
+            teacher_block_times = []
+            for tb in teacher_blocks:
+                start = extract_start(tb.block_key)
+                if start and tb.horse:
+                    teacher_block_times.append((tb.horse.strip(), start + "*"))
+
+            # --- Build time slots ---
+            lesson_times = {
+                extract_start(l.time_frame)
+                for l in lessons
+                if l.time_frame
+            }
+
+            block_times = {
+                t.replace("*", "")
+                for (_, t) in teacher_block_times
+            }
+
+            time_slots = sorted(lesson_times | block_times)
+
+            # --- Build schedule ---
+            schedule = {h: {slot: "" for slot in time_slots} for h in horses}
+
+            # --- Fill lessons ---
+            for l in lessons:
+                h = (l.horse or "").strip()
+                if not h or h not in schedule:
+                    continue
+                if (l.attendance or "").upper() == "C":
+                    continue
+
+                slot = extract_start(l.time_frame)
+                if slot not in time_slots:
+                    continue
+
+                disp = f"{slot}T" if (l.lesson_type or "").strip() == "Trail Ride" else slot
+                schedule[h][slot] = disp
+
+            # --- Insert teacher blocks ---
+            for horse, t in teacher_block_times:
+                base = t.replace("*", "")
+                if horse in schedule and base in schedule[horse]:
+                    existing = schedule[horse][base]
+                    schedule[horse][base] = existing + "*" if existing else t
+
+            # --- Excel output ---
+            out_dir = "/home/schedule_exports"
+            os.makedirs(out_dir, exist_ok=True)
+            excel_path = os.path.join(out_dir, filename)
+
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, Alignment, Border, Side
+
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Lesson Schedule"
+
+            columns = ["Horse"] + time_slots
+            ws.append(columns)
+
+            for h in horses:
+                row = [h] + [schedule[h][slot] for slot in time_slots]
+                ws.append(row)
+
+            bold_font = Font(bold=True)
+            center_align = Alignment(horizontal='center', vertical='center')
+            thin_border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    cell.font = bold_font
+                    cell.alignment = center_align
+                    cell.border = thin_border
+
+            ws.page_margins.left   = 0.2
+            ws.page_margins.right  = 0.2
+            ws.page_margins.top    = 0.1
+            ws.page_margins.bottom = 0.1
+            ws.page_margins.header = 0.0
+            ws.page_margins.footer = 0.0
+            ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+            ws.page_setup.fitToWidth = 1
+            ws.page_setup.fitToHeight = 0
+            ws.page_setup.paperSize = ws.PAPERSIZE_A4
+
+            for col in ws.columns:
+                max_length = max(len(str(cell.value or "")) for cell in col)
+                adjusted_width = max(max_length + 2, 10)
+                ws.column_dimensions[col[0].column_letter].width = adjusted_width
+
+            wb.save(excel_path)
+
+            return send_file(excel_path, as_attachment=True)
+
+        except Exception as e:
+            return {"error": str(e)}, 500

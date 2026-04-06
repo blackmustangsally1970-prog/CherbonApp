@@ -5300,6 +5300,7 @@ Cherbon Waters Admin
 
             day = datetime.strptime(selected_date, "%Y-%m-%d").date()
             today_str = day.strftime("%d-%m-%y")
+            selected_date_str = selected_date
             filename = f"lesson_schedule_{today_str}.txt"
 
             # --- Pull all horses ---
@@ -5336,7 +5337,8 @@ Cherbon Waters Admin
                         l.teacher = ui["teacher"]
 
             # --- Pull teacher blocks ---
-            teacher_blocks = TeacherBlock.query.filter_by(date=selected_date).all()
+            teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+
 
             teacher_block_times = []
             for tb in teacher_blocks:
@@ -5432,11 +5434,6 @@ Cherbon Waters Admin
         except Exception as e:
             return {"error": str(e)}, 500
 
-    def extract_start(t):
-        if not t:
-            return ""
-        return t.split("-")[0].strip()
-
     @app.route('/save_xlsx', methods=['POST'])
     def save_xlsx():
         try:
@@ -5445,6 +5442,7 @@ Cherbon Waters Admin
                 return {"error": "Missing selected_date"}, 400
 
             day = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            selected_date_str = selected_date  # TeacherBlock stores date as string
             today_str = day.strftime("%d-%m-%y")
             filename = f"lesson_schedule_{today_str}.xlsx"
 
@@ -5460,7 +5458,7 @@ Cherbon Waters Admin
                 Lesson.lesson_date == day
             ).order_by(Lesson.time_frame.asc()).all()
 
-            # --- Merge UI state into lessons (Option 1) ---
+            # --- Merge UI state ---
             ui_state = request.get_json(silent=True) or {}
             ui_lessons = {str(item["lesson_id"]): item for item in ui_state.get("lessons", [])}
 
@@ -5471,53 +5469,66 @@ Cherbon Waters Admin
 
                     if ui.get("horse"):
                         l.horse = ui["horse"]
-
                     if ui.get("time"):
                         l.time_frame = ui["time"]
-
                     if ui.get("attendance"):
                         l.attendance = ui["attendance"]
-
                     if ui.get("teacher"):
                         l.teacher = ui["teacher"]
 
+            # --- Pull teacher blocks ---
+            teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+
+            teacher_block_times = []
+            for tb in teacher_blocks:
+                start = extract_start(tb.block_key)
+                if start and tb.horse:
+                    teacher_block_times.append((tb.horse.strip(), start + "*"))
+
             # --- Build time slots ---
-            time_slots = sorted({
-                (l.time_frame or "").split("-")[0].strip()
+            lesson_times = {
+                extract_start(l.time_frame)
                 for l in lessons
                 if l.time_frame
-            })
+            }
 
-            # --- Build empty schedule ---
+            block_times = {
+                t.replace("*", "")
+                for (_, t) in teacher_block_times
+            }
+
+            time_slots = sorted(lesson_times | block_times)
+
+            # --- Build schedule ---
             schedule = {h: {slot: "" for slot in time_slots} for h in horses}
 
-            # --- Fill schedule ---
+            # --- Fill lessons ---
             for l in lessons:
                 h = (l.horse or "").strip()
                 if not h or h not in schedule:
                     continue
-
                 if (l.attendance or "").upper() == "C":
                     continue
 
-                slot = (l.time_frame or "").split("-")[0].strip()
+                slot = extract_start(l.time_frame)
                 if slot not in time_slots:
                     continue
 
-                if (l.lesson_type or "").strip() == "Trail Ride":
-                    disp = f"{slot}T"
-                else:
-                    disp = slot
-
+                disp = f"{slot}T" if (l.lesson_type or "").strip() == "Trail Ride" else slot
                 schedule[h][slot] = disp
 
-            # --- Output directory ---
+            # --- Insert teacher blocks ---
+            for horse, t in teacher_block_times:
+                base = t.replace("*", "")
+                if horse in schedule and base in schedule[horse]:
+                    existing = schedule[horse][base]
+                    schedule[horse][base] = existing + "*" if existing else t
+
+            # --- Excel output ---
             out_dir = "/home/schedule_exports"
             os.makedirs(out_dir, exist_ok=True)
-
             excel_path = os.path.join(out_dir, filename)
 
-            # --- Excel Output ---
             from openpyxl import Workbook
             from openpyxl.styles import Font, Alignment, Border, Side
 
