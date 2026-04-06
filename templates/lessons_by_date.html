@@ -1548,27 +1548,36 @@ function extractPrettyTime(blockKey) {
     // Take only the first segment before underscore
     let first = blockKey.split("_")[0].trim();
 
+    // Normalize all hyphens (convert en-dash, em-dash, minus, etc.)
+    first = first.replace(/[–—−]/g, "-");
+
     // Remove all spaces
     first = first.replace(/\s+/g, "");
 
-    // CASE 1: Already has hyphen (12:30-13:20)
-    if (first.includes("-")) {
-        const parts = first.split("-");
-        if (parts.length === 2) {
-            return parts[0] + " - " + parts[1];
-        }
+    // CASE 1: Already in HH:MM-HH:MM format
+    if (/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(first)) {
+        const [start, end] = first.split("-");
+        return `${start} - ${end}`;
     }
 
-    // CASE 2: Smashed format (12:3013:20)
-    if (first.length === 9 && first[2] === ":" && first[5] === ":") {
-        const start = first.slice(0, 5);   // 12:30
-        const end   = first.slice(5);      // 13:20
-        return start + " - " + end;
+    // CASE 2: Smashed HH:MMHH:MM format (12:3013:20)
+    if (/^\d{2}:\d{2}\d{2}:\d{2}$/.test(first)) {
+        const start = first.slice(0, 5);
+        const end   = first.slice(5);
+        return `${start} - ${end}`;
+    }
+
+    // ⭐ CASE 3: Fully smashed HHMMHHMM format (12301320)
+    if (/^\d{8}$/.test(first)) {
+        const start = first.slice(0, 2) + ":" + first.slice(2, 4);
+        const end   = first.slice(4, 6) + ":" + first.slice(6, 8);
+        return `${start} - ${end}`;
     }
 
     // Fallback
     return first;
 }
+
 
 function aggregateTimesForHorse(horseName) {
     const key = canon(horseName);
