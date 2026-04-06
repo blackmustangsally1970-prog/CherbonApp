@@ -5286,8 +5286,6 @@ Cherbon Waters Admin
 
 
 
-
-
     @app.route('/save_txt', methods=['POST'])
     def save_txt():
         try:
@@ -5299,18 +5297,19 @@ Cherbon Waters Admin
             today_str = day.strftime("%d-%m-%y")
             filename = f"lesson_schedule_{today_str}.txt"
 
-            # --- Pull all horses (ALWAYS include all horses) ---
+            # --- Pull all horses ---
             horses = [
                 (h.horse or "").strip()
                 for h in db.session.query(Horse).order_by(Horse.orderpdk).all()
                 if (h.horse or "").strip()
             ]
 
+            # --- Pull lessons ---
             lessons = db.session.query(Lesson).filter(
                 Lesson.lesson_date == day
             ).order_by(Lesson.time_frame.asc()).all()
 
-            # --- Merge UI state into lessons (Option 1) ---
+            # --- Merge UI state into lessons ---
             ui_state = request.get_json(silent=True) or {}
             ui_lessons = {str(item["lesson_id"]): item for item in ui_state.get("lessons", [])}
 
@@ -5331,18 +5330,33 @@ Cherbon Waters Admin
                     if ui.get("teacher"):
                         l.teacher = ui["teacher"]
 
-            # --- Build time slots ---
-            time_slots = sorted({
-                (l.time_frame or "").split("-")[0].strip()
+            # --- Pull teacher blocks ---
+            teacher_blocks = TeacherBlock.query.filter_by(date=selected_date).all()
+
+            teacher_block_times = []
+            for tb in teacher_blocks:
+                start = extract_start(tb.block_key)
+                if start:
+                    teacher_block_times.append((tb.horse.strip(), start + "*"))
+
+            # --- Build time slots (include teacher block times) ---
+            lesson_times = {
+                extract_start(l.time_frame)
                 for l in lessons
                 if l.time_frame
-            })
+            }
 
+            block_times = {
+                t.replace("*", "")
+                for (_, t) in teacher_block_times
+            }
+
+            time_slots = sorted(lesson_times | block_times)
 
             # --- Build empty schedule matrix ---
             schedule = {h: {slot: "" for slot in time_slots} for h in horses}
 
-            # --- Fill schedule (skip attendance C) ---
+            # --- Fill schedule with lessons ---
             for l in lessons:
                 h = (l.horse or "").strip()
                 if not h or h not in schedule:
@@ -5351,7 +5365,7 @@ Cherbon Waters Admin
                 if (l.attendance or "").upper() == "C":
                     continue
 
-                slot = (l.time_frame or "").split("-")[0].strip()
+                slot = extract_start(l.time_frame)
                 if slot not in time_slots:
                     continue
 
@@ -5361,6 +5375,16 @@ Cherbon Waters Admin
                     disp = slot
 
                 schedule[h][slot] = disp
+
+            # --- Insert teacher block times ---
+            for horse, t in teacher_block_times:
+                base = t.replace("*", "")
+                if horse in schedule and base in schedule[horse]:
+                    existing = schedule[horse][base]
+                    if existing:
+                        schedule[horse][base] = existing + "*"
+                    else:
+                        schedule[horse][base] = t
 
             # --- Build TXT output ---
             columns = ["Horse"] + time_slots
@@ -5392,7 +5416,6 @@ Cherbon Waters Admin
 
             full_text = "\n".join(lines)
 
-            # --- Return TXT directly (NO FILE WRITING) ---
             return Response(
                 full_text,
                 mimetype="text/plain",
@@ -5403,8 +5426,6 @@ Cherbon Waters Admin
 
         except Exception as e:
             return {"error": str(e)}, 500
-
-
 
     @app.route('/save_xlsx', methods=['POST'])
     def save_xlsx():
@@ -5429,7 +5450,7 @@ Cherbon Waters Admin
                 Lesson.lesson_date == day
             ).order_by(Lesson.time_frame.asc()).all()
 
-            # --- Merge UI state into lessons (Option 1) ---
+            # --- Merge UI state into lessons ---
             ui_state = request.get_json(silent=True) or {}
             ui_lessons = {str(item["lesson_id"]): item for item in ui_state.get("lessons", [])}
 
@@ -5450,95 +5471,37 @@ Cherbon Waters Admin
                     if ui.get("teacher"):
                         l.teacher = ui["teacher"]
 
-            # --- Build time slots ---
-            time_slots = sorted({
-                (l.time_frame or "").split("-")[0].strip()
+            # --- Pull teacher blocks ---
+            teacher_blocks = TeacherBlock.query.filter_by(date=selected_date).all()
+
+            teacher_block_times = []
+            for tb in teacher_blocks:
+                start = extract_start(tb.block_key)
+                if start:
+                    teacher_block_times.append((tb.horse.strip(), start + "*"))
+
+            # --- Build time slots (include teacher block times) ---
+            lesson_times = {
+                extract_start(l.time_frame)
                 for l in lessons
                 if l.time_frame
-            })
+            }
 
+            block_times = {
+                t.replace("*", "")
+                for (_, t) in teacher_block_times
+            }
+
+            time_slots = sorted(lesson_times | block_times)
 
             # --- Build empty schedule ---
             schedule = {h: {slot: "" for slot in time_slots} for h in horses}
 
-            # --- Fill schedule ---
+            # --- Fill schedule with lessons ---
             for l in lessons:
                 h = (l.horse or "").strip()
                 if not h or h not in schedule:
                     continue
-
-                if (l.attendance or "").upper() == "C":
-                    continue
-
-                slot = (l.time_frame or "").split("-")[0].strip()
-                if slot not in time_slots:
-                    continue
-
-                if (l.lesson_type or "").strip() == "Trail Ride":
-                    disp = f"{slot}T"
-                else:
-                    disp = slot
-
-                schedule[h][slot] = disp
-
-            # --- Output directory ---
-            out_dir = "/home/schedule_exports"
-            os.makedirs(out_dir, exist_ok=True)
-
-            excel_path = os.path.join(out_dir, filename)
-
-            # --- Excel Output ---
-            from openpyxl import Workbook
-            from openpyxl.styles import Font, Alignment, Border, Side
-
-            wb = Workbook()
-            ws = wb.active
-            ws.title = "Lesson Schedule"
-
-            columns = ["Horse"] + time_slots
-            ws.append(columns)
-
-            for h in horses:
-                row = [h] + [schedule[h][slot] for slot in time_slots]
-                ws.append(row)
-
-            bold_font = Font(bold=True)
-            center_align = Alignment(horizontal='center', vertical='center')
-            thin_border = Border(
-                left=Side(style='thin'),
-                right=Side(style='thin'),
-                top=Side(style='thin'),
-                bottom=Side(style='thin')
-            )
-
-            for row in ws.iter_rows():
-                for cell in row:
-                    cell.font = bold_font
-                    cell.alignment = center_align
-                    cell.border = thin_border
-
-            ws.page_margins.left   = 0.2
-            ws.page_margins.right  = 0.2
-            ws.page_margins.top    = 0.1
-            ws.page_margins.bottom = 0.1
-            ws.page_margins.header = 0.0
-            ws.page_margins.footer = 0.0
-            ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
-            ws.page_setup.fitToWidth = 1
-            ws.page_setup.fitToHeight = 0
-            ws.page_setup.paperSize = ws.PAPERSIZE_A4
-
-            for col in ws.columns:
-                max_length = max(len(str(cell.value or "")) for cell in col)
-                adjusted_width = max(max_length + 2, 10)
-                ws.column_dimensions[col[0].column_letter].width = adjusted_width
-
-            wb.save(excel_path)
-
-            return send_file(excel_path, as_attachment=True)
-
-        except Exception as e:
-            return {"error": str(e)}, 500
 
 
 
