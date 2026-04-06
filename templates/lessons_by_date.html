@@ -1319,15 +1319,25 @@ select.teacher-dropdown {
 
       </div> <!-- end group-header -->
 
-      <!-- ⭐ NEW: Teacher assignment rows will be inserted HERE -->
-      <div class="block-teacher-rows" data-block-key="{{ block_key }}"></div>
+    <!-- ⭐ Teacher rows + button inline -->
+    <div style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
 
-<button type="button"
-        class="add-teacher-block-btn"
-        data-block-key="{{ block_key }}"
-        style="margin:4px 0; font-size:11px;">
-  ➕ Teacher
-</button>
+        <button type="button"
+                class="add-teacher-block-btn"
+                data-block-key="{{ block_key }}"
+                style="font-size:11px;">
+          ➕ Teacher
+        </button>
+
+        <div class="block-teacher-rows"
+             data-block-key="{{ block_key }}"
+             style="display:flex; gap:6px;">
+        </div>
+
+    </div>
+
+</div> <!-- end group-header -->
+
 
       <!-- ⭐ Your lesson-table continues below this point -->
 
