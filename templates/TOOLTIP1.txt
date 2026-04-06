@@ -1,79 +1,126 @@
-ock_key, teacher_horse.horse1 AS teacher_horse_horse1, teacher_horse.horse2 AS teacher_horse_horse2
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: FROM teacher_horse
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: WHERE teacher_horse.date = %(date_1)s
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 2026-04-06 00:47:34,541 INFO sqlalchemy.engine.Engine [generated in 0.00022s] {'date_1': datetime.date(2026, 4, 6)}
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 2026-04-06 00:47:34,543 INFO sqlalchemy.engine.Engine SELECT teacher_slot.id AS teacher_slot_id, teacher_slot.lesson_date AS teacher_slot_lesson_date, teacher_slot.slot_number AS teacher_slot_slot_number, teacher_slot.teacher_name AS teacher_slot_teacher_name
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: FROM teacher_slot
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: WHERE teacher_slot.lesson_date = %(lesson_date_1)s
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 2026-04-06 00:47:34,543 INFO sqlalchemy.engine.Engine [generated in 0.00020s] {'lesson_date_1': datetime.date(2026, 4, 6)}
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: === PRICE DEBUG ===
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66660 Alison Warden price_pl: 85.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66655 Fiona Wilson price_pl: 85.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 71147 Aaron Clark price_pl: 85.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66645 Zara Lemon price_pl: 125.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 70963 Aaden Sweet price_pl: 75.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 71055 Aaliyah Adams price_pl: 75.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66646 Sofie Kaye price_pl: 75.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 71009 Aaliyah Adams price_pl: 75.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66654 Isabella Davis price_pl: 95.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66661 Abigayle Johnstone price_pl: 95.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66648 Robert Henderson price_pl: 58.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66658 Celeste Stirling-Wigg price_pl: 65.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66665 Evelyn Simpson price_pl: 58.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66664 Victoria Simpson price_pl: 58.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66662 Calliope Sougleris price_pl: 65.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66652 Kate Leggett price_pl: 58.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 71101 Jacqueline De Jong price_pl: 85.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66663 Taylor Carlson price_pl: 85.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66651 Kenzi Ross price_pl: 75.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66657 Elizabeth Murray price_pl: 68.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66653 Jessica Moran price_pl: 68.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66650 Matilda Lanskey price_pl: 0.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66649 Piia Paananen price_pl: 68.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66647 Sasha Hopkins price_pl: 75.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66659 Bella Rogan price_pl: 68.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 66656 Evelyn Cunning price_pl: 68.0
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: === END PRICE DEBUG ===
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: ABOUT TO RENDER TEMPLATE — ALL DATA LOADED OK
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 2026-04-06 00:47:34,545 INFO sqlalchemy.engine.Engine SELECT teacher_time.id AS teacher_time_id, teacher_time.teacher_key AS teacher_time_teacher_key, teacher_time.weekday AS teacher_time_weekday, teacher_time.time AS teacher_time_time
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: FROM teacher_time ORDER BY teacher_time.teacher_key, teacher_time.weekday, teacher_time.time
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 2026-04-06 00:47:34,545 INFO sqlalchemy.engine.Engine [generated in 0.00019s] {}
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: [2026-04-06 00:47:34,819] ERROR in app: Exception on /lessons_by_date [GET]
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: Traceback (most recent call last):
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     response = self.full_dispatch_request()
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     rv = self.handle_user_exception(e)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     rv = self.dispatch_request()
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/app.py", line 2092, in lessons_by_date
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     return render_template(
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/templating.py", line 150, in render_template
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     return _render(app, template, context)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/templating.py", line 131, in _render
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     rv = template.render(context)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/jinja2/environment.py", line 1295, in render
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     self.environment.handle_exception()
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/jinja2/environment.py", line 942, in handle_exception
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     raise rewrite_traceback_stack(source=source)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/templates/lessons_by_date.html", line 1525, in top-level template code
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     const savedTeacherBlocks = {{ teacher_blocks|tojson }};
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/jinja2/filters.py", line 1721, in do_tojson
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/jinja2/utils.py", line 669, in htmlsafe_json_dumps
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     dumps(obj, **kwargs)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/json/provider.py", line 179, in dumps
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     return json.dumps(obj, **kwargs)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/usr/lib64/python3.9/json/__init__.py", line 234, in dumps
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     return cls(
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/usr/lib64/python3.9/json/encoder.py", line 199, in encode
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     chunks = self.iterencode(o, _one_shot=True)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/usr/lib64/python3.9/json/encoder.py", line 257, in iterencode
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     return _iterencode(o, 0)
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/json/provider.py", line 121, in _default
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]:     raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: TypeError: Object of type Undefined is not JSON serializable
-Apr 06 00:47:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[516455]: 2026-04-06 00:47:34,830 INFO sqlalchemy.engine.Engine ROLLBACK
-[ec2-user@ip-172-31-28-43 CherbonApp]$
+       _/ _/
+       _/m/'
+Last login: Mon Apr  6 00:56:07 2026 from 65.181.3.178
+[ec2-user@ip-172-31-28-43 ~]$ cd CherbonApp
+[ec2-user@ip-172-31-28-43 CherbonApp]$ sudo journalctl -u cherbonapp.service --no-pager -n 120
+Apr 06 01:02:44 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:02:44,064 INFO sqlalchemy.engine.Engine ROLLBACK
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: >>> JOTFORM KEY IN APP: df332abc30edcbc0c8e58890ee908842
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,859 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,860 INFO sqlalchemy.engine.Engine [raw sql] {}
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,861 INFO sqlalchemy.engine.Engine select current_schema()
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,861 INFO sqlalchemy.engine.Engine [raw sql] {}
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,862 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,862 INFO sqlalchemy.engine.Engine [raw sql] {}
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,863 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,866 INFO sqlalchemy.engine.Engine SELECT users.user_id AS users_user_id, users.username AS users_username, users.password_hash AS users_password_hash, users.active AS users_active, users.role AS users_role
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: FROM users
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: WHERE users.username = %(username_1)s AND users.active = true
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]:  LIMIT %(param_1)s
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,866 INFO sqlalchemy.engine.Engine [generated in 0.00023s] {'username_1': 'steve', 'param_1': 1}
+Apr 06 01:04:34 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517258]: 2026-04-06 01:04:34,972 INFO sqlalchemy.engine.Engine ROLLBACK
+Apr 06 01:04:35 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:35,054 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+Apr 06 01:04:35 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:35,055 INFO sqlalchemy.engine.Engine SELECT users.user_id AS users_user_id, users.username AS users_username, users.password_hash AS users_password_hash, users.active AS users_active, users.role AS users_role
+Apr 06 01:04:35 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM users
+Apr 06 01:04:35 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE users.user_id = %(pk_1)s
+Apr 06 01:04:35 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:35,055 INFO sqlalchemy.engine.Engine [cached since 485s ago] {'pk_1': 1}
+Apr 06 01:04:35 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:35,057 INFO sqlalchemy.engine.Engine ROLLBACK
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: === DEBUG lessons_by_date ENTRY ===
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: method: GET
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: request.values: {}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: raw date (string): ''
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: parsed date: None type: <class 'NoneType'>
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: rows found (count): 0
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: === END DEBUG ===
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,109 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,109 INFO sqlalchemy.engine.Engine SELECT times.time_id AS times_time_id, times.timerange AS times_timerange, times.length AS times_length
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM times ORDER BY times.timerange
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,109 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,115 INFO sqlalchemy.engine.Engine SELECT lessons.lesson_id AS lessons_lesson_id, lessons.lesson_date AS lessons_lesson_date, lessons.time_frame AS lessons_time_frame, lessons.block_key AS lessons_block_key, lessons.client AS lessons_client, lessons.horse AS lessons_horse, lessons.adjust AS lessons_adjust, lessons.carry_fwd AS lessons_carry_fwd, lessons.payment AS lessons_payment, lessons.price_pl AS lessons_price_pl, lessons.attendance AS lessons_attendance, lessons.balance AS lessons_balance, lessons.lesson_notes AS lessons_lesson_notes, lessons.lesson_type AS lessons_lesson_type, lessons.group_priv AS lessons_group_priv, lessons.blockends AS lessons_blockends, lessons.lesson_no AS lessons_lesson_no, lessons.freq AS lessons_freq
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM lessons
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE lessons.lesson_date = %(lesson_date_1)s ORDER BY lessons.time_frame
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,115 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {'lesson_date_1': datetime.date(2026, 4, 6)}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,117 INFO sqlalchemy.engine.Engine SELECT lesson_teacher_tags.id AS lesson_teacher_tags_id, lesson_teacher_tags.lesson_id AS lesson_teacher_tags_lesson_id, lesson_teacher_tags.lesson_date AS lesson_teacher_tags_lesson_date, lesson_teacher_tags.t1 AS lesson_teacher_tags_t1, lesson_teacher_tags.t2 AS lesson_teacher_tags_t2, lesson_teacher_tags.t3 AS lesson_teacher_tags_t3, lesson_teacher_tags.t4 AS lesson_teacher_tags_t4, lesson_teacher_tags.t5 AS lesson_teacher_tags_t5, lesson_teacher_tags.updated_at AS lesson_teacher_tags_updated_at
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM lesson_teacher_tags
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE lesson_teacher_tags.lesson_date = %(lesson_date_1)s
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,117 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {'lesson_date_1': datetime.date(2026, 4, 6)}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,118 INFO sqlalchemy.engine.Engine SELECT times.time_id AS times_time_id, times.timerange AS times_timerange, times.length AS times_length
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM times
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,118 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,177 INFO sqlalchemy.engine.Engine SELECT clients.client_id AS clients_client_id, clients.full_name AS clients_full_name, clients.guardian_name AS clients_guardian_name, clients.guardian_contact AS clients_guardian_contact, clients.guardian2_name AS clients_guardian2_name, clients.mobile2 AS clients_mobile2, clients.email_guardian2 AS clients_email_guardian2, clients.mobile AS clients_mobile, clients.email_primary AS clients_email_primary, clients.email_secondary AS clients_email_secondary, clients.age AS clients_age, clients.weight_kg AS clients_weight_kg, clients.height_cm AS clients_height_cm, clients.disclaimer AS clients_disclaimer, clients.invoice_required AS clients_invoice_required, clients.jotform_submission_id AS clients_jotform_submission_id, clients.ndis_number AS clients_ndis_number, clients.ndis_code AS clients_ndis_code, clients.notes AS clients_notes, clients.notes2 AS clients_notes2
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM clients
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,177 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,680 INFO sqlalchemy.engine.Engine SELECT lesson_block_tags.id AS lesson_block_tags_id, lesson_block_tags.lesson_date AS lesson_block_tags_lesson_date, lesson_block_tags.time_range AS lesson_block_tags_time_range, lesson_block_tags.lesson_type AS lesson_block_tags_lesson_type, lesson_block_tags.group_priv AS lesson_block_tags_group_priv, lesson_block_tags.teacher_tags AS lesson_block_tags_teacher_tags, lesson_block_tags.teacher1 AS lesson_block_tags_teacher1, lesson_block_tags.teacher2 AS lesson_block_tags_teacher2, lesson_block_tags.teacher3 AS lesson_block_tags_teacher3, lesson_block_tags.teacher4 AS lesson_block_tags_teacher4, lesson_block_tags.teacher5 AS lesson_block_tags_teacher5
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM lesson_block_tags
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE lesson_block_tags.lesson_date = %(lesson_date_1)s
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,680 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {'lesson_date_1': datetime.date(2026, 4, 6)}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,682 INFO sqlalchemy.engine.Engine SELECT teacher_horse.id AS teacher_horse_id, teacher_horse.date AS teacher_horse_date, teacher_horse.block_key AS teacher_horse_block_key, teacher_horse.horse1 AS teacher_horse_horse1, teacher_horse.horse2 AS teacher_horse_horse2
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM teacher_horse
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE teacher_horse.date = %(date_1)s
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,682 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {'date_1': datetime.date(2026, 4, 6)}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,684 INFO sqlalchemy.engine.Engine SELECT teacher_slot.id AS teacher_slot_id, teacher_slot.lesson_date AS teacher_slot_lesson_date, teacher_slot.slot_number AS teacher_slot_slot_number, teacher_slot.teacher_name AS teacher_slot_teacher_name
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM teacher_slot
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE teacher_slot.lesson_date = %(lesson_date_1)s
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,684 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {'lesson_date_1': datetime.date(2026, 4, 6)}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,685 INFO sqlalchemy.engine.Engine SELECT teacher_blocks.id AS teacher_blocks_id, teacher_blocks.date AS teacher_blocks_date, teacher_blocks.block_key AS teacher_blocks_block_key, teacher_blocks.horse AS teacher_blocks_horse, teacher_blocks.teacher_name AS teacher_blocks_teacher_name, teacher_blocks.notes AS teacher_blocks_notes, teacher_blocks.created_at AS teacher_blocks_created_at
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM teacher_blocks
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE teacher_blocks.date = %(date_1)s
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,685 INFO sqlalchemy.engine.Engine [cached since 112.6s ago] {'date_1': datetime.date(2026, 4, 6)}
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: [2026-04-06 01:04:36,686] ERROR in app: Exception on /lessons_by_date [GET]
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: Traceback (most recent call last):
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     self.dialect.do_execute(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     cursor.execute(statement, parameters)
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: psycopg2.errors.UndefinedFunction: operator does not exist: character varying = date
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: LINE 3: WHERE teacher_blocks.date = '2026-04-06'::date
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:                                   ^
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: The above exception was the direct cause of the following exception:
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: Traceback (most recent call last):
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     response = self.full_dispatch_request()
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     rv = self.handle_user_exception(e)
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     rv = self.dispatch_request()
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/app.py", line 2069, in lessons_by_date
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     teacher_blocks = TeacherBlock.query.filter_by(date=selected_date).all()
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     return self._iter().all()  # type: ignore
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     return self._execute_internal(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     result: Result[Any] = compile_state_cls.orm_execute_statement(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     result = conn.execute(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/base.py", line 1415, in execute
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     return meth(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     return connection._execute_clauseelement(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/base.py", line 1637, in _execute_clauseelement
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     ret = self._execute_context(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/base.py", line 1842, in _execute_context
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     return self._exec_single_context(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/base.py", line 1982, in _exec_single_context
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     self._handle_dbapi_exception(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/base.py", line 2351, in _handle_dbapi_exception
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     self.dialect.do_execute(
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:   File "/home/ec2-user/CherbonApp/venv/lib64/python3.9/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:     cursor.execute(statement, parameters)
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedFunction) operator does not exist: character varying = date
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: LINE 3: WHERE teacher_blocks.date = '2026-04-06'::date
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]:                                   ^
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: [SQL: SELECT teacher_blocks.id AS teacher_blocks_id, teacher_blocks.date AS teacher_blocks_date, teacher_blocks.block_key AS teacher_blocks_block_key, teacher_blocks.horse AS teacher_blocks_horse, teacher_blocks.teacher_name AS teacher_blocks_teacher_name, teacher_blocks.notes AS teacher_blocks_notes, teacher_blocks.created_at AS teacher_blocks_created_at
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: FROM teacher_blocks
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: WHERE teacher_blocks.date = %(date_1)s]
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: [parameters: {'date_1': datetime.date(2026, 4, 6)}]
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: (Background on this error at: https://sqlalche.me/e/20/f405)
+Apr 06 01:04:36 ip-172-31-28-43.ap-southeast-2.compute.internal gunicorn[517261]: 2026-04-06 01:04:36,694 INFO sqlalchemy.engine.Engine ROLLBACK
+[ec
