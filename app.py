@@ -2066,7 +2066,7 @@ def create_app():
         # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
         ctx = build_lessons_context(selected_date, selected_date_str)
 
-        teacher_blocks = TeacherBlock.query.filter_by(date=selected_date).all()
+        teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
         grouped_lessons = ctx["grouped_lessons"]
         horse_list = ctx["horse_list"]
         horse_schedule = ctx["horse_schedule"]
