@@ -2368,19 +2368,31 @@ function setTooltipForElement($container, horseName) {
     const clientTimes = window.horseSchedule?.[horseName] || [];
     const teacherItems = window.teacherHorseUsage?.[horseName] || [];
 
-    const teacherBlocks = teacherItems.filter(
+    // OLD SYSTEM teacher blocks (teacher_horse)
+    const teacherBlocksOld = teacherItems.filter(
         item => typeof item === "object" && item.type === "teacher"
     );
 
+    // NEW SYSTEM teacher blocks (TeacherBlock table)
+    const teacherBlocksNew = (window.savedTeacherBlocks || [])
+        .filter(b => b.horse === horseName)
+        .map(b => ({
+            block_key: b.block_key,
+            teacher: b.teacher_name,
+            notes: b.notes
+        }));
+
     let html = `<strong>${horseName}</strong>`;
 
+    // Client lessons
     if (clientTimes.length > 0) {
         html += clientTimes.map(t => `<div>• ${t}</div>`).join('');
     }
 
-    if (teacherBlocks.length > 0) {
+    // Old teacher_horse blocks
+    if (teacherBlocksOld.length > 0) {
         html += `<div style="margin-top:4px;"><em>Teacher blocks:</em></div>`;
-        html += teacherBlocks.map(tb => {
+        html += teacherBlocksOld.map(tb => {
             let line = `• ${tb.block_key}`;
             if (tb.teacher) line += ` — ${tb.teacher}`;
             if (tb.notes) line += ` (${tb.notes})`;
@@ -2388,7 +2400,22 @@ function setTooltipForElement($container, horseName) {
         }).join('');
     }
 
-    if (clientTimes.length === 0 && teacherBlocks.length === 0) {
+    // NEW TeacherBlock entries
+    if (teacherBlocksNew.length > 0) {
+        html += `<div style="margin-top:4px;"><em>Teacher blocks:</em></div>`;
+        html += teacherBlocksNew.map(tb => {
+            let line = `• ${tb.block_key}`;
+            if (tb.teacher) line += ` — ${tb.teacher}`;
+            if (tb.notes) line += ` (${tb.notes})`;
+            return `<div>${line}</div>`;
+        }).join('');
+    }
+
+    if (
+        clientTimes.length === 0 &&
+        teacherBlocksOld.length === 0 &&
+        teacherBlocksNew.length === 0
+    ) {
         html += `<div><em>No other bookings today</em></div>`;
     }
 
@@ -2408,51 +2435,43 @@ function setTooltipForElement($container, horseName) {
     }
 }
 
-
-  if (window.jQuery) {
+if (window.jQuery) {
     $('.horse-cell').each(function () {
-      const $c = $(this);
-      const sel = $c.find('select.compact-horse').first();
-      const horseName = sel.length
-        ? sel.val()
-        : $c.find('.horse-print-only').text().trim();
+        const $c = $(this);
+        const sel = $c.find('select.compact-horse').first();
+        const horseName = sel.length
+            ? sel.val()
+            : $c.find('.horse-print-only').text().trim();
 
-      if (horseName) {
-        setTooltipForElement($c, horseName);
-      }
+        if (horseName) {
+            setTooltipForElement($c, horseName);
+        }
 
-      sel.on('change', function () {
-        const name = $(this).val();
-        setTooltipForElement($c, name);
-      });
+        sel.on('change', function () {
+            const name = $(this).val();
+            setTooltipForElement($c, name);
+        });
     });
-  }
+}
 
-  // -------------------------------
-  // RESTORED: SHOW ALL LESSONS BUTTON
-  // -------------------------------
-  const toggle = document.getElementById('toggle-all-lessons');
+// -------------------------------
+// RESTORED: SHOW ALL LESSONS BUTTON
+// -------------------------------
+const toggle = document.getElementById('toggle-all-lessons');
 
-  if (toggle) {
+if (toggle) {
     const applyState = function (showDetails) {
-      document.querySelectorAll('.lesson-block').forEach(function (block) {
-        block.classList.toggle('collapsed', !showDetails);
-      });
+        document.querySelectorAll('.lesson-block').forEach(function (block) {
+            block.classList.toggle('collapsed', !showDetails);
+        });
     };
 
-    // Apply initial state
     applyState(toggle.checked);
 
-    // Listen for changes
     toggle.addEventListener('change', function (e) {
-      applyState(e.target.checked);
+        applyState(e.target.checked);
     });
-  }
-
-  // -------------------------------
-  // REMOVED: header click collapsing
-  // -------------------------------
-  // (intentionally left out)
+}
 
 });
 </script>
