@@ -4194,7 +4194,10 @@ def create_app():
         price_pl        = request.form.get("price_pl", "$0.00")
         lesson_type     = request.form.get("lesson_type", "Arena")
         group_priv      = request.form.get("group_priv", "")
-        freq            = request.form.get("freq", "")
+        freq            = request.form.get("recurrence_type", "").strip()
+        if freq not in ["S", "W", "F"]:
+            freq = "S"
+
         respect_blockouts = request.form.get("respect_blockouts", "yes")
 
         # ⭐ Accept time_frame directly from modal (Option A)
