@@ -709,16 +709,6 @@ select.teacher-dropdown {
 }
 
 
-/* Fix width of Teacher Block horse dropdown */
-.teacher-block-horse,
-.teacher-block-horse + .select2-container {
-    width: 120px !important;
-    max-width: 120px !important;
-    min-width: 120px !important;
-}
-
-
-
 </style>
 
 
@@ -818,13 +808,9 @@ select.teacher-dropdown {
     Book Lessons
 </button>
 
-<button type="button" id="print-run-sheet" class="btn btn-danger" style="margin-left:8px;">
-    Print Run Sheet
+<button type="button" id="export-pdf" class="btn btn-danger" style="margin-left:8px;">
+    Export PDF
 </button>
-
-
-<!-- <button id="save-teachers" class="btn btn-primary">Save Teachers</button> -->
-
 
 
 </form>
@@ -875,7 +861,7 @@ select.teacher-dropdown {
               {% set set_times = teacher_times.get(key, {}).get(weekday_int|string, []) %}
               {% set lesson_blocks = [] %}
               {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
-              {% set block_key = norm_timerange_key(timerange) ~ '_' ~ lesson_type ~ '_' ~ group_priv %}
+              {% set block_key = norm_timerange_key(timerange) %}
               {# detect whether a saved row exists for this block (even if it's explicitly empty) #}
               {% set has_saved = block_key in block_tag_lookup %}
               {% set saved_tags = block_tag_lookup.get(block_key, []) %}
@@ -924,7 +910,7 @@ select.teacher-dropdown {
 
 <!-- Popup box hidden by default -->
 <div class="lesson-popup" data-block-key="{{ item.block_key }}" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:9000;">
-  <form onsubmit="return false;" class="sms-invite-form">
+  <form method="POST" action="/new_lesson" class="sms-invite-form">
 
     <input type="hidden" name="date" value="{{ selected_date }}">
     <input type="hidden" name="start" value="{{ item.time }}">
@@ -980,16 +966,18 @@ select.teacher-dropdown {
 
     <hr>
 
-<label>Client</label>
-<select name="client_id" class="searchable-dropdown" style="min-width:200px;">
-  <option value=""></option>
-  {% for c in clients|sort(attribute='full_name') %}
-    <option value="{{ c.client_id }}"
-            {% if c.client_id == item.client_id %}selected{% endif %}>
-        {{ c.full_name }}
-    </option>
-  {% endfor %}
-</select>
+    <label>Client</label>
+    <select name="client_id" class="searchable-dropdown" style="min-width:200px;">
+      <option value=""></option>
+      {% for c in clients %}
+        <option value="{{ c.client_id }}"
+    {% if c.full_name == item.client %}selected{% endif %}>
+    {{ c.full_name }}
+</option>
+
+
+      {% endfor %}
+    </select>
 
     <label>Horse</label>
     <select name="horse" class="searchable-dropdown" style="min-width:200px;">
@@ -1016,9 +1004,7 @@ select.teacher-dropdown {
 
 <!-- Popup box hidden by default -->
 <div class="lesson-popup" data-block-key="{{ item.block_key }}" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:9000;">
-  <form onsubmit="return false;" class="sms-invite-form">
-
-
+  <form method="POST" action="/new_lesson" class="sms-invite-form">
 
     <input type="hidden" name="date" value="{{ selected_date }}">
     <input type="hidden" name="start" value="{{ item.time }}">
@@ -1050,7 +1036,7 @@ select.teacher-dropdown {
 
     <label>Group Priv</label>
     <select name="group_priv">
-      {% for opt in ['CC','CT','G','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+      {% for opt in ['CC','CT','G','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
         <option>{{ opt }}</option>
       {% endfor %}
     </select>
@@ -1177,8 +1163,6 @@ select.teacher-dropdown {
 <div id="multi-lesson-booker" class="card" style="display:none; margin:12px 0;">
     <div class="card-body">
 
-          <input type="hidden" id="top_base_date" value="{{ selected_date }}">
-
         <!-- ⭐ Booking Grid Header -->
         <table class="booking-top-grid">
             <thead>
@@ -1206,10 +1190,9 @@ select.teacher-dropdown {
                     </td>
 
                     <td>
-                        <!-- ⭐ FIXED: Sorted, correct ID, Select2-ready -->
                         <select id="top_existing_client" class="searchable-dropdown">
                             <option value=""></option>
-                            {% for c in clients|sort(attribute='full_name') %}
+                            {% for c in clients %}
                                 <option value="{{ c.client_id }}">{{ c.full_name }}</option>
                             {% endfor %}
                         </select>
@@ -1229,11 +1212,11 @@ select.teacher-dropdown {
 
                     <td>
                         <label class="form-label fw-bold">Recurrence</label>
-                        <select id="recurrence_type" class="form-select">
-                            <option value="S" selected>Single</option>
-                            <option value="W">Weekly</option>
-                            <option value="F">Fortnightly</option>
-                        </select>
+                    <select id="recurrence_type" class="form-select">
+                        <option value="S" selected>Single</option>
+                        <option value="W">Weekly</option>
+                        <option value="F">Fortnightly</option>
+                    </select>
 
                         <div id="recurrence_options" class="mt-2" style="display:none;">
                             <label class="form-label">Number of Occurrences</label>
@@ -1269,12 +1252,12 @@ select.teacher-dropdown {
 </div>
 
 
+
 {% if grouped_lessons %}
   {% set arena_keys = grouped_lessons.items() | selectattr('0.1', 'equalto', 'Arena') | list %}
   {% set last_arena_key = arena_keys[-1][0] if arena_keys else None %}
-
   {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
-    {% set block_key = norm_timerange_key(timerange) ~ '_' ~ lesson_type ~ '_' ~ group_priv %}
+    {% set block_key = norm_timerange_key(timerange) %}
     {% set has_saved = block_key in block_tag_lookup %}
     {% set saved_tags = block_tag_lookup.get(block_key, []) %}
     {% set check_t1 = lesson_type.strip().lower() in ['arena', 'gym go gall'] %}
@@ -1287,20 +1270,16 @@ select.teacher-dropdown {
          data-block-header="{{ timerange }} {{ lesson_type }} {{ group_priv }} ({{ active_count }})"
          data-saved-tags="{{ saved_tags|join(',') }}">
 
-      <!-- ⭐ BLOCK HEADER -->
       <div class="group-header"
            style="display:flex; align-items:center; gap:14px; margin:10px 0; flex-wrap:nowrap;">
 
-        <!-- Header text -->
         <div class="header-text{% if (saved_tags|length) != 0 %} header-assigned{% endif %}"
              style="white-space:nowrap;">
           {{ timerange }} {{ lesson_type }} {{ group_priv }} ({{ active_count }})
         </div>
 
-        <!-- Tag checkboxes -->
         <div class="tag-box" style="display:flex; gap:6px; white-space:nowrap;">
           <input type="hidden" name="teacher_tag_{{ block_key }}" value="">
-
           {% for i in range(1, 6) %}
             {% set tag_name = 'T' ~ i %}
             {% set saved_tags = block_tag_lookup.get(block_key) or [] %}
@@ -1310,8 +1289,6 @@ select.teacher-dropdown {
             <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">
               {{ tag_name }}
               <input type="checkbox"
-                     class="lesson-tag"
-                     data-tag="{{ tag_name }}"
                      name="teacher_tag_{{ block_key }}"
                      value="{{ tag_name }}"
                      {% if checked %}checked{% endif %}>
@@ -1319,29 +1296,7 @@ select.teacher-dropdown {
           {% endfor %}
         </div>
 
-      </div> <!-- end group-header -->
-
-    <!-- ⭐ Teacher rows + button inline -->
-    <div style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
-
-        <button type="button"
-                class="add-teacher-block-btn"
-                data-block-key="{{ block_key }}"
-                style="font-size:11px;">
-          ➕ Teacher
-        </button>
-
-        <div class="block-teacher-rows"
-             data-block-key="{{ block_key }}"
-             style="display:flex; gap:6px;">
-        </div>
-
-    </div>
-
-</div> <!-- end group-header -->
-
-
-      <!-- ⭐ Your lesson-table continues below this point -->
+      </div>
 
 <div class="lesson-table">
     <div class="table-scroll">
@@ -1514,15 +1469,23 @@ select.teacher-dropdown {
 <div id="export-toast">TXT + Excel saved. Notepad++ opened.</div>
 
 <script>
-    // Core datasets — kept SEPARATE on purpose
-    window.teacherTimes = {{ teacher_times | tojson }};
-    window.horseSchedule = {{ horse_schedule | tojson }};
-    window.teacherHorseUsage = {{ teacher_horse_usage | tojson }};
-    window.invoiceClients = new Set({{ invoice_clients | tojson }});
+  window.teacherTimes = {{ teacher_times|tojson }};
+  window.horseSchedule = {{ horse_schedule|tojson }};
+  window.teacherHorseUsage = {{ teacher_horse_usage|tojson }};
+  window.invoiceClients = new Set({{ invoice_clients | tojson }});
 
-    // ❗ DO NOT MERGE teacherHorseUsage into horseSchedule
-    // Teacher entries contain objects (block_key, teacher, notes, etc.)
-    // Merging them corrupts horseSchedule and breaks tooltips.
+  // Merge teacherHorseUsage into horseSchedule
+  for (const [horse, times] of Object.entries(window.teacherHorseUsage || {})) {
+    if (!window.horseSchedule[horse]) {
+      window.horseSchedule[horse] = [];
+    }
+    for (const t of times) {
+      if (!window.horseSchedule[horse].includes(t)) {
+        window.horseSchedule[horse].push(t);
+      }
+    }
+    window.horseSchedule[horse].sort();
+  }
 </script>
 
 
@@ -1543,9 +1506,6 @@ document.addEventListener('blur', function(e) {
 </script>
 
 
-<script>
-window.savedTeacherBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
-</script>
 
 
 <script>
@@ -1564,98 +1524,34 @@ window.savedTeacherBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
     return 0;
   }
 
-function extractPrettyTime(blockKey) {
-    if (!blockKey) return "";
-
-    // Take only the first segment before underscore
-    let first = blockKey.split("_")[0].trim();
-
-    // Normalize all hyphens (convert en-dash, em-dash, minus, etc.)
-    first = first.replace(/[–—−]/g, "-");
-
-    // Remove all spaces
-    first = first.replace(/\s+/g, "");
-
-    // CASE 1: Already in HH:MM-HH:MM format
-    if (/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(first)) {
-        const [start, end] = first.split("-");
-        return `${start} - ${end}`;
-    }
-
-    // CASE 2: Smashed HH:MMHH:MM format (12:3013:20)
-    if (/^\d{2}:\d{2}\d{2}:\d{2}$/.test(first)) {
-        const start = first.slice(0, 5);
-        const end   = first.slice(5);
-        return `${start} - ${end}`;
-    }
-
-    // ⭐ CASE 3: Fully smashed HHMMHHMM format (12301320)
-    if (/^\d{8}$/.test(first)) {
-        const start = first.slice(0, 2) + ":" + first.slice(2, 4);
-        const end   = first.slice(4, 6) + ":" + first.slice(6, 8);
-        return `${start} - ${end}`;
-    }
-
-    // Fallback
-    return first;
-}
-
-
-function aggregateTimesForHorse(horseName) {
+  function aggregateTimesForHorse(horseName) {
     const key = canon(horseName);
     const set = new Set();
     if (!key) return [];
 
-    // 1. Rider lesson times (from window.horseSchedule)
     Object.keys(window.horseSchedule || {}).forEach(k => {
-        if (canon(k) === key) {
-            (window.horseSchedule[k] || []).forEach(t => {
-                if (t && String(t).trim()) set.add(String(t).trim());
-            });
-        }
+      if (canon(k) === key) {
+        (window.horseSchedule[k] || []).forEach(t => {
+          if (t && String(t).trim()) set.add(String(t).trim());
+        });
+      }
     });
 
-// 2. Saved TeacherBlock times (from DB)
-savedTeacherBlocks.forEach(tb => {
-    if (tb.horse && canon(tb.horse) === key) {
-        console.log("SAVED TB RAW:", tb.block_key,
-                    "PRETTY:", extractPrettyTime(tb.block_key));
-        set.add(extractPrettyTime(tb.block_key));
-    }
-});
-
-// 3. Live (unsaved) teacher block rows
-document.querySelectorAll(".teacher-block-row").forEach(row => {
-    const h = row.querySelector(".teacher-block-horse")?.value?.trim().toLowerCase();
-    const keyRaw = row.querySelector(".teacher-block-key")?.value?.trim();
-
-if (h && h === key && keyRaw) {
-
-    console.log("LIVE TB RAW:", keyRaw,
-                "PRETTY:", extractPrettyTime(keyRaw));
-
-    set.add(extractPrettyTime(keyRaw));
-}
-
-});
-
-    // 4. Rider lesson rows in DOM (live)
     document.querySelectorAll('tbody tr').forEach(row => {
-        const horseSel = row.querySelector('select[name^="horse_"], input[name^="horse_"]');
-        const timeAttr = (row.getAttribute('data-time') || '').trim();
-        const rowHorse = horseSel ? (horseSel.value || '').trim() : '';
-        const rowAtt = (row.getAttribute('data-att') || '').trim().toUpperCase();
+      const horseSel = row.querySelector('select[name^="horse_"], input[name^="horse_"]');
+      const timeAttr = (row.getAttribute('data-time') || '').trim();
+      const rowHorse = horseSel ? (horseSel.value || '').trim() : '';
+      const rowAtt = (row.getAttribute('data-att') || '').trim().toUpperCase();
 
-        if (rowHorse && canon(rowHorse) === key && rowAtt !== 'C' && timeAttr) {
-            set.add(timeAttr);
-        }
+      if (rowHorse && canon(rowHorse) === key && rowAtt !== 'C' && timeAttr) {
+        set.add(timeAttr);
+      }
     });
 
-    // Sort and return
     const out = Array.from(set);
     out.sort((a, b) => parseMins(a) - parseMins(b));
     return out;
-}
+  }
 
   function refreshTooltipForElement(el) {
     const $el = $(el);
@@ -1676,39 +1572,10 @@ if (h && h === key && keyRaw) {
       $tip.empty().css({visibility:'hidden', opacity:0, pointerEvents:'none'});
       return;
     }
-const title = $('<div>').text(horse).html();
-
-// Rider usage
-let body = times.map(t =>
-  '<div>' + $('<div>').text(t).html() + '</div>'
-).join('');
-
-// ---------------------------------------------------------
-// Add teacher assignments for this horse
-// ---------------------------------------------------------
-let teacherHtml = '';
-const horseKey = horse.trim().toLowerCase();
-
-if (window.teacherAssignments) {
-  Object.values(window.teacherAssignments).forEach(block => {
-    Object.values(block).forEach(t => {
-      if (t.horse && t.horse.trim().toLowerCase() === horseKey) {
-        teacherHtml += `
-          <div style="margin-top:4px; border-top:1px solid #ccc; padding-top:4px;">
-            <strong>${t.teacher_name}</strong>
-            ${t.notes ? ' — ' + t.notes : ''}
-            <div style="font-size:10px; color:#666;">
-              Block ${t.block_key}, Slot ${t.slot_number}
-            </div>
-          </div>
-        `;
-      }
-    });
-  });
-}
-
-$tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
-}
+    const title = $('<div>').text(horse).html();
+    const body = times.map(t => '<div>' + $('<div>').text(t).html() + '</div>').join('');
+    $tip.html('<strong>' + title + '</strong>' + body);
+  }
 
   function positionAndShow($select) {
     const $td = $select.closest('td.horse-cell');
@@ -1829,62 +1696,46 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+  const dateInput = document.getElementById('date-picker');
+  const form = document.getElementById('date-nav-form');
+  const selectedDate = "{{ selected_date }}"; // passed from Flask
 
-    const dateInput = document.getElementById('date-picker');
-    const form = document.getElementById('date-nav-form');
+  // Set initial date
+  if (dateInput && !selectedDate) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
+  } else if (dateInput && selectedDate) {
+    dateInput.value = selectedDate;
+  }
 
-    // ⭐ 1. Read date from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlDate = urlParams.get("date");
+  // Shift date left/right and submit
+  function shiftDate(days) {
+    const current = new Date(dateInput.value || new Date());
+    current.setDate(current.getDate() + days);
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    const newDate = `${yyyy}-${mm}-${dd}`;
 
-    // ⭐ 2. Read date from Flask (if provided)
-    const flaskDate = "{{ selected_date }}";   // may be empty
+    // update visible picker
+    dateInput.value = newDate;
 
-    let finalDate = "";
+    // keep hidden selected_date (in update-lessons-form) synchronized if present
+    const hidden = document.querySelector('form#update-lessons-form input[name="selected_date"]');
+    if (hidden) hidden.value = newDate;
 
-    // ⭐ Priority order:
-    // 1. URL date
-    // 2. Flask date
-    // 3. Today
-    if (urlDate) {
-        finalDate = urlDate;
-    } else if (flaskDate) {
-        finalDate = flaskDate;
-    } else {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        finalDate = `${yyyy}-${mm}-${dd}`;
-    }
+    // tiny delay so the DOM value is applied before the form is serialized
+    setTimeout(() => form.submit(), 10);
+  }
 
-    // ⭐ Apply final date to picker + modal hidden field
-    dateInput.value = finalDate;
-
-    const hiddenBase = document.getElementById("top_base_date");
-    if (hiddenBase) hiddenBase.value = finalDate;
-
-    // ⭐ Prev/next day buttons
-    function shiftDate(days) {
-        const current = new Date(dateInput.value || new Date());
-        current.setDate(current.getDate() + days);
-
-        const yyyy = current.getFullYear();
-        const mm = String(current.getMonth() + 1).padStart(2, '0');
-        const dd = String(current.getDate()).padStart(2, '0');
-        const newDate = `${yyyy}-${mm}-${dd}`;
-
-        dateInput.value = newDate;
-        if (hiddenBase) hiddenBase.value = newDate;
-
-        setTimeout(() => form.submit(), 10);
-    }
-
-    const prevBtn = document.getElementById('prev-day');
-    const nextBtn = document.getElementById('next-day');
-    if (prevBtn) prevBtn.addEventListener('click', () => shiftDate(-1));
-    if (nextBtn) nextBtn.addEventListener('click', () => shiftDate(1));
-
+  // bind prev/next buttons
+  const prevBtn = document.getElementById('prev-day');
+  const nextBtn = document.getElementById('next-day');
+  if (prevBtn) prevBtn.addEventListener('click', () => shiftDate(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => shiftDate(1));
 });
 </script>
 
@@ -2242,53 +2093,23 @@ if (typeof placeHeadersUnderTeachers === 'function') {
 function collectLessonOverrides() {
     const overrides = {};
 
-    document.querySelectorAll(".lesson-block").forEach(block => {
+    document.querySelectorAll('tr[data-lesson-id]').forEach(row => {
+        const lid = row.getAttribute('data-lesson-id');
+        const tags = [];
 
-        // Collect ONLY the tags that are currently checked in this block
-        const blockTags = [...block.querySelectorAll(".lesson-tag:checked")]
-            .map(cb => cb.dataset.tag);
-
-        // Assign a *fresh copy* of the tags to each lesson in the block
-        block.querySelectorAll("tr[data-lesson-id]").forEach(row => {
-            overrides[row.dataset.lessonId] = [...blockTags];
+        row.querySelectorAll('.lesson-tag:checked').forEach(cb => {
+            tags.push(cb.dataset.tag);
         });
+
+        // Only save if user actually set overrides
+        if (tags.length > 0) {
+            overrides[lid] = tags;
+        }
     });
 
     return overrides;
 }
-    // ✅ ADD THIS DIRECTLY BELOW collectLessonOverrides()
-    function collectTeacherSlots() {
-        const lessons = [];
-
-        document.querySelectorAll('.lesson-row').forEach(row => {
-            const lessonId = row.getAttribute('data-lesson-id');
-            if (!lessonId) return;
-
-            const T1 = row.querySelector('.t1-checkbox')?.checked || false;
-            const T2 = row.querySelector('.t2-checkbox')?.checked || false;
-            const T3 = row.querySelector('.t3-checkbox')?.checked || false;
-            const T4 = row.querySelector('.t4-checkbox')?.checked || false;
-            const T5 = row.querySelector('.t5-checkbox')?.checked || false;
-
-            lessons.push({
-                lesson_id: parseInt(lessonId),
-                T1: T1,
-                T2: T2,
-                T3: T3,
-                T4: T4,
-                T5: T5
-            });
-        });
-
-        return {
-            date: CURRENT_DATE,
-            lessons: lessons
-        };
-    }
-
-
 </script>
-
 
 <script>
 // --- LIVE SYNC: Update teacher timeline when lesson-level tags change ---
@@ -2457,114 +2278,81 @@ document.addEventListener('submit', function(e) {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-function setTooltipForElement($container, horseName) {
-    const clientTimes = window.horseSchedule?.[horseName] || [];
-    const teacherItems = window.teacherHorseUsage?.[horseName] || [];
+  // -------------------------------
+  // HORSE TOOLTIP LOGIC (unchanged)
+  // -------------------------------
+  function setTooltipForElement($container, horseName) {
+    const times = (window.horseSchedule && window.horseSchedule[horseName])
+                  ? window.horseSchedule[horseName]
+                  : [];
 
-    // OLD SYSTEM teacher blocks (teacher_horse)
-    const teacherBlocksOld = teacherItems.filter(
-        item => typeof item === "object" && item.type === "teacher"
-    );
-
-    // NEW SYSTEM teacher blocks (TeacherBlock table)
-    const teacherBlocksNew = (window.savedTeacherBlocks || [])
-        .filter(b => b.horse === horseName)
-        .map(b => ({
-            block_key: b.block_key,
-            teacher: b.teacher_name,
-            notes: b.notes
-        }));
-
-    let html = `<strong>${horseName}</strong>`;
-
-    // Client lessons
-    if (clientTimes.length > 0) {
-        html += clientTimes.map(t => `<div>• ${t}</div>`).join('');
-    }
-
-    // Old teacher_horse blocks
-    if (teacherBlocksOld.length > 0) {
-        html += `<div style="margin-top:4px;"><em>Teacher blocks:</em></div>`;
-        html += teacherBlocksOld.map(tb => {
-            let line = `• ${tb.block_key}`;
-            if (tb.teacher) line += ` — ${tb.teacher}`;
-            if (tb.notes) line += ` (${tb.notes})`;
-            return `<div>${line}</div>`;
-        }).join('');
-    }
-
-    // NEW TeacherBlock entries
-    if (teacherBlocksNew.length > 0) {
-        html += `<div style="margin-top:4px;"><em>Teacher blocks:</em></div>`;
-        html += teacherBlocksNew.map(tb => {
-            let line = `• ${tb.block_key}`;
-            if (tb.teacher) line += ` — ${tb.teacher}`;
-            if (tb.notes) line += ` (${tb.notes})`;
-            return `<div>${line}</div>`;
-        }).join('');
-    }
-
-    if (
-        clientTimes.length === 0 &&
-        teacherBlocksOld.length === 0 &&
-        teacherBlocksNew.length === 0
-    ) {
-        html += `<div><em>No other bookings today</em></div>`;
-    }
+    const html = times.length
+      ? '<strong>' + horseName + '</strong>' +
+        times.map(t => '<div>' + t + '</div>').join('')
+      : '';
 
     const $tooltip = $container.find('.tooltip-box').first();
     if ($tooltip.length) {
-        $tooltip.html(html);
+      $tooltip.html(html);
 
-        $container.off('mouseenter.tooltip mouseleave.tooltip');
+      $container.off('mouseenter.tooltip mouseleave.tooltip');
 
-        $container.on('mouseenter.tooltip', function () {
-            $tooltip.css({ visibility: 'visible', opacity: 1 });
-        });
-
-        $container.on('mouseleave.tooltip', function () {
-            $tooltip.css({ visibility: 'hidden', opacity: 0 });
-        });
-    }
-}
-
-if (window.jQuery) {
-    $('.horse-cell').each(function () {
-        const $c = $(this);
-        const sel = $c.find('select.compact-horse').first();
-        const horseName = sel.length
-            ? sel.val()
-            : $c.find('.horse-print-only').text().trim();
-
-        if (horseName) {
-            setTooltipForElement($c, horseName);
+      $container.on('mouseenter.tooltip', function () {
+        if (html) {
+          $tooltip.css({ visibility: 'visible', opacity: 1 });
         }
+      });
 
-        sel.on('change', function () {
-            const name = $(this).val();
-            setTooltipForElement($c, name);
-        });
+      $container.on('mouseleave.tooltip', function () {
+        $tooltip.css({ visibility: 'hidden', opacity: 0 });
+      });
+    }
+  }
+
+  if (window.jQuery) {
+    $('.horse-cell').each(function () {
+      const $c = $(this);
+      const sel = $c.find('select.compact-horse').first();
+      const horseName = sel.length
+        ? sel.val()
+        : $c.find('.horse-print-only').text().trim();
+
+      if (horseName) {
+        setTooltipForElement($c, horseName);
+      }
+
+      sel.on('change', function () {
+        const name = $(this).val();
+        setTooltipForElement($c, name);
+      });
     });
-}
+  }
 
-// -------------------------------
-// RESTORED: SHOW ALL LESSONS BUTTON
-// -------------------------------
-const toggle = document.getElementById('toggle-all-lessons');
+  // -------------------------------
+  // RESTORED: SHOW ALL LESSONS BUTTON
+  // -------------------------------
+  const toggle = document.getElementById('toggle-all-lessons');
 
-if (toggle) {
+  if (toggle) {
     const applyState = function (showDetails) {
-        document.querySelectorAll('.lesson-block').forEach(function (block) {
-            block.classList.toggle('collapsed', !showDetails);
-        });
+      document.querySelectorAll('.lesson-block').forEach(function (block) {
+        block.classList.toggle('collapsed', !showDetails);
+      });
     };
 
+    // Apply initial state
     applyState(toggle.checked);
 
+    // Listen for changes
     toggle.addEventListener('change', function (e) {
-        applyState(e.target.checked);
+      applyState(e.target.checked);
     });
-}
+  }
+
+  // -------------------------------
+  // REMOVED: header click collapsing
+  // -------------------------------
+  // (intentionally left out)
 
 });
 </script>
@@ -2855,8 +2643,8 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
 
 <script>
 // ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
-(() => {
- 
+document.addEventListener("DOMContentLoaded", () => {
+
     const panel        = document.getElementById("multi-lesson-booker");
     const btnOpen      = document.getElementById("open-booking-panel");
     const lessonCount  = document.getElementById("top_lesson_count");
@@ -2867,98 +2655,115 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
     const newName      = document.getElementById("top_new_client_name");
     const rowsContainer = document.getElementById("lesson-rows-container");
 
-// ⭐ Unified modal open handler — correct order of operations
-btnOpen.addEventListener("click", () => {
-    const visible = panel.style.display === "block";
-    panel.style.display = visible ? "none" : "block";
+    // ⭐ Show/hide panel + fix Select2 width
+    btnOpen.addEventListener("click", () => {
+        const visible = panel.style.display === "block";
+        panel.style.display = visible ? "none" : "block";
 
-    if (!visible) {
-
-        // ⭐ 1. Sync hidden base date from date picker
-        const pickerVal = document.getElementById("date-picker").value;
-        document.getElementById("top_base_date").value = pickerVal;
-
-        // ⭐ 2. HARD RESET — clear stale rows
-        rowsContainer.innerHTML = "";
-
-        // ⭐ 3. Generate rows fresh using the correct base date
-        generateRows();
-
-        // ⭐ 4. Sync row date-fields AFTER rows exist
-        setTimeout(() => {
-            document.querySelectorAll(".date-field").forEach(df => {
-                df.value = pickerVal;
-            });
-        }, 10);
-
-        // ⭐ 5. Fix Select2 AFTER rows exist
-        setTimeout(() => activateExistingClientSelect2(), 20);
-    }
-});
-
-
-function generateRows() {
-    rowsContainer.innerHTML = "";
-
-    const baseDate = document.getElementById("top_base_date").value;
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-        <td>
-            <input type="date" class="form-control date-field" value="${baseDate}">
-        </td>
-        <td>
-            <select class="form-select time-field searchable-dropdown">
-                <option value=""></option>
-                {% for t in times %}
-                    <option value="{{ t }}">{{ t }}</option>
-                {% endfor %}
-            </select>
-        </td>
-        <td>
-            <select class="form-select type-field">
-                <option>Arena</option>
-                <option>Roundyard</option>
-                <option>Trail Ride</option>
-                <option>Go Gallop</option>
-                <option>Party</option>
-            </select>
-        </td>
-        <td>
-            <select class="form-select gp-field">
-                {% for opt in ['CC','CT','G','GY','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
-                    <option>{{ opt }}</option>
-                {% endfor %}
-            </select>
-        </td>
-        <td>
-            <input type="text" class="form-control price-field" placeholder="$0.00">
-        </td>
-        <td>
-            <input type="text" class="form-control payment-field" placeholder="$0.00">
-        </td>
-        <td class="sms-only-cell" style="display:none;">
-            <select class="form-select riders-field">
-                {% for i in range(1, 11) %}
-                    <option value="{{ i }}">{{ i }}</option>
-                {% endfor %}
-            </select>
-        </td>
-    `;
-
-    rowsContainer.appendChild(row);
-
-    $(row).find('.searchable-dropdown').select2({
-        width: '100%',
-        matcher: prefixMatcher,
-        minimumResultsForSearch: 0,
-        selectOnClose: true
+        if (!visible) {
+            setTimeout(() => activateExistingClientSelect2(), 20);
+        }
     });
 
-    updateSMSVisibility();
+    // ⭐ Generate lesson rows (recurrence-aware)
+    function generateRows() {
+        const count = parseInt(lessonCount.value || "0", 10);
+        const recurrence = document.getElementById("recurrence_type")?.value || "none";
+        const repeats = parseInt(document.getElementById("recurrence_count")?.value || "1", 10);
+
+        rowsContainer.innerHTML = "";
+
+        // Base date from server
+        const baseDate = "{{ selected_date }}";
+
+        // Helpers
+        function addDays(dateStr, days) {
+            const d = new Date(dateStr);
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split("T")[0];
+        }
+
+        function addMonths(dateStr, months) {
+            const d = new Date(dateStr);
+            d.setMonth(d.getMonth() + months);
+            return d.toISOString().split("T")[0];
+        }
+
+        let dates = [];
+
+// ⭐ Single lesson (S)
+if (recurrence === "S") {
+    for (let i = 0; i < count; i++) {
+        dates.push(baseDate);
+    }
 }
 
+// ⭐ Weekly (W)
+if (recurrence === "W") {
+    for (let i = 0; i < repeats; i++) {
+        dates.push(addDays(baseDate, i * 7));
+    }
+}
 
+// ⭐ Fortnightly (F)
+if (recurrence === "F") {
+    for (let i = 0; i < repeats; i++) {
+        dates.push(addDays(baseDate, i * 14));
+    }
+}
+
+        // ⭐ Build rows
+        dates.forEach(dateVal => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>
+                    <input type="date" class="form-control date-field" value="${dateVal}">
+                </td>
+                <td>
+                    <select class="form-select time-field searchable-dropdown">
+                        <option value=""></option>
+                        {% for t in times %}
+                            <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select type-field">
+                        <option>Arena</option>
+                        <option>Roundyard</option>
+                        <option>Trail Ride</option>
+                        <option>Go Gallop</option>
+                        <option>Party</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select gp-field">
+                        {% for opt in ['CC','CT','G','GY','IC','J','P1','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                            <option>{{ opt }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control price-field" placeholder="$0.00">
+                </td>
+                <td>
+                    <input type="text" class="form-control payment-field" placeholder="$0.00">
+               </td>
+
+
+                <td class="sms-only-cell" style="display:none;">
+                    <select class="form-select riders-field">
+                        {% for i in range(1, 11) %}
+                            <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            `;
+            rowsContainer.appendChild(row);
+        });
+
+        updateSMSVisibility();
+    }
 
     // ⭐ SMS column visibility
     function updateSMSVisibility() {
@@ -3004,6 +2809,7 @@ function generateRows() {
 
     // ⭐ Initialise everything
     activateExistingClientSelect2();
+    generateRows();
     updateBookingFields();
     updateSMSVisibility();
 
@@ -3042,8 +2848,6 @@ function generateRows() {
 
         return rows;
     }
-    window.collectLessonRows = collectLessonRows;
-
     // ⭐ Collect top-row booking info
     function collectBookingInfo() {
         return {
@@ -3065,192 +2869,162 @@ function generateRows() {
         };
     }
 
-function isValidDate(dateStr) {
-    const d = new Date(dateStr + "T00:00:00");
-    return !isNaN(d.getTime());
-}
-
-function hasDuplicateDates(lessons) {
-    const dates = lessons.map(l => l.lesson_date);
-    return new Set(dates).size !== dates.length;
-}
-
-
-
-// ⭐ Unified Save Handler (Option A — send time_frame only)
-document.getElementById("save-lessons-btn").addEventListener("click", async () => {
-
-    const info = collectBookingInfo();
-    const lessons = collectLessonRows();
-
-    if (lessons.length === 0) {
-        alert("No lessons to save.");
-        return;
+    // ⭐ Validate a date string (YYYY-MM-DD)
+    function isValidDate(dateStr) {
+        const d = new Date(dateStr);
+        return !isNaN(d.getTime()) && dateStr === d.toISOString().split("T")[0];
     }
 
-    // ⭐ Validate rows
-    for (const row of lessons) {
+    function hasDuplicateDates(lessons) {
+        const dates = lessons.map(l => l.lesson_date);
+        return new Set(dates).size !== dates.length;
+    }
 
-        if (!row.lesson_date || !row.time_frame) {
-            alert("Each lesson requires a date and time.");
+
+
+
+    // ⭐ Unified Save Handler (supports all booking types structurally)
+    document.getElementById("save-lessons-btn").addEventListener("click", async () => {
+
+        const info = collectBookingInfo();
+        const lessons = collectLessonRows();
+
+        if (lessons.length === 0) {
+            alert("No lessons to save.");
             return;
         }
 
-        if (!isValidDate(row.lesson_date)) {
-            alert("One or more dates are invalid.");
-            return;
+        // ⭐ Validate rows
+        for (const row of lessons) {
+
+            if (!row.lesson_date || !row.time_frame) {
+                alert("Each lesson requires a date and time.");
+                return;
+            }
+
+            if (!isValidDate(row.lesson_date)) {
+                alert("One or more dates are invalid.");
+                return;
+            }
         }
+
+        // ⭐ EXISTING CLIENT MODE
+if (info.booking_type === "existing") {
+
+    if (!info.client_id) {
+        alert("Please select an existing client.");
+        return;
     }
 
     const freq = document.getElementById("recurrence_type").value;
 
-    // ============================================================
-    // ⭐ EXISTING CLIENT MODE
-    // ============================================================
-    if (info.booking_type === "existing") {
+    for (const row of lessons) {
+        const form = new FormData();
+        form.append("date", row.lesson_date);
 
-        if (!info.client_id) {
-            alert("Please select an existing client.");
-            return;
-        }
+        const [start, end] = row.time_frame.split("-").map(s => s.trim());
+        form.append("start", start);
+        form.append("end", end);
 
-        for (const row of lessons) {
+        form.append("lesson_type", row.lesson_type);
+        form.append("group_priv", row.group_priv);
+        form.append("price_pl", row.price);
+        form.append("payment", row.payment);
+        form.append("freq", freq);
+        form.append("client_mode", "existing");
+        form.append("client_id", info.client_id);
+        form.append("respect_blockouts", "yes");
 
-            const form = new FormData();
-            form.append("date", row.lesson_date);
+        await fetch("/new_lesson", {
+            method: "POST",
+            body: form
+        });
+    }
 
-            // ⭐ Send full time frame (backend splits)
-            form.append("time_frame", row.time_frame);
+    alert("Existing client booking saved!");
+    return;
+}
 
-            form.append("lesson_type", row.lesson_type);
-            form.append("group_priv", row.group_priv);
-            form.append("price_pl", row.price);
-            form.append("payment", row.payment);
-            form.append("recurrence_type", freq);
-            form.append("client_mode", "existing");
-            form.append("client_id", info.client_id);
 
-            form.append("respect_blockouts", "yes");
+        // ⭐ NEW CLIENT MODE
+if (info.booking_type === "new") {
 
-            await fetch("/new_lesson", {
-                method: "POST",
-                body: form
-            });
-        }
-
-        alert("Existing client booking saved!");
+    if (!info.new_client_name) {
+        alert("Please enter the new client's name.");
         return;
     }
 
-    // ============================================================
-    // ⭐ NEW CLIENT MODE
-    // ============================================================
-    if (info.booking_type === "new") {
+    const freq = document.getElementById("recurrence_type").value;
 
-        if (!info.new_client_name) {
-            alert("Please enter the new client's name.");
-            return;
-        }
+    for (const row of lessons) {
+        const form = new FormData();
+        form.append("date", row.lesson_date);
 
-        for (const row of lessons) {
+        const [start, end] = row.time_frame.split("-").map(s => s.trim());
+        form.append("start", start);
+        form.append("end", end);
 
-            const form = new FormData();
-            form.append("date", row.lesson_date);
+        form.append("lesson_type", row.lesson_type);
+        form.append("group_priv", row.group_priv);
+        form.append("price_pl", row.price);
+        form.append("payment", row.payment);
+        form.append("freq", freq);
+        form.append("client_mode", "new");
+        form.append("client_name", info.new_client_name);
+        form.append("client_phone", info.mobile);
+        form.append("respect_blockouts", "yes");
 
-            // ⭐ Send full time frame
-            form.append("time_frame", row.time_frame);
-
-            form.append("lesson_type", row.lesson_type);
-            form.append("group_priv", row.group_priv);
-            form.append("price_pl", row.price);
-            form.append("payment", row.payment);
-            form.append("recurrence_type", freq);
-
-            form.append("client_mode", "new");
-            form.append("client_name", info.new_client_name);
-            form.append("client_phone", info.mobile);
-
-            form.append("respect_blockouts", "yes");
-
-            await fetch("/new_lesson", {
-                method: "POST",
-                body: form
-            });
-        }
-
-        alert("New client booking saved!");
-        return;
+        await fetch("/new_lesson", {
+            method: "POST",
+            body: form
+        });
     }
 
-    // ============================================================
-    // ⭐ SMS MODE
-    // ============================================================
-    if (info.booking_type === "sms") {
+    alert("New client booking saved!");
+    return;
+}
 
-        if (!info.mobile) {
-            alert("Mobile number is required for SMS invites.");
-            return;
-        }
+        // ⭐ SMS MODE (fully functional)
+        if (info.booking_type === "sms") {
 
-        const btn = document.getElementById("save-lessons-btn");
-        if (btn) {
+            if (!info.mobile) {
+                alert("Mobile number is required for SMS invites.");
+                return;
+            }
+
+            const btn = document.getElementById("save-button");
+            if (!btn) return;   // safety
             btn.disabled = true;
             btn.textContent = "Sending SMS Invites...";
-        }
 
-        for (const row of lessons) {
+            for (const row of lessons) {
+                const payload = new FormData();
+                payload.append("lesson_date", row.lesson_date);
+                payload.append("time_frame", row.time_frame);
+                payload.append("lesson_type", row.lesson_type);
+                payload.append("group_priv", row.group_priv);
+                payload.append("mobile", info.mobile);
+                payload.append("riders", row.riders);
+                payload.append("price", row.price);
 
-            const payload = new FormData();
-            payload.append("lesson_date", row.lesson_date);
-            payload.append("time_frame", row.time_frame);
-            payload.append("lesson_type", row.lesson_type);
-            payload.append("group_priv", row.group_priv);
-            payload.append("mobile", info.mobile);
-            payload.append("riders", row.riders);
-            payload.append("price", row.price);
+                await fetch("/send_invite", {
+                    method: "POST",
+                    body: payload
+                });
+            }
 
-            await fetch("/send_invite", {
-                method: "POST",
-                body: payload
-            });
-        }
-
-        if (btn) {
             btn.textContent = "Invites Sent!";
             setTimeout(() => {
                 btn.disabled = false;
                 btn.textContent = "Save Lessons";
             }, 1500);
+
+            return;
         }
 
-        return;
-    }
-
-});
-
-
-})();
-
-</script>
-
-<script>
-function collectTeacherBlocks() {
-    const blocks = [];
-
-    $(".teacher-block-row").each(function () {
-        const row = $(this);
-
-        blocks.push({
-            id: row.attr("data-id") || null,
-            block_key: row.find(".teacher-block-key").val(),
-            horse: row.find(".teacher-block-horse").val(),
-            teacher_name: row.find(".teacher-block-name").val(),
-            notes: row.find(".teacher-block-notes").val()
-        });
     });
 
-    return blocks;
-}
+});
 </script>
 
 <script>
@@ -3264,7 +3038,6 @@ document.getElementById("save-button").addEventListener("click", async () => {
 
     const payload = {
         date: selectedDate,
-        teacher_blocks: collectTeacherBlocks(),   // ⭐ ADD THIS LINE
         lessons: []
     };
     // ⭐ ADD THIS BLOCK HERE
@@ -3322,14 +3095,12 @@ document.getElementById("save-button").addEventListener("click", async () => {
     });
 
 // ⭐ NEW: Save lesson-level teacher tag overrides
-const overrides = collectLessonOverrides();
-
 await fetch("/save_teacher_tags", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
         date: selectedDate,
-        overrides: overrides
+        overrides: collectLessonOverrides()
     })
 });
 
@@ -3542,190 +3313,18 @@ window.addEventListener('load', function () {
     });
 </script>
 
-<!--
 <script>
-document.getElementById("save-teachers").addEventListener("click", function () {
-    const payload = collectTeacherSlots();
-
-    fetch("/save_t_slots", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(resp => {
-        console.log("T-slot save response:", resp);
-        // Optional: show a small green flash message
-    })
-    .catch(err => {
-        console.error("T-slot save error:", err);
-        // Optional: show a red flash message
-    });
-});
-
-</script>
--->
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const btn = document.getElementById("print-run-sheet");
-    if (!btn) {
-        console.warn("Print Run Sheet button not found.");
+document.getElementById("export-pdf").addEventListener("click", function () {
+    const date = document.getElementById("date-picker").value;
+    if (!date) {
+        alert("No date selected.");
         return;
     }
-
-    btn.addEventListener("click", function () {
-        const date = document.getElementById("date-picker").value;
-        if (!date) {
-            alert("Please select a date first.");
-            return;
-        }
-        window.open(`/print/lessons/${date}`, "_blank");
-    });
+    window.open(`/export_lessons_pdf/${date}`, "_blank");
 });
 </script>
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
 
-  // Handle Add Teacher Block
-  $(document).on("click", ".add-teacher-block-btn", function () {
-
-    const blockKey = $(this).data("block-key");
-    const container = $(`.block-teacher-rows[data-block-key='${blockKey}']`);
-
-    // Clone the new template
-    const newRow = $("#teacher-block-template .teacher-block-row").clone(true);
-
-    // Set block key
-    newRow.find(".teacher-block-key").val(blockKey);
-
-    // Append into this block
-    container.append(newRow);
-
-    // Init Select2 on horse dropdown
-    newRow.find(".teacher-block-horse").select2({
-      width: '100%',
-      dropdownAutoWidth: true
-    });
-  });
-
-  // Handle delete
-  $(document).on("click", ".teacher-block-delete", function () {
-    $(this).closest(".teacher-block-row").remove();
-  });
-
-});
-</script>
-
-<script>
-
-// ------------------------------------------------------------
-// NORMALISE BLOCK KEY → match the container's data-block-key
-// ------------------------------------------------------------
-function normalizeBlockKey(raw) {
-    if (!raw) return "";
-
-    raw = raw.replace(/\s+/g, "");
-
-    if (/^\d{8}$/.test(raw)) {
-        const start = raw.slice(0,2) + ":" + raw.slice(2,4);
-        const end   = raw.slice(4,6) + ":" + raw.slice(6,8);
-        return `${start}-${end}`;
-    }
-
-    if (/^\d{2}:\d{2}\d{2}:\d{2}$/.test(raw)) {
-        return raw.slice(0,5) + "-" + raw.slice(5);
-    }
-
-    return raw.replace(" - ", "-");
-}
-
-
-// ------------------------------------------------------------
-// BUILD A TEACHER BLOCK ROW FROM TEMPLATE
-// ------------------------------------------------------------
-function buildTeacherBlockRow(tb) {
-    const row = $("#teacher-block-template .teacher-block-row").clone(true);
-
-    row.attr("data-id", tb.id || "");
-    row.find(".teacher-block-key").val(tb.block_key || "");
-    row.find(".teacher-block-horse").val(tb.horse || "");
-    row.find(".teacher-block-name").val(tb.teacher_name || "");
-    row.find(".teacher-block-notes").val(tb.notes || "");
-
-    row.find(".teacher-block-horse").select2({
-        width: '100%',
-        dropdownAutoWidth: true
-    });
-
-    return row;
-}
-
-
-// ------------------------------------------------------------
-// MAIN LOADER — RUNS ON PAGE LOAD
-// ------------------------------------------------------------
-document.addEventListener("DOMContentLoaded", function () {
-
-    const savedBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
-
-    savedBlocks.forEach(tb => {
-
-        const prettyKey = normalizeBlockKey(tb.block_key);
-
-        const container = $(`.block-teacher-rows[data-block-key='${prettyKey}']`);
-        if (!container.length) return;
-
-        const row = buildTeacherBlockRow(tb);
-        container.append(row);
-    });
-
-});
-
-</script>
-
-<!-- ⭐ Hidden template for a Teacher Block row -->
-<div id="teacher-block-template" style="display:none;">
-
-  <div class="teacher-block-row"
-       style="display:flex; align-items:center; gap:8px; margin:4px 0;">
-
-    <!-- HORSE -->
-    <select class="compact-horse teacher-block-horse"
-            style="width:120px; font-size:11px;">
-      <option value=""></option>
-      {% for horse in horse_list %}
-        <option value="{{ horse }}">{{ horse }}</option>
-      {% endfor %}
-    </select>
-
-    <!-- TEACHER NAME -->
-    <input type="text"
-           class="teacher-block-name"
-           placeholder="Teacher name"
-           style="width:140px; font-size:11px;">
-
-    <!-- NOTES -->
-    <input type="text"
-           class="teacher-block-notes"
-           placeholder="Notes"
-           style="width:200px; font-size:11px;">
-
-    <!-- DELETE -->
-    <button type="button"
-            class="teacher-block-delete"
-            style="font-size:11px; color:#900;">
-      ✕
-    </button>
-
-    <!-- Hidden block key -->
-    <input type="hidden" class="teacher-block-key" value="">
-  </div>
-
-</div>
 
 
 </body>
