@@ -2859,6 +2859,16 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
         }
     });
 
+// ⭐ Force-sync all row date fields to the correct base date when opening the panel
+btnOpen.addEventListener("click", () => {
+    if (panel.style.display === "block") {
+        const base = document.getElementById("top_base_date").value;
+        document.querySelectorAll(".date-field").forEach(df => {
+            df.value = base;
+        });
+    }
+});
+
 // ⭐ Generate lesson rows (recurrence-aware)
 function generateRows() {
     const count = parseInt(lessonCount.value || "0", 10);
