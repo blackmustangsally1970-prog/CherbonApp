@@ -1175,6 +1175,8 @@ select.teacher-dropdown {
 <div id="multi-lesson-booker" class="card" style="display:none; margin:12px 0;">
     <div class="card-body">
 
+          <input type="hidden" id="top_base_date" value="{{ selected_date }}">
+
         <!-- ⭐ Booking Grid Header -->
         <table class="booking-top-grid">
             <thead>
@@ -2835,8 +2837,8 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
 
 <script>
 // ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
-document.addEventListener("DOMContentLoaded", () => {
-
+(() => {
+ 
     const panel        = document.getElementById("multi-lesson-booker");
     const btnOpen      = document.getElementById("open-booking-panel");
     const lessonCount  = document.getElementById("top_lesson_count");
@@ -2866,7 +2868,7 @@ function generateRows() {
     rowsContainer.innerHTML = "";
 
     // Base date from server
-    const baseDate = "{{ selected_date }}";
+    const baseDate = document.getElementById("top_base_date").value;
 
     // Helpers
     function addDays(dateStr, days) {
@@ -3048,6 +3050,8 @@ function generateRows() {
 
         return rows;
     }
+    window.collectLessonRows = collectLessonRows;
+
     // ⭐ Collect top-row booking info
     function collectBookingInfo() {
         return {
@@ -3236,7 +3240,8 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
 });
 
 
-});
+})();
+
 </script>
 
 <script>
