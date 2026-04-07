@@ -3328,17 +3328,32 @@ document.getElementById("save-lessons-btn").addEventListener("click", async (e) 
     showBlockoutPopup(data.blocked_dates);
 });
 
-// ⭐ Blockout popup controller
 function showBlockoutPopup(blockedDates) {
     const modal = document.getElementById("blockout-warning-modal");
     const list = document.getElementById("blockout-dates-list");
 
     list.innerHTML = "";
+
     blockedDates.forEach(item => {
         const li = document.createElement("li");
-        li.textContent = item.reason
-            ? `${item.date} — ${item.reason}`
-            : item.date;
+
+        // ⭐ Colour logic
+        if (item.reason.toLowerCase().includes("single")) {
+            // 🔴 Single‑day blockout
+            li.style.background = "#ffdddd";          // light red
+            li.style.borderLeft = "4px solid #d00";   // strong red
+        } else {
+            // 🟡 Range blockout
+            li.style.background = "#fff7cc";          // light yellow
+            li.style.borderLeft = "4px solid #e6b800"; // gold
+        }
+
+        li.style.padding = "6px 10px";
+        li.style.marginBottom = "6px";
+        li.style.borderRadius = "4px";
+        li.style.listStyle = "none";
+
+        li.textContent = `${item.date} — ${item.reason}`;
         list.appendChild(li);
     });
 
