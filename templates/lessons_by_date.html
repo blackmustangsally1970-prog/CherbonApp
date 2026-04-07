@@ -3171,8 +3171,7 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
             form.append("group_priv", row.group_priv);
             form.append("price_pl", row.price);
             form.append("payment", row.payment);
-            form.append("freq", freq);
-
+            form.append("recurrence_type", freq);
             form.append("client_mode", "existing");
             form.append("client_id", info.client_id);
 
@@ -3210,7 +3209,7 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
             form.append("group_priv", row.group_priv);
             form.append("price_pl", row.price);
             form.append("payment", row.payment);
-            form.append("freq", freq);
+            form.append("recurrence_type", freq);
 
             form.append("client_mode", "new");
             form.append("client_name", info.new_client_name);
