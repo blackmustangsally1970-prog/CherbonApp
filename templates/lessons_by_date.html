@@ -1188,6 +1188,7 @@ select.teacher-dropdown {
                     <th>Existing Client (Name)</th>
                     <th>New Client (Name)</th>
                     <th>How Many Lessons</th>
+                    <th>Respect Blockouts?</th>
                 </tr>
             </thead>
 
@@ -1226,6 +1227,13 @@ select.teacher-dropdown {
                             {% endfor %}
                         </select>
                     </td>
+			<td>
+			    <label class="form-label fw-bold">Respect Blockouts?</label>
+			    <select id="respect_blockouts" class="form-select">
+			        <option value="yes" selected>Yes</option>
+			        <option value="no">No (Override)</option>
+			    </select>
+			</td>
 
                     <td>
                         <label class="form-label fw-bold">Recurrence</label>
@@ -3153,7 +3161,9 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
             form.append("client_mode", "existing");
             form.append("client_id", info.client_id);
 
-            form.append("respect_blockouts", "yes");
+            form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
+
+
 
             await fetch("/new_lesson", {
                 method: "POST",
@@ -3193,7 +3203,9 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
             form.append("client_name", info.new_client_name);
             form.append("client_phone", info.mobile);
 
-            form.append("respect_blockouts", "yes");
+            form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
+
+
 
             await fetch("/new_lesson", {
                 method: "POST",

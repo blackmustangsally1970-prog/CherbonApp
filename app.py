@@ -4281,14 +4281,12 @@ def create_app():
             lesson.price_pl    = parse_money(price_pl)
             lesson.lesson_type = lesson_type
             lesson.group_priv  = group_priv
-            # ⭐ FIX: Only overwrite freq if the form actually sent one
             if freq:
                 lesson.freq = freq
             lesson.horse       = horse
 
             db.session.commit()
 
-            # ⭐ CASCADE FORWARD LOGIC — update future lessons for weekly/fortnightly riders
             try:
                 if freq in ["W", "F"] and group_priv not in ["J", "CT", "CC", "D"]:
                     future_lessons = Lesson.query.filter(
@@ -4304,8 +4302,6 @@ def create_app():
                 print("[DEBUG] Cascade error:", e)
 
             return redirect(url_for("lessons_by_date", date=lesson_date_str))
-
-
 
         # ---------------------------------------------------------
         # CREATE NEW LESSON(S)
@@ -4324,7 +4320,6 @@ def create_app():
             db.session.add(Time(timerange=time_range))
             db.session.commit()
 
-        # Determine client_id
         if client_mode == "new":
             if client_name:
                 new_client = Client(full_name=client_name, mobile=client_phone)
@@ -4336,14 +4331,12 @@ def create_app():
         else:
             client_id = int(client_id_raw) if client_id_raw and str(client_id_raw).isdigit() else None
 
-        # Canonical client name (CRITICAL FIX)
         if client_id:
             client_obj = Client.query.get(client_id)
             canonical_name = client_obj.full_name if client_obj else client_name
         else:
             canonical_name = client_name
 
-        # Blockouts
         block_dates  = {b.block_date for b in db.session.query(BlockoutDate).all()}
         block_ranges = [(r.start_date, r.end_date) for r in db.session.query(BlockoutRange).all()]
 
@@ -4408,13 +4401,9 @@ def create_app():
         db.session.commit()
         print(f"[DEBUG] commit done, total lessons added={added}")
 
-
-
-        # If this was an AJAX save (Save button), do NOT redirect
         if request.headers.get("X-Requested-With") == "fetch":
             return "OK", 200
 
-        # Otherwise behave normally (booking panel, manual form submits)
         return redirect(url_for("lessons_by_date", date=lesson_date_str))
 
 
