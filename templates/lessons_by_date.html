@@ -2865,23 +2865,29 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
     const newName      = document.getElementById("top_new_client_name");
     const rowsContainer = document.getElementById("lesson-rows-container");
 
-    // ⭐ Show/hide panel + fix Select2 width
-    btnOpen.addEventListener("click", () => {
-        const visible = panel.style.display === "block";
-        panel.style.display = visible ? "none" : "block";
-
-        if (!visible) {
-            setTimeout(() => activateExistingClientSelect2(), 20);
-        }
-    });
-
-// ⭐ Force-sync all row date fields to the correct base date when opening the panel
+// ⭐ Unified modal open handler — correct order of operations
 btnOpen.addEventListener("click", () => {
-    if (panel.style.display === "block") {
-        const base = document.getElementById("top_base_date").value;
-        document.querySelectorAll(".date-field").forEach(df => {
-            df.value = base;
-        });
+    const visible = panel.style.display === "block";
+    panel.style.display = visible ? "none" : "block";
+
+    if (!visible) {
+
+        // ⭐ 1. Sync hidden base date from date picker
+        const pickerVal = document.getElementById("date-picker").value;
+        document.getElementById("top_base_date").value = pickerVal;
+
+        // ⭐ 2. Generate rows fresh using the correct base date
+        generateRows();
+
+        // ⭐ 3. Sync row date-fields AFTER rows exist
+        setTimeout(() => {
+            document.querySelectorAll(".date-field").forEach(df => {
+                df.value = pickerVal;
+            });
+        }, 10);
+
+        // ⭐ 4. Fix Select2 AFTER rows exist
+        setTimeout(() => activateExistingClientSelect2(), 20);
     }
 });
 
