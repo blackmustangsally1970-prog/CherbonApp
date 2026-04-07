@@ -4186,6 +4186,7 @@ def create_app():
     def new_lesson():
         import re
         from datetime import datetime, timedelta, date
+        print("DEBUG FORM:", dict(request.form))
 
         lesson_date_str = request.form.get("date")
         lesson_id       = request.form.get("lesson_id")

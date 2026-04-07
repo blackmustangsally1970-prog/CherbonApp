@@ -3063,16 +3063,18 @@ function generateRows() {
         };
     }
 
-    // ⭐ Validate a date string (YYYY-MM-DD)
-    function isValidDate(dateStr) {
-        const d = new Date(dateStr);
-        return !isNaN(d.getTime()) && dateStr === d.toISOString().split("T")[0];
-    }
+function isValidDate(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    return !isNaN(d.getTime());
+}
 
-    function hasDuplicateDates(lessons) {
-        const dates = lessons.map(l => l.lesson_date);
-        return new Set(dates).size !== dates.length;
-    }
+function hasDuplicateDates(lessons) {
+    const dates = lessons.map(l => l.lesson_date);
+    return new Set(dates).size !== dates.length;
+}
+
+})(); // close IIFE
+
 
 
 
