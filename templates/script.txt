@@ -1,79 +1,4 @@
 <script>
-function collectLessonState() {
-    const rows = document.querySelectorAll("tr[data-lesson-id]");
-    const out = [];
-
-    rows.forEach(row => {
-        const lessonId = row.dataset.lessonId;
-        const time = row.dataset.time;
-
-        // Horse
-        const horse = row.querySelector("select.compact-horse")?.value || "";
-
-        // Attendance
-        const attendance = row.querySelector("select[name^='attendance_']")?.value || "";
-
-        // Teacher is NOT inside the row (by design)
-        const teacher = "";
-
-        out.push({
-            lesson_id: lessonId,
-            horse: horse,
-            time: time,
-            attendance: attendance,
-            teacher: teacher
-        });
-    });
-
-    return out;
-}
-
-document.getElementById("download-txt-btn").addEventListener("click", () => {
-    const payload = {
-        date: document.getElementById("date-picker").value,
-        lessons: collectLessonState()
-    };
-
-    fetch("/save_txt?selected_date=" + payload.date, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.blob())
-    .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "lesson_schedule.txt";
-        a.click();
-        URL.revokeObjectURL(url);
-    });
-});
-
-document.getElementById("download-xlsx-btn").addEventListener("click", () => {
-    const payload = {
-        date: document.getElementById("date-picker").value,
-        lessons: collectLessonState()
-    };
-
-    fetch("/save_xlsx?selected_date=" + payload.date, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.blob())
-    .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "lesson_schedule.xlsx";
-        a.click();
-        URL.revokeObjectURL(url);
-    });
-});
-</script>
-
-<script>
 // ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
 (() => {
  
@@ -285,16 +210,18 @@ function generateRows() {
         };
     }
 
-    // ⭐ Validate a date string (YYYY-MM-DD)
 function isValidDate(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
     return !isNaN(d.getTime());
+}
 
+function hasDuplicateDates(lessons) {
+    const dates = lessons.map(l => l.lesson_date);
+    return new Set(dates).size !== dates.length;
+}
 
-    function hasDuplicateDates(lessons) {
-        const dates = lessons.map(l => l.lesson_date);
-        return new Set(dates).size !== dates.length;
-    }
+})(); // close IIFE
+
 
 
 
@@ -453,4 +380,24 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
 
 })();
 
+</script>
+
+<script>
+function collectTeacherBlocks() {
+    const blocks = [];
+
+    $(".teacher-block-row").each(function () {
+        const row = $(this);
+
+        blocks.push({
+            id: row.attr("data-id") || null,
+            block_key: row.find(".teacher-block-key").val(),
+            horse: row.find(".teacher-block-horse").val(),
+            teacher_name: row.find(".teacher-block-name").val(),
+            notes: row.find(".teacher-block-notes").val()
+        });
+    });
+
+    return blocks;
+}
 </script>
