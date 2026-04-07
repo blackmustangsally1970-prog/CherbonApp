@@ -2876,8 +2876,9 @@ btnOpen.addEventListener("click", () => {
         const pickerVal = document.getElementById("date-picker").value;
         document.getElementById("top_base_date").value = pickerVal;
 
-        // ⭐ 2. Generate rows fresh using the correct base date
-        generateRows();
+                       // ⭐ 2. Generate rows fresh using the correct base date
+       generateRows();
+
 
         // ⭐ 3. Sync row date-fields AFTER rows exist
         setTimeout(() => {
@@ -3043,7 +3044,6 @@ function generateRows() {
 
     // ⭐ Initialise everything
     activateExistingClientSelect2();
-    generateRows();
     updateBookingFields();
     updateSMSVisibility();
 

@@ -1,0 +1,444 @@
+<script>
+// ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
+(() => {
+ 
+    const panel        = document.getElementById("multi-lesson-booker");
+    const btnOpen      = document.getElementById("open-booking-panel");
+    const lessonCount  = document.getElementById("top_lesson_count");
+    const bookingType  = document.getElementById("booking_type");
+    bookingType.value = "existing";   // enforce default on load
+    const mobile       = document.getElementById("top_mobile");
+    const existing     = document.getElementById("top_existing_client");
+    const newName      = document.getElementById("top_new_client_name");
+    const rowsContainer = document.getElementById("lesson-rows-container");
+
+// ⭐ Unified modal open handler — correct order of operations
+btnOpen.addEventListener("click", () => {
+    const visible = panel.style.display === "block";
+    panel.style.display = visible ? "none" : "block";
+
+    if (!visible) {
+
+        // ⭐ 1. Sync hidden base date from date picker
+        const pickerVal = document.getElementById("date-picker").value;
+        document.getElementById("top_base_date").value = pickerVal;
+
+                       // Do NOT generate rows on page load.
+                      // Rows are generated ONLY when the modal opens.
+
+        // ⭐ 3. Sync row date-fields AFTER rows exist
+        setTimeout(() => {
+            document.querySelectorAll(".date-field").forEach(df => {
+                df.value = pickerVal;
+            });
+        }, 10);
+
+        // ⭐ 4. Fix Select2 AFTER rows exist
+        setTimeout(() => activateExistingClientSelect2(), 20);
+    }
+});
+
+// ⭐ Generate lesson rows (recurrence-aware)
+function generateRows() {
+    const count = parseInt(lessonCount.value || "0", 10);
+    const recurrence = document.getElementById("recurrence_type")?.value || "none";
+    const repeats = parseInt(document.getElementById("recurrence_count")?.value || "1", 10);
+
+    rowsContainer.innerHTML = "";
+
+    // Base date from server
+    const baseDate = document.getElementById("top_base_date").value;
+
+    // Helpers
+    function addDays(dateStr, days) {
+        const d = new Date(dateStr);
+        d.setDate(d.getDate() + days);
+        return d.toISOString().split("T")[0];
+    }
+
+    function addMonths(dateStr, months) {
+        const d = new Date(dateStr);
+        d.setMonth(d.getMonth() + months);
+        return d.toISOString().split("T")[0];
+    }
+
+    let dates = [];
+
+    // ⭐ Single lesson (S)
+    if (recurrence === "S") {
+        for (let i = 0; i < count; i++) {
+            dates.push(baseDate);
+        }
+    }
+
+    // ⭐ Weekly (W)
+    if (recurrence === "W") {
+        for (let i = 0; i < repeats; i++) {
+            dates.push(addDays(baseDate, i * 7));
+        }
+    }
+
+    // ⭐ Fortnightly (F)
+    if (recurrence === "F") {
+        for (let i = 0; i < repeats; i++) {
+            dates.push(addDays(baseDate, i * 14));
+        }
+    }
+
+    // ⭐ Build rows
+    dates.forEach(dateVal => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>
+                <input type="date" class="form-control date-field" value="${dateVal}">
+            </td>
+            <td>
+                <select class="form-select time-field searchable-dropdown">
+                    <option value=""></option>
+                    {% for t in times %}
+                        <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select class="form-select type-field">
+                    <option>Arena</option>
+                    <option>Roundyard</option>
+                    <option>Trail Ride</option>
+                    <option>Go Gallop</option>
+                    <option>Party</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-select gp-field">
+                    {% for opt in ['CC','CT','G','GY','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                        <option>{{ opt }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control price-field" placeholder="$0.00">
+            </td>
+            <td>
+                <input type="text" class="form-control payment-field" placeholder="$0.00">
+            </td>
+            <td class="sms-only-cell" style="display:none;">
+                <select class="form-select riders-field">
+                    {% for i in range(1, 11) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        `;
+
+        rowsContainer.appendChild(row);
+
+        // ⭐⭐⭐ CRITICAL FIX — re‑initialise Select2 for dynamic rows ⭐⭐⭐
+        $(row).find('.searchable-dropdown').select2({
+            width: '100%',
+            matcher: prefixMatcher,
+            minimumResultsForSearch: 0,
+            selectOnClose: true
+        });
+    });
+
+    updateSMSVisibility();
+}
+
+
+    // ⭐ SMS column visibility
+    function updateSMSVisibility() {
+        const show = bookingType.value === "sms";
+        document.querySelectorAll(".sms-only-header").forEach(h => h.style.display = show ? "" : "none");
+        document.querySelectorAll(".sms-only-cell").forEach(c => c.style.display = show ? "" : "none");
+    }
+
+    // ⭐ Booking type logic
+    function updateBookingFields() {
+        mobile.disabled   = true;
+        existing.disabled = true;
+        newName.disabled  = true;
+
+        if (bookingType.value === "sms") mobile.disabled = false;
+        if (bookingType.value === "existing") existing.disabled = false;
+        if (bookingType.value === "new") {
+            newName.disabled = false;
+            mobile.disabled  = false;
+        }
+    }
+
+    // ⭐ TRUE PREFIX MATCHER
+    function prefixMatcher(params, data) {
+        if (!params.term) return data;
+        if (!data.text) return null;
+
+        const term = params.term.toLowerCase();
+        const text = data.text.toLowerCase();
+
+        return text.startsWith(term) ? $.extend({}, data, true) : null;
+    }
+
+    // ⭐ SELECT2 activation
+    function activateExistingClientSelect2() {
+        $('#top_existing_client').select2({
+            width: '100%',
+            matcher: prefixMatcher,
+            minimumResultsForSearch: 0,
+            selectOnClose: true
+        });
+    }
+
+    // ⭐ Initialise everything
+    activateExistingClientSelect2();
+    generateRows();
+    updateBookingFields();
+    updateSMSVisibility();
+
+    lessonCount.addEventListener("change", generateRows);
+    bookingType.addEventListener("change", () => {
+        updateBookingFields();
+        updateSMSVisibility();
+    });
+
+    document.getElementById("recurrence_type").addEventListener("change", generateRows);
+    document.getElementById("recurrence_count").addEventListener("change", generateRows);
+
+    // ⭐ STEP 9 — Collect all lesson rows into a clean array
+    function collectLessonRows() {
+        const rows = [];
+        const trs = rowsContainer.querySelectorAll("tr");
+
+        trs.forEach(row => {
+            const date   = row.querySelector(".date-field")?.value?.trim() || "";
+            const time   = row.querySelector(".time-field")?.value?.trim() || "";
+            const type   = row.querySelector(".type-field")?.value?.trim() || "";
+            const gp     = row.querySelector(".gp-field")?.value?.trim() || "";
+            const price  = row.querySelector(".price-field")?.value?.trim() || "";
+            const riders = row.querySelector(".riders-field")?.value?.trim() || "1";
+
+            rows.push({
+                lesson_date: date,
+                time_frame:  time,
+                lesson_type: type,
+                group_priv:  gp,
+                price:       price,
+                payment:     row.querySelector(".payment-field")?.value?.trim() || "0",
+                riders:      riders
+            });
+        });
+
+        return rows;
+    }
+    window.collectLessonRows = collectLessonRows;
+
+    // ⭐ Collect top-row booking info
+    function collectBookingInfo() {
+        return {
+            booking_type: bookingType.value,
+            mobile:       mobile.value.trim(),
+            client_id:    existing.value.trim(),
+            new_client_name: newName.value.trim()
+        };
+    }
+
+    // ⭐ Build unified booking payload
+    function buildUnifiedPayload(info, lessons) {
+        return {
+            booking_type: info.booking_type,
+            mobile: info.mobile,
+            client_id: info.client_id,
+            new_client_name: info.new_client_name,
+            lessons: lessons
+        };
+    }
+
+    // ⭐ Validate a date string (YYYY-MM-DD)
+    function isValidDate(dateStr) {
+        const d = new Date(dateStr);
+        return !isNaN(d.getTime()) && dateStr === d.toISOString().split("T")[0];
+    }
+
+    function hasDuplicateDates(lessons) {
+        const dates = lessons.map(l => l.lesson_date);
+        return new Set(dates).size !== dates.length;
+    }
+
+
+
+
+// ⭐ Unified Save Handler (Option A — send time_frame only)
+document.getElementById("save-lessons-btn").addEventListener("click", async () => {
+
+    const info = collectBookingInfo();
+    const lessons = collectLessonRows();
+
+    if (lessons.length === 0) {
+        alert("No lessons to save.");
+        return;
+    }
+
+    // ⭐ Validate rows
+    for (const row of lessons) {
+
+        if (!row.lesson_date || !row.time_frame) {
+            alert("Each lesson requires a date and time.");
+            return;
+        }
+
+        if (!isValidDate(row.lesson_date)) {
+            alert("One or more dates are invalid.");
+            return;
+        }
+    }
+
+    const freq = document.getElementById("recurrence_type").value;
+
+    // ============================================================
+    // ⭐ EXISTING CLIENT MODE
+    // ============================================================
+    if (info.booking_type === "existing") {
+
+        if (!info.client_id) {
+            alert("Please select an existing client.");
+            return;
+        }
+
+        for (const row of lessons) {
+
+            const form = new FormData();
+            form.append("date", row.lesson_date);
+
+            // ⭐ Send full time frame (backend splits)
+            form.append("time_frame", row.time_frame);
+
+            form.append("lesson_type", row.lesson_type);
+            form.append("group_priv", row.group_priv);
+            form.append("price_pl", row.price);
+            form.append("payment", row.payment);
+            form.append("freq", freq);
+
+            form.append("client_mode", "existing");
+            form.append("client_id", info.client_id);
+
+            form.append("respect_blockouts", "yes");
+
+            await fetch("/new_lesson", {
+                method: "POST",
+                body: form
+            });
+        }
+
+        alert("Existing client booking saved!");
+        return;
+    }
+
+    // ============================================================
+    // ⭐ NEW CLIENT MODE
+    // ============================================================
+    if (info.booking_type === "new") {
+
+        if (!info.new_client_name) {
+            alert("Please enter the new client's name.");
+            return;
+        }
+
+        for (const row of lessons) {
+
+            const form = new FormData();
+            form.append("date", row.lesson_date);
+
+            // ⭐ Send full time frame
+            form.append("time_frame", row.time_frame);
+
+            form.append("lesson_type", row.lesson_type);
+            form.append("group_priv", row.group_priv);
+            form.append("price_pl", row.price);
+            form.append("payment", row.payment);
+            form.append("freq", freq);
+
+            form.append("client_mode", "new");
+            form.append("client_name", info.new_client_name);
+            form.append("client_phone", info.mobile);
+
+            form.append("respect_blockouts", "yes");
+
+            await fetch("/new_lesson", {
+                method: "POST",
+                body: form
+            });
+        }
+
+        alert("New client booking saved!");
+        return;
+    }
+
+    // ============================================================
+    // ⭐ SMS MODE
+    // ============================================================
+    if (info.booking_type === "sms") {
+
+        if (!info.mobile) {
+            alert("Mobile number is required for SMS invites.");
+            return;
+        }
+
+        const btn = document.getElementById("save-lessons-btn");
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Sending SMS Invites...";
+        }
+
+        for (const row of lessons) {
+
+            const payload = new FormData();
+            payload.append("lesson_date", row.lesson_date);
+            payload.append("time_frame", row.time_frame);
+            payload.append("lesson_type", row.lesson_type);
+            payload.append("group_priv", row.group_priv);
+            payload.append("mobile", info.mobile);
+            payload.append("riders", row.riders);
+            payload.append("price", row.price);
+
+            await fetch("/send_invite", {
+                method: "POST",
+                body: payload
+            });
+        }
+
+        if (btn) {
+            btn.textContent = "Invites Sent!";
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = "Save Lessons";
+            }, 1500);
+        }
+
+        return;
+    }
+
+});
+
+
+})();
+
+</script>
+
+<script>
+function collectTeacherBlocks() {
+    const blocks = [];
+
+    $(".teacher-block-row").each(function () {
+        const row = $(this);
+
+        blocks.push({
+            id: row.attr("data-id") || null,
+            block_key: row.find(".teacher-block-key").val(),
+            horse: row.find(".teacher-block-horse").val(),
+            teacher_name: row.find(".teacher-block-name").val(),
+            notes: row.find(".teacher-block-notes").val()
+        });
+    });
+
+    return blocks;
+}
+</script>
