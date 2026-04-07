@@ -3080,6 +3080,7 @@ function hasDuplicateDates(lessons) {
 
 // ⭐ Unified Save Handler (Option A — send time_frame only)
 document.getElementById("save-lessons-btn").addEventListener("click", async () => {
+    console.log("HANDLER ENTERED");
 
     const info = collectBookingInfo();
     const lessons = collectLessonRows();
