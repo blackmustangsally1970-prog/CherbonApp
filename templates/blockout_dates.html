@@ -1,6 +1,6 @@
 <a href="{{ url_for('dashboard') }}">← Back to Equestrian Menu</a>
 <h2>Single‑Day Blockouts</h2>
-<form method="POST">
+<form method="POST" action="{{ url_for('manage_blockout_dates') }}">
   <label>Date:</label>
   <input type="date" name="block_date" required>
   <label>Reason:</label>
