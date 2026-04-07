@@ -1827,46 +1827,62 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  const dateInput = document.getElementById('date-picker');
-  const form = document.getElementById('date-nav-form');
-  const selectedDate = "{{ selected_date }}"; // passed from Flask
 
-  // Set initial date
-  if (dateInput && !selectedDate) {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    dateInput.value = `${yyyy}-${mm}-${dd}`;
-  } else if (dateInput && selectedDate) {
-    dateInput.value = selectedDate;
-  }
+    const dateInput = document.getElementById('date-picker');
+    const form = document.getElementById('date-nav-form');
 
-  // Shift date left/right and submit
-  function shiftDate(days) {
-    const current = new Date(dateInput.value || new Date());
-    current.setDate(current.getDate() + days);
-    const yyyy = current.getFullYear();
-    const mm = String(current.getMonth() + 1).padStart(2, '0');
-    const dd = String(current.getDate()).padStart(2, '0');
-    const newDate = `${yyyy}-${mm}-${dd}`;
+    // ⭐ 1. Read date from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlDate = urlParams.get("date");
 
-    // update visible picker
-    dateInput.value = newDate;
+    // ⭐ 2. Read date from Flask (if provided)
+    const flaskDate = "{{ selected_date }}";   // may be empty
 
-    // keep hidden selected_date (in update-lessons-form) synchronized if present
-    const hidden = document.querySelector('form#update-lessons-form input[name="selected_date"]');
-    if (hidden) hidden.value = newDate;
+    let finalDate = "";
 
-    // tiny delay so the DOM value is applied before the form is serialized
-    setTimeout(() => form.submit(), 10);
-  }
+    // ⭐ Priority order:
+    // 1. URL date
+    // 2. Flask date
+    // 3. Today
+    if (urlDate) {
+        finalDate = urlDate;
+    } else if (flaskDate) {
+        finalDate = flaskDate;
+    } else {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        finalDate = `${yyyy}-${mm}-${dd}`;
+    }
 
-  // bind prev/next buttons
-  const prevBtn = document.getElementById('prev-day');
-  const nextBtn = document.getElementById('next-day');
-  if (prevBtn) prevBtn.addEventListener('click', () => shiftDate(-1));
-  if (nextBtn) nextBtn.addEventListener('click', () => shiftDate(1));
+    // ⭐ Apply final date to picker + modal hidden field
+    dateInput.value = finalDate;
+
+    const hiddenBase = document.getElementById("top_base_date");
+    if (hiddenBase) hiddenBase.value = finalDate;
+
+    // ⭐ Prev/next day buttons
+    function shiftDate(days) {
+        const current = new Date(dateInput.value || new Date());
+        current.setDate(current.getDate() + days);
+
+        const yyyy = current.getFullYear();
+        const mm = String(current.getMonth() + 1).padStart(2, '0');
+        const dd = String(current.getDate()).padStart(2, '0');
+        const newDate = `${yyyy}-${mm}-${dd}`;
+
+        dateInput.value = newDate;
+        if (hiddenBase) hiddenBase.value = newDate;
+
+        setTimeout(() => form.submit(), 10);
+    }
+
+    const prevBtn = document.getElementById('prev-day');
+    const nextBtn = document.getElementById('next-day');
+    if (prevBtn) prevBtn.addEventListener('click', () => shiftDate(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => shiftDate(1));
+
 });
 </script>
 
