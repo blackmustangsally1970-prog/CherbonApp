@@ -3076,6 +3076,25 @@ function hasDuplicateDates(lessons) {
     return new Set(dates).size !== dates.length;
 }
 
+function canonicalTimeFrame(tf) {
+    if (!tf) return "";
+
+    // Remove spaces
+    tf = tf.replace(/\s+/g, "");
+
+    // Split
+    const [start, end] = tf.split("-");
+
+    // Zero-pad
+    const pad = t => {
+        let [h, m] = t.split(":");
+        h = h.padStart(2, "0");
+        m = m.padStart(2, "0");
+        return `${h}:${m}`;
+    };
+
+    return `${pad(start)} - ${pad(end)}`;
+}
 
 
 // ⭐ Unified Save Handler (Option A — send time_frame only)
@@ -3122,7 +3141,9 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
             form.append("date", row.lesson_date);
 
             // ⭐ Send full time frame (backend splits)
-            form.append("time_frame", row.time_frame);
+            form.append("time_frame", canonicalTimeFrame(row.time_frame));
+
+
 
             form.append("lesson_type", row.lesson_type);
             form.append("group_priv", row.group_priv);
@@ -3160,7 +3181,7 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
             form.append("date", row.lesson_date);
 
             // ⭐ Send full time frame
-            form.append("time_frame", row.time_frame);
+            form.append("time_frame", canonicalTimeFrame(row.time_frame));
 
             form.append("lesson_type", row.lesson_type);
             form.append("group_priv", row.group_priv);
