@@ -2876,18 +2876,20 @@ btnOpen.addEventListener("click", () => {
         const pickerVal = document.getElementById("date-picker").value;
         document.getElementById("top_base_date").value = pickerVal;
 
-                       // ⭐ 2. Generate rows fresh using the correct base date
-       generateRows();
+        // ⭐ 2. HARD RESET — clear stale rows
+        rowsContainer.innerHTML = "";
 
+        // ⭐ 3. Generate rows fresh using the correct base date
+        generateRows();
 
-        // ⭐ 3. Sync row date-fields AFTER rows exist
+        // ⭐ 4. Sync row date-fields AFTER rows exist
         setTimeout(() => {
             document.querySelectorAll(".date-field").forEach(df => {
                 df.value = pickerVal;
             });
         }, 10);
 
-        // ⭐ 4. Fix Select2 AFTER rows exist
+        // ⭐ 5. Fix Select2 AFTER rows exist
         setTimeout(() => activateExistingClientSelect2(), 20);
     }
 });
