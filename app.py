@@ -4180,6 +4180,68 @@ def create_app():
             flash("Blockout range removed.", "success")
         return redirect(url_for('manage_blockout_ranges'))
 
+    @app.route("/api/check_blockouts", methods=["POST"])
+    def api_check_blockouts():
+        from datetime import datetime, timedelta, date
+
+        data = request.get_json() or {}
+
+        start_date_str = data.get("start_date")
+        freq = (data.get("freq") or "S").strip()  # "S" (single), "W" (weekly), "F" (fortnightly)
+
+        if not start_date_str:
+            return {"blocked": False, "blocked_dates": []}
+
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_of_year = date(start_date.year, 12, 31)
+
+        # Build candidate dates using same pattern as your lesson recurrence
+        if freq == "S":
+            dates = [start_date]
+        elif freq == "F":
+            dates = []
+            d = start_date
+            while d <= end_of_year:
+                dates.append(d)
+                d += timedelta(days=14)
+        elif freq == "W":
+            dates = []
+            d = start_date
+            while d <= end_of_year:
+                dates.append(d)
+                d += timedelta(days=7)
+        else:
+            dates = [start_date]
+
+        # Load blockouts from your tables
+        block_dates = {
+            b.block_date: (b.reason or "")
+            for b in db.session.query(BlockoutDate).all()
+        }
+        block_ranges = list(db.session.query(BlockoutRange).all())
+
+        def is_blocked(d):
+            if d in block_dates:
+                return True, (block_dates[d] or "Single‑day blockout")
+            for r in block_ranges:
+                if r.start_date <= d <= r.end_date:
+                    reason = r.reason or f"Range {r.start_date} → {r.end_date}"
+                    return True, reason
+            return False, ""
+
+        blocked_list = []
+        for d in dates:
+            blocked, reason = is_blocked(d)
+            if blocked:
+                blocked_list.append({
+                    "date": d.strftime("%Y-%m-%d"),
+                    "reason": reason,
+                })
+
+        return {
+            "blocked": bool(blocked_list),
+            "blocked_dates": blocked_list,
+        }
 
 
     @app.route("/new_lesson", methods=["POST"])

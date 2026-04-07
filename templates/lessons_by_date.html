@@ -1276,6 +1276,28 @@ select.teacher-dropdown {
     </div>
 </div>
 
+    <!-- Blockout Warning Modal -->
+    <div id="blockout-warning-modal" style="display:none;
+         position:fixed; inset:0; background:rgba(0,0,0,0.45);
+         align-items:center; justify-content:center; z-index:9999;">
+
+        <div style="background:#fff; padding:20px; border-radius:6px;
+             max-width:420px; width:100%; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+
+            <h3>Blocked Dates Detected</h3>
+            <p>The following dates are blocked:</p>
+
+            <ul id="blockout-dates-list" style="margin-bottom:12px;"></ul>
+
+            <p>Do you want to continue?</p>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+                <button type="button" id="blockout-keep-btn">Keep Anyway</button>
+                <button type="button" id="blockout-change-btn">Change Date</button>
+            </div>
+        </div>
+    </div>
+
 
 {% if grouped_lessons %}
   {% set arena_keys = grouped_lessons.items() | selectattr('0.1', 'equalto', 'Arena') | list %}
@@ -3106,7 +3128,7 @@ function canonicalTimeFrame(tf) {
 
 
 // ⭐ Unified Save Handler (Option A — send time_frame only)
-document.getElementById("save-lessons-btn").addEventListener("click", async () => {
+async function actuallySaveLessons() {
     console.log("HANDLER ENTERED");
 
     const info = collectBookingInfo();
@@ -3261,7 +3283,73 @@ document.getElementById("save-lessons-btn").addEventListener("click", async () =
         return;
     }
 
+}
+
+// ⭐ Blockout-aware wrapper for Save Lessons
+document.getElementById("save-lessons-btn").addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const respect = document.getElementById("respect_blockouts").value;
+    const startDate = document.getElementById("top_base_date").value;
+    const freq = document.getElementById("recurrence_type").value;
+
+    // ⭐ If override → skip popup entirely
+    if (respect === "no") {
+        return actuallySaveLessons();
+    }
+
+    // ⭐ No date? Just save
+    if (!startDate) {
+        return actuallySaveLessons();
+    }
+
+    // ⭐ Call backend blockout checker
+    const resp = await fetch("/api/check_blockouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            start_date: startDate,
+            freq: freq
+        })
+    });
+
+    const data = await resp.json();
+
+    // ⭐ No blockouts → save normally
+    if (!data.blocked) {
+        return actuallySaveLessons();
+    }
+
+    // ⭐ Blockouts found → show popup
+    showBlockoutPopup(data.blocked_dates);
 });
+
+// ⭐ Blockout popup controller
+function showBlockoutPopup(blockedDates) {
+    const modal = document.getElementById("blockout-warning-modal");
+    const list = document.getElementById("blockout-dates-list");
+
+    list.innerHTML = "";
+    blockedDates.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item.reason
+            ? `${item.date} — ${item.reason}`
+            : item.date;
+        list.appendChild(li);
+    });
+
+    modal.style.display = "flex";
+}
+
+document.getElementById("blockout-keep-btn").addEventListener("click", () => {
+    document.getElementById("blockout-warning-modal").style.display = "none";
+    actuallySaveLessons();   // ⭐ proceed normally (respect blockouts still applies)
+});
+
+document.getElementById("blockout-change-btn").addEventListener("click", () => {
+    document.getElementById("blockout-warning-modal").style.display = "none";
+});
+
 
 
 })();
