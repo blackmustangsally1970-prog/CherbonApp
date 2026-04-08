@@ -71,7 +71,7 @@
 
 <p>
     <a class="button" href="{{ url_for('fetch_jotform_submissions') }}">
-        🔄 Fetch New Submissions
+        🔄 Fetch New Submissions only if none appear below
     </a>
 <p>
     <a class="button" href="{{ url_for('process_all_pending') }}">
@@ -103,12 +103,14 @@
         <td>{{ row.display_names }}</td>
         <td>{{ row.received_at }}</td>
         <td>{{ 'Processed' if row.processed else 'Pending' }}</td>
+<!--
         <td>
             <a class="button"
                href="{{ url_for('process_notification', webhook_id=row.id) }}">
                 Process
             </a>
         </td>
+-->
     </tr>
     {% endfor %}
 </table>
