@@ -822,11 +822,14 @@ select.teacher-dropdown {
     Print Run Sheet
 </button>
 
-<a href="{{ url_for('print_horse_by_date', date=selected_date) }}"
-   class="btn btn-secondary"
-   target="_blank">
-    🐴 Horse Print
-</a>
+<button type="button"
+        id="horse-print"
+        class="btn btn-danger"
+        style="margin-left:8px;"
+        onclick="window.open('{{ url_for('print_horse_by_date', date=selected_date) }}', '_blank');">
+    Horse Print
+</button>
+
 
 
 
