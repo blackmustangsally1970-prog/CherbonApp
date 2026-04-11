@@ -29,12 +29,12 @@
     <tbody>
         {% for l in lessons %}
         <tr>
-            <td>{{ l.horse_name or "" }}</td>
-            <td>{{ l.client_name }}</td>
+            <td>{{ l.horse or "" }}</td>
+            <td>{{ l.client }}</td>
             <td>{{ l.attendance or "" }}</td>
-            <td>{{ l.lesson_type_name }}</td>
-            <td>{{ l.timeframe_name or "" }}</td>
-            <td>{{ l.teacher_name or "" }}</td>
+            <td>{{ l.lesson_type }}</td>
+            <td>{{ l.time_frame or "" }}</td>
+            <td></td>  <!-- Teacher blank for now -->
         </tr>
         {% endfor %}
     </tbody>
@@ -46,3 +46,4 @@
 
 </body>
 </html>
+

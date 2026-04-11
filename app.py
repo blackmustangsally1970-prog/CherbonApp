@@ -3948,16 +3948,14 @@ def create_app():
     @role_required("admin", "management")
     def print_horse_by_date(date):
         lessons = (
-            db.session.query(Lesson)
-            .join(Horse, Lesson.horse_id == Horse.horse_id, isouter=True)
-            .join(Timeframe, Lesson.timeframe_id == Timeframe.timeframe_id, isouter=True)
-            .join(Teacher, Lesson.teacher_id == Teacher.teacher_id, isouter=True)
-            .filter(Lesson.date == date)
-            .order_by(Horse.name, Timeframe.orderpdk)
+            Lesson.query
+            .filter(Lesson.lesson_date == date)
+            .order_by(Lesson.horse, Lesson.time_frame)
             .all()
         )
 
         return render_template("horse_print.html", date=date, lessons=lessons)
+
 
 
 
