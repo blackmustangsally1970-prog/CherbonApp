@@ -3197,6 +3197,9 @@ def create_app():
         )
 
 
+
+
+
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['GET'])
     def resolve_conflict(submission_id, rider_index):
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
@@ -3939,6 +3942,19 @@ def create_app():
             })
 
         return render_template("minus_balances.html", rows=final_output)
+
+
+    @app.route("/print/horses/<date>")
+    @role_required("admin", "management")
+    def print_horse_by_date(date):
+        lessons = (
+            Lesson.query
+            .filter(Lesson.date == date)
+            .order_by(Lesson.horse_name, Lesson.timeframe_order)
+            .all()
+        )
+
+        return render_template("horse_print.html", date=date, lessons=lesson)
 
 
 
