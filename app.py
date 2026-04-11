@@ -3950,13 +3950,14 @@ def create_app():
         lessons = (
             Lesson.query
             .filter(Lesson.lesson_date == date)
-            .order_by(Lesson.horse, Lesson.time_frame)
+            .order_by(
+                Lesson.horse,
+                db.func.substr(Lesson.time_frame, 1, 5)   # sort by start time
+            )
             .all()
         )
 
         return render_template("horse_print.html", date=date, lessons=lessons)
-
-
 
 
     @app.route("/manage_teachers")
