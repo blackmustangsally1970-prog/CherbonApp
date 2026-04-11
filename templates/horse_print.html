@@ -45,13 +45,11 @@
             background: #f0f0f0;
         }
 
-        /* Column widths */
-        th:nth-child(1), td:nth-child(1) { width: 120px; }  /* Horse */
-        th:nth-child(2), td:nth-child(2) { width: 160px; }  /* Client */
-        th:nth-child(3), td:nth-child(3) { width: 40px; }   /* Att */
-        th:nth-child(4), td:nth-child(4) { width: 120px; }  /* Lesson Type */
-        th:nth-child(5), td:nth-child(5) { width: 60px; }   /* Time */
-        th:nth-child(6), td:nth-child(6) { width: 120px; }  /* Teacher */
+th:nth-child(1), td:nth-child(1) { width: 120px; }  /* Horse */
+th:nth-child(2), td:nth-child(2) { width: 160px; }  /* Client */
+th:nth-child(3), td:nth-child(3) { width: 35px; }   /* Att */
+th:nth-child(4), td:nth-child(4) { width: 120px; }  /* Lesson Type */
+th:nth-child(5), td:nth-child(5) { width: 120px; }  /* Teacher */
 
         .lesson-block {
             page-break-inside: avoid;
@@ -114,7 +112,6 @@
             <th>Client</th>
             <th>Att</th>
             <th>Lesson Type</th>
-            <th>Time</th>
             <th>Teacher</th>
         </tr>
 
@@ -124,7 +121,6 @@
             <td>{{ r.client_name }}</td>
             <td>{{ r.att }}</td>
             <td>{{ r.lesson_type }}</td>
-            <td>{{ r.time_frame }}</td>
             <td>{{ r.teacher or "" }}</td>
         </tr>
         {% endfor %}
