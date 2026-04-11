@@ -1299,7 +1299,7 @@ def create_app():
                 "lesson_type": (l.lesson_type or "").strip(),
                 "group_priv": (l.group_priv or "").strip().upper(),
 
-                # LESSON FIELDS (correct names)
+                # LESSON FIELDS
                 "client_name": l.client or "",
                 "freq": getattr(l, "freq", "") or "",
                 "att": getattr(l, "attendance", False),
@@ -1307,7 +1307,7 @@ def create_app():
                 "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
                 "balance": float(str(getattr(l, "balance", 0)).strip() or 0),
 
-                # CLIENT FIELDS (correct names)
+                # CLIENT FIELDS
                 "age": getattr(client, "age", "") or "",
                 "guardian": getattr(client, "guardian_name", "") or "",
                 "mobile": getattr(client, "mobile", "") or "",
@@ -1319,6 +1319,18 @@ def create_app():
                 # HORSE
                 "horse": l.horse or "",
             })
+
+        # ---------------------------------------------------------
+        # ASSIGN UNIQUE INDEX TO PURE PRIVATE LESSONS ("P")
+        # ---------------------------------------------------------
+        private_counter = defaultdict(int)
+        for d in data:
+            if d["group_priv"] == "P":  # pure private only
+                key = (d["time_frame"], d["lesson_type"])
+                private_counter[key] += 1
+                d["priv_index"] = private_counter[key]
+            else:
+                d["priv_index"] = 0
 
         # Split Arena vs Others
         arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
@@ -1332,11 +1344,12 @@ def create_app():
         def group_blocks(rows):
             blocks = defaultdict(list)
             for r in rows:
-                key = (r["time_frame"], r["lesson_type"], r["group_priv"])
+                # NEW: priv_index included so each "P" becomes its own block
+                key = (r["time_frame"], r["lesson_type"], r["group_priv"], r["priv_index"])
                 blocks[key].append(r)
 
             grouped = []
-            for (time, ltype, gp), riders in sorted(
+            for (time, ltype, gp, priv_i), riders in sorted(
                 blocks.items(),
                 key=lambda k: parse_start(k[0][0])
             ):
@@ -3947,16 +3960,71 @@ def create_app():
     @app.route("/print/horses/<date>")
     @role_required("admin", "management")
     def print_horse_by_date(date):
+        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
+
         lessons = (
             Lesson.query
-            .filter(Lesson.lesson_date == date)
-            .order_by(
-                db.func.substr(Lesson.time_frame, 1, 5)   # sort ONLY by start time
-            )
+            .filter(Lesson.lesson_date == lesson_date)
+            .order_by(db.func.substr(Lesson.time_frame, 1, 5))
             .all()
         )
 
-        return render_template("horse_print.html", date=date, lessons=lessons)
+        # Build dictionaries
+        data = []
+        for l in lessons:
+            data.append({
+                "time_frame": (l.time_frame or "").strip().replace("–", "-"),
+                "lesson_type": (l.lesson_type or "").strip(),
+                "group_priv": (l.group_priv or "").strip().upper(),
+                "client_name": l.client or "",
+                "horse": l.horse or "",
+            })
+
+        # ---------------------------------------------------------
+        # ASSIGN UNIQUE INDEX TO PURE PRIVATE LESSONS ("P")
+        # ---------------------------------------------------------
+        private_counter = defaultdict(int)
+        for d in data:
+            if d["group_priv"] == "P":
+                key = (d["time_frame"], d["lesson_type"])
+                private_counter[key] += 1
+                d["priv_index"] = private_counter[key]
+            else:
+                d["priv_index"] = 0
+
+        # Sort by chronological start time
+        data.sort(key=lambda x: parse_start(x["time_frame"]))
+
+        # ---------------------------------------------------------
+        # GROUP BLOCKS (same engine as lesson print)
+        # ---------------------------------------------------------
+        blocks = defaultdict(list)
+        for r in data:
+            key = (
+                r["time_frame"],
+                r["lesson_type"],
+                r["group_priv"],
+                r["priv_index"]
+            )
+            blocks[key].append(r)
+
+        grouped = []
+        for (time, ltype, gp, priv_i), riders in sorted(
+            blocks.items(),
+            key=lambda k: parse_start(k[0][0])
+        ):
+            grouped.append({
+                "time": time,
+                "lesson_type": ltype,
+                "group_priv": gp,
+                "riders": sorted(riders, key=lambda x: x["horse"].lower())
+            })
+
+        return render_template(
+            "horse_print.html",
+            date=lesson_date,
+            grouped=grouped
+        )
 
     @app.route("/manage_teachers")
     def manage_teachers_page():
