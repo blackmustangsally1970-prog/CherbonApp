@@ -5792,22 +5792,27 @@ Cherbon Waters Admin
         state = data.get('state')
 
         if not (override_date and time_label and teacher_index is not None):
-            return jsonify({'status': 'error', 'message': 'Missing fields'}), 400
+            return jsonify(success=False, error="Missing fields"), 400
 
-        conn = get_db()
-        cur = conn.cursor()
+        try:
+            conn = get_db()
+            cur = conn.cursor()
 
-        cur.execute("""
-            INSERT INTO teacher_grid_overrides (override_date, time_label, teacher_index, state)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (override_date, time_label, teacher_index)
-            DO UPDATE SET state = EXCLUDED.state, updated_at = NOW();
-        """, (override_date, time_label, teacher_index, state))
+            cur.execute("""
+                INSERT INTO teacher_grid_overrides (override_date, time_label, teacher_index, state)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (override_date, time_label, teacher_index)
+                DO UPDATE SET state = EXCLUDED.state, updated_at = NOW();
+            """, (override_date, time_label, teacher_index, state))
 
-        conn.commit()
-        cur.close()
+            conn.commit()
+            cur.close()
 
-        return jsonify({'status': 'ok'})
+            return jsonify(success=True)
+
+        except Exception as e:
+            conn.rollback()
+            return jsonify(success=False, error=str(e)), 500
 
     @app.route('/reset_grid_overrides', methods=['POST'])
     def reset_grid_overrides():

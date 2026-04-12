@@ -717,11 +717,11 @@ select.teacher-dropdown {
     min-width: 120px !important;
 }
 
-    .grid-free {
-        background: #c8f7c5;   /* green */
-    }
-    .grid-block {
-        background: #ffb3b3;   /* red */
+.grid-free {
+    background: #c8f7c5;   /* green */
+}
+.grid-block {
+    background: #ffb3b3;   /* red */
 
 .grid-break {
     background: #ffcc80;              /* Cherbon high-vis orange */
@@ -2091,25 +2091,61 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 <script>
+function showToast() {
+    const t = document.getElementById("save-toast");
+    t.style.display = "block";
+    setTimeout(() => {
+        t.style.display = "none";
+    }, 900); // disappears after 0.9s
+}
+
+</script>
+
+
+<script>
 function toggleGridCell(el) {
+    // Read current state
     let state = parseInt(el.dataset.state || "0");
 
-    // 0 = green, 1 = red, 2 = orange (break)
-    if (state === 0) {
-        el.dataset.state = "1";
-        el.className = "grid-block";
-        el.innerHTML = ""; // red stays empty
-    } 
-    else if (state === 1) {
-        el.dataset.state = "2";
-        el.className = "grid-break";
-        el.innerHTML = "BREAK"; // clear, bold, no emoji quirks
-    } 
-    else {
-        el.dataset.state = "0";
-        el.className = "grid-free";
-        el.innerHTML = ""; // green stays empty
+    // Cycle state: 0 → 1 → 2 → 0
+    let newState = (state + 1) % 3;
+
+    // Update UI immediately
+    el.dataset.state = newState;
+    el.classList.remove("grid-free", "grid-block", "grid-break");
+
+    if (newState === 0) {
+        el.classList.add("grid-free");
+        el.textContent = "";
+    } else if (newState === 1) {
+        el.classList.add("grid-block");
+        el.textContent = "";
+    } else if (newState === 2) {
+        el.classList.add("grid-break");
+        el.textContent = "BREAK";
     }
+
+    // Prepare payload
+    const payload = {
+        date: el.dataset.date,
+        time: el.dataset.time,
+        teacher: parseInt(el.dataset.teacher),
+        state: newState
+    };
+
+    // Send to backend
+    fetch("/save_grid_override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            console.error("Save failed:", data.error);
+        }
+    })
+    .catch(err => console.error("AJAX error:", err));
 }
 </script>
 
@@ -4085,6 +4121,26 @@ document.addEventListener("DOMContentLoaded", function () {
   </div>
 
 </div>
+
+
+<div id="save-toast"
+     style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-weight: bold;
+        display: none;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        z-index: 9999;
+     ">
+    Saved
+</div>
+
+
 
 
 </body>
