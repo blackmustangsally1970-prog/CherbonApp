@@ -723,15 +723,16 @@ select.teacher-dropdown {
     .grid-block {
         background: #ffb3b3;   /* red */
 
-    .grid-break {
-        background: #ffcc80;          /* orange */
-        border: 2px solid #e67e22;    /* darker orange border */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: #000;                  /* ensure visibility */
-    }
+.grid-break {
+    background: #ffcc80;              /* Cherbon high-vis orange */
+    border: 2px solid #e67e22;        /* darker orange border */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;                /* bold text */
+    color: #000;                      /* black text */
+}
+
 
 </style>
 
@@ -1199,12 +1200,24 @@ select.teacher-dropdown {
         </tr>
       </tbody>
     </table>
-<!-- ⭐ NEW: Doctor-Style Teacher Grid (Step 1 Skeleton Only) -->
+
+<!-- ⭐ NEW: Doctor-Style Teacher Grid (Unique Start Times) -->
 <h4 style="margin: 18px 0 6px 0; text-align:center; font-size:14px;">
-    Teacher Time Grid (Prototype)
+    Teacher Time Grid
 </h4>
 
-<table class="teacher-grid" 
+{# --------------------------------------------- #}
+{# Build unique start times from full time frames #}
+{# --------------------------------------------- #}
+{% set unique_starts = [] %}
+{% for t in times %}
+    {% set s = t.split(' - ')[0].strip() %}
+    {% if s not in unique_starts %}
+        {% set _ = unique_starts.append(s) %}
+    {% endif %}
+{% endfor %}
+
+<table class="teacher-grid"
        style="width:95%; margin:0 auto; border-collapse:collapse; table-layout:fixed; font-size:12px;">
 
     <thead>
@@ -1217,90 +1230,93 @@ select.teacher-dropdown {
     </thead>
 
     <tbody>
-        {# times already exists in your template and contains "10:30 - 11:30" etc #}
-        {% for t in times %}
-            {% set t_clean = t|trim %}
-            {% set start_time = t_clean.split(' - ')[0] %}
+
+        {% for start_time in unique_starts %}
         <tr>
+
+            <!-- Left column: unique start time -->
             <td style="text-align:center; font-weight:bold; border:1px solid #ccc;">
                 {{ start_time }}
             </td>
 
             {% for i in range(5) %}
-{% set cell_lessons = [] %}
+            <td style="border:1px solid #ccc; height:28px; background:#fff;">
 
-{# Loop through grouped lessons and find matches for this time + teacher #}
-{% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
-    {% set start = timerange.split('-')[0].strip() %}
-    {% if start == start_time %}
-        {% set block_key = norm_timerange_key(timerange) ~ '_' ~ lesson_type ~ '_' ~ group_priv %}
-        {% set saved_tags = block_tag_lookup.get(block_key, []) %}
+                {# --------------------------------------------- #}
+                {# 1. Find lessons that match this start + teacher #}
+                {# --------------------------------------------- #}
+                {% set cell_lessons = [] %}
 
-        {# If this lesson belongs to this teacher column #}
-        {% if 'T' ~ (i+1) in saved_tags %}
-            {% set lesson_obj = lesson_group[0][0] %}
-            {% set _ = cell_lessons.append({
-                'label': timerange ~ ' ' ~ lesson_type ~ ' ' ~ group_priv ~ ' (' ~ (lesson_group|length) ~ ')',
-                'block_key': block_key
-            }) %}
-        {% endif %}
-    {% endif %}
-{% endfor %}
+                {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
+                    {% set start = timerange.split('-')[0].strip() %}
+                    {% if start == start_time %}
+                        {% set block_key = norm_timerange_key(timerange) ~ '_' ~ lesson_type ~ '_' ~ group_priv %}
+                        {% set saved_tags = block_tag_lookup.get(block_key, []) %}
 
-<td style="border:1px solid #ccc; height:28px; background:#fff;">
+                        {% if 'T' ~ (i+1) in saved_tags %}
+                            {% set lesson_obj = lesson_group[0][0] %}
+                            {% set _ = cell_lessons.append({
+                                'label': timerange ~ ' ' ~ lesson_type ~ ' ' ~ group_priv ~ ' (' ~ (lesson_group|length) ~ ')',
+                                'block_key': block_key
+                            }) %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
 
-    {# 1. Render lesson blocks if present #}
-    {% if cell_lessons %}
-        {% for L in cell_lessons %}
-<div onclick="openLessonPopup('{{ L.block_key }}')"
-     style="cursor:pointer; padding:2px; font-weight:bold; font-size:11px; background:#fff;">
-    📘 {{ L.label }}
-</div>
-        {% endfor %}
-    {% endif %}
+                {# Render lesson blocks if present #}
+                {% if cell_lessons %}
+                    {% for L in cell_lessons %}
+                        <div onclick="openLessonPopup('{{ L.block_key }}')"
+                             style="cursor:pointer; padding:2px; font-weight:bold; font-size:11px; background:#fff;">
+                            📘 {{ L.label }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
-    {# 2. Now handle override state (ALWAYS runs) #}
-    {% set override = grid_overrides.get((start_time, i+1)) %}
+                {# --------------------------------------------- #}
+                {# 2. Override state (always runs)               #}
+                {# --------------------------------------------- #}
+                {% set override = grid_overrides.get((start_time, i+1)) %}
 
-    {% if override == 1 %}
-        <div class="grid-block"
-             data-state="1"
-             data-date="{{ selected_date }}"
-             data-time="{{ start_time }}"
-             data-teacher="{{ i+1 }}"
-             onclick="toggleGridCell(this)"
-             style="height:100%; width:100%; cursor:pointer;">
-        </div>
+                {% if override == 1 %}
+                    <div class="grid-block"
+                         data-state="1"
+                         data-date="{{ selected_date }}"
+                         data-time="{{ start_time }}"
+                         data-teacher="{{ i+1 }}"
+                         onclick="toggleGridCell(this)"
+                         style="height:100%; width:100%; cursor:pointer;">
+                    </div>
 
-    {% elif override == 2 %}
-        <div class="grid-break"
-             data-state="2"
-             data-date="{{ selected_date }}"
-             data-time="{{ start_time }}"
-             data-teacher="{{ i+1 }}"
-             onclick="toggleGridCell(this)"
-             style="height:100%; width:100%; cursor:pointer;">
-            BREAK
-        </div>
+                {% elif override == 2 %}
+                    <div class="grid-break"
+                         data-state="2"
+                         data-date="{{ selected_date }}"
+                         data-time="{{ start_time }}"
+                         data-teacher="{{ i+1 }}"
+                         onclick="toggleGridCell(this)"
+                         style="height:100%; width:100%; cursor:pointer;">
+                        BREAK
+                    </div>
 
-    {% else %}
-        <div class="grid-free"
-             data-state="0"
-             data-date="{{ selected_date }}"
-             data-time="{{ start_time }}"
-             data-teacher="{{ i+1 }}"
-             onclick="toggleGridCell(this)"
-             style="height:100%; width:100%; cursor:pointer;">
-        </div>
-    {% endif %}
+                {% else %}
+                    <div class="grid-free"
+                         data-state="0"
+                         data-date="{{ selected_date }}"
+                         data-time="{{ start_time }}"
+                         data-teacher="{{ i+1 }}"
+                         onclick="toggleGridCell(this)"
+                         style="height:100%; width:100%; cursor:pointer;">
+                    </div>
+                {% endif %}
 
-</td>
-
+            </td>
             {% endfor %}
+
         </tr>
         {% endfor %}
-    </tbody>
 
+    </tbody>
 </table>
 
   </div>
