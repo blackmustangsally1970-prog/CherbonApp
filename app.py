@@ -5769,6 +5769,53 @@ Cherbon Waters Admin
         except Exception as e:
             return {"error": str(e)}, 500
 
+    @app.route('/save_grid_override', methods=['POST'])
+    def save_grid_override():
+        data = request.get_json()
+
+        override_date = data.get('date')
+        time_label = data.get('time')
+        teacher_index = data.get('teacher')
+        state = data.get('state')
+
+        if not (override_date and time_label and teacher_index is not None):
+            return jsonify({'status': 'error', 'message': 'Missing fields'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO teacher_grid_overrides (override_date, time_label, teacher_index, state)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (override_date, time_label, teacher_index)
+            DO UPDATE SET state = EXCLUDED.state, updated_at = NOW();
+        """, (override_date, time_label, teacher_index, state))
+
+        conn.commit()
+        cur.close()
+
+        return jsonify({'status': 'ok'})
+
+    @app.route('/reset_grid_overrides', methods=['POST'])
+    def reset_grid_overrides():
+        data = request.get_json()
+        override_date = data.get('date')
+
+        if not override_date:
+            return jsonify({'status': 'error', 'message': 'Missing date'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("""
+            DELETE FROM teacher_grid_overrides
+            WHERE override_date = %s
+        """, (override_date,))
+
+        conn.commit()
+        cur.close()
+
+        return jsonify({'status': 'ok'})
 
 
     @app.route("/debug_order/<client>")
