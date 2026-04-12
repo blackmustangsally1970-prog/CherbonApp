@@ -2078,6 +2078,17 @@ def create_app():
 
         # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
         ctx = build_lessons_context(selected_date, selected_date_str)
+        # ⭐ LOAD GRID OVERRIDES ⭐
+        overrides = TeacherGridOverride.query.filter_by(
+            override_date=selected_date
+        ).all()
+
+        grid_overrides = {
+            (o.time_label, o.teacher_index): o.state
+            for o in overrides
+        }
+
+
 
         teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
         teacher_blocks_json = [
@@ -2135,6 +2146,7 @@ def create_app():
             slot_map=slot_map,
             merged_tags=ctx["merged_tags"],
             norm_timerange_key=norm_timerange_key,
+            grid_overrides=grid_overrides,
             teacher_blocks=teacher_blocks_json,
         )
 

@@ -282,6 +282,22 @@ class LessonBlockTag(db.Model):
     teacher5 = db.Column(db.String(50))  # Name for T5
 
 
+class TeacherGridOverride(db.Model):
+    __tablename__ = 'teacher_grid_overrides'
+
+    id = db.Column(db.Integer, primary_key=True)
+    override_date = db.Column(db.Date, nullable=False)
+    time_label = db.Column(db.String(20), nullable=False)   # e.g. "10:30"
+    teacher_index = db.Column(db.Integer, nullable=False)   # 1–5
+    state = db.Column(db.Integer, nullable=False)           # 0=green, 1=red, 2=break
+    updated_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    __table_args__ = (
+        db.UniqueConstraint('override_date', 'time_label', 'teacher_index'),
+    )
+
+
+
 
     # ❌ Do NOT define relationships unless you have foreign keys like client_id, horse_id, etc.
     # Remove these:
