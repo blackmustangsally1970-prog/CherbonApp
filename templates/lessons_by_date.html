@@ -717,7 +717,15 @@ select.teacher-dropdown {
     min-width: 120px !important;
 }
 
-
+    .grid-free {
+        background: #c8f7c5;   /* green */
+    }
+    .grid-block {
+        background: #ffb3b3;   /* red */
+    }
+    .grid-break {
+        background: #fff7a8;   /* yellow */
+    }
 
 </style>
 
@@ -1180,7 +1188,85 @@ select.teacher-dropdown {
         </tr>
       </tbody>
     </table>
+<!-- ⭐ NEW: Doctor-Style Teacher Grid (Step 1 Skeleton Only) -->
+<h4 style="margin: 18px 0 6px 0; text-align:center; font-size:14px;">
+    Teacher Time Grid (Prototype)
+</h4>
+
+<table class="teacher-grid" 
+       style="width:95%; margin:0 auto; border-collapse:collapse; table-layout:fixed; font-size:12px;">
+
+    <thead>
+        <tr>
+            <th style="width:70px; text-align:center; background:#ddd;">Time</th>
+            {% for i in range(5) %}
+                <th style="text-align:center; background:#eee;">Teacher {{ i+1 }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {# times already exists in your template and contains "10:30 - 11:30" etc #}
+        {% for t in times %}
+            {% set t_clean = t|trim %}
+            {% set start_time = t_clean.split(' - ')[0] %}
+        <tr>
+            <td style="text-align:center; font-weight:bold; border:1px solid #ccc;">
+                {{ start_time }}
+            </td>
+
+            {% for i in range(5) %}
+{% set cell_lessons = [] %}
+
+{# Loop through grouped lessons and find matches for this time + teacher #}
+{% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
+    {% set start = timerange.split('-')[0].strip() %}
+    {% if start == start_time %}
+        {% set block_key = norm_timerange_key(timerange) ~ '_' ~ lesson_type ~ '_' ~ group_priv %}
+        {% set saved_tags = block_tag_lookup.get(block_key, []) %}
+
+        {# If this lesson belongs to this teacher column #}
+        {% if 'T' ~ (i+1) in saved_tags %}
+            {% set lesson_obj = lesson_group[0][0] %}
+            {% set _ = cell_lessons.append({
+                'label': timerange ~ ' ' ~ lesson_type ~ ' ' ~ group_priv ~ ' (' ~ (lesson_group|length) ~ ')',
+                'block_key': block_key
+            }) %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
+
+<td style="border:1px solid #ccc; height:28px; background:#fff;">
+
+    {% if cell_lessons %}
+        {% for L in cell_lessons %}
+<div onclick="openLessonPopup('{{ L.block_key }}')"
+     style="cursor:pointer; padding:2px; font-weight:bold; font-size:11px; background:#fff;">
+    📘 {{ L.label }}
+</div>
+        {% endfor %}
+{% else %}
+    <div class="grid-free"
+         data-state="0"
+         onclick="toggleGridCell(this)"
+         style="height:100%; width:100%; cursor:pointer;">
+    </div>
+{% endif %}
+
+
+</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
   </div>
+
+
+
+
 
 
 <!-- ⭐ Multi-lesson booking panel -->
@@ -1944,6 +2030,44 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => flash.remove(), 4200);
   });
 });
+</script>
+
+
+<script>
+function toggleGridCell(el) {
+    let state = parseInt(el.dataset.state || "0");
+
+    // 0 = green, 1 = red, 2 = yellow
+    if (state === 0) {
+        el.dataset.state = "1";
+        el.className = "grid-block";
+    } 
+    else if (state === 1) {
+        el.dataset.state = "2";
+        el.className = "grid-break";
+    } 
+    else {
+        el.dataset.state = "0";
+        el.className = "grid-free";
+    }
+}
+</script>
+<script>
+function openLessonPopup(blockKey) {
+    // Hide any open popups
+    document.querySelectorAll('.lesson-popup').forEach(p => p.style.display = 'none');
+
+    // Find the popup for this block
+    const popup = document.querySelector(`.lesson-popup[data-block-key="${blockKey}"]`);
+    if (!popup) return;
+
+    // Position popup near the mouse or center it
+    popup.style.display = 'block';
+    popup.style.position = 'absolute';
+    popup.style.left = '50%';
+    popup.style.top = '120px';
+    popup.style.transform = 'translateX(-50%)';
+}
 </script>
 
 
