@@ -1249,6 +1249,7 @@ select.teacher-dropdown {
 
 <td style="border:1px solid #ccc; height:28px; background:#fff;">
 
+    {# 1. Render lesson blocks if present #}
     {% if cell_lessons %}
         {% for L in cell_lessons %}
 <div onclick="openLessonPopup('{{ L.block_key }}')"
@@ -1256,43 +1257,45 @@ select.teacher-dropdown {
     📘 {{ L.label }}
 </div>
         {% endfor %}
-{% set override = grid_overrides.get((start_time, i+1)) %}
+    {% endif %}
 
-{% if override == 1 %}
-    <div class="grid-block"
-         data-state="1"
-         data-date="{{ selected_date }}"
-         data-time="{{ start_time }}"
-         data-teacher="{{ i+1 }}"
-         onclick="toggleGridCell(this)"
-         style="height:100%; width:100%; cursor:pointer;">
-    </div>
+    {# 2. Now handle override state (ALWAYS runs) #}
+    {% set override = grid_overrides.get((start_time, i+1)) %}
 
-{% elif override == 2 %}
-    <div class="grid-break"
-         data-state="2"
-         data-date="{{ selected_date }}"
-         data-time="{{ start_time }}"
-         data-teacher="{{ i+1 }}"
-         onclick="toggleGridCell(this)"
-         style="height:100%; width:100%; cursor:pointer;">
-        BREAK
-    </div>
+    {% if override == 1 %}
+        <div class="grid-block"
+             data-state="1"
+             data-date="{{ selected_date }}"
+             data-time="{{ start_time }}"
+             data-teacher="{{ i+1 }}"
+             onclick="toggleGridCell(this)"
+             style="height:100%; width:100%; cursor:pointer;">
+        </div>
 
-{% else %}
-    <div class="grid-free"
-         data-state="0"
-         data-date="{{ selected_date }}"
-         data-time="{{ start_time }}"
-         data-teacher="{{ i+1 }}"
-         onclick="toggleGridCell(this)"
-         style="height:100%; width:100%; cursor:pointer;">
-    </div>
-{% endif %}
+    {% elif override == 2 %}
+        <div class="grid-break"
+             data-state="2"
+             data-date="{{ selected_date }}"
+             data-time="{{ start_time }}"
+             data-teacher="{{ i+1 }}"
+             onclick="toggleGridCell(this)"
+             style="height:100%; width:100%; cursor:pointer;">
+            BREAK
+        </div>
 
-
+    {% else %}
+        <div class="grid-free"
+             data-state="0"
+             data-date="{{ selected_date }}"
+             data-time="{{ start_time }}"
+             data-teacher="{{ i+1 }}"
+             onclick="toggleGridCell(this)"
+             style="height:100%; width:100%; cursor:pointer;">
+        </div>
+    {% endif %}
 
 </td>
+
             {% endfor %}
         </tr>
         {% endfor %}
