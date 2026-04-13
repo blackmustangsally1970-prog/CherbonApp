@@ -5216,7 +5216,7 @@ def create_app():
 
         enquiries = (
             GeneralEnquirySubmission.query
-            .filter_by(ignored=False)
+            .filter_by(ignored=False, processed=False)
             .order_by(GeneralEnquirySubmission.created_at.desc())
             .all()
         )
@@ -5230,7 +5230,6 @@ def create_app():
             times=times,
             current_date=current_date
         )
-
 
 
     @app.route("/ignore_general_enquiry/<int:enquiry_id>")
@@ -5274,6 +5273,15 @@ def create_app():
             flash("Enquiry not found or already processed.", "warning")
             return redirect(url_for('general_enquiries'))
 
+        # -------------------------------
+        # NAME NORMALISATION
+        # -------------------------------
+        def clean_name(name):
+            if not name:
+                return ""
+            name = " ".join(name.split())      # collapse multiple spaces
+            return name.title()                # proper case
+
         # IGNORE BRANCH
         if request.form.get(f"ignore_{enquiry_id}") == "1":
             enquiry.ignored = True
@@ -5295,14 +5303,15 @@ def create_app():
             flash("Please select BOTH a date and a time.", "danger")
             return redirect(url_for('general_enquiries'))
 
-        # SINGLE RIDER
+        # SINGLE RIDER CHECKBOX
         if not request.form.get(f"process_rider_{enquiry_id}_1"):
             flash("No rider selected.", "warning")
             return redirect(url_for('general_enquiries'))
 
-        rider_name = enquiry.rider_name
-        rider_mobile = enquiry.mobile_phone
-        rider_email = enquiry.email_address
+        # CLEANED RIDER DETAILS
+        rider_name = clean_name(enquiry.rider_name)
+        rider_mobile = enquiry.mobile_phone.strip() if enquiry.mobile_phone else ""
+        rider_email = enquiry.email_address.strip() if enquiry.email_address else ""
 
         # ENSURE CLIENT EXISTS
         existing_client = Client.query.filter(
