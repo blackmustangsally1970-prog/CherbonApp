@@ -4227,9 +4227,15 @@ def create_app():
         return redirect(url_for("manage_horses_page"))
 
 
-    @app.route("/manage_blockout_dates")
+    @app.route("/manage_blockout_dates_page")
     def manage_blockout_dates_page():
-        return render_template("blockout_dates.html")
+        blockouts = BlockoutDate.query.order_by(BlockoutDate.block_date).all()
+        times = Time.query.order_by(Time.timerange).all()
+        return render_template(
+            "blockout_dates.html",
+            blockouts=blockouts,
+            times=times
+        )
 
     @app.route("/manage_blockout_ranges")
     def manage_blockout_ranges_page():
@@ -4255,7 +4261,6 @@ def create_app():
             db.session.commit()
             flash("Blockout removed.", "success")
         return redirect(url_for('manage_blockout_dates'))
-
 
     @app.route('/blockout_ranges', methods=['GET','POST'])
     def manage_blockout_ranges():
