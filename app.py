@@ -14,7 +14,8 @@ from models import (
     LessonInvite, TeacherSlot, DisclaimerState,
     LessonTeacherTag, WeeklyEvent, CourseReference,
     Users, TrailRideSubmission, TeacherBlock,
-    TeacherGridOverride   # ← ADD THIS
+    TeacherGridOverride,
+    GeneralEnquirySubmission
 )
 
 # Core libs
@@ -43,14 +44,13 @@ from weasyprint import HTML
 from playwright.sync_api import sync_playwright
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# JotForm helpers
 from helpers_jf import (
     extract_riders_from_submission,
     get_main_contact_fields,
-    TRAIL_FORM_ID
+    TRAIL_FORM_ID,
+    GENERAL_ENQUIRY_FORM_ID,            # ⭐ ADD THIS
+    parse_general_enquiry_payload       # ⭐ ADD THIS
 )
-
-
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -5163,14 +5163,16 @@ def create_app():
 
         api_key = current_app.config.get("JOTFORM_API_KEY")
         if not api_key:
-            return {"error": "Missing JotForm API key"}, 500
+            flash("Missing JotForm API key", "danger")
+            return redirect(url_for("general_enquiries"))
 
         url = f"https://api.jotform.com/form/{GENERAL_ENQUIRY_FORM_ID}/submissions?apiKey={api_key}"
         response = requests.get(url)
         data = response.json()
 
         if data.get("responseCode") != 200:
-            return {"error": "Failed to fetch from JotForm"}, 500
+            flash("Failed to fetch from JotForm", "danger")
+            return redirect(url_for("general_enquiries"))
 
         submissions = data.get("content", [])
         new_count = 0
@@ -5179,7 +5181,6 @@ def create_app():
             submission_id = sub.get("id")
             created_at = sub.get("created_at")
 
-            # Skip if already stored
             existing = GeneralEnquirySubmission.query.filter_by(submission_id=submission_id).first()
             if existing:
                 continue
@@ -5196,6 +5197,7 @@ def create_app():
                 email_address=parsed["email_address"],
                 mobile_phone=parsed["mobile_phone"],
                 comments=parsed["comments"],
+                ignored=False
             )
 
             db.session.add(entry)
@@ -5203,7 +5205,9 @@ def create_app():
 
         db.session.commit()
 
-        return {"status": "ok", "new_records": new_count}
+        flash(f"Imported {new_count} new enquiries.", "success")
+        return redirect(url_for("general_enquiries"))
+
 
     @app.route("/general_enquiries")
     def general_enquiries():
