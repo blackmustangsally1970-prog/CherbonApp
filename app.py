@@ -5211,7 +5211,7 @@ def create_app():
 
     @app.route("/general_enquiries")
     def general_enquiries():
-        from models import GeneralEnquirySubmission, Times
+        from models import GeneralEnquirySubmission, Time
         from datetime import date
 
         enquiries = (
@@ -5221,7 +5221,7 @@ def create_app():
             .all()
         )
 
-        times = Times.query.order_by(Times.sort_order).all()
+        times = Time.query.order_by(Time.timerange).all()
         current_date = date.today().strftime("%Y-%m-%d")
 
         return render_template(
@@ -5230,6 +5230,7 @@ def create_app():
             times=times,
             current_date=current_date
         )
+
 
 
     @app.route("/ignore_general_enquiry/<int:enquiry_id>")
