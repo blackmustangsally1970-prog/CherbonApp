@@ -5211,15 +5211,25 @@ def create_app():
 
     @app.route("/general_enquiries")
     def general_enquiries():
-        from models import GeneralEnquirySubmission
+        from models import GeneralEnquirySubmission, Times
+        from datetime import date
 
         enquiries = (
             GeneralEnquirySubmission.query
+            .filter_by(ignored=False)
             .order_by(GeneralEnquirySubmission.created_at.desc())
             .all()
         )
 
-        return render_template("general_enquiries.html", enquiries=enquiries)
+        times = Times.query.order_by(Times.sort_order).all()
+        current_date = date.today().strftime("%Y-%m-%d")
+
+        return render_template(
+            "general_enquiries.html",
+            enquiries=enquiries,
+            times=times,
+            current_date=current_date
+        )
 
 
     @app.route("/ignore_general_enquiry/<int:enquiry_id>")
