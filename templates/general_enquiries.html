@@ -25,6 +25,8 @@
   </style>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -44,6 +46,7 @@
   </a>
 </p>
 
+<form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
 {% for e in enquiries %}
 <div class="ge-card">
 
@@ -65,53 +68,162 @@
     </div>
 
     <!-- COMMENTS -->
+    {% if e.comments %}
     <div style="margin-bottom:16px;">
         <strong>Comments:</strong><br>
         {{ e.comments }}
     </div>
+    {% endif %}
 
-    <!-- BUTTONS -->
-    <div style="display:flex; gap:10px;">
+    <!-- BOOKING DETAILS (embedded, Trail Ride style) -->
+    <div style="
+        border:1px solid #ddd;
+        padding:12px;
+        border-radius:6px;
+        margin-bottom:16px;
+        background:#f9f9f9;
+    ">
+        <div style="font-weight:bold; margin-bottom:8px;">
+            Booking Details
+        </div>
 
-        <!-- BOOK BUTTON -->
-        <button class="menu-btn"
-                style="background:#28a745;"
-                data-bs-toggle="modal"
-                data-bs-target="#bookingModal"
-                onclick="prefillBookingModal('{{ e.rider_name }}',
-                                             '{{ e.mobile_phone }}',
-                                             '{{ e.email_address }}')">
-            📘 Book
-        </button>
+        <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
 
-        <!-- IGNORE -->
-        <a href="{{ url_for('ignore_general_enquiry', enquiry_id=e.id) }}"
-           class="menu-btn"
-           style="background:#ffc107; color:black;">
-           Ignore
-        </a>
+            <div>
+                <label>Date:</label><br>
+                <input type="date"
+                       name="booking_date_{{ e.id }}"
+                       value="{{ current_date }}"
+                       style="padding:4px; width:140px;">
+            </div>
 
-        <!-- VIEW DETAILS -->
-        <a href="{{ url_for('view_general_enquiry', enquiry_id=e.id) }}"
-           class="menu-btn"
-           style="background:#6c757d;">
-           View Details
-        </a>
+            <div>
+                <label>Time:</label><br>
+                <select name="booking_time_{{ e.id }}"
+                        class="form-select time-field searchable-dropdown"
+                        style="width:140px;">
+                    <option value=""></option>
+                    {% for t in times %}
+                        <option value="{{ t.timerange }}">{{ t.timerange }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
+            <div>
+                <label>Lesson Type:</label><br>
+                <select name="lesson_type_{{ e.id }}"
+                        style="padding:4px; width:150px;">
+                    <option value="General Enquiry Lesson" selected>General Enquiry Lesson</option>
+                    <option value="Private Lesson">Private Lesson</option>
+                    <option value="Group Lesson">Group Lesson</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Price (per rider):</label><br>
+                <input type="number"
+                       step="1.00"
+                       name="price_per_rider_{{ e.id }}"
+                       value="0.00"
+                       style="padding:4px; width:90px;">
+            </div>
+
+            <div>
+                <label>Payment (per rider):</label><br>
+                <input type="number"
+                       step="1.00"
+                       name="payment_per_rider_{{ e.id }}"
+                       value="0.00"
+                       style="padding:4px; width:90px;">
+            </div>
+
+        </div>
     </div>
+
+    <!-- SINGLE RIDER CHECKBOX (auto-selected) -->
+    <div style="
+        border:1px solid #ddd;
+        padding:12px;
+        border-radius:6px;
+        background:#ffffff;
+        margin-bottom:16px;
+    ">
+        <div style="font-weight:bold; margin-bottom:8px;">Rider</div>
+
+        <div style="padding:8px; border-bottom:1px solid #eee; display:flex; align-items:center;">
+            <input type="checkbox"
+                   name="process_rider_{{ e.id }}_1"
+                   value="1"
+                   checked
+                   style="margin-right:10px;">
+
+            <div style="flex-grow:1;">
+                <strong>{{ e.rider_name }}</strong>
+                {% if e.rider_age %} ({{ e.rider_age }}){% endif %}
+                {% if e.rider_height_cm %} — {{ e.rider_height_cm }}cm{% endif %}
+                {% if e.rider_weight_kg %} / {{ e.rider_weight_kg }}kg{% endif %}
+            </div>
+
+            <div style="margin-left:10px; font-size:14px;">
+                ✔ Auto
+            </div>
+        </div>
+    </div>
+
+    <!-- IGNORE -->
+    <div style="margin-bottom:12px;">
+        <label>
+            <input type="checkbox"
+                   name="ignore_{{ e.id }}"
+                   value="1">
+            Ignore this enquiry
+        </label>
+    </div>
+
+    <!-- PROCESS BUTTON -->
+    <button type="submit"
+            name="process_enquiry"
+            value="{{ e.id }}"
+            style="
+                padding:10px 16px;
+                background:#007bff;
+                color:white;
+                border:none;
+                border-radius:6px;
+                cursor:pointer;
+            ">
+        PROCESS ENQUIRY
+    </button>
 
 </div>
 {% endfor %}
-
-<!-- BOOKING MODAL -->
-{% include "booking_modal.html" %}
+</form>
 
 <script>
-function prefillBookingModal(name, phone, email) {
-    document.getElementById("booking_client_name").value = name;
-    document.getElementById("booking_client_phone").value = phone;
-    document.getElementById("booking_client_email").value = email;
+function startTimeMatcher(params, data) {
+    if ($.trim(params.term) === '') return data;
+    if (typeof data.text === 'undefined') return null;
+
+    let start = data.text.split('-')[0].trim();
+    if (start.startsWith(params.term)) return data;
+
+    return null;
 }
+
+$(document).ready(function() {
+    $('.searchable-dropdown.time-field').select2({
+        tags: true,
+        placeholder: "Select or type a time",
+        allowClear: true,
+        width: '100%',
+        matcher: startTimeMatcher
+    });
+
+    $('.searchable-dropdown.time-field').on('select2:open', function() {
+        let searchField = document.querySelector('.select2-container--open .select2-search__field');
+        if (searchField) searchField.focus();
+    });
+});
 </script>
 
 </body>
