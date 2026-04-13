@@ -972,23 +972,21 @@ def create_app():
     print(">>> JOTFORM KEY IN APP:", os.getenv("JOTFORM_API_KEY"))
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
-    app.config.from_object(Config())      # loads class-level config
+    app.config.from_object(Config())
 
-    # ⭐ Load JotForm API key into Flask config
+    # JotForm key
     app.config['JOTFORM_API_KEY'] = os.getenv("JOTFORM_API_KEY", "")
 
-    # Load ClickSend credentials
-    app.config['CLICKSEND_USERNAME'] = (
-        os.environ.get('CLICKSEND_USERNAME')
-        or os.environ.get('APPSETTING_CLICKSEND_USERNAME')
-        or ""
-    )
+    # ClickSend keys
+    app.config['CLICKSEND_USERNAME'] = ...
+    app.config['CLICKSEND_API_KEY'] = ...
 
-    app.config['CLICKSEND_API_KEY'] = (
-        os.environ.get('CLICKSEND_API_KEY')
-        or os.environ.get('APPSETTING_CLICKSEND_API_KEY')
-        or ""
-    )
+    # ⭐ CRITICAL: Initialise extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+
+    return app
 
 
     @app.route("/health")
