@@ -3167,36 +3167,43 @@ function generateRows() {
     rowsContainer.innerHTML = "";
 
     const baseDate = document.getElementById("top_base_date").value;
+    const recurrence = document.getElementById("recurrence_type").value;
     const count = parseInt(lessonCount.value || "1", 10);
 
-    const recurrence = document.getElementById("recurrence_type")?.value || "S";
-    const repeats = parseInt(document.getElementById("recurrence_count")?.value || "1", 10);
-
-    // ⭐ Helpers
+    // Helper: add days
     function addDays(dateStr, days) {
         const d = new Date(dateStr);
         d.setDate(d.getDate() + days);
         return d.toISOString().split("T")[0];
     }
 
-    // ⭐ Build date list
+    // End-of-year cutoff (Dec 24)
+    const endOfYear = new Date(new Date(baseDate).getFullYear(), 11, 24);
+
     let dates = [];
 
+    // ⭐ SINGLE MODE — manual multi-lesson entry
     if (recurrence === "S") {
         for (let i = 0; i < count; i++) {
-            dates.push(baseDate);
+            dates.push(baseDate);   // user can change each row manually
         }
     }
 
+    // ⭐ WEEKLY MODE — auto-generate until Dec 24
     if (recurrence === "W") {
-        for (let i = 0; i < repeats; i++) {
-            dates.push(addDays(baseDate, i * 7));
+        let d = new Date(baseDate);
+        while (d <= endOfYear) {
+            dates.push(d.toISOString().split("T")[0]);
+            d.setDate(d.getDate() + 7);
         }
     }
 
+    // ⭐ FORTNIGHTLY MODE — auto-generate until Dec 24
     if (recurrence === "F") {
-        for (let i = 0; i < repeats; i++) {
-            dates.push(addDays(baseDate, i * 14));
+        let d = new Date(baseDate);
+        while (d <= endOfYear) {
+            dates.push(d.toISOString().split("T")[0]);
+            d.setDate(d.getDate() + 14);
         }
     }
 
@@ -3254,7 +3261,7 @@ function generateRows() {
 
         rowsContainer.appendChild(row);
 
-        // ⭐ Activate Select2 for time dropdown
+        // Activate Select2
         $(row).find('.searchable-dropdown').select2({
             width: '100%',
             matcher: prefixMatcher,
@@ -3265,6 +3272,7 @@ function generateRows() {
 
     updateSMSVisibility();
 }
+
 
 
 
