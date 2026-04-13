@@ -192,9 +192,9 @@ class GeneralEnquirySubmission(db.Model):
 
     email_address = db.Column(db.String(120))
     mobile_phone = db.Column(db.String(40))
-
+    processed = db.Column(db.Boolean, default=False)
+    processed_at = db.Column(db.DateTime)
     comments = db.Column(db.Text)
-
     ignored = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
