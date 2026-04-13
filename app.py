@@ -5257,6 +5257,94 @@ def create_app():
 
         return render_template("general_enquiry_view.html", e=entry)
 
+    @app.route("/general_enquiries_process", methods=["POST"])
+    def general_enquiries_process():
+        enquiry_id = request.form.get("process_enquiry")
+
+        if not enquiry_id:
+            flash("No enquiry selected.", "warning")
+            return redirect(url_for('general_enquiries'))
+
+        from models import GeneralEnquirySubmission, Client, Lesson
+        from datetime import datetime
+        from sqlalchemy import func
+
+        enquiry = GeneralEnquirySubmission.query.get(enquiry_id)
+        if not enquiry or enquiry.ignored:
+            flash("Enquiry not found or already processed.", "warning")
+            return redirect(url_for('general_enquiries'))
+
+        # IGNORE BRANCH
+        if request.form.get(f"ignore_{enquiry_id}") == "1":
+            enquiry.ignored = True
+            enquiry.processed = True
+            enquiry.processed_at = datetime.utcnow()
+            db.session.commit()
+            flash("Enquiry ignored.", "info")
+            return redirect(url_for('general_enquiries'))
+
+        # BOOKING FIELDS
+        booking_date = request.form.get(f"booking_date_{enquiry_id}")
+        booking_time = request.form.get(f"booking_time_{enquiry_id}")
+        lesson_type = request.form.get(f"lesson_type_{enquiry_id}")
+        group_priv = request.form.get(f"group_priv_{enquiry_id}")
+        price_per_rider = float(request.form.get(f"price_per_rider_{enquiry_id}") or 0)
+        payment_per_rider = float(request.form.get(f"payment_per_rider_{enquiry_id}") or 0)
+
+        if not booking_date or not booking_time:
+            flash("Please select BOTH a date and a time.", "danger")
+            return redirect(url_for('general_enquiries'))
+
+        # SINGLE RIDER
+        if not request.form.get(f"process_rider_{enquiry_id}_1"):
+            flash("No rider selected.", "warning")
+            return redirect(url_for('general_enquiries'))
+
+        rider_name = enquiry.rider_name
+        rider_mobile = enquiry.mobile_phone
+        rider_email = enquiry.email_address
+
+        # ENSURE CLIENT EXISTS
+        existing_client = Client.query.filter(
+            func.lower(Client.full_name) == rider_name.lower()
+        ).first()
+
+        if not existing_client:
+            client = Client(
+                full_name=rider_name,
+                mobile=rider_mobile,
+                email_primary=rider_email
+            )
+            db.session.add(client)
+            db.session.flush()
+        else:
+            client = existing_client
+
+        # CREATE LESSON
+        lesson = Lesson(
+            lesson_date=booking_date,
+            time_frame=booking_time,
+            client=client.full_name,
+            horse="",
+            payment=payment_per_rider,
+            price_pl=price_per_rider,
+            attendance="",
+            balance=0.0,
+            lesson_type=lesson_type,
+            group_priv=group_priv,
+            block_key=""
+        )
+
+        db.session.add(lesson)
+
+        # MARK ENQUIRY AS PROCESSED
+        enquiry.processed = True
+        enquiry.processed_at = datetime.utcnow()
+
+        db.session.commit()
+
+        flash("General enquiry processed and lesson created.", "success")
+        return redirect(url_for('general_enquiries'))
 
 
 
