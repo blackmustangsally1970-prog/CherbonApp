@@ -3167,62 +3167,105 @@ function generateRows() {
     rowsContainer.innerHTML = "";
 
     const baseDate = document.getElementById("top_base_date").value;
+    const count = parseInt(lessonCount.value || "1", 10);
 
-    const row = document.createElement("tr");
-    row.innerHTML = `
-        <td>
-            <input type="date" class="form-control date-field" value="${baseDate}">
-        </td>
-        <td>
-            <select class="form-select time-field searchable-dropdown">
-                <option value=""></option>
-                {% for t in times %}
-                    <option value="{{ t }}">{{ t }}</option>
-                {% endfor %}
-            </select>
-        </td>
-        <td>
-            <select class="form-select type-field">
-                <option>Arena</option>
-                <option>Roundyard</option>
-                <option>Trail Ride</option>
-                <option>Go Gallop</option>
-                <option>Party</option>
-            </select>
-        </td>
-        <td>
-            <select class="form-select gp-field">
-                {% for opt in ['CC','CT','G','GY','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
-                    <option>{{ opt }}</option>
-                {% endfor %}
-            </select>
-        </td>
-        <td>
-            <input type="text" class="form-control price-field" placeholder="$0.00">
-        </td>
-        <td>
-            <input type="text" class="form-control payment-field" placeholder="$0.00">
-        </td>
-        <td class="sms-only-cell" style="display:none;">
-            <select class="form-select riders-field">
-                {% for i in range(1, 11) %}
-                    <option value="{{ i }}">{{ i }}</option>
-                {% endfor %}
-            </select>
-        </td>
-    `;
+    const recurrence = document.getElementById("recurrence_type")?.value || "S";
+    const repeats = parseInt(document.getElementById("recurrence_count")?.value || "1", 10);
 
-    rowsContainer.appendChild(row);
+    // ⭐ Helpers
+    function addDays(dateStr, days) {
+        const d = new Date(dateStr);
+        d.setDate(d.getDate() + days);
+        return d.toISOString().split("T")[0];
+    }
 
-    $(row).find('.searchable-dropdown').select2({
-        width: '100%',
-        matcher: prefixMatcher,
-        minimumResultsForSearch: 0,
-        selectOnClose: true
+    // ⭐ Build date list
+    let dates = [];
+
+    if (recurrence === "S") {
+        for (let i = 0; i < count; i++) {
+            dates.push(baseDate);
+        }
+    }
+
+    if (recurrence === "W") {
+        for (let i = 0; i < repeats; i++) {
+            dates.push(addDays(baseDate, i * 7));
+        }
+    }
+
+    if (recurrence === "F") {
+        for (let i = 0; i < repeats; i++) {
+            dates.push(addDays(baseDate, i * 14));
+        }
+    }
+
+    // ⭐ Build rows
+    dates.forEach(dateVal => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>
+                <input type="date" class="form-control date-field" value="${dateVal}">
+            </td>
+
+            <td>
+                <select class="form-select time-field searchable-dropdown">
+                    <option value=""></option>
+                    {% for t in times %}
+                        <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+
+            <td>
+                <select class="form-select type-field">
+                    <option>Arena</option>
+                    <option>Roundyard</option>
+                    <option>Trail Ride</option>
+                    <option>Go Gallop</option>
+                    <option>Party</option>
+                </select>
+            </td>
+
+            <td>
+                <select class="form-select gp-field">
+                    {% for opt in ['CC','CT','G','GY','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                        <option>{{ opt }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+
+            <td>
+                <input type="text" class="form-control price-field" placeholder="$0.00">
+            </td>
+
+            <td>
+                <input type="text" class="form-control payment-field" placeholder="$0.00">
+            </td>
+
+            <td class="sms-only-cell" style="display:none;">
+                <select class="form-select riders-field">
+                    {% for i in range(1, 10) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        `;
+
+        rowsContainer.appendChild(row);
+
+        // ⭐ Activate Select2 for time dropdown
+        $(row).find('.searchable-dropdown').select2({
+            width: '100%',
+            matcher: prefixMatcher,
+            minimumResultsForSearch: 0,
+            selectOnClose: true
+        });
     });
 
     updateSMSVisibility();
 }
+
 
 
 
