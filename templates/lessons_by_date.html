@@ -1418,7 +1418,7 @@ select.teacher-dropdown {
                     <th class="sms-only-header" style="display:none;">Riders</th>
                 </tr>
             </thead>
-            <tbody id="lesson-rows-container"></tbody>
+            <tbody id="booking-rows-container"></tbody>
         </table>
 
         <div class="mt-3">
@@ -3131,7 +3131,7 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
     const mobile       = document.getElementById("top_mobile");
     const existing     = document.getElementById("top_existing_client");
     const newName      = document.getElementById("top_new_client_name");
-    const rowsContainer = document.getElementById("lesson-rows-container");
+    const rowsContainer = document.getElementById("booking-rows-container");
 
 // ⭐ Unified modal open handler — correct order of operations
 btnOpen.addEventListener("click", () => {
