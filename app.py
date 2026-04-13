@@ -972,8 +972,12 @@ def create_app():
     print(">>> JOTFORM KEY IN APP:", os.getenv("JOTFORM_API_KEY"))
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
-    app.config.from_object(Config())      # <-- fix
-    # Load ClickSend credentials from Azure App Settings or environment
+    app.config.from_object(Config())      # loads class-level config
+
+    # ⭐ Load JotForm API key into Flask config
+    app.config['JOTFORM_API_KEY'] = os.getenv("JOTFORM_API_KEY", "")
+
+    # Load ClickSend credentials
     app.config['CLICKSEND_USERNAME'] = (
         os.environ.get('CLICKSEND_USERNAME')
         or os.environ.get('APPSETTING_CLICKSEND_USERNAME')
@@ -986,11 +990,6 @@ def create_app():
         or ""
     )
 
-
-    app.config['SQLALCHEMY_ECHO'] = True
-    db.init_app(app)
-
-    # print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())  # <-- remove or wrap
 
     @app.route("/health")
     def health():

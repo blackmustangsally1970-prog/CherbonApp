@@ -4,6 +4,8 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "devkey")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    JOTFORM_API_KEY = os.environ.get("JOTFORM_API_KEY", "")
+
     # ClickSend SMS configuration
     CLICKSEND_USERNAME = os.environ.get("CLICKSEND_USERNAME", "")
     CLICKSEND_API_KEY = os.environ.get("CLICKSEND_API_KEY", "")
