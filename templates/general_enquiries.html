@@ -1,85 +1,252 @@
-<!-- BOOKING DETAILS (Trail Ride style, corrected schema) -->
-<div style="
-    border:1px solid #ddd;
-    padding:12px;
-    border-radius:6px;
-    margin-bottom:16px;
-    background:#f9f9f9;
-">
-    <div style="font-weight:bold; margin-bottom:8px;">
-        Booking Details
-    </div>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>General Enquiries</title>
 
-    <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .ge-card {
+        border:1px solid #ccc;
+        border-radius:8px;
+        padding:16px;
+        margin-bottom:18px;
+        background:#ffffff;
+    }
+    .menu-btn {
+        display:inline-block;
+        padding:10px 15px;
+        background:#007bff;
+        color:white;
+        border-radius:6px;
+        text-decoration:none;
+        margin-right:10px;
+    }
+  </style>
 
-        <!-- DATE -->
-        <div>
-            <label>Date:</label><br>
-            <input type="date"
-                   name="booking_date_{{ e.id }}"
-                   value="{{ current_date }}"
-                   style="padding:4px; width:140px;">
-        </div>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
 
-        <!-- TIME -->
-        <div>
-            <label>Time:</label><br>
-            <select name="booking_time_{{ e.id }}"
-                    class="form-select time-field searchable-dropdown"
-                    style="width:140px;">
-                <option value=""></option>
-                {% for t in times %}
-                    <option value="{{ t.timerange }}">{{ t.timerange }}</option>
-                {% endfor %}
-            </select>
-        </div>
+<body>
 
-        <!-- LESSON TYPE -->
-        <div>
-            <label>Lesson Type:</label><br>
-            <select name="lesson_type_{{ e.id }}"
-                    style="padding:4px; width:160px;">
-                <option value="Roundyard" selected>Roundyard</option>
-                <option value="Arena">Arena</option>
-                <option value="Trail Ride">Trail Ride</option>
-                <option value="Party">Party</option>
-            </select>
-        </div>
-
-        <!-- GROUP PRIV -->
-        <div>
-            <label>Group Priv:</label><br>
-            <select name="gp_{{ e.id }}"
-                    style="padding:4px; width:100px;">
-                <option value="P" selected>P</option>
-                <option value="SP1">SP1</option>
-                <option value="SP2">SP2</option>
-                <option value="SP3">SP3</option>
-                <option value="SP4">SP4</option>
-                <option value="G">G</option>
-                <option value="GY">GY</option>
-            </select>
-        </div>
-
-        <!-- PRICE -->
-        <div>
-            <label>Price (per rider):</label><br>
-            <input type="number"
-                   step="1.00"
-                   name="price_per_rider_{{ e.id }}"
-                   value="0.00"
-                   style="padding:4px; width:90px;">
-        </div>
-
-        <!-- PAYMENT -->
-        <div>
-            <label>Payment (per rider):</label><br>
-            <input type="number"
-                   step="1.00"
-                   name="payment_per_rider_{{ e.id }}"
-                   value="0.00"
-                   style="padding:4px; width:90px;">
-        </div>
-
-    </div>
+<div style="margin-bottom:12px;" class="no-print" id="top-controls">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
 </div>
+
+<h1>General Enquiries</h1>
+
+<p>
+  <a href="{{ url_for('fetch_general_enquiries') }}"
+     class="menu-btn"
+     style="background:#28a745;">
+     🔄 Fetch Latest General Enquiries
+  </a>
+</p>
+
+<form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
+
+{% for e in enquiries %}
+<div class="ge-card">
+
+    <!-- HEADER -->
+    <div style="font-weight:bold; font-size:18px; margin-bottom:4px;">
+        {{ e.rider_name }} • {{ e.mobile_phone }} • {{ e.email_address }}
+    </div>
+
+    <!-- META -->
+    <div style="color:#555; font-size:14px; margin-bottom:12px;">
+        Submitted: {{ e.created_at }}
+    </div>
+
+    <!-- RIDER DETAILS -->
+    <div style="margin-bottom:12px;">
+        <strong>Age:</strong> {{ e.rider_age }}<br>
+        <strong>Height:</strong> {{ e.rider_height_cm }} cm<br>
+        <strong>Weight:</strong> {{ e.rider_weight_kg }} kg<br>
+    </div>
+
+    <!-- COMMENTS -->
+    {% if e.comments %}
+    <div style="margin-bottom:16px;">
+        <strong>Comments:</strong><br>
+        {{ e.comments }}
+    </div>
+    {% endif %}
+
+    <!-- BOOKING DETAILS (Trail Ride style, corrected schema) -->
+    <div style="
+        border:1px solid #ddd;
+        padding:12px;
+        border-radius:6px;
+        margin-bottom:16px;
+        background:#f9f9f9;
+    ">
+        <div style="font-weight:bold; margin-bottom:8px;">
+            Booking Details
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+
+            <!-- DATE -->
+            <div>
+                <label>Date:</label><br>
+                <input type="date"
+                       name="booking_date_{{ e.id }}"
+                       value="{{ current_date }}"
+                       style="padding:4px; width:140px;">
+            </div>
+
+            <!-- TIME -->
+            <div>
+                <label>Time:</label><br>
+                <select name="booking_time_{{ e.id }}"
+                        class="form-select time-field searchable-dropdown"
+                        style="width:140px;">
+                    <option value=""></option>
+                    {% for t in times %}
+                        <option value="{{ t.timerange }}">{{ t.timerange }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- LESSON TYPE -->
+            <div>
+                <label>Lesson Type:</label><br>
+                <select name="lesson_type_{{ e.id }}"
+                        style="padding:4px; width:160px;">
+                    <option value="Roundyard" selected>Roundyard</option>
+                    <option value="Arena">Arena</option>
+                    <option value="Trail Ride">Trail Ride</option>
+                    <option value="Party">Party</option>
+                </select>
+            </div>
+
+            <!-- GROUP PRIV -->
+            <div>
+                <label>Group Priv:</label><br>
+                <select name="gp_{{ e.id }}"
+                        style="padding:4px; width:100px;">
+                    <option value="P" selected>P</option>
+                    <option value="SP1">SP1</option>
+                    <option value="SP2">SP2</option>
+                    <option value="SP3">SP3</option>
+                    <option value="SP4">SP4</option>
+                    <option value="G">G</option>
+                    <option value="GY">GY</option>
+                </select>
+            </div>
+
+            <!-- PRICE -->
+            <div>
+                <label>Price (per rider):</label><br>
+                <input type="number"
+                       step="1.00"
+                       name="price_per_rider_{{ e.id }}"
+                       value="0.00"
+                       style="padding:4px; width:90px;">
+            </div>
+
+            <!-- PAYMENT -->
+            <div>
+                <label>Payment (per rider):</label><br>
+                <input type="number"
+                       step="1.00"
+                       name="payment_per_rider_{{ e.id }}"
+                       value="0.00"
+                       style="padding:4px; width:90px;">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SINGLE RIDER CHECKBOX -->
+    <div style="
+        border:1px solid #ddd;
+        padding:12px;
+        border-radius:6px;
+        background:#ffffff;
+        margin-bottom:16px;
+    ">
+        <div style="font-weight:bold; margin-bottom:8px;">Rider</div>
+
+        <div style="padding:8px; border-bottom:1px solid #eee; display:flex; align-items:center;">
+            <input type="checkbox"
+                   name="process_rider_{{ e.id }}_1"
+                   value="1"
+                   checked
+                   style="margin-right:10px;">
+
+            <div style="flex-grow:1;">
+                <strong>{{ e.rider_name }}</strong>
+                {% if e.rider_age %} ({{ e.rider_age }}){% endif %}
+                {% if e.rider_height_cm %} — {{ e.rider_height_cm }}cm{% endif %}
+                {% if e.rider_weight_kg %} / {{ e.rider_weight_kg }}kg{% endif %}
+            </div>
+
+            <div style="margin-left:10px; font-size:14px;">
+                ✔ Auto
+            </div>
+        </div>
+    </div>
+
+    <!-- IGNORE -->
+    <div style="margin-bottom:12px;">
+        <label>
+            <input type="checkbox"
+                   name="ignore_{{ e.id }}"
+                   value="1">
+            Ignore this enquiry
+        </label>
+    </div>
+
+    <!-- PROCESS BUTTON -->
+    <button type="submit"
+            name="process_enquiry"
+            value="{{ e.id }}"
+            style="
+                padding:10px 16px;
+                background:#007bff;
+                color:white;
+                border:none;
+                border-radius:6px;
+                cursor:pointer;
+            ">
+        PROCESS ENQUIRY
+    </button>
+
+</div>
+{% endfor %}
+</form>
+
+<script>
+function startTimeMatcher(params, data) {
+    if ($.trim(params.term) === '') return data;
+    if (typeof data.text === 'undefined') return null;
+
+    let start = data.text.split('-')[0].trim();
+    if (start.startsWith(params.term)) return data;
+
+    return null;
+}
+
+$(document).ready(function() {
+    $('.searchable-dropdown.time-field').select2({
+        tags: true,
+        placeholder: "Select or type a time",
+        allowClear: true,
+        width: '100%',
+        matcher: startTimeMatcher
+    });
+
+    $('.searchable-dropdown.time-field').on('select2:open', function() {
+        let searchField = document.querySelector('.select2-container--open .select2-search__field');
+        if (searchField) searchField.focus();
+    });
+});
+</script>
+
+</body>
+</html>
