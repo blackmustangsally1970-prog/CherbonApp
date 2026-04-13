@@ -4298,7 +4298,7 @@ def create_app():
             return {"blocked": False, "blocked_dates": []}
 
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_of_year = date(start_date.year, 12, 31)
+        end_of_year = date(start_date.year, 12, 24)
 
         # Build candidate dates using same pattern as your lesson recurrence
         if freq == "S":
@@ -4516,7 +4516,7 @@ def create_app():
             return False
 
         start_date = datetime.strptime(lesson_date_str, "%Y-%m-%d").date()
-        end_of_year = date(start_date.year, 12, 31)
+        end_of_year = date(start_date.year, 12, 24)
 
         if freq == "S":
             dates = [start_date]
