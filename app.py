@@ -5215,7 +5215,6 @@ def create_app():
 
         enquiries = (
             GeneralEnquirySubmission.query
-            .filter_by(ignored=False)
             .order_by(GeneralEnquirySubmission.created_at.desc())
             .all()
         )
@@ -5236,8 +5235,9 @@ def create_app():
 
         return redirect(url_for("general_enquiries"))
 
+
     @app.route("/general_enquiry/<int:enquiry_id>")
-    def general_enquiry_view(enquiry_id):
+    def view_general_enquiry(enquiry_id):
         from models import GeneralEnquirySubmission
 
         entry = GeneralEnquirySubmission.query.get(enquiry_id)
