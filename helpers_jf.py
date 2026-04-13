@@ -22,6 +22,24 @@ RIDER_QIDS = {
 TRAIL_FORM_ID = "211290218538049"  # Your JotForm ID
 
 
+# -----------------------------------------
+# General Enquiry JotForm (single rider)
+# -----------------------------------------
+
+GENERAL_ENQUIRY_FORM_ID = "211288469503056"
+
+GENERAL_QIDS = {
+    "rider_name_first": "3",      # answers["3"]["answer"]["first"]
+    "rider_name_last": "3",       # answers["3"]["answer"]["last"]
+    "email_address": "4",         # answers["4"]["answer"]
+    "mobile_phone": "5",          # answers["5"]["answer"]["full"]
+    "rider_age": "9",             # answers["9"]["answer"]
+    "rider_height_cm": "10",      # answers["10"]["answer"]
+    "rider_weight_kg": "11",      # answers["11"]["answer"]
+    "comments": "15"              # answers["15"]["answer"]
+}
+
+
 def get_answer(submission, qid):
     answers = submission.get('answers', {})
     field = answers.get(str(qid)) or answers.get(qid)
@@ -73,3 +91,51 @@ def get_main_contact_fields(raw_payload):
         "phone": phone,
         "email": email,
     }
+
+def parse_general_enquiry_payload(raw_payload):
+    """
+    Parse a single JotForm submission for the General Enquiry form
+    into a clean, flat dict.
+    """
+    submission = raw_payload if isinstance(raw_payload, dict) else json.loads(raw_payload)
+    answers = submission.get("answers", {})
+
+    def _get(qid):
+        field = answers.get(str(qid)) or answers.get(qid)
+        if not field:
+            return None
+        return field.get("answer")
+
+    # Rider name (fullname control, same QID for first/last)
+    name_field = _get(GENERAL_QIDS["rider_name_first"])
+    if isinstance(name_field, dict):
+        first = (name_field.get("first") or "").strip()
+        last = (name_field.get("last") or "").strip()
+        rider_name = (first + " " + last).strip()
+    else:
+        rider_name = str(name_field).strip() if name_field else None
+
+    # Simple fields
+    email = _get(GENERAL_QIDS["email_address"])
+    mobile_field = _get(GENERAL_QIDS["mobile_phone"])
+    if isinstance(mobile_field, dict):
+        mobile = (mobile_field.get("full") or "").strip()
+    else:
+        mobile = str(mobile_field).strip() if mobile_field else None
+
+    age = _get(GENERAL_QIDS["rider_age"])
+    height = _get(GENERAL_QIDS["rider_height_cm"])
+    weight = _get(GENERAL_QIDS["rider_weight_kg"])
+    comments = _get(GENERAL_QIDS["comments"])
+
+    return {
+        "rider_name": rider_name or None,
+        "rider_age": int(age) if age and str(age).isdigit() else None,
+        "rider_height_cm": int(height) if height and str(height).isdigit() else None,
+        "rider_weight_kg": int(weight) if weight and str(weight).isdigit() else None,
+        "email_address": email or None,
+        "mobile_phone": mobile or None,
+        "comments": comments or None,
+    }
+
+

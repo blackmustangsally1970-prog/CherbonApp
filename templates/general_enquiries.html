@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>General Enquiries</title>
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .menu-btn {
+        display:inline-block;
+        padding:8px 12px;
+        background:#007bff;
+        color:white;
+        border-radius:6px;
+        text-decoration:none;
+        margin-right:8px;
+    }
+    .ge-card {
+        border:1px solid #ccc;
+        border-radius:8px;
+        padding:16px;
+        margin-bottom:18px;
+        background:#ffffff;
+    }
+    th, td { border:1px solid #ccc; padding:8px; }
+  </style>
+</head>
+
+<body>
+
+<div style="margin-bottom:12px;" class="no-print" id="top-controls">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
+</div>
+
+<h1>General Enquiries</h1>
+
+<p>
+  <a href="{{ url_for('fetch_general_enquiries') }}"
+     class="menu-btn"
+     style="background:#28a745;">
+     🔄 Fetch Latest JotForm Submissions
+  </a>
+</p>
+
+{% for e in enquiries %}
+<div class="ge-card">
+
+    <!-- HEADER -->
+    <div style="font-weight:bold; font-size:18px; margin-bottom:4px;">
+        {{ e.rider_name }} • {{ e.mobile_phone }} • {{ e.email_address }}
+    </div>
+
+    <!-- META -->
+    <div style="color:#555; font-size:14px; margin-bottom:12px;">
+        Submitted: {{ e.created_at }}
+    </div>
+
+    <!-- RIDER DETAILS -->
+    <div style="
+        border:1px solid #ddd;
+        padding:12px;
+        border-radius:6px;
+        background:#f9f9f9;
+        margin-bottom:16px;
+    ">
+        <div style="font-weight:bold; margin-bottom:8px;">
+            Rider Details
+        </div>
+
+        <div>Age: {{ e.rider_age }}</div>
+        <div>Height: {{ e.rider_height_cm }} cm</div>
+        <div>Weight: {{ e.rider_weight_kg }} kg</div>
+    </div>
+
+    <!-- COMMENTS -->
+    {% if e.comments %}
+    <div style="
+        border:1px solid #ddd;
+        padding:12px;
+        border-radius:6px;
+        background:#ffffff;
+        margin-bottom:16px;
+    ">
+        <div style="font-weight:bold; margin-bottom:8px;">
+            Comments
+        </div>
+        <div style="white-space:pre-wrap;">{{ e.comments }}</div>
+    </div>
+    {% endif %}
+
+    <!-- ACTIONS -->
+    <div style="display:flex; gap:12px;">
+        <a href="{{ url_for('ignore_general_enquiry', enquiry_id=e.id) }}"
+           class="menu-btn"
+           style="background:#dc3545;">
+           Ignore
+        </a>
+
+        <a href="{{ url_for('general_enquiry_view', enquiry_id=e.id) }}"
+           class="menu-btn"
+           style="background:#6c757d;">
+           View Details
+        </a>
+    </div>
+
+</div>
+{% endfor %}
+
+</body>
+</html>

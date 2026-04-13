@@ -177,6 +177,30 @@ class IncomingSubmission(db.Model):
     jotform_id = db.Column(db.String, index=True)
 
 
+class GeneralEnquirySubmission(db.Model):
+    __tablename__ = "general_enquiry_submissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(64), unique=True, nullable=False)
+
+    created_at = db.Column(db.DateTime, nullable=False)
+
+    rider_name = db.Column(db.String(120))
+    rider_age = db.Column(db.Integer)
+    rider_height_cm = db.Column(db.Integer)
+    rider_weight_kg = db.Column(db.Integer)
+
+    email_address = db.Column(db.String(120))
+    mobile_phone = db.Column(db.String(40))
+
+    comments = db.Column(db.Text)
+
+    ignored = db.Column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f"<GeneralEnquirySubmission {self.submission_id}>"
+
+
 
 class TeacherTime(db.Model):
     __tablename__ = 'teacher_time'

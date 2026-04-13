@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>General Enquiry Details</title>
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .menu-btn {
+        display:inline-block;
+        padding:8px 12px;
+        background:#007bff;
+        color:white;
+        border-radius:6px;
+        text-decoration:none;
+        margin-right:8px;
+    }
+    .box {
+        border:1px solid #ccc;
+        border-radius:8px;
+        padding:16px;
+        margin-bottom:18px;
+        background:#ffffff;
+    }
+  </style>
+</head>
+
+<body>
+
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('general_enquiries') }}" class="menu-btn">← Back to Enquiries</a>
+</div>
+
+<h1>General Enquiry Details</h1>
+
+<div class="box">
+    <h3>Contact</h3>
+    <p><strong>Name:</strong> {{ e.rider_name }}</p>
+    <p><strong>Email:</strong> {{ e.email_address }}</p>
+    <p><strong>Mobile:</strong> {{ e.mobile_phone }}</p>
+    <p><strong>Submitted:</strong> {{ e.created_at }}</p>
+</div>
+
+<div class="box">
+    <h3>Rider Details</h3>
+    <p><strong>Age:</strong> {{ e.rider_age }}</p>
+    <p><strong>Height:</strong> {{ e.rider_height_cm }} cm</p>
+    <p><strong>Weight:</strong> {{ e.rider_weight_kg }} kg</p>
+</div>
+
+{% if e.comments %}
+<div class="box">
+    <h3>Comments</h3>
+    <div style="white-space:pre-wrap;">{{ e.comments }}</div>
+</div>
+{% endif %}
+
+</body>
+</html>

@@ -5151,6 +5151,97 @@ def create_app():
         return redirect(url_for('trailride_enquiries'))
 
 
+    @app.route("/fetch_general_enquiries")
+    def fetch_general_enquiries():
+        import requests
+        from datetime import datetime
+        from models import GeneralEnquirySubmission
+        from helpers_jf import GENERAL_ENQUIRY_FORM_ID, parse_general_enquiry_payload
+
+        api_key = current_app.config.get("JOTFORM_API_KEY")
+        if not api_key:
+            return {"error": "Missing JotForm API key"}, 500
+
+        url = f"https://api.jotform.com/form/{GENERAL_ENQUIRY_FORM_ID}/submissions?apiKey={api_key}"
+        response = requests.get(url)
+        data = response.json()
+
+        if data.get("responseCode") != 200:
+            return {"error": "Failed to fetch from JotForm"}, 500
+
+        submissions = data.get("content", [])
+        new_count = 0
+
+        for sub in submissions:
+            submission_id = sub.get("id")
+            created_at = sub.get("created_at")
+
+            # Skip if already stored
+            existing = GeneralEnquirySubmission.query.filter_by(submission_id=submission_id).first()
+            if existing:
+                continue
+
+            parsed = parse_general_enquiry_payload(sub)
+
+            entry = GeneralEnquirySubmission(
+                submission_id=submission_id,
+                created_at=datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S"),
+                rider_name=parsed["rider_name"],
+                rider_age=parsed["rider_age"],
+                rider_height_cm=parsed["rider_height_cm"],
+                rider_weight_kg=parsed["rider_weight_kg"],
+                email_address=parsed["email_address"],
+                mobile_phone=parsed["mobile_phone"],
+                comments=parsed["comments"],
+            )
+
+            db.session.add(entry)
+            new_count += 1
+
+        db.session.commit()
+
+        return {"status": "ok", "new_records": new_count}
+
+    @app.route("/general_enquiries")
+    def general_enquiries():
+        from models import GeneralEnquirySubmission
+
+        enquiries = (
+            GeneralEnquirySubmission.query
+            .filter_by(ignored=False)
+            .order_by(GeneralEnquirySubmission.created_at.desc())
+            .all()
+        )
+
+        return render_template("general_enquiries.html", enquiries=enquiries)
+
+
+    @app.route("/ignore_general_enquiry/<int:enquiry_id>")
+    def ignore_general_enquiry(enquiry_id):
+        from models import GeneralEnquirySubmission
+
+        entry = GeneralEnquirySubmission.query.get(enquiry_id)
+        if not entry:
+            return "Not found", 404
+
+        entry.ignored = True
+        db.session.commit()
+
+        return redirect(url_for("general_enquiries"))
+
+    @app.route("/general_enquiry/<int:enquiry_id>")
+    def general_enquiry_view(enquiry_id):
+        from models import GeneralEnquirySubmission
+
+        entry = GeneralEnquirySubmission.query.get(enquiry_id)
+        if not entry:
+            return "Not found", 404
+
+        return render_template("general_enquiry_view.html", e=entry)
+
+
+
+
     @app.route('/send_invoice')
     def send_invoice():
         import win32com.client
