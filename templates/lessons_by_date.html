@@ -3189,23 +3189,15 @@ function generateRows() {
         }
     }
 
-    // ⭐ WEEKLY MODE — auto-generate until Dec 24
-    if (recurrence === "W") {
-        let d = new Date(baseDate);
-        while (d <= endOfYear) {
-            dates.push(d.toISOString().split("T")[0]);
-            d.setDate(d.getDate() + 7);
-        }
-    }
+// ⭐ WEEKLY MODE — UI shows ONE row only
+if (recurrence === "W") {
+    dates = [baseDate];
+}
 
-    // ⭐ FORTNIGHTLY MODE — auto-generate until Dec 24
-    if (recurrence === "F") {
-        let d = new Date(baseDate);
-        while (d <= endOfYear) {
-            dates.push(d.toISOString().split("T")[0]);
-            d.setDate(d.getDate() + 14);
-        }
-    }
+// ⭐ FORTNIGHTLY MODE — UI shows ONE row only
+if (recurrence === "F") {
+    dates = [baseDate];
+}
 
     // ⭐ Build rows
     dates.forEach(dateVal => {
