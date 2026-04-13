@@ -972,21 +972,27 @@ def create_app():
     print(">>> JOTFORM KEY IN APP:", os.getenv("JOTFORM_API_KEY"))
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
-    app.config.from_object(Config())
-
-    # JotForm key
+    app.config.from_object(Config())      # <-- fix
     app.config['JOTFORM_API_KEY'] = os.getenv("JOTFORM_API_KEY", "")
 
-    # ClickSend keys
-    app.config['CLICKSEND_USERNAME'] = ...
-    app.config['CLICKSEND_API_KEY'] = ...
+    # Load ClickSend credentials from Azure App Settings or environment
+    app.config['CLICKSEND_USERNAME'] = (
+        os.environ.get('CLICKSEND_USERNAME')
+        or os.environ.get('APPSETTING_CLICKSEND_USERNAME')
+        or ""
+    )
 
-    # ⭐ CRITICAL: Initialise extensions
+    app.config['CLICKSEND_API_KEY'] = (
+        os.environ.get('CLICKSEND_API_KEY')
+        or os.environ.get('APPSETTING_CLICKSEND_API_KEY')
+        or ""
+    )
+
+
+    app.config['SQLALCHEMY_ECHO'] = True
     db.init_app(app)
-    migrate.init_app(app, db)
-    login_manager.init_app(app)
 
-    return app
+    # print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())  # <-- remove or wrap
 
 
     @app.route("/health")
