@@ -46,7 +46,8 @@
   </a>
 </p>
 
-<form method="POST" action="{{ url_for('trailride_enquiries_process') }}">
+<!-- ⭐ FIXED: POST TO THE CORRECT PROCESSOR -->
+<form method="POST" action="{{ url_for('general_enquiries_process') }}">
 
 {% for e in enquiries %}
 <div class="ge-card">
@@ -76,7 +77,7 @@
     </div>
     {% endif %}
 
-    <!-- BOOKING DETAILS (Trail Ride style, corrected schema) -->
+    <!-- BOOKING DETAILS -->
     <div style="
         border:1px solid #ddd;
         padding:12px;
@@ -127,7 +128,7 @@
             <!-- GROUP PRIV -->
             <div>
                 <label>Group Priv:</label><br>
-                <select name="gp_{{ e.id }}"
+                <select name="group_priv_{{ e.id }}"
                         style="padding:4px; width:100px;">
                     <option value="P" selected>P</option>
                     <option value="SP1">SP1</option>
