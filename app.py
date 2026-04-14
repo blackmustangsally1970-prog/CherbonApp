@@ -6188,6 +6188,22 @@ Cherbon Waters Admin
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
 
+    @app.route("/phone_lookup", methods=["GET", "POST"])
+    def phone_lookup():
+        client = None
+        number = ""
+
+        if request.method == "POST":
+            number = (request.form.get("phone") or "").strip()
+            clean = "".join(filter(str.isdigit, number))
+
+            client = Client.query.filter(
+                Client.mobile == clean
+            ).first()
+
+        return render_template("phone_lookup.html", client=client, number=number)
+
+
 
     @app.route("/save_teacher_tags", methods=["POST"])
     def save_teacher_tags():
