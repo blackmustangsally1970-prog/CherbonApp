@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "other.html" %}
 {% block content %}
 
 <h2>Phone Lookup</h2>
@@ -14,10 +14,10 @@
     <h4>Match Found</h4>
     <p><strong>{{ client.full_name }}</strong></p>
     <p>Mobile: {{ client.mobile }}</p>
-    <p>Guardian: {{ client.guardian }}</p>
+    <p>Guardian: {{ client.guardian_name }}</p>
     <p>Notes: {{ client.notes }}</p>
 
-    <a href="{{ url_for('edit_client', client_id=client.id) }}" class="btn btn-success">
+    <a href="{{ url_for('edit_client', client_id=client.client_id) }}" class="btn btn-success">
         Open Client
     </a>
 {% elif number %}
