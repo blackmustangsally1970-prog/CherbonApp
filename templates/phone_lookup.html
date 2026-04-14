@@ -25,6 +25,14 @@
         text-decoration: none;
         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
+
+    .result-box {
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background: #fafafa;
+    }
   </style>
 </head>
 <body>
@@ -35,24 +43,24 @@
 <h1>Phone Lookup</h1>
 
 <form method="POST">
-    <label>Enter phone number:</label>
+    <label>Enter phone number:</label><br>
     <input type="text" name="phone" value="{{ number }}" required>
     <button>Search</button>
 </form>
 
 {% if client %}
-    <hr>
+<div class="result-box">
     <h3>Match Found</h3>
-    <p><strong>{{ client.full_name }}</strong></p>
-    <p>Mobile: {{ client.mobile }}</p>
-    <p>Guardian: {{ client.guardian_name }}</p>
-    <p>Notes: {{ client.notes }}</p>
-
-    <a href="{{ url_for('edit_client', client_id=client.client_id) }}">Open Client</a>
+    <p><strong>Name:</strong> {{ client.full_name }}</p>
+    <p><strong>Mobile:</strong> {{ client.mobile }}</p>
+    <p><strong>Guardian:</strong> {{ client.guardian_name }}</p>
+    <p><strong>Notes:</strong> {{ client.notes }}</p>
+</div>
 
 {% elif number %}
-    <hr>
+<div class="result-box">
     <p>No client found for <strong>{{ number }}</strong></p>
+</div>
 {% endif %}
 
 </body>
