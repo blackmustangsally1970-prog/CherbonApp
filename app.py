@@ -5720,7 +5720,7 @@ Cherbon Waters Admin
             headers.append(cell.value.strip() if cell.value else None)
 
         # Get valid Lesson model columns
-        valid_fields = [col.name for col in Lessons.__table__.columns]
+        valid_fields = [col.name for col in Lesson.__table__.columns]
 
         # Build mapping: XLSX heading -> DB field
         field_map = {}
@@ -5746,7 +5746,7 @@ Cherbon Waters Admin
                 continue
 
             # Create Lesson object with defaults for missing fields
-            lesson = Lessons(**row_data)
+            lesson = Lesson(**row_data)
             db.session.add(lesson)
             inserted += 1
 
