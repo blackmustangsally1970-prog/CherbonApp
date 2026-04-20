@@ -99,13 +99,23 @@
             {% if invite_mode %}
                 Height: {{ m.height_cm }}<br>
                 Weight: {{ m.weight_kg }}<br><br>
-            {% else %}
-                Age: {{ m.age }}<br>
-                Email: {{ m.email_primary }}<br>
-                Mobile: {{ m.mobile }}<br>
-                Guardian: {{ m.guardian_name }}<br>
-                Disclaimer: {{ m.disclaimer }}<br><br>
-            {% endif %}
+{% else %}
+    Age: {{ m.age }}<br>
+    Email: {{ m.email_primary }}<br>
+    Mobile: {{ m.mobile }}<br>
+    Guardian: {{ m.guardian_name }}<br>
+    Disclaimer: {{ m.disclaimer }}<br>
+
+    Last Lesson:
+    {% if m.last_lesson_date %}
+        {{ m.last_lesson_date.strftime('%d %b %Y') }}
+    {% else %}
+        None recorded
+    {% endif %}
+    <!-- DEBUG: Last lesson raw = {{ m.last_lesson_date }} -->
+    <br><br>
+{% endif %}
+
 
             <!-- USE EXISTING -->
             <form method="post"

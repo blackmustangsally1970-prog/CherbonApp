@@ -3259,6 +3259,16 @@ def create_app():
         # Load REAL Client objects
         matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
 
+        # ⭐ Attach last lesson date
+        for m in matches:
+            last = (
+                Lesson.query
+                .filter_by(client=m.full_name)
+                .order_by(Lesson.lesson_date.desc())
+                .first()
+            )
+            m.last_lesson_date = last.lesson_date if last else None
+
         return render_template(
             'conflict_resolution.html',
             submission=row,
