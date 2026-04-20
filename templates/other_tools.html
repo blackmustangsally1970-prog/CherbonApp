@@ -82,6 +82,22 @@
 
 <a href="{{ url_for('phone_lookup') }}" class="menu-btn">Phone Lookup</a>
 
+<a href="#" class="menu-btn" onclick="document.getElementById('xlsxUpload').style.display='block'">
+    📄 Import Lessons (XLSX)
+</a>
+
+<div id="xlsxUpload" style="display:none; margin-top:20px;">
+    <form action="{{ url_for('import_lessons_xlsx') }}" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".xlsx" required
+               style="margin-bottom:12px; font-size:16px;">
+        <button type="submit"
+                style="padding:12px 20px; font-size:18px; background:#4a6bff; color:white; border:none; border-radius:8px;">
+            Upload & Import
+        </button>
+    </form>
+</div>
+
+
 
 </body>
 </html>

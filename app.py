@@ -5703,6 +5703,69 @@ Cherbon Waters Admin
                 return t.timerange  # full "HH:MM - HH:MM"
 
 
+    @app.route('/import_lessons_xlsx', methods=['POST'])
+    def import_lessons_xlsx():
+        file = request.files.get('file')
+        if not file:
+            return jsonify({"status": "error", "message": "No file uploaded"}), 400
+
+        # Load workbook
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+
+        # Extract header row
+        headers = []
+        for cell in ws[1]:
+            headers.append(cell.value.strip() if cell.value else None)
+
+        # Get valid Lesson model columns
+        valid_fields = [col.name for col in Lessons.__table__.columns]
+
+        # Build mapping: XLSX heading -> DB field
+        field_map = {}
+        for idx, header in enumerate(headers):
+            if header in valid_fields:
+                field_map[idx] = header  # column index -> field name
+
+        inserted = 0
+        skipped = 0
+
+        # Process rows
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            row_data = {}
+
+            # Map only known fields
+            for idx, value in enumerate(row):
+                if idx in field_map:
+                    row_data[field_map[idx]] = value
+
+            # Skip empty rows
+            if not any(row_data.values()):
+                skipped += 1
+                continue
+
+            # Create Lesson object with defaults for missing fields
+            lesson = Lessons(**row_data)
+            db.session.add(lesson)
+            inserted += 1
+
+        db.session.commit()
+
+        # Run your recalc function
+        try:
+            recalc_lessons()
+        except:
+            pass
+
+        return jsonify({
+            "status": "success",
+            "inserted": inserted,
+            "skipped": skipped,
+            "message": f"Imported {inserted} lessons successfully."
+        })
+
+
+
     @app.route('/save_txt', methods=['POST'])
     def save_txt():
         try:
