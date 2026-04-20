@@ -5758,13 +5758,8 @@ Cherbon Waters Admin
         except:
             pass
 
-        return jsonify({
-            "status": "success",
-            "inserted": inserted,
-            "skipped": skipped,
-            "message": f"Imported {inserted} lessons successfully."
-        })
-
+        flash(f"Imported {inserted} lessons successfully.", "success")
+        return redirect(url_for('other_tools'))
 
 
     @app.route('/save_txt', methods=['POST'])
