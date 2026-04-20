@@ -28,6 +28,7 @@ import string
 import tempfile
 import subprocess
 import unicodedata
+import openpyxl
 from datetime import date, datetime, time, timedelta
 from functools import lru_cache, wraps
 from urllib.parse import urlencode
