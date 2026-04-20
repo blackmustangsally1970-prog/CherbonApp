@@ -5752,11 +5752,10 @@ Cherbon Waters Admin
 
         db.session.commit()
 
-        # Run your recalc function
         try:
-            recalc_lessons()
-        except:
-            pass
+            recalc_all_lessons()
+        except Exception as e:
+            flash(f"Import succeeded but recalc failed: {e}", "error")
 
         flash(f"Imported {inserted} lessons successfully.", "success")
         return redirect(url_for('other_tools'))
