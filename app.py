@@ -6377,7 +6377,6 @@ Cherbon Waters Admin
                 "pax": w.pax,
                 "time": w.time,
                 "service1": w.service1,
-                "couple_name": w.couple_name,
                 "notes": w.notes,
                 "category": w.category,
                 "staff": staff_names,
@@ -6494,12 +6493,12 @@ Cherbon Waters Admin
 
         if request.method == 'POST':
             date_str = request.form.get('date')
-            wedding.couple_name = request.form.get('couple_name', '').strip()
             wedding.notes = request.form.get('notes', '').strip()
 
             wedding.pax = request.form.get('pax') or None
             wedding.time = request.form.get('time') or None
             wedding.service1 = request.form.get('service1') or None
+            wedding.category = request.form.get('category')  # NEW: allow editing type
 
             if date_str:
                 wedding.date = datetime.strptime(date_str, "%Y-%m-%d").date()
