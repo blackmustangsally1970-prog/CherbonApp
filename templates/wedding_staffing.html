@@ -51,6 +51,13 @@
 
         .danger { background: #b30000; }
         .danger:hover { background: #7a0000; }
+
+        .assigned-staff {
+            max-width: 200px;      /* keeps the column narrow */
+            white-space: normal;   /* allows wrapping */
+            word-wrap: break-word; /* breaks long names if needed */
+        }
+
     </style>
 </head>
 <body>
@@ -93,13 +100,13 @@
             {% endif %}
         </td>
 
-        <td>
-            {% if w.staff %}
-                {{ w.staff|join(', ') }}
-            {% else %}
-                <em>No staff assigned</em>
-            {% endif %}
-        </td>
+<td class="assigned-staff">
+    {% if w.staff %}
+        {{ w.staff|join(', ') }}
+    {% else %}
+        <em>No staff assigned</em>
+    {% endif %}
+</td>
 
         <td>
             <a href="{{ url_for('edit_wedding_staffing', wedding_id=w.id) }}" class="small-btn">👥 Staff</a>
