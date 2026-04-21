@@ -35,31 +35,30 @@
             height: 100px;
         }
 
-        label { font-weight: bold; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <a href="{{ url_for('wedding_staffing') }}" class="menu-btn">← Back</a>
+<a href="{{ url_for('manage_wedding_staff') }}" class="menu-btn">👥 Manage Staff</a>
 
 <h1>Edit Staffing for {{ wedding.couple_name }}</h1>
 <p><strong>Date:</strong> {{ wedding.date }}</p>
 
 <form method="post">
 
-    <label>Assign Staff</label><br>
-    <select name="staff_ids" multiple size="6" style="width: 300px;">
+    <label>Assign Staff</label>
+    <select name="staff_ids" multiple size="8" style="width: 300px;">
         {% for s in staff_list %}
             <option value="{{ s.id }}"
-                {% if s.id in wedding.staff_ids %}selected{% endif %}>
+                {% if s.id in assigned_ids %}selected{% endif %}>
                 {{ s.name }}
             </option>
         {% endfor %}
     </select>
 
-    <br><br>
-
-    <label>Notes (times, duties, special instructions)</label><br>
+    <label>Notes (times, duties, special instructions)</label>
     <textarea name="notes" class="notes-box">{{ wedding.notes }}</textarea>
 
     <br><br>
