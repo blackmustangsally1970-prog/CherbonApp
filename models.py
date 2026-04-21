@@ -141,11 +141,16 @@ class Wedding(db.Model):
     date = db.Column(db.Date, nullable=False)
     couple_name = db.Column(db.String(120), nullable=False)
     notes = db.Column(db.Text)
+
     pax = db.Column(db.Integer)
     time = db.Column(db.String(50))
-    service1_start = db.Column(db.String(20))
-    service1_end = db.Column(db.String(20))
-    assignments = db.relationship('WeddingAssignment', backref='wedding', cascade="all, delete-orphan")
+    service1 = db.Column(db.String(100))   # ← single editable 1st Service field
+
+    assignments = db.relationship(
+        'WeddingAssignment',
+        backref='wedding',
+        cascade="all, delete-orphan"
+    )
 
 
 class WeddingStaff(db.Model):
