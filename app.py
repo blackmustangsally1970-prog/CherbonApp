@@ -32,6 +32,7 @@ from models import (
     Wedding,
     WeddingAssignment,
     WeddingStaff,
+    WeddingStaffUnavailability,
     WeeklyEvent
 )
 
