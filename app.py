@@ -6522,14 +6522,12 @@ Cherbon Waters Admin
     def add_wedding():
         if request.method == 'POST':
             date_str = request.form.get('date')
-            couple_name = request.form.get('couple_name', '').strip()
             notes = request.form.get('notes', '').strip()
             category = request.form.get('category')  # CO / IND / WR
 
-            if date_str and couple_name:
+            if date_str:
                 new_wedding = Wedding(
                     date=datetime.strptime(date_str, "%Y-%m-%d").date(),
-                    couple_name=couple_name,
                     notes=notes,
                     category=category
                 )
