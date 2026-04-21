@@ -6517,26 +6517,27 @@ Cherbon Waters Admin
 
         return redirect(url_for('wedding_staffing'))
 
-    @app.route('/weddings/add', methods=['GET', 'POST'])
-    def add_wedding():
-        if request.method == 'POST':
-            date_str = request.form.get('date')
-            couple_name = request.form.get('couple_name', '').strip()
-            notes = request.form.get('notes', '').strip()
+        @app.route('/weddings/add', methods=['GET', 'POST'])
+        def add_wedding():
+            if request.method == 'POST':
+                date_str = request.form.get('date')
+                couple_name = request.form.get('couple_name', '').strip()
+                notes = request.form.get('notes', '').strip()
+                category = request.form.get('category')  # CO / IND / WR
 
-            if date_str and couple_name:
-                new_wedding = Wedding(
-                    date=datetime.strptime(date_str, "%Y-%m-%d").date(),
-                    couple_name=couple_name,
-                    notes=notes
-                )
-                db.session.add(new_wedding)
-                db.session.commit()
+                if date_str and couple_name:
+                    new_wedding = Wedding(
+                        date=datetime.strptime(date_str, "%Y-%m-%d").date(),
+                        couple_name=couple_name,
+                        notes=notes,
+                        category=category
+                    )
+                    db.session.add(new_wedding)
+                    db.session.commit()
 
-                return redirect(url_for('wedding_staffing'))
+                    return redirect(url_for('wedding_staffing'))
 
-        return render_template('add_wedding.html')
-
+            return render_template('add_wedding.html')
 
     @app.route("/messages_menu")
     def messages_menu():

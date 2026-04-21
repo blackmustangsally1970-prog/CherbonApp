@@ -153,7 +153,7 @@ class Wedding(db.Model):
     date = db.Column(db.Date, nullable=False)
     couple_name = db.Column(db.String(120), nullable=False)
     notes = db.Column(db.Text)
-
+    category = db.Column(db.String(10), default='WR')
     pax = db.Column(db.Integer)
     time = db.Column(db.String(50))
     service1 = db.Column(db.String(100))   # ← single editable 1st Service field

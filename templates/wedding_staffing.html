@@ -64,6 +64,9 @@
             line-height: 1.3;
         }
 
+        .co-row {
+            background: #e7f1ff; /* soft blue */
+        }
 
     </style>
 </head>
@@ -80,6 +83,7 @@
 <table>
     <tr>
         <th>Date</th>
+        <th>Type</th>
         <th>Pax</th>
         <th>Time</th>
         <th>1st Service</th>
@@ -90,8 +94,9 @@
     </tr>
 
     {% for w in weddings %}
-    <tr>
+    <tr class="{% if w.category == 'CO' %}co-row{% endif %}">
         <td>{{ w.date }}</td>
+        <td>{{ w.category }}</td>
         <td>{{ w.pax or '' }}</td>
         <td>{{ w.time or '' }}</td>
         <td>{{ w.service1 or '' }}</td>
