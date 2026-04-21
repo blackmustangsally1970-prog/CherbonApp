@@ -6394,7 +6394,8 @@ Cherbon Waters Admin
         staff_list = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
 
         if request.method == 'POST':
-            selected_ids = request.form.getlist('staff_ids')
+            raw_ids = request.form.get('staff_ids', '')
+            selected_ids = [int(x) for x in raw_ids.split(',') if x.strip()]
 
             WeddingAssignment.query.filter_by(wedding_id=wedding.id).delete()
 
