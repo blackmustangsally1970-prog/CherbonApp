@@ -36,6 +36,10 @@
         }
 
         label { font-weight: bold; display: block; margin-top: 15px; }
+        input[type="text"], input[type="number"] {
+            width: 220px;
+            padding: 6px;
+        }
     </style>
 </head>
 <body>
@@ -48,23 +52,7 @@
 
 <form method="post">
 
-    <label>Assign Staff</label>
-    <select name="staff_ids" multiple size="8" style="width: 300px;">
-        {% for s in staff_list %}
-            <option value="{{ s.id }}"
-                {% if s.id in assigned_ids %}selected{% endif %}>
-                {{ s.name }}
-            </option>
-        {% endfor %}
-    </select>
+    <label>Pax</label>
+    <input type="number" name="pax" value="{{ wedding.pax or '' }}" min="0">
 
-    <label>Notes (times, duties, special instructions)</label>
-    <textarea name="notes" class="notes-box">{{ wedding.notes }}</textarea>
-
-    <br><br>
-
-    <button class="save-btn">Save Changes</button>
-</form>
-
-</body>
-</html>
+    <label>Time
