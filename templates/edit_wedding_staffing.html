@@ -55,4 +55,14 @@
     <label>Pax</label>
     <input type="number" name="pax" value="{{ wedding.pax or '' }}" min="0">
 
-    <label>Time
+    <label>Time (overall event time)</label>
+    <input type="text" name="time" value="{{ wedding.time or '' }}" placeholder="e.g. 12:30 – 5:30">
+
+    <label>1st Service</label>
+    <input type="text" name="service1" value="{{ wedding.service1 or '' }}" placeholder="e.g. 1:00pm – 2:00pm">
+
+    <label>Assign Staff</label>
+    <select name="staff_ids" multiple size="8" style="width: 300px;">
+        {% for s in staff_list %}
+            <option value="{{ s.id }}"
+                {% if s.id in assigned_ids %}selected{% endif %}>
