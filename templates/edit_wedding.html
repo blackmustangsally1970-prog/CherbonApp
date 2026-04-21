@@ -48,6 +48,13 @@
     <label>Date</label>
     <input type="date" name="date" value="{{ wedding.date }}" required>
 
+<label>Type</label>
+<select name="category" style="width: 150px; padding: 6px; margin-top: 4px;">
+    <option value="WR" {% if wedding.category == 'WR' %}selected{% endif %}>WR</option>
+    <option value="IND" {% if wedding.category == 'IND' %}selected{% endif %}>IND</option>
+    <option value="CO" {% if wedding.category == 'CO' %}selected{% endif %}>CO</option>
+</select>
+
     <label>Pax</label>
     <input type="number" name="pax" value="{{ wedding.pax or '' }}" min="0" style="width: 120px;">
 
