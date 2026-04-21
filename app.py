@@ -6457,6 +6457,10 @@ Cherbon Waters Admin
             wedding.couple_name = request.form.get('couple_name', '').strip()
             wedding.notes = request.form.get('notes', '').strip()
 
+            wedding.pax = request.form.get('pax') or None
+            wedding.time = request.form.get('time') or None
+            wedding.service1 = request.form.get('service1') or None
+
             if date_str:
                 wedding.date = datetime.strptime(date_str, "%Y-%m-%d").date()
 
