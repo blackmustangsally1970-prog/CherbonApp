@@ -2,16 +2,12 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Edit Wedding</title>
+    <title>Edit Wedding Staffing</title>
 
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        label { font-weight: bold; display: block; margin-top: 12px; }
-        input, textarea {
-            width: 300px;
-            padding: 6px;
-            margin-top: 4px;
-        }
+        h1 { margin-bottom: 20px; }
+
         .menu-btn {
             padding: 8px 14px;
             background: #0645AD;
@@ -20,9 +16,10 @@
             border-radius: 4px;
             margin-right: 6px;
         }
+
         .menu-btn:hover { background: #003f8a; }
+
         .save-btn {
-            margin-top: 20px;
             padding: 10px 16px;
             background: green;
             color: white;
@@ -30,34 +27,31 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
         .save-btn:hover { background: #0a6f0a; }
+
+        label { font-weight: bold; display: block; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <a href="{{ url_for('wedding_staffing') }}" class="menu-btn">← Back</a>
+<a href="{{ url_for('manage_wedding_staff') }}" class="menu-btn">👥 Manage Staff</a>
 
-<h1>Edit Wedding</h1>
+<h1>Edit Staffing for {{ wedding.couple_name }}</h1>
+<p><strong>Date:</strong> {{ wedding.date }}</p>
 
 <form method="post">
 
-    <label>Date</label>
-    <input type="date" name="date" value="{{ wedding.date }}" required>
-
-    <label>Couple Name</label>
-    <input type="text" name="couple_name" value="{{ wedding.couple_name }}" required>
-
-    <label>Pax</label>
-    <input type="number" name="pax" value="{{ wedding.pax or '' }}" min="0" style="width: 120px;">
-
-    <label>Time (overall event time)</label>
-    <input type="text" name="time" value="{{ wedding.time or '' }}" placeholder="e.g. 12:30 – 5:30" style="width: 200px;">
-
-    <label>1st Service</label>
-    <input type="text" name="service1" value="{{ wedding.service1 or '' }}" placeholder="e.g. 1:00pm – 2:00pm" style="width: 220px;">
-
-    <label>Notes</label>
-    <textarea name="notes" class="notes-box">{{ wedding.notes }}</textarea>
+    <label>Assign Staff</label>
+    <select name="staff_ids" multiple size="10" style="width: 300px;">
+        {% for s in staff_list %}
+            <option value="{{ s.id }}"
+                {% if s.id in assigned_ids %}selected{% endif %}>
+                {{ s.name }}
+            </option>
+        {% endfor %}
+    </select>
 
     <br><br>
 
