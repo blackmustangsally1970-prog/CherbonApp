@@ -8,14 +8,31 @@ from collections import defaultdict
 from config import Config
 from extensions import db
 from models import (
-    Lesson, Time, Client, Horse, Teacher,
-    LessonBlockTag, TeacherTime, TeacherHorse,
-    BlockoutDate, BlockoutRange, IncomingSubmission,
-    LessonInvite, TeacherSlot, DisclaimerState,
-    LessonTeacherTag, WeeklyEvent, CourseReference,
-    Users, TrailRideSubmission, TeacherBlock,
+    BlockoutDate,
+    BlockoutRange,
+    Client,
+    CourseReference,
+    DisclaimerState,
+    GeneralEnquirySubmission,
+    Horse,
+    IncomingSubmission,
+    Lesson,
+    LessonBlockTag,
+    LessonInvite,
+    LessonTeacherTag,
+    Teacher,
+    TeacherBlock,
     TeacherGridOverride,
-    GeneralEnquirySubmission
+    TeacherHorse,
+    TeacherSlot,
+    TeacherTime,
+    Time,
+    TrailRideSubmission,
+    Users,
+    Wedding,
+    WeddingAssignment,
+    WeddingStaff,
+    WeeklyEvent
 )
 
 # Core libs
@@ -33,6 +50,7 @@ from datetime import date, datetime, time, timedelta
 from functools import lru_cache, wraps
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
+from app import db
 
 # Third‑party libs
 import requests
