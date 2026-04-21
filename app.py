@@ -6379,6 +6379,7 @@ Cherbon Waters Admin
                 "service1": w.service1,
                 "couple_name": w.couple_name,
                 "notes": w.notes,
+                "category": w.category,
                 "staff": staff_names,
                 "staff_count": len(staff_names)
             })
