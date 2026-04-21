@@ -1,0 +1,42 @@
+<h1>Staff Unavailability</h1>
+
+<form method="post">
+    <label>Staff</label>
+    <select name="staff_id">
+        {% for s in staff_list %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Date</label>
+    <input type="date" name="date" required>
+
+    <label>Reason (optional)</label>
+    <input type="text" name="reason" placeholder="Away, holiday, other job">
+
+    <button>Add</button>
+</form>
+
+<hr>
+
+<h2>Existing Unavailability</h2>
+
+<table>
+    <tr>
+        <th>Staff</th>
+        <th>Date</th>
+        <th>Reason</th>
+        <th>Delete</th>
+    </tr>
+
+    {% for u in unavailability %}
+    <tr>
+        <td>{{ u.staff.name }}</td>
+        <td>{{ u.date }}</td>
+        <td>{{ u.reason or '' }}</td>
+        <td>
+            <a href="{{ url_for('delete_unavailability', id=u.id) }}">🗑</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

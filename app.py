@@ -6389,6 +6389,44 @@ Cherbon Waters Admin
         )
 
 
+    @app.route('/staff/unavailability', methods=['GET', 'POST'])
+    def manage_unavailability():
+        staff_list = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
+
+        if request.method == 'POST':
+            staff_id = int(request.form['staff_id'])
+            date = request.form['date']
+            reason = request.form.get('reason', '')
+
+            entry = WeddingStaffUnavailability(
+                staff_id=staff_id,
+                date=date,
+                reason=reason
+            )
+            db.session.add(entry)
+            db.session.commit()
+
+            return redirect(url_for('manage_unavailability'))
+
+        all_unavailability = WeddingStaffUnavailability.query.order_by(
+            WeddingStaffUnavailability.date.asc()
+        ).all()
+
+        return render_template(
+            'manage_unavailability.html',
+            staff_list=staff_list,
+            unavailability=all_unavailability
+        )
+
+    @app.route('/staff/unavailability/delete/<int:id>')
+    def delete_unavailability(id):
+        entry = WeddingStaffUnavailability.query.get_or_404(id)
+        db.session.delete(entry)
+        db.session.commit()
+        return redirect(url_for('manage_unavailability'))
+
+
+
     @app.route('/weddings/staffing/<int:wedding_id>', methods=['GET', 'POST'])
     def edit_wedding_staffing(wedding_id):
         wedding = Wedding.query.get_or_404(wedding_id)
