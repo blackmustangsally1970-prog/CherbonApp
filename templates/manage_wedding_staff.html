@@ -67,7 +67,8 @@
     <tr>
         <td>{{ s.name }}</td>
         <td>
-            <a href="#" class="small-btn danger">Delete</a>
+<a href="{{ url_for('delete_wedding_staff', staff_id=s.id) }}" 
+   class="small-btn danger">Delete</a>
         </td>
     </tr>
     {% endfor %}

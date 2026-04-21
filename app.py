@@ -6394,23 +6394,15 @@ Cherbon Waters Admin
         staff_list = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
 
         if request.method == 'POST':
-            wedding.notes = request.form.get('notes', '')
             selected_ids = request.form.getlist('staff_ids')
 
-            # Clear existing assignments
             WeddingAssignment.query.filter_by(wedding_id=wedding.id).delete()
 
-            # Add new assignments
             for sid in selected_ids:
                 db.session.add(WeddingAssignment(
                     wedding_id=wedding.id,
                     staff_id=int(sid)
                 ))
-
-            # Save operational fields
-            wedding.pax = request.form.get('pax') or None
-            wedding.time = request.form.get('time') or None
-            wedding.service1 = request.form.get('service1') or None
 
             db.session.commit()
             return redirect(url_for('wedding_staffing'))
