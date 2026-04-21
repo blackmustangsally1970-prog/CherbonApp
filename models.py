@@ -39,6 +39,18 @@ class Client(db.Model):
     notes = db.Column(db.String)
     notes2 = db.Column(db.String)
 
+
+class WeddingStaffUnavailability(db.Model):
+    __tablename__ = 'wedding_staff_unavailability'
+
+    id = db.Column(db.Integer, primary_key=True)
+    staff_id = db.Column(db.Integer, db.ForeignKey('wedding_staff.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    reason = db.Column(db.Text)
+
+    staff = db.relationship('WeddingStaff', backref='unavailability')
+
+
 class LessonInvite(db.Model):
     __tablename__ = 'lesson_invites'
 

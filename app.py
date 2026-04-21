@@ -6402,7 +6402,7 @@ Cherbon Waters Admin
             for sid in selected_ids:
                 db.session.add(WeddingAssignment(
                     wedding_id=wedding.id,
-                    staff_id=int(sid)
+                    staff_id=sid
                 ))
 
             db.session.commit()
@@ -6410,11 +6410,18 @@ Cherbon Waters Admin
 
         assigned_ids = [a.staff_id for a in wedding.assignments]
 
+        # NEW: load unavailable staff for this wedding date
+        unavailable_ids = {
+            u.staff_id
+            for u in WeddingStaffUnavailability.query.filter_by(date=wedding.date).all()
+        }
+
         return render_template(
             'edit_wedding_staffing.html',
             wedding=wedding,
             staff_list=staff_list,
-            assigned_ids=assigned_ids
+            assigned_ids=assigned_ids,
+            unavailable_ids=unavailable_ids
         )
 
     @app.route('/weddings/staff/manage', methods=['GET', 'POST'])

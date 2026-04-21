@@ -57,6 +57,13 @@
             white-space: normal;   /* allows wrapping */
             word-wrap: break-word; /* breaks long names if needed */
         }
+        .notes-cell {
+            max-width: 260px;
+            white-space: normal;
+            word-wrap: break-word;
+            line-height: 1.3;
+        }
+
 
     </style>
 </head>
@@ -76,7 +83,6 @@
         <th>Pax</th>
         <th>Time</th>
         <th>1st Service</th>
-        <th>Couple</th>
         <th>Notes</th>
         <th>Staff (#)</th>
         <th>Assigned Staff</th>
@@ -89,8 +95,9 @@
         <td>{{ w.pax or '' }}</td>
         <td>{{ w.time or '' }}</td>
         <td>{{ w.service1 or '' }}</td>
-        <td>{{ w.couple_name }}</td>
-        <td>{{ w.notes or '' }}</td>
+<td class="notes-cell">
+    {{ w.notes or '' }}
+</td>
 
         <td>
             {% if w.staff_count %}

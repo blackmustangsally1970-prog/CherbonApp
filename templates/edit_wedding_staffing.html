@@ -61,6 +61,16 @@
         .dual-list-item:hover {
             background: #e8f0ff;
         }
+
+        /* STEP 4: unavailable staff styling */
+        .unavailable {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+        .unavailable:hover {
+            background: #f8d7da; /* light red */
+        }
     </style>
 </head>
 <body>
@@ -82,7 +92,12 @@
             <h3>Available Staff</h3>
             {% for s in staff_list %}
                 {% if s.id not in assigned_ids %}
-                    <div class="dual-list-item" data-id="{{ s.id }}">{{ s.name }}</div>
+                    <div class="dual-list-item
+                         {% if s.id in unavailable_ids %}unavailable{% endif %}"
+                         data-id="{{ s.id }}"
+                         title="{% if s.id in unavailable_ids %}Unavailable{% endif %}">
+                        {{ s.name }}
+                    </div>
                 {% endif %}
             {% endfor %}
         </div>
@@ -92,7 +107,12 @@
             <h3>Assigned Staff</h3>
             {% for s in staff_list %}
                 {% if s.id in assigned_ids %}
-                    <div class="dual-list-item" data-id="{{ s.id }}">{{ s.name }}</div>
+                    <div class="dual-list-item
+                         {% if s.id in unavailable_ids %}unavailable{% endif %}"
+                         data-id="{{ s.id }}"
+                         title="{% if s.id in unavailable_ids %}Unavailable{% endif %}">
+                        {{ s.name }}
+                    </div>
                 {% endif %}
             {% endfor %}
         </div>
@@ -115,6 +135,11 @@ function updateHiddenField() {
 function makeClickable(listId, otherListId) {
     document.getElementById(listId).addEventListener('click', function(e) {
         if (!e.target.classList.contains('dual-list-item')) return;
+
+        // STEP 5: block unavailable staff
+        if (e.target.classList.contains('unavailable')) {
+            return; // blocked from moving
+        }
 
         const item = e.target;
         document.getElementById(otherListId).appendChild(item);
