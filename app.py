@@ -6370,12 +6370,22 @@ Cherbon Waters Admin
         for w in weddings:
             staff_names = [a.staff.name for a in w.assignments]
 
+            # Build service1 combined string
+            if w.service1_start:
+                service1 = f"{w.service1_start} - {w.service1_end}"
+            else:
+                service1 = ""
+
             wedding_rows.append({
                 "id": w.id,
                 "date": w.date.strftime('%d %b %Y'),
+                "pax": w.pax,
+                "time": w.time,
+                "service1": service1,
                 "couple_name": w.couple_name,
+                "notes": w.notes,
                 "staff": staff_names,
-                "notes": w.notes
+                "staff_count": len(staff_names)
             })
 
         return render_template(

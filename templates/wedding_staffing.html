@@ -49,9 +49,8 @@
             font-weight: bold;
         }
 
-    .danger { background: #b30000; }
-    .danger:hover { background: #7a0000; }
-
+        .danger { background: #b30000; }
+        .danger:hover { background: #7a0000; }
     </style>
 </head>
 <body>
@@ -67,16 +66,33 @@
 <table>
     <tr>
         <th>Date</th>
+        <th>Pax</th>
+        <th>Time</th>
+        <th>1st Service</th>
         <th>Couple</th>
-        <th>Assigned Staff</th>
         <th>Notes</th>
+        <th>Staff (#)</th>
+        <th>Assigned Staff</th>
         <th>Actions</th>
     </tr>
 
     {% for w in weddings %}
     <tr>
         <td>{{ w.date }}</td>
+        <td>{{ w.pax or '' }}</td>
+        <td>{{ w.time or '' }}</td>
+        <td>{{ w.service1 or '' }}</td>
         <td>{{ w.couple_name }}</td>
+        <td>{{ w.notes or '' }}</td>
+
+        <td>
+            {% if w.staff_count %}
+                {{ w.staff_count }}
+            {% else %}
+                0
+            {% endif %}
+        </td>
+
         <td>
             {% if w.staff %}
                 {{ w.staff|join(', ') }}
@@ -84,9 +100,10 @@
                 <em>No staff assigned</em>
             {% endif %}
         </td>
-        <td>{{ w.notes or '' }}</td>
+
         <td>
             <a href="{{ url_for('edit_wedding_staffing', wedding_id=w.id) }}" class="small-btn">👥 Staff</a>
+            <a href="{{ url_for('edit_wedding', wedding_id=w.id) }}" class="small-btn">✏ Edit</a>
             <a href="{{ url_for('delete_wedding', wedding_id=w.id) }}" class="small-btn danger">🗑 Delete</a>
         </td>
     </tr>
