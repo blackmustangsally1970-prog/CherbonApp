@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Wedding Staffing</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            text-align: left;
+        }
+
+        .menu-btn {
+            padding: 8px 14px;
+            background: #0645AD;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+
+        .menu-btn:hover { background: #003f8a; }
+
+        .small-btn {
+            padding: 6px 10px;
+            background: #444;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .small-btn:hover { background: #222; }
+
+        .section-title {
+            font-size: 1.2em;
+            margin-top: 30px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+    .danger { background: #b30000; }
+    .danger:hover { background: #7a0000; }
+
+    </style>
+</head>
+<body>
+
+<a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+
+<h1>Wedding Staffing</h1>
+
+<a href="{{ url_for('add_wedding') }}" class="menu-btn">➕ Add Wedding</a>
+
+<div class="section-title">Upcoming Weddings</div>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Couple</th>
+        <th>Assigned Staff</th>
+        <th>Notes</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for w in weddings %}
+    <tr>
+        <td>{{ w.date }}</td>
+        <td>{{ w.couple_name }}</td>
+        <td>
+            {% if w.staff %}
+                {{ w.staff|join(', ') }}
+            {% else %}
+                <em>No staff assigned</em>
+            {% endif %}
+        </td>
+        <td>{{ w.notes or '' }}</td>
+        <td>
+            <a href="{{ url_for('edit_wedding', wedding_id=w.id) }}" class="small-btn">✏ Edit</a>
+            <a href="{{ url_for('delete_wedding', wedding_id=w.id) }}" class="small-btn danger">🗑 Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

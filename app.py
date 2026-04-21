@@ -6344,6 +6344,109 @@ Cherbon Waters Admin
 
         return jsonify({"status": "ok"})
 
+    @app.route('/weddings/staffing')
+    def wedding_staffing():
+        weddings = Wedding.query.order_by(Wedding.date.asc()).all()
+
+        wedding_rows = []
+        for w in weddings:
+            staff_names = [a.staff.name for a in w.assignments]
+
+            wedding_rows.append({
+                "id": w.id,
+                "date": w.date.strftime('%d %b %Y'),
+                "couple_name": w.couple_name,
+                "staff": staff_names,
+                "notes": w.notes
+            })
+
+        return render_template(
+            'wedding_staffing.html',
+            weddings=wedding_rows
+        )
+
+
+    @app.route('/weddings/staffing/<int:wedding_id>', methods=['GET', 'POST'])
+    def edit_wedding_staffing(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+        staff_list = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
+
+        if request.method == 'POST':
+            wedding.notes = request.form.get('notes', '')
+            selected_ids = request.form.getlist('staff_ids')
+
+            WeddingAssignment.query.filter_by(wedding_id=wedding.id).delete()
+
+            for sid in selected_ids:
+                db.session.add(WeddingAssignment(
+                    wedding_id=wedding.id,
+                    staff_id=int(sid)
+                ))
+
+            db.session.commit()
+            return redirect(url_for('wedding_staffing'))
+
+        assigned_ids = [a.staff_id for a in wedding.assignments]
+
+        return render_template(
+            'edit_wedding_staffing.html',
+            wedding=wedding,
+            staff_list=staff_list,
+            assigned_ids=assigned_ids
+        )
+
+    @app.route('/weddings/staff/manage', methods=['GET', 'POST'])
+    def manage_wedding_staff():
+        if request.method == 'POST':
+            name = request.form.get('name', '').strip()
+            if name:
+                db.session.add(WeddingStaff(name=name))
+                db.session.commit()
+            return redirect(url_for('manage_wedding_staff'))
+
+        staff = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
+
+        return render_template(
+            'manage_wedding_staff.html',
+            staff=staff
+        )
+    @app.route('/weddings/staff/delete/<int:staff_id>')
+    def delete_wedding_staff(staff_id):
+        staff = WeddingStaff.query.get_or_404(staff_id)
+
+        db.session.delete(staff)
+        db.session.commit()
+
+        return redirect(url_for('manage_wedding_staff'))
+
+    @app.route('/weddings/edit/<int:wedding_id>', methods=['GET', 'POST'])
+    def edit_wedding(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        if request.method == 'POST':
+            date_str = request.form.get('date')
+            wedding.couple_name = request.form.get('couple_name', '').strip()
+            wedding.notes = request.form.get('notes', '').strip()
+
+            if date_str:
+                wedding.date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+            db.session.commit()
+            return redirect(url_for('wedding_staffing'))
+
+        return render_template('edit_wedding.html', wedding=wedding)
+
+    @app.route('/weddings/delete/<int:wedding_id>')
+    def delete_wedding(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        db.session.delete(wedding)
+        db.session.commit()
+
+        return redirect(url_for('wedding_staffing'))
+
+
+
     @app.route("/messages_menu")
     def messages_menu():
         return render_template("messages_menu.html")

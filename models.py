@@ -136,6 +136,30 @@ class CourseReference(db.Model):
     discount_upfront = db.Column(db.Float, default=0)
 
 
+class Wedding(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    couple_name = db.Column(db.String(120), nullable=False)
+    notes = db.Column(db.Text)
+
+    assignments = db.relationship('WeddingAssignment', backref='wedding', cascade="all, delete-orphan")
+
+
+class WeddingStaff(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+
+    assignments = db.relationship('WeddingAssignment', backref='staff', cascade="all, delete-orphan")
+
+
+class WeddingAssignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    wedding_id = db.Column(db.Integer, db.ForeignKey('wedding.id'), nullable=False)
+    staff_id = db.Column(db.Integer, db.ForeignKey('wedding_staff.id'), nullable=False)
+
+
+
 class DisclaimerState(db.Model):
     __tablename__ = 'disclaimer_state'
 
