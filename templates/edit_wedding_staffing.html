@@ -16,7 +16,6 @@
             border-radius: 4px;
             margin-right: 6px;
         }
-
         .menu-btn:hover { background: #003f8a; }
 
         .save-btn {
@@ -26,11 +25,42 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin-top: 20px;
         }
-
         .save-btn:hover { background: #0a6f0a; }
 
-        label { font-weight: bold; display: block; margin-top: 15px; }
+        .dual-list-container {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .dual-list {
+            width: 260px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            background: #fafafa;
+        }
+
+        .dual-list h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .dual-list-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .dual-list-item:hover {
+            background: #e8f0ff;
+        }
     </style>
 </head>
 <body>
@@ -44,19 +74,66 @@
 <form method="post">
 
     <label>Assign Staff</label>
-    <select name="staff_ids" multiple size="10" style="width: 300px;">
-        {% for s in staff_list %}
-            <option value="{{ s.id }}"
-                {% if s.id in assigned_ids %}selected{% endif %}>
-                {{ s.name }}
-            </option>
-        {% endfor %}
-    </select>
 
-    <br><br>
+    <div class="dual-list-container">
+
+        <!-- LEFT: Available Staff -->
+        <div class="dual-list" id="availableList">
+            <h3>Available Staff</h3>
+            {% for s in staff_list %}
+                {% if s.id not in assigned_ids %}
+                    <div class="dual-list-item" data-id="{{ s.id }}">{{ s.name }}</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- RIGHT: Assigned Staff -->
+        <div class="dual-list" id="assignedList">
+            <h3>Assigned Staff</h3>
+            {% for s in staff_list %}
+                {% if s.id in assigned_ids %}
+                    <div class="dual-list-item" data-id="{{ s.id }}">{{ s.name }}</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+    </div>
+
+    <!-- Hidden field storing final assigned IDs -->
+    <input type="hidden" name="staff_ids" id="staff_ids">
 
     <button class="save-btn">Save Changes</button>
 </form>
+
+<script>
+function updateHiddenField() {
+    const assigned = [...document.querySelectorAll('#assignedList .dual-list-item')]
+        .map(item => item.dataset.id);
+    document.getElementById('staff_ids').value = assigned.join(',');
+}
+
+function makeClickable(listId, otherListId) {
+    document.getElementById(listId).addEventListener('click', function(e) {
+        if (!e.target.classList.contains('dual-list-item')) return;
+
+        const item = e.target;
+        document.getElementById(otherListId).appendChild(item);
+
+        // Auto-sort alphabetically
+        const items = [...document.getElementById(otherListId).children]
+            .sort((a, b) => a.textContent.localeCompare(b.textContent));
+        items.forEach(i => document.getElementById(otherListId).appendChild(i));
+
+        updateHiddenField();
+    });
+}
+
+makeClickable('availableList', 'assignedList');
+makeClickable('assignedList', 'availableList');
+
+// Initial load
+updateHiddenField();
+</script>
 
 </body>
 </html>
