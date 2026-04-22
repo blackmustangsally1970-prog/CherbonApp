@@ -112,6 +112,59 @@
 </a>
     </div>
 
+    <!-- NEW: AWS Backup Nuclear Delete -->
+    <div class="admin-box" style="margin-top:25px; border-color:#c00; background:#fff5f5;">
+      <h3 style="color:#b30000;">AWS Backup Destruction</h3>
+      <p>
+        This will permanently delete <strong>ALL</strong> AWS RDS backups, snapshots, and PITR logs.
+        This action is <strong>irreversible</strong>. Only proceed if you have a verified offline backup.
+      </p>
+
+      <a href="#" onclick="openNukeModal()" class="menu-btn" style="background:#c00; color:#fff;">
+        ☢️ DELETE ALL AWS BACKUPS / SNAPSHOTS / PITR
+      </a>
+    </div>
+
+    <!-- Nuke Modal -->
+    <div id="nukeModal" style="
+        display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+        background:rgba(0,0,0,0.6); z-index:9999; padding-top:80px;
+    ">
+      <div style="
+          background:#fff; width:420px; margin:0 auto; padding:20px;
+          border-radius:8px; box-shadow:0 0 12px rgba(0,0,0,0.4);
+      ">
+        <h2 style="margin-top:0; color:#b30000;">ARE YOU ABSOLUTELY SURE?</h2>
+
+        <p>This will permanently delete <strong>all AWS backups</strong>. This cannot be undone.</p>
+
+        <p>Type <strong>DELETE EVERYTHING FOREVER</strong> to continue:</p>
+        <input id="confirmPhrase" type="text" style="width:100%; margin-bottom:10px;">
+
+        <p>Re-enter your admin password:</p>
+        <input id="adminPassword" type="password" style="width:100%; margin-bottom:10px;">
+
+        <label style="display:block; margin-bottom:10px;">
+          <input type="checkbox" id="finalAck">
+          I understand this will permanently remove all AWS historical states.
+        </label>
+
+        <p id="countdownText" style="font-weight:bold; margin-bottom:10px;"></p>
+
+        <div style="text-align:right;">
+          <button onclick="closeNukeModal()">Cancel</button>
+          <button id="nukeSubmitBtn" disabled
+                  onclick="submitNukeRequest()"
+                  style="background:#c00; color:#fff; padding:6px 12px; border-radius:4px;">
+            PERMANENTLY DELETE AWS BACKUPS
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+
+
   </main>
 
   <script>

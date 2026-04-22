@@ -6677,6 +6677,79 @@ Cherbon Waters Admin
     def other_tools():
         return render_template("other_tools.html")
 
+    @app.route('/nuke_aws_backups', methods=['POST'])
+    def nuke_aws_backups():
+        import boto3
+        from flask import request, jsonify, current_app, flash
+        from werkzeug.security import check_password_hash
+
+        data = request.get_json() or {}
+        confirm_phrase = data.get('confirm_phrase', '')
+        admin_password = data.get('admin_password', '')
+
+        # 1) Validate phrase
+        if confirm_phrase != "DELETE EVERYTHING FOREVER":
+            return jsonify({"status": "error", "message": "Invalid confirmation phrase"}), 400
+
+        # 2) Validate admin password
+        admin_user = Users.query.filter_by(username='steve').first()
+        if not admin_user or not check_password_hash(admin_user.password_hash, admin_password):
+            return jsonify({"status": "error", "message": "Invalid admin credentials"}), 403
+
+        # 3) Log the event
+        current_app.logger.warning("NUKE AWS BACKUPS triggered by %s", admin_user.username)
+
+        # 4) AWS RDS client
+        rds = boto3.client('rds', region_name='ap-southeast-2')
+
+        # *** IMPORTANT ***
+        db_identifier = "cherboneq"
+
+        # 5) Set retention to 0 (kills PITR + future automated backups)
+        try:
+            rds.modify_db_instance(
+                DBInstanceIdentifier=db_identifier,
+                BackupRetentionPeriod=0,
+                ApplyImmediately=True
+            )
+            current_app.logger.warning("Backup retention set to 0 for %s", db_identifier)
+        except Exception as e:
+            current_app.logger.error("Error setting retention to 0: %s", e)
+
+        # 6) Delete ALL manual snapshots
+        try:
+            manual_snaps = rds.describe_db_snapshots(
+                DBInstanceIdentifier=db_identifier,
+                SnapshotType='manual'
+            )['DBSnapshots']
+
+            for snap in manual_snaps:
+                snap_id = snap['DBSnapshotIdentifier']
+                current_app.logger.warning("Deleting manual snapshot: %s", snap_id)
+                rds.delete_db_snapshot(DBSnapshotIdentifier=snap_id)
+
+        except Exception as e:
+            current_app.logger.error("Error deleting manual snapshots: %s", e)
+
+        # 7) Delete ALL automated snapshots
+        try:
+            auto_snaps = rds.describe_db_snapshots(
+                DBInstanceIdentifier=db_identifier,
+                SnapshotType='automated'
+            )['DBSnapshots']
+
+            for snap in auto_snaps:
+                snap_id = snap['DBSnapshotIdentifier']
+                current_app.logger.warning("Deleting automated snapshot: %s", snap_id)
+                rds.delete_db_snapshot(DBSnapshotIdentifier=snap_id)
+
+        except Exception as e:
+            current_app.logger.error("Error deleting automated snapshots: %s", e)
+
+        flash("AWS backups, snapshots, and PITR logs scheduled for deletion.", "warning")
+        return jsonify({"status": "ok"})
+
+
     @app.route('/client_view')
     def client_view():
         client_id = request.args.get('client', type=int) or request.args.get('client_filter', type=int)
