@@ -176,5 +176,68 @@
     });
   </script>
 
+<script>
+  const PHRASE = "DELETE EVERYTHING FOREVER";
+  let countdown = 5;
+  let countdownTimer = null;
+
+  function openNukeModal() {
+    document.getElementById('nukeModal').style.display = 'block';
+    startCountdown();
+  }
+
+  function closeNukeModal() {
+    document.getElementById('nukeModal').style.display = 'none';
+    clearInterval(countdownTimer);
+    countdown = 5;
+  }
+
+  function startCountdown() {
+    countdown = 5;
+    const ct = document.getElementById('countdownText');
+    ct.textContent = "Final lockout: " + countdown + " seconds remaining...";
+
+    countdownTimer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(countdownTimer);
+        countdown = 0;
+        ct.textContent = "You may now confirm the deletion.";
+      } else {
+        ct.textContent = "Final lockout: " + countdown + " seconds remaining...";
+      }
+      validateNukeForm();
+    }, 1000);
+  }
+
+  function validateNukeForm() {
+    const phraseOk = document.getElementById('confirmPhrase').value === PHRASE;
+    const pwdOk = document.getElementById('adminPassword').value.length > 0;
+    const ackOk = document.getElementById('finalAck').checked;
+    const btn = document.getElementById('nukeSubmitBtn');
+
+    btn.disabled = !(phraseOk && pwdOk && ackOk && countdown === 0);
+  }
+
+  document.getElementById('confirmPhrase').addEventListener('input', validateNukeForm);
+  document.getElementById('adminPassword').addEventListener('input', validateNukeForm);
+  document.getElementById('finalAck').addEventListener('change', validateNukeForm);
+
+  function submitNukeRequest() {
+    fetch("{{ url_for('nuke_aws_backups') }}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        confirm_phrase: document.getElementById('confirmPhrase').value,
+        admin_password: document.getElementById('adminPassword').value
+      })
+    }).then(() => {
+      closeNukeModal();
+      window.location.reload();
+    });
+  }
+</script>
+
+
 </body>
 </html>
