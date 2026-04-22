@@ -6640,8 +6640,8 @@ Cherbon Waters Admin
     @app.route("/db-health")
     def db_health():
         try:
-            # Tiny, fast query
-            db.session.execute("SELECT 1")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("SELECT 1"))
             return {"status": "ok"}
         except Exception:
             return {"status": "restarting"}, 503
