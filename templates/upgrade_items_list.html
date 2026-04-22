@@ -1,23 +1,40 @@
-{% extends "base.html" %}
-{% block content %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Upgrade Items</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { margin-bottom: 20px; }
+    .form-group { margin-bottom: 12px; }
+    .btn { padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; }
+    .btn-primary { background: #4a6bff; color: white; }
+    .btn-danger { background: #cc0000; color: white; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border-bottom: 1px solid #ccc; }
+  </style>
+</head>
+<body>
 
-<h2>Upgrade Items</h2>
+<a href="{{ url_for('other_tools') }}" class="menu-btn-small">← Other Tools</a>
 
-<form method="POST" action="{{ url_for('upgrade_items_add') }}" class="mb-4">
+<h1>Upgrade Items</h1>
+
+<form method="POST" action="{{ url_for('upgrade_items_add') }}">
     <div class="form-group">
         <label>Title</label>
-        <input name="title" class="form-control" required>
+        <input name="title" class="form-control" required style="width:100%; padding:8px;">
     </div>
 
-    <div class="form-group mt-2">
+    <div class="form-group">
         <label>Notes (optional)</label>
-        <textarea name="notes" class="form-control"></textarea>
+        <textarea name="notes" class="form-control" style="width:100%; padding:8px;"></textarea>
     </div>
 
-    <button class="btn btn-primary mt-3">Add Item</button>
+    <button class="btn btn-primary">Add Item</button>
 </form>
 
-<table class="table table-striped">
+<table>
     <thead>
         <tr>
             <th>Title</th>
@@ -34,7 +51,7 @@
             <td>{{ item.created_at.strftime('%Y-%m-%d') }}</td>
             <td>
                 <form method="POST" action="{{ url_for('upgrade_items_delete', item_id=item.id) }}">
-                    <button class="btn btn-danger btn-sm">Delete</button>
+                    <button class="btn btn-danger">Delete</button>
                 </form>
             </td>
         </tr>
@@ -42,4 +59,5 @@
     </tbody>
 </table>
 
-{% endblock %}
+</body>
+</html>
