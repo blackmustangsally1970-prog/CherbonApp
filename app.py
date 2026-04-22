@@ -4846,6 +4846,96 @@ def create_app():
             log_admin_action(f"Reindex failed: {str(e)}", user="system")
         return redirect(url_for('debug_page'))
 
+    @app.route('/import-lessons-with-clients', methods=['GET', 'POST'])
+    def import_lessons_with_clients():
+        if request.method == 'POST':
+            file = request.files.get('file')
+            if not file:
+                flash("No file uploaded", "danger")
+                return redirect(request.url)
+
+            wb = openpyxl.load_workbook(file)
+            sheet = wb.active
+
+            # Expected columns:
+            # client | age | weight_kg | height_cm | lesson_date | time_frame | horse | lesson_type
+            headers = [cell.value for cell in sheet[1]]
+            rows = []
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                rows.append(dict(zip(headers, row)))
+
+            new_clients = 0
+            new_lessons = 0
+
+            for row in rows:
+                client_name = (row.get("client") or "").strip()
+                if not client_name:
+                    continue
+
+                # --- CLIENT LOOKUP OR CREATE ---
+                client = Client.query.filter_by(full_name=client_name).first()
+
+                if not client:
+                    client = Client(
+                        full_name=client_name,
+                        age=row.get("age"),
+                        weight_kg=row.get("weight_kg"),
+                        height_cm=row.get("height_cm"),
+                        guardian_name=None,
+                        guardian_contact=None,
+                        guardian2_name=None,
+                        mobile=None,
+                        mobile2=None,
+                        email_primary=None,
+                        email_secondary=None,
+                        email_guardian2=None,
+                        disclaimer=0,
+                        invoice_required=False,
+                        jotform_submission_id=None,
+                        ndis_number=None,
+                        ndis_code=None,
+                        notes=None,
+                        notes2=None
+                    )
+                    db.session.add(client)
+                    db.session.flush()
+                    new_clients += 1
+
+                # --- LESSON CREATION ---
+                lesson = Lesson(
+                    lesson_date=row.get("lesson_date"),
+                    time_frame=row.get("time_frame"),
+                    client=client.full_name,   # GOLDEN RULE
+                    horse=row.get("horse"),
+                    lesson_type=row.get("lesson_type"),
+
+                    # Defaults for unused fields
+                    group_priv="",
+                    freq="",
+                    lesson_notes="",
+                    payment=0,
+                    price_pl=0,
+                    attendance="",
+                    balance=0,
+                    adjust=0,
+                    carry_fwd=0,
+                    block_key=None,
+                    blockends=None,
+                    lesson_no=None
+                )
+
+                db.session.add(lesson)
+                new_lessons += 1
+
+            db.session.commit()
+
+            flash(f"Imported {new_lessons} lessons and created {new_clients} new clients.", "success")
+            return redirect(url_for('other_tools'))
+
+        return render_template('import_lessons_with_clients.html')
+
+
 
     @app.route('/trailride_enquiries', methods=['GET'])
     def trailride_enquiries():
