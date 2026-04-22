@@ -65,6 +65,23 @@
 
 <body>
 
+
+<!-- ⭐ DB RESTART BANNER -->
+<div id="db-restart-banner" style="
+    display:none;
+    background:#ffcc00;
+    padding:15px;
+    text-align:center;
+    font-weight:bold;
+    font-size:20px;
+    border-bottom:4px solid #cc9900;
+">
+    ⚠️ Database restarting… please wait
+</div>
+
+<!-- Wrap ALL app content so it can be hidden -->
+<div id="app-content">
+
 <!-- ⭐ DAILY QUOTE BAR -->
 <div id="daily-quote" style="
     padding: 12px;
@@ -233,6 +250,34 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("daily-quote").textContent = randomQuote;
 
 });
+</script>
+</div> <!-- end of app-content -->
+
+<script>
+async function checkDBHealth() {
+    try {
+        const res = await fetch("/db-health");
+        const data = await res.json();
+
+        if (data.status === "restarting") {
+            document.getElementById("db-restart-banner").style.display = "block";
+            document.getElementById("app-content").style.display = "none";
+        } else {
+            document.getElementById("db-restart-banner").style.display = "none";
+            document.getElementById("app-content").style.display = "block";
+        }
+    } catch (e) {
+        // If fetch fails, assume DB is restarting
+        document.getElementById("db-restart-banner").style.display = "block";
+        document.getElementById("app-content").style.display = "none";
+    }
+}
+
+// Poll every 5 seconds
+setInterval(checkDBHealth, 5000);
+
+// Run immediately on page load
+checkDBHealth();
 </script>
 
 </body>

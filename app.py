@@ -6637,6 +6637,16 @@ Cherbon Waters Admin
 
         return render_template('add_wedding.html')
 
+    @app.route("/db-health")
+    def db_health():
+        try:
+            # Tiny, fast query
+            db.session.execute("SELECT 1")
+            return {"status": "ok"}
+        except Exception:
+            return {"status": "restarting"}, 503
+
+
     @app.route("/messages_menu")
     def messages_menu():
         return render_template("messages_menu.html")
