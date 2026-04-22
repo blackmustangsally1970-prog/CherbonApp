@@ -4858,7 +4858,7 @@ def create_app():
             sheet = wb.active
 
             # Expected columns:
-            # client | age | weight_kg | height_cm | lesson_date | time_frame | horse | lesson_type
+            # client | age | weight_kg | height_cm | lesson_date | time_frame | horse | lesson_type | price_pl
             headers = [cell.value for cell in sheet[1]]
             rows = []
 
@@ -4867,6 +4867,7 @@ def create_app():
 
             new_clients = 0
             new_lessons = 0
+            touched_clients = set()
 
             for row in rows:
                 client_name = (row.get("client") or "").strip()
@@ -4902,6 +4903,9 @@ def create_app():
                     db.session.flush()
                     new_clients += 1
 
+                # Track client for recalc
+                touched_clients.add(client.full_name)
+
                 # --- LESSON CREATION ---
                 lesson = Lesson(
                     lesson_date=row.get("lesson_date"),
@@ -4909,13 +4913,13 @@ def create_app():
                     client=client.full_name,   # GOLDEN RULE
                     horse=row.get("horse"),
                     lesson_type=row.get("lesson_type"),
+                    price_pl=row.get("price_pl") or 0,
 
                     # Defaults for unused fields
-                    group_priv="",
-                    freq="",
+                    group_priv="GT",
+                    freq="S",
                     lesson_notes="",
                     payment=0,
-                    price_pl=0,
                     attendance="",
                     balance=0,
                     adjust=0,
@@ -4928,12 +4932,17 @@ def create_app():
                 db.session.add(lesson)
                 new_lessons += 1
 
+            # --- RECALC CASCADE FOR ALL TOUCHED CLIENTS ---
+            for cname in touched_clients:
+                recalc_client_cascade(cname)
+
             db.session.commit()
 
             flash(f"Imported {new_lessons} lessons and created {new_clients} new clients.", "success")
             return redirect(url_for('other_tools'))
 
         return render_template('import_lessons_with_clients.html')
+
 
 
 
