@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Upgrade Items</h2>
+
+<form method="POST" action="{{ url_for('upgrade_items_add') }}" class="mb-4">
+    <div class="form-group">
+        <label>Title</label>
+        <input name="title" class="form-control" required>
+    </div>
+
+    <div class="form-group mt-2">
+        <label>Notes (optional)</label>
+        <textarea name="notes" class="form-control"></textarea>
+    </div>
+
+    <button class="btn btn-primary mt-3">Add Item</button>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Notes</th>
+            <th>Added</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.title }}</td>
+            <td>{{ item.notes }}</td>
+            <td>{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('upgrade_items_delete', item_id=item.id) }}">
+                    <button class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -40,6 +40,16 @@ class Client(db.Model):
     notes2 = db.Column(db.String)
 
 
+class UpgradeItem(db.Model):
+    __tablename__ = 'upgrade_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+
 class WeddingStaffUnavailability(db.Model):
     __tablename__ = 'wedding_staff_unavailability'
 

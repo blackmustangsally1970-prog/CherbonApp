@@ -15,6 +15,7 @@ from models import (
     DisclaimerState,
     GeneralEnquirySubmission,
     Horse,
+    UpgradeItem,
     IncomingSubmission,
     Lesson,
     LessonBlockTag,
@@ -6541,6 +6542,37 @@ Cherbon Waters Admin
     def messages_menu():
         return render_template("messages_menu.html")
 
+    @app.route('/upgrade-items')
+    def upgrade_items_list():
+        items = UpgradeItem.query.order_by(UpgradeItem.created_at.desc()).all()
+        return render_template('upgrade_items_list.html', items=items)
+
+
+    @app.route('/upgrade-items/add', methods=['POST'])
+    def upgrade_items_add():
+        title = request.form.get('title')
+        notes = request.form.get('notes')
+
+        if not title:
+            flash("Title is required.", "danger")
+            return redirect(url_for('upgrade_items_list'))
+
+        item = UpgradeItem(title=title, notes=notes)
+        db.session.add(item)
+        db.session.commit()
+
+        flash("Upgrade item added.", "success")
+        return redirect(url_for('upgrade_items_list'))
+
+
+    @app.route('/upgrade-items/delete/<int:item_id>', methods=['POST'])
+    def upgrade_items_delete(item_id):
+        item = UpgradeItem.query.get_or_404(item_id)
+        db.session.delete(item)
+        db.session.commit()
+
+        flash("Upgrade item deleted.", "success")
+        return redirect(url_for('upgrade_items_list'))
 
     @app.route("/other_tools")
     def other_tools():
