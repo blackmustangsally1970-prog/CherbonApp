@@ -982,7 +982,7 @@ select.teacher-dropdown {
 
     <label>Lesson Type</label>
     <select name="lesson_type">
-      {% for opt in ['Arena','Roundyard','Trail Ride','Go Gallop','Party'] %}
+      {% for opt in ['Arena','Roundyard','Trail Ride','Go Gallop','Party','Comp'] %}
         <option value="{{ opt }}" {% if item.lesson_type == opt %}selected{% endif %}>{{ opt }}</option>
       {% endfor %}
     </select>
@@ -1076,6 +1076,7 @@ select.teacher-dropdown {
       <option>Party</option>
       <option>Payment</option>
       <option>Comp</option>
+      <option>Voucher CR</option>
     </select>
 
     <label>Group Priv</label>
@@ -1201,6 +1202,7 @@ select.teacher-dropdown {
       </tbody>
     </table>
 
+{# 
 <!-- ⭐ NEW: Doctor-Style Teacher Grid (Unique Start Times) -->
 <h4 style="margin: 18px 0 6px 0; text-align:center; font-size:14px;">
     Teacher Time Grid
@@ -1318,7 +1320,7 @@ select.teacher-dropdown {
 
     </tbody>
 </table>
-
+#}
   </div>
 
 
