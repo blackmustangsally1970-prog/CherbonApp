@@ -552,7 +552,7 @@ def handle_new_client(data):
             notes     = "Created via booking panel"
         )
         db.session.add(client)
-        db.session.flush()
+        db.session.flush()   # get client.client_id
 
         for l in lessons:
             lesson = Lesson(
@@ -565,11 +565,18 @@ def handle_new_client(data):
                 client      = name,
                 horse       = "",
                 attendance  = "Pending",
-                payment     = None
+                payment     = None,   # OK — recalc will fix this
             )
             db.session.add(lesson)
 
         db.session.commit()
+
+        # ⭐ NEW: Immediately recalc this client's balances
+        try:
+            recalc_client_cascade(name)
+        except Exception as e:
+            print("Recalc failed:", e)
+
         return jsonify(success=True)
 
     except Exception as e:
