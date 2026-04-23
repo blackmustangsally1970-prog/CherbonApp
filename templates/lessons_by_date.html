@@ -1202,15 +1202,15 @@ select.teacher-dropdown {
       </tbody>
     </table>
 
-{# 
+{#
 <!-- ⭐ NEW: Doctor-Style Teacher Grid (Unique Start Times) -->
 <h4 style="margin: 18px 0 6px 0; text-align:center; font-size:14px;">
     Teacher Time Grid
 </h4>
 
-{# --------------------------------------------- #}
-{# Build unique start times from full time frames #}
-{# --------------------------------------------- #}
+# --------------------------------------------- 
+# Build unique start times from full time frames 
+# --------------------------------------------- 
 {% set unique_starts = [] %}
 {% for t in times %}
     {% set s = t.split(' - ')[0].strip() %}
@@ -1236,7 +1236,6 @@ select.teacher-dropdown {
         {% for start_time in unique_starts %}
         <tr>
 
-            <!-- Left column: unique start time -->
             <td style="text-align:center; font-weight:bold; border:1px solid #ccc;">
                 {{ start_time }}
             </td>
@@ -1244,9 +1243,7 @@ select.teacher-dropdown {
             {% for i in range(5) %}
             <td style="border:1px solid #ccc; height:28px; background:#fff;">
 
-                {# --------------------------------------------- #}
-                {# 1. Find lessons that match this start + teacher #}
-                {# --------------------------------------------- #}
+                # 1. Find lessons that match this start + teacher
                 {% set cell_lessons = [] %}
 
                 {% for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items() %}
@@ -1265,7 +1262,6 @@ select.teacher-dropdown {
                     {% endif %}
                 {% endfor %}
 
-                {# Render lesson blocks if present #}
                 {% if cell_lessons %}
                     {% for L in cell_lessons %}
                         <div onclick="openLessonPopup('{{ L.block_key }}')"
@@ -1275,41 +1271,14 @@ select.teacher-dropdown {
                     {% endfor %}
                 {% endif %}
 
-                {# --------------------------------------------- #}
-                {# 2. Override state (always runs)               #}
-                {# --------------------------------------------- #}
                 {% set override = grid_overrides.get((start_time, i+1)) %}
 
                 {% if override == 1 %}
-                    <div class="grid-block"
-                         data-state="1"
-                         data-date="{{ selected_date }}"
-                         data-time="{{ start_time }}"
-                         data-teacher="{{ i+1 }}"
-                         onclick="toggleGridCell(this)"
-                         style="height:100%; width:100%; cursor:pointer;">
-                    </div>
-
+                    <div class="grid-block"></div>
                 {% elif override == 2 %}
-                    <div class="grid-break"
-                         data-state="2"
-                         data-date="{{ selected_date }}"
-                         data-time="{{ start_time }}"
-                         data-teacher="{{ i+1 }}"
-                         onclick="toggleGridCell(this)"
-                         style="height:100%; width:100%; cursor:pointer;">
-                        BREAK
-                    </div>
-
+                    <div class="grid-break">BREAK</div>
                 {% else %}
-                    <div class="grid-free"
-                         data-state="0"
-                         data-date="{{ selected_date }}"
-                         data-time="{{ start_time }}"
-                         data-teacher="{{ i+1 }}"
-                         onclick="toggleGridCell(this)"
-                         style="height:100%; width:100%; cursor:pointer;">
-                    </div>
+                    <div class="grid-free"></div>
                 {% endif %}
 
             </td>
@@ -1321,6 +1290,7 @@ select.teacher-dropdown {
     </tbody>
 </table>
 #}
+
   </div>
 
 
@@ -3225,12 +3195,14 @@ if (recurrence === "F") {
                     <option>Trail Ride</option>
                     <option>Go Gallop</option>
                     <option>Party</option>
+                    <option>Comp</option>
+                    <option>Voucher CR</option>
                 </select>
             </td>
 
             <td>
                 <select class="form-select gp-field">
-                    {% for opt in ['CC','CT','G','GY','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                    {% for opt in ['CC','CT','G','GT','GY','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
                         <option>{{ opt }}</option>
                     {% endfor %}
                 </select>
