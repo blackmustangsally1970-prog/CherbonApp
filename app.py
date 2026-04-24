@@ -5920,6 +5920,11 @@ Cherbon Waters Admin
                 skipped += 1
                 continue
 
+            # --- TEXT NORMALISATION (Excel TRIM) ---
+            for key, val in row_data.items():
+                if isinstance(val, str):
+                    row_data[key] = " ".join(val.split())
+
             # --- REQUIRED FIELDS ---
             required_fields = ["client", "lesson_date"]
             missing = [f for f in required_fields if not row_data.get(f)]
@@ -5944,6 +5949,25 @@ Cherbon Waters Admin
                         print(f"BAD DATE FORMAT — {val} | {row_data}")
                         skipped += 1
                         continue
+
+            # --- NUMERIC NORMALISATION ---
+            numeric_fields = ["payment", "price_pl", "adjust", "carry_fwd", "balance"]
+
+            for key in numeric_fields:
+                if key in row_data:
+                    val = row_data[key]
+
+                    # Treat blanks, spaces, "None", None as null
+                    if val in [None, "", " ", "None"]:
+                        row_data[key] = None
+                        continue
+
+                    # Convert valid numbers
+                    try:
+                        row_data[key] = float(val)
+                    except:
+                        print(f"BAD NUMERIC VALUE — {key}={val} | forcing to None")
+                        row_data[key] = None
 
             # Create lesson safely
             try:
