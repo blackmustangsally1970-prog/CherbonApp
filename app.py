@@ -1898,7 +1898,10 @@ def create_app():
         if selected_date:
             lesson_rows = (
                 db.session.query(Lesson)
-                .filter_by(lesson_date=selected_date)
+                .filter(
+                    Lesson.lesson_date == selected_date,
+                    Lesson.lesson_type.notin_(["Payment", "Voucher CR"])
+                )
                 .order_by(Lesson.time_frame)
                 .all()
             )
