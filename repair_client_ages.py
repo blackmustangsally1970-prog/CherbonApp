@@ -3,7 +3,7 @@
 
 import csv
 from app import db
-from models import Clients
+from models import Client
 
 
 CSV_FILE = "import_tools/clients.csv"   # <-- uses your existing file
