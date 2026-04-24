@@ -61,8 +61,17 @@ from clicksend_client import SmsMessage
 from clicksend_client.rest import ApiException
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
-from weasyprint import HTML
-from playwright.sync_api import sync_playwright
+import os
+
+if os.environ.get("DISABLE_WEASYPRINT") != "1":
+    from weasyprint import HTML
+else:
+    HTML = None
+
+if os.environ.get("DISABLE_PLAYWRIGHT") != "1":
+    from playwright.sync_api import sync_playwright
+else:
+    sync_playwright = None
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from helpers_jf import (
@@ -5903,12 +5912,25 @@ Cherbon Waters Admin
             # Map only known fields
             for idx, value in enumerate(row):
                 if idx in field_map:
+                    # Normalize empty strings / whitespace to None
+                    if isinstance(value, str) and value.strip() == "":
+                        value = None
                     row_data[field_map[idx]] = value
 
-            # Skip empty rows
+            # Skip fully empty rows
             if not any(row_data.values()):
                 skipped += 1
                 continue
+
+            # --- REQUIRED FIELDS CHECK ---
+            required_fields = ["client", "lesson_date"]
+            missing_required = [f for f in required_fields if not row_data.get(f)]
+
+            if missing_required:
+                print(f"SKIPPED ROW — missing required fields: {missing_required} | row_data={row_data}")
+                skipped += 1
+                continue
+            # --------------------------------
 
             # Create Lesson object with defaults for missing fields
             lesson = Lesson(**row_data)
@@ -5922,7 +5944,7 @@ Cherbon Waters Admin
         except Exception as e:
             flash(f"Import succeeded but recalc failed: {e}", "error")
 
-        flash(f"Imported {inserted} lessons successfully.", "success")
+        flash(f"Imported {inserted} lessons successfully. Skipped {skipped} incomplete rows.", "success")
         return redirect(url_for('other_tools'))
 
 

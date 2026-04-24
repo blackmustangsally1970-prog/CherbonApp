@@ -28,6 +28,9 @@ class Client(db.Model):
 
     # --- Admin / Compliance ---
     disclaimer = db.Column(db.Integer)
+    disclaimer_date = db.Column(db.Date, nullable=True)
+    disclaimer_source = db.Column(db.String, nullable=True)
+    disclaimer_version = db.Column(db.String, nullable=True)
     invoice_required = db.Column(db.Boolean, default=False)
     jotform_submission_id = db.Column(db.String)
 
@@ -38,6 +41,7 @@ class Client(db.Model):
     # --- Notes ---
     notes = db.Column(db.String)
     notes2 = db.Column(db.String)
+
 
 
 class UpgradeItem(db.Model):
