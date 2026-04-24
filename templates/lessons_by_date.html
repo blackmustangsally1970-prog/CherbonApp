@@ -3197,6 +3197,8 @@ if (recurrence === "F") {
                     <option>Party</option>
                     <option>Comp</option>
                     <option>Voucher CR</option>
+                    <option>Payment</option>
+
                 </select>
             </td>
 
@@ -4157,7 +4159,45 @@ document.addEventListener("DOMContentLoaded", function () {
     Saved
 </div>
 
+<script>
+// -------------------------------
+// 1. Disable time for Payment / Voucher CR
+// -------------------------------
+document.addEventListener("DOMContentLoaded", function () {
+    const ltField = document.querySelector("select[name='lesson_type']");
+    const timeField = document.querySelector("select[name='end']");
+    const timeLabel = document.querySelector(".popup-end-label");
 
+    function updateTimeState() {
+        const lt = ltField.value;
+
+        if (lt === "Payment" || lt === "Voucher CR") {
+            timeField.disabled = true;
+            timeField.style.opacity = "0.4";
+            timeLabel.style.opacity = "0.4";
+            timeField.value = "";
+        } else {
+            timeField.disabled = false;
+            timeField.style.opacity = "1";
+            timeLabel.style.opacity = "1";
+        }
+    }
+
+    ltField.addEventListener("change", updateTimeState);
+    updateTimeState(); // run once on popup open
+});
+
+
+// -------------------------------
+// 2. Enforce 10‑digit mobile (optional)
+// -------------------------------
+document.addEventListener("input", function (e) {
+    if (e.target.name === "client_phone" || e.target.name === "invite_mobile") {
+        // Strip non‑digits
+        e.target.value = e.target.value.replace(/\D/g, "");
+
+        // Enforce max length 10
+        if (
 
 
 </body>
