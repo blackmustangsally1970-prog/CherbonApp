@@ -4514,9 +4514,20 @@ def create_app():
         start_token, end_token = _parse_times(start_raw, end_raw)
         time_range = _clean_time_range(f"{start_token} - {end_token}")
 
-        if not start_token or not end_token or "-" not in time_range:
-            print("[DEBUG] Missing or invalid time range for NEW lesson, rejecting.")
-            return redirect(url_for("lessons_by_date", date=lesson_date_str))
+        # ---------------------------------------------------------
+        # TIME REQUIREMENTS (Payment / Voucher CR EXEMPT)
+        # ---------------------------------------------------------
+        if lesson_type not in ["Payment", "Voucher CR"]:
+            if not start_token or not end_token or "-" not in time_range:
+                print("[DEBUG] Missing or invalid time range for NEW lesson, rejecting.")
+                return redirect(url_for("lessons_by_date", date=lesson_date_str))
+        else:
+            # Force blank time for Payment / Voucher CR
+            start_token = ""
+            end_token = ""
+            time_range = ""
+            time_frame = ""
+
 
         time_frame = time_range
 
