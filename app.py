@@ -5933,13 +5933,13 @@ Cherbon Waters Admin
                 val = row_data["lesson_date"]
 
                 # Excel real date/datetime
-                if isinstance(val, (datetime.datetime, datetime.date)):
-                    row_data["lesson_date"] = val.date() if isinstance(val, datetime.datetime) else val
+                if isinstance(val, (datetime, date)):
+                    row_data["lesson_date"] = val.date() if isinstance(val, datetime) else val
 
                 # AU string date "17/04/2026"
                 elif isinstance(val, str):
                     try:
-                        row_data["lesson_date"] = datetime.datetime.strptime(val.strip(), "%d/%m/%Y").date()
+                        row_data["lesson_date"] = datetime.strptime(val.strip(), "%d/%m/%Y").date()
                     except ValueError:
                         print(f"BAD DATE FORMAT — {val} | {row_data}")
                         skipped += 1
