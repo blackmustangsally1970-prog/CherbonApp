@@ -2,7 +2,9 @@
 # One-off script to update client ages from /import_tools/clients.csv
 
 import csv
-from app import db, Clients
+from app import db
+from models import Clients
+
 
 CSV_FILE = "import_tools/clients.csv"   # <-- uses your existing file
 
