@@ -4044,6 +4044,7 @@ def create_app():
                 "group_priv": (l.group_priv or "").strip().upper(),
                 "client_name": l.client or "",
                 "horse": l.horse or "",
+                "att": (l.attendance or "").strip().upper(),
             })
 
         # ---------------------------------------------------------
