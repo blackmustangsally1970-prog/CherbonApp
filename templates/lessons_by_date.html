@@ -3393,19 +3393,22 @@ async function actuallySaveLessons() {
         return;
     }
 
-    // ⭐ Validate rows
-    for (const row of lessons) {
+// ⭐ Validate rows
+for (const row of lessons) {
 
+    // ⭐ Allow Payment + Voucher CR to skip time
+    if (row.lesson_type !== "Payment" && row.lesson_type !== "Voucher CR") {
         if (!row.lesson_date || !row.time_frame) {
             alert("Each lesson requires a date and time.");
             return;
         }
-
-        if (!isValidDate(row.lesson_date)) {
-            alert("One or more dates are invalid.");
-            return;
-        }
     }
+
+    if (!isValidDate(row.lesson_date)) {
+        alert("One or more dates are invalid.");
+        return;
+    }
+}
 
     const freq = document.getElementById("recurrence_type").value;
 
