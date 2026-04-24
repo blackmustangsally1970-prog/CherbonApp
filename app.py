@@ -5884,7 +5884,6 @@ Cherbon Waters Admin
         if not file:
             return jsonify({"status": "error", "message": "No file uploaded"}), 400
 
-        # Load workbook
         wb = openpyxl.load_workbook(file)
         ws = wb.active
 
@@ -5893,26 +5892,25 @@ Cherbon Waters Admin
         for cell in ws[1]:
             headers.append(cell.value.strip() if cell.value else None)
 
-        # Get valid Lesson model columns
+        # Valid DB fields
         valid_fields = [col.name for col in Lesson.__table__.columns]
 
-        # Build mapping: XLSX heading -> DB field
+        # Map XLSX column index -> DB field name
         field_map = {}
         for idx, header in enumerate(headers):
             if header in valid_fields:
-                field_map[idx] = header  # column index -> field name
+                field_map[idx] = header
 
         inserted = 0
         skipped = 0
 
-        # Process rows
+        # Process each row
         for row in ws.iter_rows(min_row=2, values_only=True):
             row_data = {}
 
-            # Map only known fields
+            # Map known fields + normalize blanks
             for idx, value in enumerate(row):
                 if idx in field_map:
-                    # Normalize empty strings / whitespace to None
                     if isinstance(value, str) and value.strip() == "":
                         value = None
                     row_data[field_map[idx]] = value
@@ -5922,29 +5920,51 @@ Cherbon Waters Admin
                 skipped += 1
                 continue
 
-            # --- REQUIRED FIELDS CHECK ---
+            # --- REQUIRED FIELDS ---
             required_fields = ["client", "lesson_date"]
-            missing_required = [f for f in required_fields if not row_data.get(f)]
-
-            if missing_required:
-                print(f"SKIPPED ROW — missing required fields: {missing_required} | row_data={row_data}")
+            missing = [f for f in required_fields if not row_data.get(f)]
+            if missing:
+                print(f"SKIPPED ROW — missing required fields {missing} | {row_data}")
                 skipped += 1
                 continue
-            # --------------------------------
 
-            # Create Lesson object with defaults for missing fields
-            lesson = Lesson(**row_data)
-            db.session.add(lesson)
-            inserted += 1
+            # --- DATE NORMALIZATION ---
+            if "lesson_date" in row_data and row_data["lesson_date"]:
+                val = row_data["lesson_date"]
 
+                # Excel real date/datetime
+                if isinstance(val, (datetime.datetime, datetime.date)):
+                    row_data["lesson_date"] = val.date() if isinstance(val, datetime.datetime) else val
+
+                # AU string date "17/04/2026"
+                elif isinstance(val, str):
+                    try:
+                        row_data["lesson_date"] = datetime.datetime.strptime(val.strip(), "%d/%m/%Y").date()
+                    except ValueError:
+                        print(f"BAD DATE FORMAT — {val} | {row_data}")
+                        skipped += 1
+                        continue
+
+            # Create lesson safely
+            try:
+                lesson = Lesson(**row_data)
+                db.session.add(lesson)
+                inserted += 1
+            except Exception as e:
+                print(f"ROW FAILED — {e} | {row_data}")
+                skipped += 1
+                continue
+
+        # Commit all valid rows
         db.session.commit()
 
+        # Recalc
         try:
             recalc_all_lessons()
         except Exception as e:
             flash(f"Import succeeded but recalc failed: {e}", "error")
 
-        flash(f"Imported {inserted} lessons successfully. Skipped {skipped} incomplete rows.", "success")
+        flash(f"Imported {inserted} lessons. Skipped {skipped} rows.", "success")
         return redirect(url_for('other_tools'))
 
 
