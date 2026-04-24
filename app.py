@@ -4693,6 +4693,21 @@ def create_app():
                         if client_obj:
                             client_obj.notes = notes_val
 
+                # ---------------------------
+                # TIME REQUIREMENTS (Payment / Voucher CR EXEMPT)
+                # ---------------------------
+                lt_val = item.get("lesson_type")
+
+                if lt_val in ["Payment", "Voucher CR"]:
+                    # These lesson types do NOT require time
+                    lesson.start = ""
+                    lesson.end = ""
+                else:
+                    # Normal lessons MUST have time
+                    lesson.start = item.get("start")
+                    lesson.end   = item.get("end")
+
+
                 # Always update times
                 lesson.start = item.get("start")
                 lesson.end   = item.get("end")
