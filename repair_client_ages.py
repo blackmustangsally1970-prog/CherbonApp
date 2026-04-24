@@ -3,8 +3,7 @@
 
 import csv
 from app import db
-from models import Client
-
+from models import Client   # <-- correct model name
 
 CSV_FILE = "import_tools/clients.csv"   # <-- uses your existing file
 
@@ -37,7 +36,7 @@ with open(CSV_FILE, encoding="utf-8") as f:
             continue
 
         # Exact match lookup
-        client = Clients.query.filter_by(full_name=name).first()
+        client = Client.query.filter_by(full_name=name).first()
 
         if not client:
             not_found.append(name)
