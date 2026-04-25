@@ -405,9 +405,10 @@
 
     </table>
 
-    <!-- ========================= -->
-    <!-- INVOICE CHECKBOX          -->
-    <!-- ========================= -->
+<!--
+    =========================
+    INVOICE CHECKBOX
+    =========================
 
     <form action="/update_invoice_flag" method="post" style="margin-top: 12px;">
         <input type="hidden" name="client_id" value="{{ client_obj.client_id }}">
@@ -418,6 +419,7 @@
         </label>
         <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
     </form>
+-->
 
 {% endif %}
 
@@ -597,32 +599,6 @@
 
 
         <!-- 🔼 END DELETE CONTROLS -->
-
-<!-- CONFIRMATION MODAL -->
-<div class="modal fade" id="confirmModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">Confirm Action</h5>
-      </div>
-
-      <div class="modal-body">
-        <p id="confirm-text">Are you sure?</p>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" id="confirm-yes" class="btn btn-danger">Yes, Continue</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-
-
 
 
 {% if lessons %}
@@ -1032,24 +1008,6 @@ document.getElementById('bulk-action').addEventListener('change', function() {
     }
 });
 
-// Modal logic
-let pendingForm = null;
-
-document.querySelectorAll('.open-confirm').forEach(btn => {
-    btn.addEventListener('click', function() {
-        pendingForm = document.getElementById(this.dataset.target);
-        document.getElementById('confirm-text').innerText =
-            this.innerText + " for {{ client_obj.full_name }}?";
-        new bootstrap.Modal(document.getElementById('confirmModal')).show();
-    });
-});
-
-document.getElementById('confirm-yes').addEventListener('click', function() {
-    if (pendingForm) {
-        applyCutoff(pendingForm.id);
-        pendingForm.submit();
-    }
-});
 </script>
 
 
