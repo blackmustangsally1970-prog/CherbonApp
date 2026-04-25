@@ -6931,9 +6931,14 @@ Cherbon Waters Admin
         client_names = [(c.client_id, c.full_name) for c in clients]
 
         # ---------------------------------------------------------
-        # LOAD ALL HORSES  <-- THIS WAS MISSING
+        # LOAD ALL HORSES
         # ---------------------------------------------------------
         horses = db.session.query(Horse).order_by(Horse.horse.asc()).all()
+
+        # ---------------------------------------------------------
+        # LOAD ALL TIMES  <-- REQUIRED FOR CHANGE TIME TOOL
+        # ---------------------------------------------------------
+        times = db.session.query(Times).order_by(Times.sort_order.asc()).all()
 
         # ---------------------------------------------------------
         # LOOK UP SELECTED CLIENT
@@ -6942,7 +6947,6 @@ Cherbon Waters Admin
             client_obj = Client.query.get(client_id)
 
             if client_obj:
-                # Filter lessons by exact client name match
                 query = db.session.query(Lesson).filter(
                     Lesson.client == client_obj.full_name
                 )
@@ -6954,9 +6958,6 @@ Cherbon Waters Admin
 
                 total = query.count()
 
-                # ---------------------------------------------------------
-                # ORDER BY TRUE DATE ASCENDING (SQL-LEVEL DATE CAST)
-                # ---------------------------------------------------------
                 lessons = (
                     query.order_by(
                         db.func.date(Lesson.lesson_date).desc(),
@@ -6978,7 +6979,8 @@ Cherbon Waters Admin
             per_page=per_page,
             client_names=client_names,
             client_obj=client_obj,
-            horses=horses,                     # <-- NOW INCLUDED
+            horses=horses,
+            times=times,                     # <-- NOW INCLUDED
             today=date.today().isoformat()
         )
 
