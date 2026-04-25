@@ -4815,6 +4815,8 @@ def create_app():
             # --------------------------------------------------------
             # FINAL COMMIT
             # --------------------------------------------------------
+            recalc_all_lessons()   # <-- ADD THIS LINE
+
             db.session.commit()
             print("✅ COMMIT OK")
             return {"status": "ok"}, 200
