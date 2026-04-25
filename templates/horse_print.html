@@ -48,8 +48,7 @@
 th:nth-child(1), td:nth-child(1) { width: 120px; }  /* Horse */
 th:nth-child(2), td:nth-child(2) { width: 160px; }  /* Client */
 th:nth-child(3), td:nth-child(3) { width: 35px; }   /* Att */
-th:nth-child(4), td:nth-child(4) { width: 120px; }  /* Lesson Type */
-th:nth-child(5), td:nth-child(5) { width: 120px; }  /* Teacher */
+th:nth-child(5), td:nth-child(4) { width: 120px; }  /* Teacher */
 
         .lesson-block {
             page-break-inside: avoid;
@@ -111,7 +110,6 @@ th:nth-child(5), td:nth-child(5) { width: 120px; }  /* Teacher */
             <th>Horse</th>
             <th>Client</th>
             <th>Att</th>
-            <th>Lesson Type</th>
             <th>Teacher</th>
         </tr>
 
@@ -120,7 +118,6 @@ th:nth-child(5), td:nth-child(5) { width: 120px; }  /* Teacher */
             <td>{{ r.horse }}</td>
             <td>{{ r.client_name }}</td>
             <td>{{ r.att }}</td>
-            <td>{{ r.lesson_type }}</td>
             <td>{{ r.teacher or "" }}</td>
         </tr>
         {% endfor %}
