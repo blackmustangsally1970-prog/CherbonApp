@@ -6434,6 +6434,42 @@ Cherbon Waters Admin
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
 
+
+    @app.route("/client/<int:client_id>/change_time", methods=["POST"])
+    def change_client_time(client_id):
+        mode = request.form.get("mode")
+        cutoff = request.form.get("cutoff_date")
+        gp = request.form.get("group_priv")
+        new_time = request.form.get("new_time")
+
+        if not new_time or not cutoff or not gp:
+            return {"status": "error", "message": "Missing data"}, 400
+
+        cutoff_date = datetime.strptime(cutoff, "%Y-%m-%d").date()
+
+        client = Client.query.get(client_id)
+        if not client:
+            return {"status": "error", "message": "Client not found"}, 404
+
+        lessons = (
+            Lesson.query
+            .filter(
+                Lesson.client == client.full_name,
+                Lesson.lesson_date == cutoff_date,   # single date only
+                Lesson.group_priv == gp
+            )
+            .all()
+        )
+
+        for l in lessons:
+            l.time_frame = new_time
+
+        db.session.commit()
+        recalc_all_lessons()
+
+        return redirect(url_for("client_view", client_id=client_id))
+
+
     @app.route("/client/<int:client_id>/change_horse", methods=["POST"])
     def change_client_horse(client_id):
         mode = request.form.get("mode")

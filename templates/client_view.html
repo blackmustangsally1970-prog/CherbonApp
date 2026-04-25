@@ -531,6 +531,38 @@
     </div>
 </form>
 
+<!-- CHANGE TIME (Single Date Only) -->
+<form id="form-change-time"
+      action="{{ url_for('change_client_time', client_id=client_obj.client_id) }}"
+      method="post"
+      onsubmit="return applyCutoff('form-change-time');"
+      style="margin-bottom:10px;">
+
+    <input type="hidden" name="mode" value="change_time">
+    <input type="hidden" name="cutoff_date">
+    <input type="hidden" name="group_priv">
+
+    <div style="display:flex; align-items:center; gap:12px;">
+        <label class="form-label" style="min-width:110px;">New Time:</label>
+
+        <!-- TIME SELECT (Select2 compatible) -->
+        <select name="new_time"
+                class="form-select time-field searchable-dropdown"
+                style="width:180px; padding:4px;">
+            <option value=""></option>
+            {% for t in times %}
+                <option value="{{ t.timerange }}">{{ t.timerange }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-secondary btn-sm"
+                onclick="return confirm('Change TIME for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
+            Change Time From Cutoff
+        </button>
+    </div>
+</form>
+
+
 </div>
 
 {% endif %}
