@@ -914,6 +914,26 @@ function recalculateBalance(lessonId) {
 }
 </script>
 
+<script>
+    // Ensure Change Time dropdown behaves exactly like all other Select2 time pickers
+    $(document).ready(function () {
+
+        $('.time-field').select2({
+            width: 'resolve',
+            placeholder: '',
+            allowClear: true
+        }).on('select2:open', function () {
+            // Auto-focus the search field so typing works instantly
+            let searchField = document.querySelector('.select2-container--open .select2-search__field');
+            if (searchField) {
+                searchField.focus();
+            }
+        });
+
+    });
+</script>
+
+
 </body>
 </html>
 
