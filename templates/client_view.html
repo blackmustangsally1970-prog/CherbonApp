@@ -120,8 +120,48 @@
 }
 
 
+.bulk-controls {
+    margin-top: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
 
-    </style>
+.bulk-controls label {
+    font-weight: bold;
+}
+
+.action-form {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 6px;
+    background: #f7f7f7;
+    border: 1px solid #ccc;
+}
+
+.action-form.danger-zone {
+    background: #ffe5e5;
+    border: 2px solid #cc0000;
+}
+
+.action-form label {
+    min-width: 110px;
+}
+
+.action-form select,
+.action-form input {
+    padding: 4px;
+}
+
+.action-buttons {
+    margin-top: 12px;
+}
+</style>
+
+
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 
@@ -384,191 +424,204 @@
 
 {% if client_obj %}
 
-<!-- GLOBAL GROUP PRIV + GLOBAL CUTOFF DATE -->
-<div style="margin-top: 12px; margin-bottom: 12px; display:flex; gap:20px; align-items:center;">
+<!-- ONE-LINE GLOBAL CONTROLS -->
+<div class="bulk-controls">
+
     <div>
-        <label for="global-cutoff" style="font-weight:bold;">Cutoff Date:</label>
-        <input type="date" id="global-cutoff" value="{{ today }}">
+        <label>Cutoff Date:</label><br>
+        <input type="date" id="global-cutoff" value="{{ today }}" style="width:160px;">
     </div>
+
     <div>
-        <label for="global-grouppriv" style="font-weight:bold;">Group Priv:</label>
-        <input type="text" id="global-grouppriv" placeholder="e.g. J or CT">
+        <label>Group Priv:</label><br>
+        <input type="text" id="global-grouppriv" placeholder="e.g. J or CT" style="width:120px;">
     </div>
+
+    <div>
+        <label>Action:</label><br>
+        <select id="bulk-action" style="width:260px; padding:6px;">
+            <option value="">-- Select Action --</option>
+
+            <!-- Danger Zone -->
+            <optgroup label="Danger Zone ⚠️">
+                <option value="delete-all">Delete ALL Lessons From Cutoff</option>
+                <option value="delete-gp">Delete Selected Group Priv From Cutoff</option>
+            </optgroup>
+
+            <!-- Safe Actions -->
+            <optgroup label="Modify Lessons">
+                <option value="change-horse">Change Horse From Cutoff</option>
+                <option value="assign-empty">Assign Horse If Empty</option>
+                <option value="change-price">Change Price From Cutoff</option>
+                <option value="change-time">Change Time From Cutoff</option>
+            </optgroup>
+        </select>
+    </div>
+
 </div>
 
-<script>
-    function applyCutoff(formId) {
-        const cutoff = document.getElementById('global-cutoff').value;
-        const gp = document.getElementById('global-grouppriv').value;
 
-        const form = document.getElementById(formId);
-
-        // Set cutoff date
-        const cutoffField = form.querySelector('input[name="cutoff_date"]');
-        if (cutoffField) cutoffField.value = cutoff;
-
-        // Set group_priv if the form uses it
-        const gpField = form.querySelector('input[name="group_priv"]');
-        if (gpField) gpField.value = gp;
-
-        return true;
-    }
-</script>
-
-
-
-<div style="margin-top: 12px;">
+<!-- ACTION FORMS (hidden until selected) -->
+<div id="action-forms">
 
     <!-- DELETE ALL -->
-    <form id="form-delete-all"
+    <form id="form-delete-all" class="action-form danger-zone"
           action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
-          method="post" style="display:inline-block; margin-right:12px;"
-          onsubmit="return applyCutoff('form-delete-all');">
+          method="post">
 
         <input type="hidden" name="mode" value="all">
         <input type="hidden" name="cutoff_date">
 
-        <button type="submit" class="btn btn-danger btn-sm"
-                onclick="return confirm('Delete ALL lessons from cutoff date for {{ client_obj.full_name }}?');">
-            Delete ALL Lessons From Cutoff
-        </button>
+        <div class="action-buttons">
+            <button type="button" class="btn btn-danger btn-sm open-confirm"
+                    data-target="form-delete-all">
+                Delete ALL Lessons From Cutoff
+            </button>
+        </div>
     </form>
 
-    <!-- DELETE BY GROUP PRIV -->
-    <form id="form-delete-gp"
+    <!-- DELETE GROUP PRIV -->
+    <form id="form-delete-gp" class="action-form danger-zone"
           action="{{ url_for('delete_client_lessons', client_id=client_obj.client_id) }}"
-          method="post" style="display:inline-block;"
-          onsubmit="return applyCutoff('form-delete-gp');">
+          method="post">
 
         <input type="hidden" name="mode" value="group_priv">
         <input type="hidden" name="cutoff_date">
         <input type="hidden" name="group_priv">
-        <button type="submit" class="btn btn-warning btn-sm"
-                onclick="return confirm('Delete lessons of this group_priv from cutoff date for {{ client_obj.full_name }}?');">
-            Delete Selected Group Priv From Cutoff
-        </button>
+
+        <div class="action-buttons">
+            <button type="button" class="btn btn-warning btn-sm open-confirm"
+                    data-target="form-delete-gp">
+                Delete Selected Group Priv From Cutoff
+            </button>
+        </div>
     </form>
 
-</div>
-<div style="margin-top: 20px;">
+    <!-- CHANGE HORSE -->
+    <form id="form-change-horse" class="action-form"
+          action="{{ url_for('change_client_horse', client_id=client_obj.client_id) }}"
+          method="post">
 
-<!-- CHANGE HORSE -->
-<form id="form-change-horse"
-      action="{{ url_for('change_client_horse', client_id=client_obj.client_id) }}"
-      method="post"
-      onsubmit="return applyCutoff('form-change-horse');"
-      style="margin-bottom:10px;">
+        <input type="hidden" name="mode" value="change_horse">
+        <input type="hidden" name="cutoff_date">
+        <input type="hidden" name="group_priv">
 
-    <input type="hidden" name="mode" value="change_horse">
-    <input type="hidden" name="cutoff_date">
-    <input type="hidden" name="group_priv">
+        <label>New Horse:</label>
+        <select name="new_horse" style="width:180px;">
+            <option value=""></option>
+            {% for horse in horses %}
+                <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
+            {% endfor %}
+        </select>
 
-    <div style="display:flex; align-items:center; gap:12px;">
-        <label class="form-label" style="min-width:110px;">New Horse:</label>
+        <div class="action-buttons">
+            <button type="button" class="btn btn-info btn-sm open-confirm"
+                    data-target="form-change-horse">
+                Change Horse From Cutoff
+            </button>
+        </div>
+    </form>
 
-<select name="new_horse" style="width:180px; padding:4px;">
-    <option value="" selected></option>
-    {% for horse in horses %}
-        <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
-    {% endfor %}
-</select>
+    <!-- ASSIGN IF EMPTY -->
+    <form id="form-assign-empty" class="action-form"
+          action="{{ url_for('change_client_horse', client_id=client_obj.client_id) }}"
+          method="post">
 
-        <button type="submit" class="btn btn-info btn-sm"
-                onclick="return confirm('Change horse for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
-            Change Horse From Cutoff
-        </button>
-    </div>
-</form>
-<!-- ASSIGN IF EMPTY -->
-<form id="form-assign-empty"
-      action="{{ url_for('change_client_horse', client_id=client_obj.client_id) }}"
-      method="post"
-      onsubmit="return applyCutoff('form-assign-empty');"
-      style="margin-bottom:10px;">
+        <input type="hidden" name="mode" value="assign_if_empty">
+        <input type="hidden" name="cutoff_date">
+        <input type="hidden" name="group_priv">
 
-    <input type="hidden" name="mode" value="assign_if_empty">
-    <input type="hidden" name="cutoff_date">
-    <input type="hidden" name="group_priv">
+        <label>Horse:</label>
+        <select name="new_horse" style="width:180px;">
+            <option value=""></option>
+            {% for horse in horses %}
+                <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
+            {% endfor %}
+        </select>
 
-    <div style="display:flex; align-items:center; gap:12px;">
-        <label class="form-label" style="min-width:110px;">Horse:</label>
+        <div class="action-buttons">
+            <button type="button" class="btn btn-success btn-sm open-confirm"
+                    data-target="form-assign-empty">
+                Assign Horse If Empty
+            </button>
+        </div>
+    </form>
 
-<select name="new_horse" style="width:180px; padding:4px;">
-    <option value="" selected></option>
-    {% for horse in horses %}
-        <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
-    {% endfor %}
-</select>
+    <!-- CHANGE PRICE -->
+    <form id="form-change-price" class="action-form"
+          action="{{ url_for('change_client_price', client_id=client_obj.client_id) }}"
+          method="post">
 
-        <button type="submit" class="btn btn-success btn-sm"
-                onclick="return confirm('Assign horse ONLY where empty for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
-            Assign Horse If Empty
-        </button>
-    </div>
-</form>
-<!-- CHANGE PRICE -->
-<form id="form-change-price"
-      action="{{ url_for('change_client_price', client_id=client_obj.client_id) }}"
-      method="post"
-      onsubmit="return applyCutoff('form-change-price');"
-      style="margin-bottom:10px;">
+        <input type="hidden" name="mode" value="change_price">
+        <input type="hidden" name="cutoff_date">
+        <input type="hidden" name="group_priv">
 
-    <input type="hidden" name="mode" value="change_price">
-    <input type="hidden" name="cutoff_date">
-    <input type="hidden" name="group_priv">
+        <label>New Price:</label>
+        <input type="number" step="0.01" name="new_price" style="width:175px;">
 
-    <div style="display:flex; align-items:center; gap:12px;">
-        <label class="form-label" style="min-width:110px;">New Price:</label>
+        <div class="action-buttons">
+            <button type="button" class="btn btn-primary btn-sm open-confirm"
+                    data-target="form-change-price">
+                Change Price From Cutoff
+            </button>
+        </div>
+    </form>
 
-        <input type="number" step="0.01" name="new_price"
-               placeholder="e.g. 65.00"
-               style="width:175px; padding:4px;">
+    <!-- CHANGE TIME -->
+    <form id="form-change-time" class="action-form"
+          action="{{ url_for('change_client_time', client_id=client_obj.client_id) }}"
+          method="post">
 
-        <button type="submit" class="btn btn-primary btn-sm"
-                onclick="return confirm('Change price_pl for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
-            Change Price From Cutoff
-        </button>
-    </div>
-</form>
+        <input type="hidden" name="mode" value="change_time">
+        <input type="hidden" name="cutoff_date">
+        <input type="hidden" name="group_priv">
 
-<!-- CHANGE TIME (Single Date Only) -->
-<form id="form-change-time"
-      action="{{ url_for('change_client_time', client_id=client_obj.client_id) }}"
-      method="post"
-      onsubmit="return applyCutoff('form-change-time');"
-      style="margin-bottom:10px;">
-
-    <input type="hidden" name="mode" value="change_time">
-    <input type="hidden" name="cutoff_date">
-    <input type="hidden" name="group_priv">
-
-    <div style="display:flex; align-items:center; gap:12px;">
-        <label class="form-label" style="min-width:110px;">New Time:</label>
-
-        <!-- TIME SELECT (Select2 compatible) -->
-        <select name="new_time"
-                class="form-select time-field searchable-dropdown"
-                style="width:180px; padding:4px;">
+        <label>New Time:</label>
+        <select name="new_time" style="width:180px;">
             <option value=""></option>
             {% for t in times %}
                 <option value="{{ t.timerange }}">{{ t.timerange }}</option>
             {% endfor %}
         </select>
 
-        <button type="submit" class="btn btn-secondary btn-sm"
-                onclick="return confirm('Change TIME for this group_priv from cutoff date for {{ client_obj.full_name }}?');">
-            Change Time From Cutoff
-        </button>
-    </div>
-</form>
-
+        <div class="action-buttons">
+            <button type="button" class="btn btn-secondary btn-sm open-confirm"
+                    data-target="form-change-time">
+                Change Time From Cutoff
+            </button>
+        </div>
+    </form>
 
 </div>
-
 {% endif %}
 
 
         <!-- 🔼 END DELETE CONTROLS -->
+
+<!-- CONFIRMATION MODAL -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirm Action</h5>
+      </div>
+
+      <div class="modal-body">
+        <p id="confirm-text">Are you sure?</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="confirm-yes" class="btn btn-danger">Yes, Continue</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
 
 
 
@@ -944,6 +997,58 @@ $(document).ready(function () {
         }
     });
 
+});
+</script>
+
+
+<script>
+function applyCutoff(formId) {
+    const cutoff = document.getElementById('global-cutoff').value;
+    const gp = document.getElementById('global-grouppriv').value;
+
+    const form = document.getElementById(formId);
+
+    if (form.querySelector('input[name="cutoff_date"]'))
+        form.querySelector('input[name="cutoff_date"]').value = cutoff;
+
+    if (form.querySelector('input[name="group_priv"]'))
+        form.querySelector('input[name="group_priv"]').value = gp;
+
+    return true;
+}
+
+// Hide all forms initially
+document.querySelectorAll('.action-form').forEach(f => f.style.display = 'none');
+
+// Show selected form
+document.getElementById('bulk-action').addEventListener('change', function() {
+    const val = this.value;
+
+    document.querySelectorAll('.action-form').forEach(f => f.style.display = 'none');
+
+    if (val) {
+        const form = document.getElementById('form-' + val);
+        if (form) form.style.display = 'block';
+    }
+});
+
+// Modal logic
+let pendingForm = null;
+
+document.querySelectorAll('.open-confirm').forEach(btn => {
+    btn.addEventListener('click', function() {
+        pendingForm = document.getElementById(this.dataset.target);
+        document.getElementById('confirm-text').innerText =
+            this.innerText + " for {{ client_obj.full_name }}?";
+        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+    });
+});
+
+document.getElementById('confirm-yes').addEventListener('click', function() {
+    if (pendingForm) {
+        applyCutoff(pendingForm.id);
+        pendingForm.submit();
+    }
 });
 </script>
 
