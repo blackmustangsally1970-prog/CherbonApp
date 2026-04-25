@@ -741,7 +741,10 @@ body {
 }
 
 #page-wrapper {
-    padding: 16px;
+    padding-top: 0;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 16px;
 }
 
 
@@ -756,6 +759,23 @@ body {
 </head>
 
 <body>
+
+
+<!-- ⭐ STICKY BAR MUST BE HERE, OUTSIDE THE WRAPPER ⭐ -->
+<div id="top-controls" class="no-print" style="margin-bottom:0; display:flex; gap:12px; align-items:center;">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+    <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
+
+    <!-- Your Save button -->
+    <button id="save-button" type="button" class="menu-btn">Save</button>
+</div>
+
+<!-- Optional second bar -->
+<form id="date-nav-form" class="no-print">
+    <!-- your date picker etc -->
+</form>
+
+
 <div id="page-wrapper">
 
 
@@ -789,6 +809,10 @@ body {
     <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
 </div>
 
+<button id="save-button" type="button" class="menu-btn" style="background:#7CFC00;">
+    Save
+</button>
+
 
   <button id="toggle-teacher-btn" type="button" style="margin-left:8px; padding:6px 10px; font-size:12px;">
     Show teachers
@@ -814,9 +838,7 @@ body {
   <button type="submit" style="margin-left:12px;">View</button>
 <!-- <button type="submit" form="update-lessons-form" style="margin-left:8px;">Save</button> -->
 
-<button id="save-button" type="button" class="save-btn">
-    Save
-</button>
+
 
 <button type="button" id="print-page" style="margin-left:8px;">
     Print
