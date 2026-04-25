@@ -1346,7 +1346,15 @@ def create_app():
                 "att": getattr(l, "attendance", False),
                 "payment": getattr(l, "payment", "") or "",
                 "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
-                "balance": float(str(getattr(l, "balance", 0)).strip() or 0),
+                raw_balance = str(getattr(l, "balance", "")).strip()
+
+                if raw_balance.lower() == "none" or raw_balance == "":
+                    balance = 0.0
+                else:
+                    try:
+                        balance = float(raw_balance)
+                    except:
+                        balance = 0.0
 
                 # CLIENT FIELDS
                 "age": getattr(client, "age", "") or "",
