@@ -1334,7 +1334,19 @@ def create_app():
         for l in lessons:
             client = Client.query.filter_by(full_name=l.client).first()
 
+            # SAFE DISCLAIMER PARSING
             raw = str(getattr(client, "disclaimer", "")).strip()
+
+            # SAFE BALANCE PARSING
+            raw_balance = str(getattr(l, "balance", "")).strip()
+            if raw_balance.lower() == "none" or raw_balance == "":
+                balance = 0.0
+            else:
+                try:
+                    balance = float(raw_balance)
+                except:
+                    balance = 0.0
+
             data.append({
                 "time_frame": (l.time_frame or "").strip().replace("–", "-"),
                 "lesson_type": (l.lesson_type or "").strip(),
@@ -1346,15 +1358,7 @@ def create_app():
                 "att": getattr(l, "attendance", False),
                 "payment": getattr(l, "payment", "") or "",
                 "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
-                raw_balance = str(getattr(l, "balance", "")).strip()
-
-                if raw_balance.lower() == "none" or raw_balance == "":
-                    balance = 0.0
-                else:
-                    try:
-                        balance = float(raw_balance)
-                    except:
-                        balance = 0.0
+                "balance": balance,
 
                 # CLIENT FIELDS
                 "age": getattr(client, "age", "") or "",
@@ -1393,7 +1397,6 @@ def create_app():
         def group_blocks(rows):
             blocks = defaultdict(list)
             for r in rows:
-                # NEW: priv_index included so each "P" becomes its own block
                 key = (r["time_frame"], r["lesson_type"], r["group_priv"], r["priv_index"])
                 blocks[key].append(r)
 
