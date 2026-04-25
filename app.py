@@ -6938,7 +6938,8 @@ Cherbon Waters Admin
         # ---------------------------------------------------------
         # LOAD ALL TIMES  <-- REQUIRED FOR CHANGE TIME TOOL
         # ---------------------------------------------------------
-        times = db.session.query(Time).order_by(Time.sort_order.asc()).all()
+        times = db.session.query(Time).order_by(Time.timerange.asc()).all()
+
 
         # ---------------------------------------------------------
         # LOOK UP SELECTED CLIENT
