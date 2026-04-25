@@ -149,11 +149,9 @@
 
 
 <div style="margin:12px 0;">
-    <form action="{{ url_for('recalculate_all') }}" method="post">
-        <button type="submit" class="btn btn-danger">
-            Recalculate All Lessons
-        </button>
-    </form>
+    <button type="button" class="btn btn-danger" onclick="recalcAllLessons()">
+        Recalculate All Lessons
+    </button>
 </div>
 
 {% if client_obj %}
@@ -685,6 +683,27 @@
 
 </div>
 {% endif %}
+
+<script>
+function recalcAllLessons() {
+    fetch("{{ url_for('recalculate_all') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert("All lesson balances recalculated.");
+        } else {
+            alert("Error: " + data.error);
+        }
+    })
+    .catch(err => alert("Request failed: " + err));
+}
+</script>
+
 
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
