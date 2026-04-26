@@ -1070,6 +1070,23 @@ function loadMoreLessons() {
 }
 </script>
 
+<script>
+// Handle all action buttons with class "open-confirm"
+document.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('open-confirm')) return;
+
+    const formId = e.target.dataset.target;
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    // OPTIONAL: Add a browser confirm dialog
+    if (!confirm("Are you sure you want to perform this action?")) {
+        return;
+    }
+
+    form.submit();
+});
+</script>
 
 
 </body>
