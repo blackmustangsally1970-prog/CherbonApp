@@ -458,6 +458,7 @@
             <optgroup label="Danger Zone ⚠️">
                 <option value="delete-all">Delete ALL Lessons From Cutoff</option>
                 <option value="delete-gp">Delete Selected Group Priv From Cutoff</option>
+                <option value="delete-day">Delete This Day Only</option>
             </optgroup>
 
             <!-- Safe Actions -->
@@ -508,6 +509,19 @@
             </button>
         </div>
     </form>
+
+    <!-- DELETE THIS DAY ONLY -->
+<form id="form-delete-day" class="action-form" method="POST" action="/bulk_delete_day">
+    <input type="hidden" name="cutoff_date">
+    <input type="hidden" name="group_priv">
+
+    <button type="button"
+            class="btn btn-danger open-confirm"
+            data-target="form-delete-day">
+        Delete This Day Only
+    </button>
+</form>
+
 
     <!-- CHANGE HORSE -->
     <form id="form-change-horse" class="action-form"

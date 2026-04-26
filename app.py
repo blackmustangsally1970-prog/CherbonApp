@@ -6912,6 +6912,26 @@ Cherbon Waters Admin
         return jsonify({"status": "ok"})
 
 
+    @app.post("/bulk_delete_day")
+    def bulk_delete_day():
+        cutoff = request.form.get("cutoff_date")
+        gp = request.form.get("group_priv")
+
+        if not cutoff:
+            return {"status": "error", "message": "Missing cutoff_date"}
+
+        # Delete lessons for this client on this specific cutoff date only
+        db.execute("""
+            DELETE FROM lessons
+            WHERE client_id = ?
+            AND date = ?
+        """, (client_id, cutoff))
+
+        return redirect(url_for("client_view", client=client_id))
+
+
+
+
     @app.route('/client_view')
     def client_view():
         client_id = request.args.get('client', type=int) or request.args.get('client_filter', type=int)
