@@ -6916,21 +6916,22 @@ Cherbon Waters Admin
     def bulk_delete_day():
         cutoff = request.form.get("cutoff_date")
         gp = request.form.get("group_priv")
+        client_name = request.args.get("client")   # lessons.client = full_name
 
         if not cutoff:
             return {"status": "error", "message": "Missing cutoff_date"}
 
-        # Delete lessons for this client on this specific cutoff date only
+        # Delete lessons for this client (full_name) on this specific cutoff date only
         db.session.execute("""
             DELETE FROM lessons
-            WHERE client_id = :cid
+            WHERE client = :cname
             AND lesson_date = :cut
             AND group_priv = :gp
-        """, {"cid": client_id, "cut": cutoff, "gp": gp})
+        """, {"cname": client_name, "cut": cutoff, "gp": gp})
 
         db.session.commit()
 
-        return redirect(url_for("client_view", client=client_id))
+        return redirect(url_for("client_view", client=client_name))
 
 
 
