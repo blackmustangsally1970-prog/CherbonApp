@@ -1089,11 +1089,15 @@ document.addEventListener('click', function (e) {
     const form = document.getElementById(formId);
     if (!form) return;
 
-    // OPTIONAL: Add a browser confirm dialog
+    // 🔥 FILL THE HIDDEN FIELDS BEFORE CONFIRMING
+    applyCutoff(formId);
+
+    // Confirm
     if (!confirm("Are you sure you want to perform this action?")) {
         return;
     }
 
+    // Submit
     form.submit();
 });
 </script>
