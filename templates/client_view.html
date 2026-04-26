@@ -510,8 +510,12 @@
         </div>
     </form>
 
-    <!-- DELETE THIS DAY ONLY -->
-<form id="form-delete-day" class="action-form" method="POST" action="/bulk_delete_day">
+<!-- DELETE THIS DAY ONLY -->
+<form id="form-delete-day"
+      class="action-form danger-zone"
+      method="POST"
+      action="{{ url_for('bulk_delete_day', client=client_obj.full_name) }}">
+    
     <input type="hidden" name="cutoff_date">
     <input type="hidden" name="group_priv">
 
