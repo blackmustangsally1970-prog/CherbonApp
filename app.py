@@ -6921,14 +6921,16 @@ Cherbon Waters Admin
             return {"status": "error", "message": "Missing cutoff_date"}
 
         # Delete lessons for this client on this specific cutoff date only
-        db.execute("""
+        db.session.execute("""
             DELETE FROM lessons
-            WHERE client_id = ?
-            AND date = ?
-        """, (client_id, cutoff))
+            WHERE client_id = :cid
+            AND lesson_date = :cut
+            AND group_priv = :gp
+        """, {"cid": client_id, "cut": cutoff, "gp": gp})
+
+        db.session.commit()
 
         return redirect(url_for("client_view", client=client_id))
-
 
 
 
