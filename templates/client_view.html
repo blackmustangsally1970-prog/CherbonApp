@@ -1020,6 +1020,57 @@ document.getElementById('bulk-action').addEventListener('change', function() {
 
 </script>
 
+<script>
+let loading = false;
+let page = {{ page or 1 }};
+const clientId = "{{ client_obj.client_id if client_obj else '' }}";
+
+if (clientId) {
+    window.addEventListener('scroll', function () {
+        if (loading) return;
+
+        const scrollPos = window.scrollY + window.innerHeight;
+        const pageHeight = document.documentElement.scrollHeight;
+
+        // When near bottom, try to load more
+        if (scrollPos >= pageHeight - 300) {
+            loadMoreLessons();
+        }
+    });
+}
+
+function loadMoreLessons() {
+    loading = true;
+    page += 1;
+
+    const url = `/client_view?client=${clientId}&page=${page}`;
+
+    fetch(url)
+        .then(r => r.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const newRows = doc.querySelectorAll('#lesson-container tbody tr');
+            if (!newRows.length) {
+                // No more lessons – lock it
+                loading = true;
+                return;
+            }
+
+            const tbody = document.querySelector('#lesson-container tbody');
+            newRows.forEach(row => tbody.appendChild(row));
+
+            loading = false;
+        })
+        .catch(err => {
+            console.error('Error loading more lessons:', err);
+            loading = false;
+        });
+}
+</script>
+
+
 
 </body>
 </html>
