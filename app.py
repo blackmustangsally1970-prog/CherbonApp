@@ -132,21 +132,23 @@ def recalc_all_lessons():
     )
 
     running_balances = {}
+    first_lesson_seen = set()
 
     for l in lessons:
         client = l.client
-
-        if client not in running_balances:
-            running_balances[client] = 0
-
-        rb = running_balances[client]
 
         price = l.price_pl or 0
         payment = l.payment or 0
         adjust = l.adjust or 0
         att = (l.attendance or '').strip().upper()
 
-        carry = rb
+        # FIRST LESSON FOR THIS CLIENT → PRESERVE IMPORTED carry_fwd
+        if client not in first_lesson_seen:
+            carry = l.carry_fwd or 0
+            first_lesson_seen.add(client)
+        else:
+            carry = running_balances[client]
+
         balance = carry + payment + adjust
 
         if att in ['Y', 'N']:
@@ -156,9 +158,6 @@ def recalc_all_lessons():
         l.balance = balance
 
         running_balances[client] = balance
-
-    # ❌ REMOVE db.session.commit() HERE
-
 
 def recalc_client_cascade(client_name: str):
     lessons = (
@@ -171,6 +170,7 @@ def recalc_client_cascade(client_name: str):
         .all()
     )
 
+    first = True
     running_balance = 0
 
     for l in lessons:
@@ -179,7 +179,13 @@ def recalc_client_cascade(client_name: str):
         adjust = l.adjust or 0
         att = (l.attendance or '').strip().upper()
 
-        carry = running_balance
+        # FIRST LESSON → PRESERVE IMPORTED carry_fwd
+        if first:
+            carry = l.carry_fwd or 0
+            first = False
+        else:
+            carry = running_balance
+
         balance = carry + payment + adjust
 
         if att in ['Y', 'N']:
@@ -191,6 +197,7 @@ def recalc_client_cascade(client_name: str):
         running_balance = balance
 
     db.session.commit()
+
 
 
 def login_required(f):
