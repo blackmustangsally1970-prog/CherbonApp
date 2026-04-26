@@ -1003,21 +1003,31 @@ function applyCutoff(formId) {
     return true;
 }
 
-// Hide all forms initially
-document.querySelectorAll('.action-form').forEach(f => f.style.display = 'none');
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
 
-// Show selected form
-document.getElementById('bulk-action').addEventListener('change', function() {
-    const val = this.value;
-
+    // Hide all forms initially
     document.querySelectorAll('.action-form').forEach(f => f.style.display = 'none');
 
-    if (val) {
-        const form = document.getElementById('form-' + val);
-        if (form) form.style.display = 'block';
-    }
-});
+    // Show selected form when dropdown changes
+    const bulk = document.getElementById('bulk-action');
+    if (bulk) {
+        bulk.addEventListener('change', function() {
+            const val = this.value;
 
+            // Hide all
+            document.querySelectorAll('.action-form').forEach(f => f.style.display = 'none');
+
+            // Show selected
+            if (val) {
+                const form = document.getElementById('form-' + val);
+                if (form) form.style.display = 'block';
+            }
+        });
+    }
+
+});
 </script>
 
 <script>
