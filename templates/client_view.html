@@ -705,16 +705,16 @@
                     </select>
                 </td>
 
-                <td>
-                    <input type="number"
-                           step="0.01"
-                           class="lesson-edit"
-                           data-field="adjust"
-                           data-id="{{ lesson.lesson_id }}"
-                           value="{{ '%.2f'|format(lesson.adjust or 0) }}"
-                           style="width:70px;"
-                           oninput="recalculateBalance({{ lesson.lesson_id }})">
-                </td>
+<td>
+    <input type="number"
+           step="0.01"
+           class="lesson-edit"
+           data-field="adjust"
+           data-id="{{ lesson.lesson_id }}"
+           value="{{ '' if not lesson.adjust else '%.2f'|format(lesson.adjust) }}"
+           style="width:70px;"
+           oninput="recalculateBalance({{ lesson.lesson_id }})">
+</td>
                 <td>
                     <input type="number"
                            step="0.01"
