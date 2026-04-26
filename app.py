@@ -6921,13 +6921,16 @@ Cherbon Waters Admin
         if not cutoff:
             return {"status": "error", "message": "Missing cutoff_date"}
 
-        # Delete lessons for this client on this specific cutoff date only
+        # Convert string to DATE object
+        from datetime import datetime
+        cutoff_date = datetime.strptime(cutoff, "%Y-%m-%d").date()
+
         db.session.execute(text("""
             DELETE FROM lessons
             WHERE client = :cname
             AND lesson_date = :cut
             AND group_priv = :gp
-        """), {"cname": client_name, "cut": cutoff, "gp": gp})
+        """), {"cname": client_name, "cut": cutoff_date, "gp": gp})
 
         db.session.commit()
 
