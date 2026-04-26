@@ -121,7 +121,6 @@ def get_static_teacher_time():
 
 
 def recalc_all_lessons():
-    # Get all lessons for all clients, sorted globally
     lessons = (
         Lesson.query
         .order_by(
@@ -132,12 +131,11 @@ def recalc_all_lessons():
         .all()
     )
 
-    running_balances = {}  # per-client running balance
+    running_balances = {}
 
     for l in lessons:
         client = l.client
 
-        # Start each client at zero
         if client not in running_balances:
             running_balances[client] = 0
 
@@ -159,8 +157,7 @@ def recalc_all_lessons():
 
         running_balances[client] = balance
 
-    db.session.commit()
-
+    # ❌ REMOVE db.session.commit() HERE
 
 
 def recalc_client_cascade(client_name: str):
@@ -4749,14 +4746,11 @@ def create_app():
                 lt_val = item.get("lesson_type")
 
                 if lt_val in ["Payment", "Voucher CR"]:
-                    # These lesson types do NOT require time
                     lesson.start = ""
                     lesson.end = ""
                 else:
-                    # Normal lessons MUST have time
                     lesson.start = item.get("start")
                     lesson.end   = item.get("end")
-
 
                 # Always update times
                 lesson.start = item.get("start")
@@ -4800,7 +4794,6 @@ def create_app():
                 notes = tb.get("notes") or ""
 
                 if tb_id:
-                    # UPDATE EXISTING
                     incoming_ids.add(int(tb_id))
                     obj = TeacherBlock.query.get(int(tb_id))
                     if obj:
@@ -4809,7 +4802,6 @@ def create_app():
                         obj.teacher_name = teacher_name
                         obj.notes = notes
                 else:
-                    # CREATE NEW
                     new_tb = TeacherBlock(
                         block_key=block_key,
                         horse=horse,
@@ -4818,10 +4810,9 @@ def create_app():
                         date=date
                     )
                     db.session.add(new_tb)
-                    db.session.flush()  # get new ID
+                    db.session.flush()
                     incoming_ids.add(new_tb.id)
 
-            # DELETE REMOVED BLOCKS
             existing = TeacherBlock.query.filter_by(date=date).all()
             for obj in existing:
                 if obj.id not in incoming_ids:
@@ -4830,7 +4821,7 @@ def create_app():
             # --------------------------------------------------------
             # FINAL COMMIT
             # --------------------------------------------------------
-            recalc_all_lessons()   # <-- ADD THIS LINE
+            recalc_all_lessons()   # run the NEW global cascade
 
             db.session.commit()
             print("✅ COMMIT OK")
