@@ -121,30 +121,45 @@ def get_static_teacher_time():
 
 
 def recalc_all_lessons():
+    # Get all lessons for all clients, sorted globally
     lessons = (
         Lesson.query
         .order_by(
             db.func.date(Lesson.lesson_date).asc(),
+            Lesson.client.asc(),
             Lesson.lesson_id.asc()
         )
         .all()
     )
 
+    running_balances = {}  # per-client running balance
+
     for l in lessons:
-        carry = l.carry_fwd or 0
-        payment = l.payment or 0
+        client = l.client
+
+        # Start each client at zero
+        if client not in running_balances:
+            running_balances[client] = 0
+
+        rb = running_balances[client]
+
         price = l.price_pl or 0
+        payment = l.payment or 0
         adjust = l.adjust or 0
         att = (l.attendance or '').strip().upper()
 
+        carry = rb
         balance = carry + payment + adjust
+
         if att in ['Y', 'N']:
             balance -= price
 
+        l.carry_fwd = carry
         l.balance = balance
 
-    db.session.commit()
+        running_balances[client] = balance
 
+    db.session.commit()
 
 
 
