@@ -6914,6 +6914,9 @@ Cherbon Waters Admin
 
     @app.post("/bulk_delete_day")
     def bulk_delete_day():
+        # Reset poisoned session
+        db.session.rollback()
+
         cutoff = request.form.get("cutoff_date")
         gp = request.form.get("group_priv")
         client_name = request.args.get("client")
@@ -6921,7 +6924,6 @@ Cherbon Waters Admin
         if not cutoff:
             return {"status": "error", "message": "Missing cutoff_date"}
 
-        # Convert string to DATE object
         from datetime import datetime
         cutoff_date = datetime.strptime(cutoff, "%Y-%m-%d").date()
 
