@@ -2294,6 +2294,8 @@ function placeHeadersUnderTeachers() {
     } catch (e) { return 0; }
   }
 
+
+
   function makeHeaderToken(blockKey, headerText) {
     const a = document.createElement('a');
     a.className = 'lesson-header-token teacher-slot';
@@ -2535,35 +2537,6 @@ function collectLessonOverrides() {
 
     return overrides;
 }
-    // ✅ ADD THIS DIRECTLY BELOW collectLessonOverrides()
-    function collectTeacherSlots() {
-        const lessons = [];
-
-        document.querySelectorAll('.lesson-row').forEach(row => {
-            const lessonId = row.getAttribute('data-lesson-id');
-            if (!lessonId) return;
-
-            const T1 = row.querySelector('.t1-checkbox')?.checked || false;
-            const T2 = row.querySelector('.t2-checkbox')?.checked || false;
-            const T3 = row.querySelector('.t3-checkbox')?.checked || false;
-            const T4 = row.querySelector('.t4-checkbox')?.checked || false;
-            const T5 = row.querySelector('.t5-checkbox')?.checked || false;
-
-            lessons.push({
-                lesson_id: parseInt(lessonId),
-                T1: T1,
-                T2: T2,
-                T3: T3,
-                T4: T4,
-                T5: T5
-            });
-        });
-
-        return {
-            date: CURRENT_DATE,
-            lessons: lessons
-        };
-    }
 
 
 </script>
@@ -2856,7 +2829,7 @@ if (toggle) {
 <script>
 // -----------------------------------------------------------
 // REQUIRE VALID LESSON TIME + FORCE CORRECT FORM ACTION
-// -----------------------------------------------------------<body<
+// -----------------------------------------------------------
 document.addEventListener("click", function (e) {
 
     const isSave = e.target.classList.contains("save-lesson-btn");
@@ -3033,29 +3006,7 @@ $(document).on('click', function (e) {
 </script>
 
 
-<script>
-function prefixMatcher(params, data) {
-    // If no search term, show all
-    if ($.trim(params.term) === '') {
-        return data;
-    }
 
-    if (typeof data.text === 'undefined') {
-        return null;
-    }
-
-    const term = params.term.toLowerCase();
-    const text = data.text.toLowerCase();
-
-    // ⭐ TRUE PREFIX MATCH
-    if (text.startsWith(term)) {
-        // MUST return a modified copy, not the original
-        return $.extend({}, data, true);
-    }
-
-    return null;
-}
-</script>
 
 <script>
 function collectLessonState() {
@@ -3146,6 +3097,8 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
     const existing     = document.getElementById("top_existing_client");
     const newName      = document.getElementById("top_new_client_name");
     const rowsContainer = document.getElementById("booking-rows-container");
+    const smsName         = document.getElementById("smsName");
+
 
 // ⭐ Unified modal open handler — correct order of operations
 btnOpen.addEventListener("click", () => {
@@ -3272,20 +3225,20 @@ if (recurrence === "F") {
         rowsContainer.appendChild(row);
 
         // Activate Select2
-        $(row).find('.searchable-dropdown').select2({
-            width: '100%',
-            matcher: prefixMatcher,
-            minimumResultsForSearch: 0,
-            selectOnClose: true
-        });
+        safeSelect2($(row).find('.searchable-dropdown'), {
+    width: '100%',
+    matcher: prefixMatcher,
+    minimumResultsForSearch: 0,
+    selectOnClose: true
+});
+
 // ⭐ Activate Select2 for time fields (tags mode)
-$(row).find('.time-field').select2({
+safeSelect2($(row).find('.time-field'), {
     tags: true,
     width: '100%',
     dropdownAutoWidth: true,
     matcher: prefixMatcher,
     placeholder: "Select or type a time",
-
     createTag: function(params) {
         let v = params.term.trim();
         let re = /^([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)$/;
@@ -3297,6 +3250,7 @@ $(row).find('.time-field').select2({
         return { id: v, text: v, newTag: true };
     }
 });
+
 
 // ⭐ Auto‑insert NEW times into the DB
 $(row).find('.time-field').on('select2:select', function(e) {
@@ -3403,26 +3357,47 @@ $(row).find('.time-field').on('select2:select', function(e) {
     }
     window.collectLessonRows = collectLessonRows;
 
-    // ⭐ Collect top-row booking info
-    function collectBookingInfo() {
-        return {
-            booking_type: bookingType.value,
-            mobile:       mobile.value.trim(),
-            client_id:    existing.value.trim(),
-            new_client_name: newName.value.trim()
-        };
-    }
 
-    // ⭐ Build unified booking payload
-    function buildUnifiedPayload(info, lessons) {
-        return {
-            booking_type: info.booking_type,
-            mobile: info.mobile,
-            client_id: info.client_id,
-            new_client_name: info.new_client_name,
-            lessons: lessons
-        };
-    }
+function getBookingType() {
+    return bookingType.value;  // "existing", "new", or "sms"
+}
+
+function collectBookingInfo() {
+    const type = getBookingType();
+
+    return {
+        booking_type: type,
+        mobile: mobile.value.trim(),
+
+        // Existing client (always integer or null)
+        client_id: (type === "existing")
+            ? parseInt(existing.value.trim(), 10)
+            : null,
+
+        // New client
+        new_client_name: (type === "new")
+            ? newName.value.trim()
+            : "",
+
+        // SMS booking
+        sms_name: (type === "sms")
+            ? smsName.value.trim()
+            : "",
+
+        // New client extra fields
+        weight_kg: (type === "new")
+            ? document.getElementById("new_weight_kg")?.value.trim() || ""
+            : "",
+
+        height_cm: (type === "new")
+            ? document.getElementById("new_height_cm")?.value.trim() || ""
+            : "",
+
+        notes: (type === "new")
+            ? document.getElementById("new_notes")?.value.trim() || ""
+            : ""
+    };
+}
 
 function isValidDate(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
@@ -3610,7 +3585,7 @@ for (const row of lessons) {
 
             const payload = new FormData();
             payload.append("lesson_date", row.lesson_date);
-            payload.append("time_frame", row.time_frame);
+            payload.append("time_frame", canonicalTimeFrame(row.time_frame));
             payload.append("lesson_type", row.lesson_type);
             payload.append("group_priv", row.group_priv);
             payload.append("mobile", info.mobile);
@@ -3715,7 +3690,7 @@ document.getElementById("blockout-keep-btn").addEventListener("click", () => {
 document.getElementById("blockout-change-btn").addEventListener("click", () => {
     document.getElementById("blockout-warning-modal").style.display = "none";
 });
-
+</script>
 
 <script>
 function collectTeacherBlocks() {
@@ -3811,6 +3786,33 @@ document.getElementById("save-button").addEventListener("click", async () => {
         body: JSON.stringify(payload)
     });
 
+
+// NOTE: Legacy per-lesson T1–T5 checkboxes exist in DOM but are intentionally ignored.
+// The ONLY authoritative teacher assignment is the 5-slot engine below.
+await fetch("/save_teacher_slots", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        date: selectedDate,
+        slots: {
+            1: document.querySelector("#teacher_select_1")?.value || "",
+            2: document.querySelector("#teacher_select_2")?.value || "",
+            3: document.querySelector("#teacher_select_3")?.value || "",
+            4: document.querySelector("#teacher_select_4")?.value || "",
+            5: document.querySelector("#teacher_select_5")?.value || ""
+        }
+    })
+});
+
+const legacyChecked = document.querySelector(
+    ".t1-checkbox:checked, .t2-checkbox:checked, .t3-checkbox:checked, .t4-checkbox:checked, .t5-checkbox:checked"
+);
+
+if (legacyChecked) {
+    console.warn("LEGACY TEACHER CHECKBOXES ARE CHECKED BUT IGNORED BY SAVE LOGIC.");
+}
+
+
     // ⭐ Save teacher slots (5-slot engine)
     await fetch("/save_teacher_slots", {
         method: "POST",
@@ -3852,6 +3854,7 @@ await fetch("/save_teacher_tags", {
 
 
 <script>
+
 function prefixMatcher(params, data) {
     if ($.trim(params.term) === '') {
         return data;
@@ -3861,10 +3864,9 @@ function prefixMatcher(params, data) {
         return null;
     }
 
-    let term = params.term.toLowerCase();
-    let text = data.text.toLowerCase();
+    const term = params.term.toLowerCase();
+    const text = data.text.toLowerCase();
 
-    // Only match from the START of the string
     if (text.startsWith(term)) {
         return data;
     }
@@ -3872,37 +3874,15 @@ function prefixMatcher(params, data) {
     return null;
 }
 
+
+
+function safeSelect2($el, opts) {
+    if ($el.data('select2')) return;  // already initialised
+    $el.select2(opts);
+}
+
 function initSelect2() {
-
-    /* ---------------------------------------------------------
-       1. NORMAL SELECT2 (client, horse, group_priv, etc.)
-       --------------------------------------------------------- */
-    $('.searchable-dropdown').select2({
-        width: '100%',
-        dropdownAutoWidth: true,
-        matcher: prefixMatcher
-    });
-
-    /* ---------------------------------------------------------
-       2. TIME FIELDS — allow NEW times (tags mode)
-       --------------------------------------------------------- */
-    $('.time-field').select2({
-        tags: true,
-        width: '100%',
-        dropdownAutoWidth: true,
-        matcher: prefixMatcher,
-
-        createTag: function(params) {
-            let v = params.term.trim();
-            let re = /^([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)$/;
-            if (!re.test(v)) return null;
-
-            let [start, end] = v.split('-').map(s => s.trim());
-            if (end <= start) return null;
-
-            return { id: v, text: v, newTag: true };
-        }
-    });
+    // intentionally empty — booking panel handles its own Select2
 }
 
 /* ---------------------------------------------------------
@@ -3913,16 +3893,29 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 /* ---------------------------------------------------------
-   Re-run whenever a popup/modal is opened
+   Re-run Select2 ONLY for teacher popup horse dropdowns
    --------------------------------------------------------- */
 $(document).on('click', '.teacher-slot', function() {
-    setTimeout(initSelect2, 50);
+    setTimeout(() => {
+        $('.teacher-block-horse').each(function () {
+            safeSelect2($(this), {
+                width: '100%',
+                dropdownAutoWidth: true,
+                matcher: prefixMatcher
+            });
+        });
+    }, 50);
 });
 
+/* ---------------------------------------------------------
+   Re-run initSelect2 when booking panel opens
+   --------------------------------------------------------- */
 $(document).on('click', '#open-booking-panel', function() {
     setTimeout(initSelect2, 50);
 });
+
 </script>
+
 
 <script>
 // START SPINNER when clicking Save inside booking popup
@@ -4279,17 +4272,24 @@ document.addEventListener("DOMContentLoaded", function () {
     updateTimeState(); // run once on popup open
 });
 
-
+</script>
+<script>
 // -------------------------------
 // 2. Enforce 10‑digit mobile (optional)
 // -------------------------------
 document.addEventListener("input", function (e) {
     if (e.target.name === "client_phone" || e.target.name === "invite_mobile") {
+
         // Strip non‑digits
         e.target.value = e.target.value.replace(/\D/g, "");
 
         // Enforce max length 10
-        if (
+        if (e.target.value.length > 10) {
+            e.target.value = e.target.value.slice(0, 10);
+        }
+    }
+});
+</script>
 
 </div>
 </body>
