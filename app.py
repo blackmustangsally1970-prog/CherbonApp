@@ -121,43 +121,17 @@ def get_static_teacher_time():
 
 
 def recalc_all_lessons():
-    lessons = (
-        Lesson.query
-        .order_by(
-            db.func.date(Lesson.lesson_date).asc(),
-            Lesson.client.asc(),
-            Lesson.lesson_id.asc()
-        )
-        .all()
-    )
+    from sqlalchemy import distinct
 
-    running_balances = {}
-    first_lesson_seen = set()
+    # Get all unique clients
+    clients = db.session.query(distinct(Lesson.client)).all()
+    clients = [c[0] for c in clients if c[0]]
 
-    for l in lessons:
-        client = l.client
+    for client in clients:
+        recalc_client_cascade(client)
 
-        price = l.price_pl or 0
-        payment = l.payment or 0
-        adjust = l.adjust or 0
-        att = (l.attendance or '').strip().upper()
+    db.session.commit()
 
-        # FIRST LESSON FOR THIS CLIENT → PRESERVE IMPORTED carry_fwd
-        if client not in first_lesson_seen:
-            carry = l.carry_fwd or 0
-            first_lesson_seen.add(client)
-        else:
-            carry = running_balances[client]
-
-        balance = carry + payment + adjust
-
-        if att in ['Y', 'N']:
-            balance -= price
-
-        l.carry_fwd = carry
-        l.balance = balance
-
-        running_balances[client] = balance
 
 def recalc_client_cascade(client_name: str):
     lessons = (
