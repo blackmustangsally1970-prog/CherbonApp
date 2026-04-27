@@ -1,79 +1,94 @@
 # repair_first_carry_forward.py
-# One-off script to restore FIRST lesson carry_fwd per client
-# using the original lessons CSV.
+# Correct version: updates the DB lesson whose date matches the CSV's first lesson date per client.
 
 import csv
 from datetime import datetime
 from app import app, db
 from models import Lesson
 
-CSV_FILE = "import_tools/lessons.csv"   # <-- your lessons CSV
+CSV_FILE = "import_tools/lessons.csv"
 
-# Helper to parse dates safely
+def clean(s):
+    if not s:
+        return ""
+    return s.replace("\ufeff", "").strip()
+
 def parse_date(s):
-    try:
-        return datetime.strptime(s.strip(), "%Y-%m-%d").date()
-    except:
+    if not s:
         return None
+    s = clean(s)
+    fmts = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
+    for fmt in fmts:
+        try:
+            return datetime.strptime(s, fmt).date()
+        except:
+            pass
+    return None
 
-# Temporary structure:
-# first_lessons[client] = { "date": date, "carry": carry_fwd }
-first_lessons = {}
+def parse_float(s):
+    try:
+        return float(clean(s))
+    except:
+        return 0.0
 
 with app.app_context():
+
+    # STEP 1 — Read CSV and determine the FIRST lesson per client
+    first_lessons = {}
+
     with open(CSV_FILE, encoding="utf-8") as f:
         reader = csv.DictReader(f)
 
+        # Clean header names
+        reader.fieldnames = [clean(h) for h in reader.fieldnames]
+
         for row in reader:
-            client = (row.get("client") or row.get("full_name") or "").strip()
+            row = {clean(k): clean(v) for k, v in row.items()}
+
+            client = row.get("client")
             if not client:
                 continue
 
-            date_str = row.get("lesson_date") or row.get("date")
-            date = parse_date(date_str)
+            date = parse_date(row.get("lesson_date"))
             if not date:
                 continue
 
-            raw_carry = row.get("carry_fwd") or row.get("carry") or "0"
-            try:
-                carry = float(raw_carry)
-            except:
-                carry = 0.0
+            carry = parse_float(row.get("carry_fwd"))
 
-            # If this is the first time we see this client OR this date is earlier
+            # Track earliest CSV lesson per client
             if client not in first_lessons or date < first_lessons[client]["date"]:
-                first_lessons[client] = {
-                    "date": date,
-                    "carry": carry
-                }
+                first_lessons[client] = {"date": date, "carry": carry}
 
-    # Now update DB
+    # STEP 2 — Update DB lesson that matches the CSV's first lesson date
     updated = 0
     missing = []
+    no_date_match = []
 
     for client, info in first_lessons.items():
-        date = info["date"]
+        csv_date = info["date"]
         carry = info["carry"]
 
-        # Find the earliest lesson for this client in DB
+        # Find DB lesson with SAME DATE and SAME CLIENT
         lesson = (
             Lesson.query
-            .filter_by(client=client)
-            .order_by(Lesson.lesson_date.asc(), Lesson.lesson_id.asc())
+            .filter_by(client=client, lesson_date=csv_date)
+            .order_by(Lesson.lesson_id.asc())
             .first()
         )
 
         if not lesson:
-            missing.append(client)
+            no_date_match.append((client, csv_date))
             continue
 
-        # Update ONLY the first lesson's carry_fwd
         lesson.carry_fwd = carry
         updated += 1
 
     db.session.commit()
 
-print(f"Updated first carry_fwd for {updated} clients.")
-print(f"Clients missing in DB: {len(missing)}")
-for m in missing:
-    print(" -", m)
+print(f"Updated carry_fwd for {updated} clients.")
+print(f"No DB lesson found for {len(no_date_match)} clients with matching date.")
+
+if no_date_match:
+    print("\nClients with no matching DB date:")
+    for client, date in no_date_match:
+        print(f" - {client} (CSV first date: {date})")
