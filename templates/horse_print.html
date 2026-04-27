@@ -21,15 +21,21 @@
             margin: 0 0 8px 0;
         }
 
-        h2 {
+        /* ⭐ BLUE BLOCK HEADER (same as lesson print) */
+        .block-header {
+            background: #d9e7ff;
+            color: #003366;
+            padding: 6px 8px;
             font-size: 11pt;
-            margin: 12px 0 4px 0;
+            font-weight: bold;
+            border-radius: 4px;
+            margin: 14px 0 6px 0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         th, td {
@@ -45,20 +51,22 @@
             background: #f0f0f0;
         }
 
-th:nth-child(1), td:nth-child(1) { width: 120px; }  /* Horse */
-th:nth-child(2), td:nth-child(2) { width: 160px; }  /* Client */
-th:nth-child(3), td:nth-child(3) { width: 35px; }   /* Att */
-th:nth-child(5), td:nth-child(4) { width: 120px; }  /* Teacher */
+        /* ⭐ Column widths */
+        th:nth-child(1), td:nth-child(1) { width: 120px; }  /* Horse */
+        th:nth-child(2), td:nth-child(2) { width: 160px; }  /* Client */
+        th:nth-child(3), td:nth-child(3) { width: 35px; }   /* Att */
+        th:nth-child(4), td:nth-child(4) { width: 120px; }  /* Teacher */
 
+        /* ⭐ Prevent block splitting */
         .lesson-block {
             page-break-inside: avoid;
             break-inside: avoid;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
-        .page-break {
-            page-break-after: always;
-        }
+        /* ⭐ Repeat table header on each page */
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
 
         /* Mobile-friendly buttons */
         .print-btn,
@@ -73,9 +81,7 @@ th:nth-child(5), td:nth-child(4) { width: 120px; }  /* Teacher */
             cursor: pointer;
         }
 
-        .back-btn {
-            background: #666;
-        }
+        .back-btn { background: #666; }
 
         .print-btn:active,
         .back-btn:active {
@@ -103,25 +109,34 @@ th:nth-child(5), td:nth-child(4) { width: 120px; }  /* Teacher */
 
 {% for block in grouped %}
 <div class="lesson-block">
-    <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
+
+    <!-- ⭐ BLUE BLOCK HEADER -->
+    <div class="block-header">
+        {{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}
+    </div>
 
     <table>
-        <tr>
-            <th>Horse</th>
-            <th>Client</th>
-            <th>Att</th>
-            <th>Teacher</th>
-        </tr>
+        <thead>
+            <tr>
+                <th>Horse</th>
+                <th>Client</th>
+                <th>Att</th>
+                <th>Teacher</th>
+            </tr>
+        </thead>
 
+        <tbody>
         {% for r in block.riders %}
-        <tr>
-            <td>{{ r.horse }}</td>
-            <td>{{ r.client_name }}</td>
-            <td>{{ r.att }}</td>
-            <td>{{ r.teacher or "" }}</td>
-        </tr>
+            <tr>
+                <td>{{ r.horse }}</td>
+                <td>{{ r.client_name }}</td>
+                <td>{{ r.att }}</td>
+                <td>{{ r.teacher or "" }}</td>
+            </tr>
         {% endfor %}
+        </tbody>
     </table>
+
 </div>
 {% endfor %}
 
