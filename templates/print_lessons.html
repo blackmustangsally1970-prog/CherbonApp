@@ -112,7 +112,9 @@
     padding: 6px 4px;
 }
 
-
+.balance-red {
+    background-color: #ffcccc;
+}
 
     </style>
 </head>
@@ -183,11 +185,11 @@
                         {% endif %}
                     </td>
 
-                    <td>
-                        {% if l.balance != 0 %}
-                            ${{ "%.2f"|format(l.balance) }}
-                        {% endif %}
-                    </td>
+<td class="{{ 'balance-red' if l.balance < 0 else '' }}">
+    {% if l.balance != 0 %}
+        ${{ "%.2f"|format(l.balance) }}
+    {% endif %}
+</td>
 
                     <td>{{ l.guardian }}</td>
                     <td>{{ l.mobile }}</td>
@@ -260,11 +262,11 @@
                         {% endif %}
                     </td>
 
-                    <td>
-                        {% if l.balance != 0 %}
-                            ${{ "%.2f"|format(l.balance) }}
-                        {% endif %}
-                    </td>
+<td class="{{ 'balance-red' if l.balance < 0 else '' }}">
+    {% if l.balance != 0 %}
+        ${{ "%.2f"|format(l.balance) }}
+    {% endif %}
+</td>
 
                     <td>{{ l.guardian }}</td>
                     <td>{{ l.mobile }}</td>
