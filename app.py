@@ -1349,7 +1349,7 @@ def create_app():
                 "client_name": l.client or "",
                 "freq": getattr(l, "freq", "") or "",
                 "att": getattr(l, "attendance", False),
-                "payment": getattr(l, "payment", "") or "",
+                "payment": float(str(getattr(l, "payment", 0)).strip() or 0),
                 "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
                 "balance": balance,
 
@@ -1363,7 +1363,7 @@ def create_app():
                 "disclaimer": int(raw) if raw.isdigit() else 0,
 
                 # HORSE
-                "horse": l.horse or "",
+                "horse": getattr(l, "horse", "") or "",
             })
 
         # ---------------------------------------------------------
