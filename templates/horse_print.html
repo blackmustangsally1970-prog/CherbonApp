@@ -18,24 +18,23 @@
 
         h1 {
             font-size: 13pt;
-            margin: 0 0 8px 0;
+            margin: 0 0 10px 0;
         }
 
-        /* ⭐ BLUE BLOCK HEADER (same as lesson print) */
-        .block-header {
+        /* ⭐ BLUE BLOCK HEADER (inside table) */
+        .block-header-row td {
             background: #d9e7ff;
             color: #003366;
-            padding: 6px 8px;
-            font-size: 11pt;
             font-weight: bold;
-            border-radius: 4px;
-            margin: 14px 0 6px 0;
+            font-size: 11pt;
+            padding: 6px 8px;
+            border: 1px solid #003366;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-top: 12px;
         }
 
         th, td {
@@ -45,10 +44,9 @@
         }
 
         th {
-            text-align: left;
+            background: #f0f0f0;
             font-weight: bold;
             white-space: nowrap;
-            background: #f0f0f0;
         }
 
         /* ⭐ Column widths */
@@ -57,18 +55,17 @@
         th:nth-child(3), td:nth-child(3) { width: 35px; }   /* Att */
         th:nth-child(4), td:nth-child(4) { width: 120px; }  /* Teacher */
 
-        /* ⭐ Prevent block splitting */
+        /* ⭐ Keep blocks together */
         .lesson-block {
-            page-break-inside: avoid;
             break-inside: avoid;
-            margin-bottom: 18px;
+            page-break-inside: avoid;
         }
 
-        /* ⭐ Repeat table header on each page */
+        /* ⭐ Repeat header on each printed page */
         thead { display: table-header-group; }
         tfoot { display: table-footer-group; }
 
-        /* Mobile-friendly buttons */
+        /* Buttons */
         .print-btn,
         .back-btn {
             font-size: 24pt;
@@ -82,11 +79,6 @@
         }
 
         .back-btn { background: #666; }
-
-        .print-btn:active,
-        .back-btn:active {
-            background: #222;
-        }
 
         @media print {
             .print-btn,
@@ -107,38 +99,40 @@
 
 <h1>Cherbon Waters Equestrian Centre – Horse Print – {{ date }}</h1>
 
-{% for block in grouped %}
-<div class="lesson-block">
+<!-- ⭐ ONE TABLE FOR THE WHOLE PRINT -->
+<table>
+    <thead>
+        <tr>
+            <th>Horse</th>
+            <th>Client</th>
+            <th>Att</th>
+            <th>Teacher</th>
+        </tr>
+    </thead>
 
-    <!-- ⭐ BLUE BLOCK HEADER -->
-    <div class="block-header">
-        {{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}
-    </div>
+    <tbody>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Horse</th>
-                <th>Client</th>
-                <th>Att</th>
-                <th>Teacher</th>
-            </tr>
-        </thead>
+    {% for block in grouped %}
+        <!-- ⭐ BLUE BLOCK HEADER INSIDE TABLE -->
+        <tr class="block-header-row">
+            <td colspan="4">
+                {{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}
+            </td>
+        </tr>
 
-        <tbody>
         {% for r in block.riders %}
-            <tr>
-                <td>{{ r.horse }}</td>
-                <td>{{ r.client_name }}</td>
-                <td>{{ r.att }}</td>
-                <td>{{ r.teacher or "" }}</td>
-            </tr>
+        <tr class="lesson-block">
+            <td>{{ r.horse }}</td>
+            <td>{{ r.client_name }}</td>
+            <td>{{ r.att }}</td>
+            <td>{{ r.teacher or "" }}</td>
+        </tr>
         {% endfor %}
-        </tbody>
-    </table>
 
-</div>
-{% endfor %}
+    {% endfor %}
+
+    </tbody>
+</table>
 
 </body>
 </html>
