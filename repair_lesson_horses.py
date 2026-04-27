@@ -2,6 +2,7 @@
 # One-off script to update lesson.horse from /import_tools/lessons.csv
 
 import csv
+from datetime import datetime
 from app import app, db
 from models import Lesson
 
@@ -11,22 +12,39 @@ updated = 0
 skipped = 0
 not_found = []
 
+def convert_date(d):
+    """Convert DD/MM/YYYY → YYYY-MM-DD safely."""
+    d = d.strip()
+    if "/" in d:
+        try:
+            return datetime.strptime(d, "%d/%m/%Y").date()
+        except:
+            return None
+    return d  # already correct or empty
+
+
 with app.app_context():
     with open(CSV_FILE, encoding="utf-8") as f:
         reader = csv.DictReader(f)
 
         for row in reader:
             client = row.get("client") or row.get("client_name") or ""
-            date = row.get("lesson_date") or row.get("date") or ""
+            raw_date = row.get("lesson_date") or row.get("date") or ""
             time_frame = row.get("time_frame") or row.get("time") or ""
             horse = row.get("horse") or ""
 
             # Skip rows missing identifiers
-            if not client or not date or not time_frame:
+            if not client or not raw_date or not time_frame:
                 skipped += 1
                 continue
 
-            # Skip rows with blank horse (means "do not change")
+            # Convert date
+            date = convert_date(raw_date)
+            if not date:
+                skipped += 1
+                continue
+
+            # Skip blank horse
             if horse.strip() == "":
                 skipped += 1
                 continue
@@ -39,7 +57,7 @@ with app.app_context():
             ).first()
 
             if not lesson:
-                not_found.append(f"{client} @ {date} {time_frame}")
+                not_found.append(f"{client} @ {raw_date} {time_frame}")
                 skipped += 1
                 continue
 
