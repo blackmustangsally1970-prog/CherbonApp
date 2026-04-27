@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Lessons – {{ pretty_date }}</title>
+
     <style>
         @page {
             size: A4 landscape;
@@ -43,24 +44,29 @@
             white-space: nowrap;
         }
 
-        /* FIXED COLUMN WIDTHS — remapped to new order */
-        th:nth-child(1),  td:nth-child(1)  { width: 25px; }   /* Freq */
-        th:nth-child(2),  td:nth-child(2)  { width: 90px; }   /* Guardian */
-        th:nth-child(3),  td:nth-child(3)  { width: 90px; }   /* Mobile */
-        th:nth-child(4),  td:nth-child(4)  { width: 260px; }  /* Notes */
-        th:nth-child(5),  td:nth-child(5)  { width: 25px; }   /* Age */
-        th:nth-child(6),  td:nth-child(6)  { width: 30px; }   /* Wgt */
-        th:nth-child(7),  td:nth-child(7)  { width: 35px; }   /* Hgt */
-        th:nth-child(8),  td:nth-child(8)  { width: 140px; }  /* Client */
-        th:nth-child(9),  td:nth-child(9)  { width: 30px; }   /* ATT */
-        th:nth-child(10), td:nth-child(10) { width: 55px; }   /* Payment */
-        th:nth-child(11), td:nth-child(11) { width: 55px; }   /* Price */
-        th:nth-child(12), td:nth-child(12) { width: 55px; }   /* Balance */
-        th:nth-child(13), td:nth-child(13) { width: 80px; }   /* SignNoPayment */
+        /* FIXED COLUMN WIDTHS — NEW ORDER WITH AGE + HORSE */
+        th:nth-child(1),  td:nth-child(1)  { width: 25px; }    /* Age */
+        th:nth-child(2),  td:nth-child(2)  { width: 80px; }    /* Horse */
+        th:nth-child(3),  td:nth-child(3)  { width: 140px; }   /* Client */
+        th:nth-child(4),  td:nth-child(4)  { width: 30px; }    /* ATT */
+        th:nth-child(5),  td:nth-child(5)  { width: 55px; }    /* Payment */
+        th:nth-child(6),  td:nth-child(6)  { width: 55px; }    /* Price */
+        th:nth-child(7),  td:nth-child(7)  { width: 55px; }    /* Balance */
+        th:nth-child(8),  td:nth-child(8)  { width: 90px; }    /* Guardian */
+        th:nth-child(9),  td:nth-child(9)  { width: 90px; }    /* Mobile */
+        th:nth-child(10), td:nth-child(10) { width: 260px; }   /* Notes */
+        th:nth-child(11), td:nth-child(11) { width: 30px; }    /* Wgt */
+        th:nth-child(12), td:nth-child(12) { width: 35px; }    /* Hgt */
+        th:nth-child(13), td:nth-child(13) { width: 25px; }    /* Freq */
+        th:nth-child(14), td:nth-child(14) { width: 80px; }    /* SignNoPayment */
 
-        .client-red {
-            color: red;
+        /* Client formatting */
+        .client-name {
             font-weight: bold;
+        }
+        .client-red {
+            font-weight: bold;
+            color: red;
         }
 
         .payment-red {
@@ -72,11 +78,10 @@
             word-wrap: break-word;
         }
 
-        .page-break {
-            page-break-after: always;
-        }
+        /* Repeat column headers at top of each printed page */
+        thead { display: table-header-group; }
+        tfoot { display: table-row-group; }
 
-        /* Prevent block splitting across pages */
         .lesson-block {
             page-break-inside: avoid;
             break-inside: avoid;
@@ -88,9 +93,12 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            .print-btn,
+            .back-btn {
+                display: none !important;
+            }
         }
 
-        /* Mobile-friendly buttons */
         .print-btn,
         .back-btn {
             font-size: 24pt;
@@ -103,21 +111,9 @@
             cursor: pointer;
         }
 
-        .back-btn {
-            background: #666;
-        }
-
+        .back-btn { background: #666; }
         .print-btn:active,
-        .back-btn:active {
-            background: #222;
-        }
-
-        @media print {
-            .print-btn,
-            .back-btn {
-                display: none !important;
-            }
-        }
+        .back-btn:active { background: #222; }
     </style>
 </head>
 
@@ -134,50 +130,70 @@
 {% if arena_blocks %}
     {% for block in arena_blocks %}
     <div class="lesson-block">
+
         <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
 
         <table>
+            <thead>
             <tr>
-                <th>Freq</th>
-                <th>Guardian</th>
-                <th>Mobile</th>
-                <th>Notes</th>
                 <th>Age</th>
-                <th>Wgt</th>
-                <th>Hgt</th>
+                <th>Horse</th>
                 <th>Client</th>
                 <th>ATT</th>
                 <th>Payment</th>
                 <th>Price</th>
                 <th>Balance</th>
+                <th>Guardian</th>
+                <th>Mobile</th>
+                <th>Notes</th>
+                <th>Wgt</th>
+                <th>Hgt</th>
+                <th>Freq</th>
                 <th>SignNoPayment</th>
             </tr>
+            </thead>
 
+            <tbody>
             {% for l in block.riders %}
-                {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
+                {% set client_class = "client-red" if l.disclaimer < 30000 else "client-name" %}
                 {% set payment_class = "payment-red" if l.balance < l.price else "" %}
 
                 <tr>
-                    <td>{{ l.freq }}</td>
+                    <td>{{ l.age }}</td>
+                    <td>{{ l.horse }}</td>
+                    <td class="{{ client_class }}">{{ l.client_name }}</td>
+                    <td>{{ l.att }}</td>
+
+                    <td class="{{ payment_class }}">
+                        {% if l.payment and l.payment > 0 %}
+                            ${{ "%.2f"|format(l.payment) }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if l.price and l.price > 0 %}
+                            ${{ "%.2f"|format(l.price) }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if l.balance and l.balance != 0 %}
+                            ${{ "%.2f"|format(l.balance) }}
+                        {% endif %}
+                    </td>
+
                     <td>{{ l.guardian }}</td>
                     <td>{{ l.mobile }}</td>
                     <td class="notes-cell">{{ l.notes }}</td>
-                    <td>{{ l.age }}</td>
                     <td>{{ l.weight }}</td>
                     <td>{{ l.height }}</td>
-                    <td class="{{ client_class }}">{{ l.client_name }}</td>
-                    <td>{{ l.att }}</td>
-<td class="{{ payment_class }}">
-    {% if l.payment and l.payment > 0 %}
-        ${{ "%.2f"|format(l.payment) }}
-    {% endif %}
-</td>
-                    <td>${{ "%.2f"|format(l.price) }}</td>
-                    <td>${{ "%.2f"|format(l.balance) }}</td>
+                    <td>{{ l.freq }}</td>
                     <td></td>
                 </tr>
             {% endfor %}
+            </tbody>
         </table>
+
     </div>
     {% endfor %}
 {% endif %}
@@ -189,50 +205,70 @@
 {% if other_blocks %}
     {% for block in other_blocks %}
     <div class="lesson-block">
+
         <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
 
         <table>
+            <thead>
             <tr>
-                <th>Freq</th>
-                <th>Guardian</th>
-                <th>Mobile</th>
-                <th>Notes</th>
                 <th>Age</th>
-                <th>Wgt</th>
-                <th>Hgt</th>
+                <th>Horse</th>
                 <th>Client</th>
                 <th>ATT</th>
                 <th>Payment</th>
                 <th>Price</th>
                 <th>Balance</th>
+                <th>Guardian</th>
+                <th>Mobile</th>
+                <th>Notes</th>
+                <th>Wgt</th>
+                <th>Hgt</th>
+                <th>Freq</th>
                 <th>SignNoPayment</th>
             </tr>
+            </thead>
 
+            <tbody>
             {% for l in block.riders %}
-                {% set client_class = "client-red" if l.disclaimer < 30000 else "" %}
+                {% set client_class = "client-red" if l.disclaimer < 30000 else "client-name" %}
                 {% set payment_class = "payment-red" if l.balance < l.price else "" %}
 
                 <tr>
-                    <td>{{ l.freq }}</td>
+                    <td>{{ l.age }}</td>
+                    <td>{{ l.horse }}</td>
+                    <td class="{{ client_class }}">{{ l.client_name }}</td>
+                    <td>{{ l.att }}</td>
+
+                    <td class="{{ payment_class }}">
+                        {% if l.payment and l.payment > 0 %}
+                            ${{ "%.2f"|format(l.payment) }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if l.price and l.price > 0 %}
+                            ${{ "%.2f"|format(l.price) }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if l.balance and l.balance != 0 %}
+                            ${{ "%.2f"|format(l.balance) }}
+                        {% endif %}
+                    </td>
+
                     <td>{{ l.guardian }}</td>
                     <td>{{ l.mobile }}</td>
                     <td class="notes-cell">{{ l.notes }}</td>
-                    <td>{{ l.age }}</td>
                     <td>{{ l.weight }}</td>
                     <td>{{ l.height }}</td>
-                    <td class="{{ client_class }}">{{ l.client_name }}</td>
-                    <td>{{ l.att }}</td>
-<td class="{{ payment_class }}">
-    {% if l.payment and l.payment > 0 %}
-        ${{ "%.2f"|format(l.payment) }}
-    {% endif %}
-</td>
-                    <td>${{ "%.2f"|format(l.price) }}</td>
-                    <td>${{ "%.2f"|format(l.balance) }}</td>
+                    <td>{{ l.freq }}</td>
                     <td></td>
                 </tr>
             {% endfor %}
+            </tbody>
         </table>
+
     </div>
     {% endfor %}
 {% endif %}
