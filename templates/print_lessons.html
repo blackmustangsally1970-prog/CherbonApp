@@ -21,15 +21,10 @@
             margin: 0 0 8px 0;
         }
 
-        h2 {
-            font-size: 11pt;
-            margin: 12px 0 4px 0;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
         }
 
         th, td {
@@ -60,18 +55,10 @@
         th:nth-child(13), td:nth-child(13) { width: 25px; }    /* Freq */
         th:nth-child(14), td:nth-child(14) { width: 80px; }    /* SignNoPayment */
 
-        /* Client formatting */
-        .client-name {
-            font-weight: bold;
-        }
-        .client-red {
-            font-weight: bold;
-            color: red;
-        }
+        .client-name { font-weight: bold; }
+        .client-red { font-weight: bold; color: red; }
 
-        .payment-red {
-            background-color: #ffcccc;
-        }
+        .payment-red { background-color: #ffcccc; }
 
         .notes-cell {
             white-space: normal;
@@ -82,10 +69,12 @@
         thead { display: table-header-group; }
         tfoot { display: table-row-group; }
 
-        .lesson-block {
-            page-break-inside: avoid;
-            break-inside: avoid;
-            margin-bottom: 20px;
+        .block-header-row td {
+            font-size: 11pt;
+            font-weight: bold;
+            background: #eee;
+            border: 1px solid #000;
+            padding: 6px 4px;
         }
 
         @media print {
@@ -114,6 +103,17 @@
         .back-btn { background: #666; }
         .print-btn:active,
         .back-btn:active { background: #222; }
+
+.block-header-row td {
+    font-size: 11pt;
+    font-weight: bold;
+    background: #d9eaff;
+    border: 1px solid #003366; /* deep navy */
+    padding: 6px 4px;
+}
+
+
+
     </style>
 </head>
 
@@ -127,33 +127,40 @@
 
 <h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
 
+<!-- ========================= -->
+<!-- ARENA SECTION (ONE TABLE) -->
+<!-- ========================= -->
+
 {% if arena_blocks %}
-    {% for block in arena_blocks %}
-    <div class="lesson-block">
+<table>
+    <thead>
+        <tr>
+            <th>Age</th>
+            <th>Horse</th>
+            <th>Client</th>
+            <th>ATT</th>
+            <th>Payment</th>
+            <th>Price</th>
+            <th>Balance</th>
+            <th>Guardian</th>
+            <th>Mobile</th>
+            <th>Notes</th>
+            <th>Wgt</th>
+            <th>Hgt</th>
+            <th>Freq</th>
+            <th>SignNoPayment</th>
+        </tr>
+    </thead>
 
-        <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
-
-        <table>
-            <thead>
-            <tr>
-                <th>Age</th>
-                <th>Horse</th>
-                <th>Client</th>
-                <th>ATT</th>
-                <th>Payment</th>
-                <th>Price</th>
-                <th>Balance</th>
-                <th>Guardian</th>
-                <th>Mobile</th>
-                <th>Notes</th>
-                <th>Wgt</th>
-                <th>Hgt</th>
-                <th>Freq</th>
-                <th>SignNoPayment</th>
+    <tbody>
+        {% for block in arena_blocks %}
+            <!-- BLOCK HEADER AS TABLE ROW -->
+            <tr class="block-header-row">
+                <td colspan="14">
+                    {{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}
+                </td>
             </tr>
-            </thead>
 
-            <tbody>
             {% for l in block.riders %}
                 {% set client_class = "client-red" if l.disclaimer < 30000 else "client-name" %}
                 {% set payment_class = "payment-red" if l.balance < l.price else "" %}
@@ -165,19 +172,19 @@
                     <td>{{ l.att }}</td>
 
                     <td class="{{ payment_class }}">
-                        {% if l.payment and l.payment > 0 %}
+                        {% if l.payment > 0 %}
                             ${{ "%.2f"|format(l.payment) }}
                         {% endif %}
                     </td>
 
                     <td>
-                        {% if l.price and l.price > 0 %}
+                        {% if l.price > 0 %}
                             ${{ "%.2f"|format(l.price) }}
                         {% endif %}
                     </td>
 
                     <td>
-                        {% if l.balance and l.balance != 0 %}
+                        {% if l.balance != 0 %}
                             ${{ "%.2f"|format(l.balance) }}
                         {% endif %}
                     </td>
@@ -191,44 +198,44 @@
                     <td></td>
                 </tr>
             {% endfor %}
-            </tbody>
-        </table>
-
-    </div>
-    {% endfor %}
+        {% endfor %}
+    </tbody>
+</table>
 {% endif %}
 
-<div class="page-break"></div>
-
-<h1>Cherbon Waters Equestrian Centre – {{ dow }} {{ pretty_date }}</h1>
+<!-- ========================= -->
+<!-- OTHER SECTION (ONE TABLE) -->
+<!-- ========================= -->
 
 {% if other_blocks %}
-    {% for block in other_blocks %}
-    <div class="lesson-block">
+<table>
+    <thead>
+        <tr>
+            <th>Age</th>
+            <th>Horse</th>
+            <th>Client</th>
+            <th>ATT</th>
+            <th>Payment</th>
+            <th>Price</th>
+            <th>Balance</th>
+            <th>Guardian</th>
+            <th>Mobile</th>
+            <th>Notes</th>
+            <th>Wgt</th>
+            <th>Hgt</th>
+            <th>Freq</th>
+            <th>SignNoPayment</th>
+        </tr>
+    </thead>
 
-        <h2>{{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}</h2>
-
-        <table>
-            <thead>
-            <tr>
-                <th>Age</th>
-                <th>Horse</th>
-                <th>Client</th>
-                <th>ATT</th>
-                <th>Payment</th>
-                <th>Price</th>
-                <th>Balance</th>
-                <th>Guardian</th>
-                <th>Mobile</th>
-                <th>Notes</th>
-                <th>Wgt</th>
-                <th>Hgt</th>
-                <th>Freq</th>
-                <th>SignNoPayment</th>
+    <tbody>
+        {% for block in other_blocks %}
+            <tr class="block-header-row">
+                <td colspan="14">
+                    {{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}
+                </td>
             </tr>
-            </thead>
 
-            <tbody>
             {% for l in block.riders %}
                 {% set client_class = "client-red" if l.disclaimer < 30000 else "client-name" %}
                 {% set payment_class = "payment-red" if l.balance < l.price else "" %}
@@ -240,19 +247,19 @@
                     <td>{{ l.att }}</td>
 
                     <td class="{{ payment_class }}">
-                        {% if l.payment and l.payment > 0 %}
+                        {% if l.payment > 0 %}
                             ${{ "%.2f"|format(l.payment) }}
                         {% endif %}
                     </td>
 
                     <td>
-                        {% if l.price and l.price > 0 %}
+                        {% if l.price > 0 %}
                             ${{ "%.2f"|format(l.price) }}
                         {% endif %}
                     </td>
 
                     <td>
-                        {% if l.balance and l.balance != 0 %}
+                        {% if l.balance != 0 %}
                             ${{ "%.2f"|format(l.balance) }}
                         {% endif %}
                     </td>
@@ -266,11 +273,9 @@
                     <td></td>
                 </tr>
             {% endfor %}
-            </tbody>
-        </table>
-
-    </div>
-    {% endfor %}
+        {% endfor %}
+    </tbody>
+</table>
 {% endif %}
 
 </body>
