@@ -18,11 +18,11 @@ with app.app_context():
         for row in reader:
             client = row.get("client") or row.get("client_name") or ""
             date = row.get("lesson_date") or row.get("date") or ""
-            time = row.get("time") or row.get("lesson_time") or ""
+            time_frame = row.get("time_frame") or row.get("time") or ""
             horse = row.get("horse") or ""
 
             # Skip rows missing identifiers
-            if not client or not date or not time:
+            if not client or not date or not time_frame:
                 skipped += 1
                 continue
 
@@ -35,11 +35,11 @@ with app.app_context():
             lesson = Lesson.query.filter_by(
                 client=client,
                 lesson_date=date,
-                time=time
+                time_frame=time_frame
             ).first()
 
             if not lesson:
-                not_found.append(f"{client} @ {date} {time}")
+                not_found.append(f"{client} @ {date} {time_frame}")
                 skipped += 1
                 continue
 
