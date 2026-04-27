@@ -1359,9 +1359,33 @@ body {
                         </select>
                     </td>
 
-                    <td>
-                        <input type="text" id="top_new_client_name" class="form-control" placeholder="Full name">
-                    </td>
+<td>
+    <!-- New Client Name -->
+    <input type="text" id="top_new_client_name" class="form-control" placeholder="Full name">
+
+    <!-- ⭐ Extra fields for NEW CLIENTS ONLY -->
+    <div id="new-client-extra-fields" style="margin-top:6px; display:none;">
+
+        <input type="number"
+               id="new_weight_kg"
+               class="form-control"
+               placeholder="Weight (kg)"
+               style="margin-top:6px;">
+
+        <input type="number"
+               id="new_height_cm"
+               class="form-control"
+               placeholder="Height (cm)"
+               style="margin-top:6px;">
+
+        <textarea id="new_notes"
+                  class="form-control"
+                  placeholder="Notes"
+                  rows="2"
+                  style="margin-top:6px;"></textarea>
+
+    </div>
+</td>
 
                     <td>
                         <select id="top_lesson_count" class="form-select">
@@ -3430,6 +3454,24 @@ function canonicalTimeFrame(tf) {
     return `${pad(start)} - ${pad(end)}`;
 }
 
+<script>
+// ⭐ Show/hide extra fields when booking type changes
+document.addEventListener("DOMContentLoaded", function () {
+
+    $("#booking_type").on("change", function () {
+        const type = $(this).val();
+
+        if (type === "new") {
+            $("#new-client-extra-fields").show();
+        } else {
+            $("#new-client-extra-fields").hide();
+        }
+    });
+
+});
+
+</script>
+
 
 // ⭐ Unified Save Handler (Option A — send time_frame only)
 async function actuallySaveLessons() {
@@ -3531,7 +3573,9 @@ for (const row of lessons) {
             form.append("client_mode", "new");
             form.append("client_name", info.new_client_name);
             form.append("client_phone", info.mobile);
-
+            form.append("weight_kg", info.weight_kg);
+            form.append("height_cm", info.height_cm);
+            form.append("notes", info.notes);
             form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
 
 

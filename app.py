@@ -4437,6 +4437,11 @@ def create_app():
         client_name   = request.form.get("client_name", "").strip()
         client_phone  = request.form.get("client_phone", "").strip()
         horse         = request.form.get("horse", "").strip()
+        # ⭐ NEW FIELDS
+        weight_kg = request.form.get("weight_kg")
+        height_cm = request.form.get("height_cm")
+        notes     = request.form.get("notes")
+
 
         print("DEBUG FORM:", dict(request.form))
 
@@ -4489,7 +4494,13 @@ def create_app():
 
             if client_mode == "new":
                 if client_name:
-                    new_client = Client(full_name=client_name, mobile=client_phone)
+                    new_client = Client(
+                        full_name = client_name,
+                        mobile    = client_phone,
+                        weight_kg = weight_kg or None,
+                        height_cm = height_cm or None,
+                        notes     = notes or "Created via booking panel"
+                    )
                     db.session.add(new_client)
                     db.session.flush()
                     client_id = new_client.client_id
