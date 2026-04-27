@@ -4047,7 +4047,7 @@ def create_app():
                 "lesson_type": (l.lesson_type or "").strip(),
                 "group_priv": (l.group_priv or "").strip().upper(),
                 "client_name": l.client or "",
-                "horse": l.horse or "",
+                "horse": getattr(l, "horse", "") or "",
                 "att": (l.attendance or "").strip().upper(),
             })
 
