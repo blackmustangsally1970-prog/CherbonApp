@@ -3254,6 +3254,38 @@ if (recurrence === "F") {
             minimumResultsForSearch: 0,
             selectOnClose: true
         });
+// ⭐ Activate Select2 for time fields (tags mode)
+$(row).find('.time-field').select2({
+    tags: true,
+    width: '100%',
+    dropdownAutoWidth: true,
+    matcher: prefixMatcher,
+    placeholder: "Select or type a time",
+
+    createTag: function(params) {
+        let v = params.term.trim();
+        let re = /^([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)$/;
+        if (!re.test(v)) return null;
+
+        let [start, end] = v.split('-').map(s => s.trim());
+        if (end <= start) return null;
+
+        return { id: v, text: v, newTag: true };
+    }
+});
+
+// ⭐ Auto‑insert NEW times into the DB
+$(row).find('.time-field').on('select2:select', function(e) {
+    if (e.params.data.newTag) {
+        fetch("/add_time", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ time: e.params.data.text })
+        });
+    }
+});
+
+
     });
 
     updateSMSVisibility();
