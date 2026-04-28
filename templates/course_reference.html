@@ -82,9 +82,14 @@
                        style="width: 100px; border: 2px solid #d9534f; border-radius: 4px;">
             </td>
 
-            <!-- DISPLAY LABEL (not editable) -->
-            <td>{{ row.display_label }}</td>
-
+<td>
+    <input type="text"
+           class="course-edit"
+           data-id="{{ row.id }}"
+           data-field="display_label"
+           value="{{ row.display_label }}"
+           style="width: 140px;">
+</td>
             <!-- DAY -->
             <td>
                 <select class="course-edit"

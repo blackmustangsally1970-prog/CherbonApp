@@ -4227,7 +4227,10 @@ def create_app():
             else:
                 setattr(course, field, value)
 
-            # NOW recompute sort order using updated values
+            # ⭐ Critical flush so compute_sort_order sees updated values
+            db.session.flush()
+
+            # Recompute sort order using updated values
             course.sort_order = compute_sort_order(
                 course.day_of_week,
                 course.timerange
