@@ -43,6 +43,16 @@ class Client(db.Model):
     notes2 = db.Column(db.String)
 
 
+class Term(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    year = db.Column(db.Integer, nullable=False)
+    term_number = db.Column(db.Integer, nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    label = db.Column(db.String(50), nullable=False)
+    active = db.Column(db.Boolean, default=False)
+
+
 
 class UpgradeItem(db.Model):
     __tablename__ = 'upgrade_items'
