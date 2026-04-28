@@ -219,9 +219,20 @@ body {
   overflow-y: auto !important;
 }
 
+/* Expanded lesson tables — NO SCROLLBARS */
 .lesson-block .lesson-table {
+  max-height: none !important;
+  overflow: visible !important;
+  opacity: 1;
   transition: max-height 0.2s ease, opacity 0.2s ease;
-  overflow: hidden;
+}
+
+/* Collapsed lesson tables — HIDDEN */
+.lesson-block.collapsed .lesson-table {
+  max-height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .lesson-block.collapsed .lesson-table {
