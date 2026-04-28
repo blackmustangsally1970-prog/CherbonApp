@@ -2763,15 +2763,15 @@ def create_app():
         return redirect(url_for('client_view', client=client_id))
 
 
-    @app.route('/client_history/<int:client_id>')
-    def client_history(client_id):
+    @app.route('/client_history/<client_name>')
+    def client_history(client_name):
 
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
 
         rows = (
             db.session.query(Lesson)
             .filter(
-                Lesson.client_id == client_id,
+                Lesson.client == client_name,
                 Lesson.lesson_date < today
             )
             .order_by(Lesson.lesson_date.desc(), Lesson.lesson_id.desc())
@@ -2782,6 +2782,7 @@ def create_app():
         horses = [(r.horse or "").strip() for r in rows]
 
         return jsonify(horses)
+
     
     @app.route('/send_invite', methods=['POST'])
     def send_invite():
