@@ -699,16 +699,13 @@ select.teacher-dropdown {
 
 #client-history-tip {
   position: absolute;
-  top: 0;
-  left: 100%;
-  margin-left: 4px;
   background: rgba(0,0,0,0.88);
   color: #fff;
   padding: 6px 8px;
   border-radius: 4px;
   font-size: 11px;
   white-space: nowrap;
-  z-index: 2000;
+  z-index: 999999;
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
@@ -4354,19 +4351,7 @@ function showSavedMessage() {
 
 
 
-<div id="client-history-tip"
-     style="
-        position:absolute;
-        background:#ffffe0;
-        border:1px solid #ccc;
-        padding:4px 6px;
-        font-size:12px;
-        visibility:hidden;
-        opacity:0;
-        transition:opacity 0.15s;
-        z-index:9999;
-     ">
-</div>
+<div id="client-history-tip"></div>
 
 <script src="{{ url_for('static', filename='js/client_history.js') }}"></script>
 
