@@ -2766,6 +2766,8 @@ def create_app():
     @app.route('/client_history/<client_name>')
     def client_history(client_name):
 
+        print("CLIENT RECEIVED:", repr(client_name))       
+
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
 
         rows = (
