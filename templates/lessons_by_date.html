@@ -2903,7 +2903,8 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(r => r.json())
         .then(list => {
 
-          tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
+          const clean = list.filter(x => x && x.trim());
+          tip.innerHTML = clean.length ? clean.join(", ") : "No recent horses";
 
           const rect = td.getBoundingClientRect();
           tip.style.top = (rect.top + window.scrollY) + "px";
