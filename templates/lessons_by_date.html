@@ -1613,7 +1613,8 @@ body {
 {% set client_key = (display_name or '')|lower|replace(' ', '') %}
 {% set horses = client_horse_history.get(client_key) %}
 
-<td class="client-cell" data-client="{{ cid }}">
+<td class="client-cell" data-client="{{ lesson.client }}">
+
 
   {% if cid %}
     <a href="{{ url_for('client_view', client_filter=cid) }}"
