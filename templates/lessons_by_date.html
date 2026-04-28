@@ -3784,22 +3784,6 @@ document.getElementById("save-button").addEventListener("click", async () => {
     });
 
 
-// NOTE: Legacy per-lesson T1–T5 checkboxes exist in DOM but are intentionally ignored.
-// The ONLY authoritative teacher assignment is the 5-slot engine below.
-await fetch("/save_teacher_slots", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-        date: selectedDate,
-        slots: {
-            1: document.querySelector("#teacher_select_1")?.value || "",
-            2: document.querySelector("#teacher_select_2")?.value || "",
-            3: document.querySelector("#teacher_select_3")?.value || "",
-            4: document.querySelector("#teacher_select_4")?.value || "",
-            5: document.querySelector("#teacher_select_5")?.value || ""
-        }
-    })
-});
 
 const legacyChecked = document.querySelector(
     ".t1-checkbox:checked, .t2-checkbox:checked, .t3-checkbox:checked, .t4-checkbox:checked, .t5-checkbox:checked"
