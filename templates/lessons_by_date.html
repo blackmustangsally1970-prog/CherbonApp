@@ -1609,10 +1609,11 @@ body {
     </td>
 
 {% set display_name = client.full_name if client else (lesson.client or '') %}
-{% set client_key = (display_name or '')|lower|replace(' ', '') %}
+{% set client_key = client.client_id %}
+
 {% set horses = client_horse_history.get(client_key) %}
 
-<td class="client-cell" data-client="{{ client_key }}">
+<td class="client-cell" data-client="{{ client.client_id }}">
 
   {% set cid = client.client_id if client else None %}
 
@@ -1686,7 +1687,7 @@ body {
     {{ '$%.2f'|format(lesson.balance or 0) }}
 </td>
 
-    <td>
+<td>
     {% set cid = client.client_id if client else None %}
     {% if cid and cid not in rendered_clients %}
       <input type="text" name="notes_{{ cid }}" value="{{ client.notes or '' }}" class="notes-input">
@@ -1694,16 +1695,16 @@ body {
     {% else %}
       <input type="text" value="{{ client.notes or '' }}" readonly class="notes-input" style="background:#f9f9f9;">
     {% endif %}
+</td>
 
+{% if config.DEBUG %}
+<td style="display:none;">
+    ID: {{ client.client_id }}<br>
+    Name: {{ client.full_name }}
+</td>
+{% endif %}
 
-    {% if config.DEBUG %}
-       <td style="display:none;">
-        ID: {{ client.client_id }}<br>
-        Name: {{ client.full_name }}
-      </td>
-    {% endif %}
-
-    <td></td>
+<td></td>
   </tr>
   {% endfor %}
 </tbody>
