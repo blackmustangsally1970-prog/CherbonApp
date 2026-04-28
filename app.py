@@ -4290,7 +4290,6 @@ def create_app():
         renumber_all_courses()
         return ("", 204)
 
-
     @app.route("/horses/delete/<int:hid>", methods=["POST"])
     def delete_horse(hid):
         row = db.session.query(Horse).get(hid)
