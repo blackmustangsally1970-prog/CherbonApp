@@ -4,157 +4,132 @@
     <meta charset="utf-8">
     <title>Summaries</title>
 
-<style>
-    body {
-        font-family: sans-serif;
-        padding: 20px;
-        margin: 0;
-        text-align: center;
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            margin: 0;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 40px;
+            font-weight: 900;
+        }
+
+        .menu-btn {
+            display: inline-block;
+            padding: 8px 14px;
+            margin-right: 8px;
+            background: #eee;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .summaries-table th,
+        .summaries-table td {
+            text-align: center;
+            vertical-align: middle;
+            padding: 4px 6px;
+            font-size: 0.85rem;
+        }
+
+        .summaries-table .fw-bold {
+            font-weight: 600;
+        }
+
+        .fy-select {
+            margin-bottom: 20px;
+            font-size: 1rem;
+            padding: 6px 10px;
+        }
+
+    .max-attendance {
+        background-color: #d4edda !important;   /* soft green */
+    }
+    .min-attendance {
+        background-color: #f8d7da !important;   /* soft red */
     }
 
-    h1 {
-        font-size: 32px;        /* was 48px */
-        margin-bottom: 30px;    /* was 40px */
-        font-weight: 900;
-    }
+    </style>
 
-    .placeholder {
-        font-size: 20px;        /* was 28px */
-        color: #666;
-        margin-top: 30px;       /* was 40px */
-    }
-
-    table {
-        margin: 30px auto;      /* was 40px */
-        border-collapse: collapse;
-        width: 90%;
-        font-size: 12px;        /* already reduced */
-    }
-
-    th, td {
-        padding: 6px;           /* already reduced */
-        border: 1px solid #ccc;
-    }
-
-    th {
-        background: #eee;
-        font-weight: bold;
-    }
-
-    #top-controls {
-        text-align: left;
-        margin-bottom: 20px;
-    }
-</style>
 </head>
 
 <body>
 
+<!-- NAVIGATION -->
 <div style="margin-bottom:12px;" class="no-print" id="top-controls">
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
     <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
 </div>
 
+<h1>Summaries</h1>
 
-
-<h1 style="font-size: 32px; font-weight: 900; margin-bottom: 30px;">Summaries</h1>
-
-<form method="GET" action="/summaries" style="margin-bottom: 30px;">
-    <label for="fy" style="font-size: 18px; font-weight: 700;">Select Financial Year:</label>
-
-    <select id="fy" name="fy"
-            style="font-size: 18px; padding: 10px; margin-left: 16px; border-radius: 10px;">
-
+<!-- FY SELECTOR -->
+<form method="get" action="/summaries" class="no-print">
+    <select name="fy" class="fy-select" onchange="this.form.submit()">
+        <option value="">Select Financial Year</option>
         {% for fy in fy_list %}
-            <option value="{{ fy }}" {% if selected_fy == fy %}selected{% endif %}>
-                {{ fy.replace('-', '–') }}
-            </option>
+            <option value="{{ fy }}" {% if fy == selected_fy %}selected{% endif %}>{{ fy }}</option>
         {% endfor %}
-
     </select>
-
-    <button type="submit"
-            style="font-size: 18px; padding: 10px 20px; margin-left: 16px; border-radius: 10px;">
-        Load
-    </button>
 </form>
-
-
-{% if not weekly_data %}
-    <div class="placeholder">
-        Financial year summaries will appear here.
-    </div>
-{% endif %}
 
 {% if weekly_data %}
 
-<form method="POST" action="/save_weekly_events">
-    <input type="hidden" name="fy" value="{{ selected_fy }}">
+<table class="table table-bordered table-sm summaries-table" style="margin: 0 auto; width: 95%;">
+    <thead class="table-light">
+        <tr>
+            <th>Week Start (Sun)</th>
+            <th>Sun</th>
+            <th>Mon</th>
+            <th>Tue</th>
+            <th>Wed</th>
+            <th>Thu</th>
+            <th>Fri</th>
+            <th>Sat</th>
+            <th>Weekly Total</th>
+            <th>YTD</th>
+            <th>Event 1</th>
+            <th>Event 2</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
 
-<table>
-<tr>
-    <th>Week Starting</th>
-    <th>Y</th>
-    <th>N</th>
-    <th>C</th>
-    <th>Event 1</th>
-    <th>Event 2</th>
-    <th>Payments</th>
-    <th>Running Total</th>
-    <th>YTD Total</th>
-    <th>Notes</th>
-</tr>
+<tbody>
+    {% for row in weekly_data %}
+    <tr class="
+        {% if row.is_max_attendance %}max-attendance{% endif %}
+        {% if row.is_min_attendance %} min-attendance{% endif %}
+    ">
+        <td>{{ row.week_start.strftime('%d %b %Y') }}</td>
 
+        <td>${{ '%.2f'|format(row.sun) }}</td>
+        <td>${{ '%.2f'|format(row.mon) }}</td>
+        <td>${{ '%.2f'|format(row.tue) }}</td>
+        <td>${{ '%.2f'|format(row.wed) }}</td>
+        <td>${{ '%.2f'|format(row.thu) }}</td>
+        <td>${{ '%.2f'|format(row.fri) }}</td>
+        <td>${{ '%.2f'|format(row.sat) }}</td>
 
+        <td class="fw-bold">${{ '%.2f'|format(row.weekly_total) }}</td>
+        <td class="fw-bold">${{ '%.2f'|format(row.ytd_total) }}</td>
 
-    {% for w in weekly_data %}
-<tr>
-    <td>{{ w.week_start }}</td>
-
-    <td>{{ w.y }}</td>
-    <td>{{ w.n }}</td>
-    <td>{{ w.c }}</td>
-
-    <td>
-        <input type="text"
-               name="event1_{{ w.week_start }}"
-               value="{{ w.event1 or '' }}"
-               maxlength="5"
-               style="width: 60px; font-size: 12px; text-align: center;">
-    </td>
-
-    <td>
-        <input type="text"
-               name="event2_{{ w.week_start }}"
-               value="{{ w.event2 or '' }}"
-               maxlength="5"
-               style="width: 60px; font-size: 12px; text-align: center;">
-    </td>
-
-    <td>${{ "%.2f"|format(w.payments) }}</td>
-    <td>${{ "%.2f"|format(w.running_total) }}</td>
-    <td>${{ "%.2f"|format(w.ytd_total) }}</td>
-
-    <td>
-        <input type="text"
-               name="notes_{{ w.week_start }}"
-               value="{{ w.notes or '' }}"
-               style="width: 150px; font-size: 12px;">
-    </td>
-</tr>
+        <td>{{ row.event1 or '' }}</td>
+        <td>{{ row.event2 or '' }}</td>
+        <td>{{ row.notes or '' }}</td>
+    </tr>
     {% endfor %}
+</tbody>
 </table>
 
-    <button type="submit"
-            style="font-size: 28px; padding: 20px 40px; margin-top: 20px;">
-        Save Weekly Events
-    </button>
-
-
-
-
-</form>
-
+{% else %}
+<div class="placeholder">
+    Select a financial year to view summaries.
+</div>
 {% endif %}
 
 </body>

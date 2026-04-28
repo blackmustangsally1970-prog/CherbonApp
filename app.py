@@ -262,24 +262,38 @@ def get_week_window(sunday_date):
 
 
 def build_weekly_summary(sundays, selected_fy):
+    from collections import defaultdict
+
     weekly_data = []
     running_total = 0
+
+    # Map Python weekday() → our summary columns
+    day_map = {
+        6: "sun",
+        0: "mon",
+        1: "tue",
+        2: "wed",
+        3: "thu",
+        4: "fri",
+        5: "sat"
+    }
 
     fy_start_year = int(selected_fy.split("-")[0])
     fy_end_year = int(selected_fy.split("-")[1])
 
     fy_start = datetime(fy_start_year, 7, 1).date()
-    fy_end = datetime(fy_end_year, 6, 30).date()
+    fy_end   = datetime(fy_end_year, 6, 30).date()
 
     for s in sundays:
         week_start, week_end = get_week_window(s)
 
-        # Clamp to FY
+        # Clamp to FY boundaries
         if week_start < fy_start:
             week_start = fy_start
         if week_end > fy_end:
             week_end = fy_end
 
+        # Load saved weekly events
         saved = (
             WeeklyEvent.query
             .filter_by(week_start=week_start, fy=selected_fy)
@@ -288,8 +302,9 @@ def build_weekly_summary(sundays, selected_fy):
 
         event1_name = saved.event1 if saved and saved.event1 else None
         event2_name = saved.event2 if saved and saved.event2 else None
-        notes_val  = saved.notes if saved and saved.notes else None   # ⭐ ADDED
+        notes_val   = saved.notes if saved and saved.notes else None
 
+        # Attendance counts
         y_count = (
             db.session.query(func.count(Lesson.lesson_id))
             .filter(
@@ -317,32 +332,61 @@ def build_weekly_summary(sundays, selected_fy):
             .scalar()
         ) or 0
 
-        payments = (
-            db.session.query(func.sum(Lesson.payment))
-            .filter(
-                Lesson.lesson_date.between(week_start, week_end),
-                Lesson.payment.isnot(None)
-            )
-            .scalar()
-        ) or 0
+        # ⭐ DAILY BREAKDOWN (Sun → Sat)
+        day_totals = defaultdict(float)
 
-        running_total += payments
+        lessons_in_week = Lesson.query.filter(
+            Lesson.lesson_date.between(week_start, week_end),
+            Lesson.payment.isnot(None)
+        ).all()
+
+        for l in lessons_in_week:
+            dow = l.lesson_date.weekday()  # 0=Mon ... 6=Sun
+            key = day_map.get(dow)
+            if key:
+                day_totals[key] += l.payment or 0
+
+        # ⭐ Weekly + YTD totals
+        weekly_total = sum(day_totals.values())
+        running_total += weekly_total
 
         weekly_data.append({
             "week_start": week_start,
-            "event1": event1_name,
-            "event2": event2_name,
-            "notes": notes_val,          # ⭐ ADDED
+
+            # Daily totals
+            "sun": day_totals["sun"],
+            "mon": day_totals["mon"],
+            "tue": day_totals["tue"],
+            "wed": day_totals["wed"],
+            "thu": day_totals["thu"],
+            "fri": day_totals["fri"],
+            "sat": day_totals["sat"],
+
+            # Totals
+            "weekly_total": weekly_total,
+            "ytd_total": running_total,
+
+            # Attendance
             "y": y_count,
             "n": n_count,
             "c": c_count,
-            "payments": payments,
-            "running_total": running_total,
-            "ytd_total": running_total
+
+            # Events
+            "event1": event1_name,
+            "event2": event2_name,
+            "notes": notes_val
         })
 
-    return weekly_data
+    # ⭐ Mark highest and lowest attendance weeks (correct indentation)
+    if weekly_data:
+        max_att = max(w["y"] for w in weekly_data)
+        min_att = min(w["y"] for w in weekly_data)
 
+        for w in weekly_data:
+            w["is_max_attendance"] = (w["y"] == max_att)
+            w["is_min_attendance"] = (w["y"] == min_att)
+
+    return weekly_data
 
 
 
