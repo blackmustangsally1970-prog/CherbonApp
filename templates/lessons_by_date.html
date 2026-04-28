@@ -4335,8 +4335,22 @@ function showSavedMessage() {
 }
 </script>
 
-<div id="client-history-tip" class="client-history-tip"></div>
 
+
+<div id="client-history-tip"
+     style="
+        position:absolute;
+        background:#ffffe0;
+        border:1px solid #ccc;
+        padding:4px 6px;
+        font-size:12px;
+        visibility:hidden;
+        opacity:0;
+        transition:opacity 0.15s;
+        z-index:9999;
+     ">
 </div>
+
+
 </body>
 </html>
