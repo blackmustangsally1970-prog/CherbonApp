@@ -3083,9 +3083,6 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
 });
 </script>
 
-<script>
-
-
 
 <script>
 // ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
@@ -4239,13 +4236,15 @@ document.addEventListener("DOMContentLoaded", function () {
 </div>
 
 <script>
-// -------------------------------
-// 1. Disable time for Payment / Voucher CR
-// -------------------------------
 document.addEventListener("DOMContentLoaded", function () {
-    const ltField = document.querySelector("select[name='lesson_type']");
+    const ltField   = document.querySelector("select[name='lesson_type']");
     const timeField = document.querySelector("select[name='end']");
     const timeLabel = document.querySelector(".popup-end-label");
+
+    // Popup not present yet — exit safely
+    if (!ltField || !timeField || !timeLabel) {
+        return;
+    }
 
     function updateTimeState() {
         const lt = ltField.value;
@@ -4263,10 +4262,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     ltField.addEventListener("change", updateTimeState);
-    updateTimeState(); // run once on popup open
+    updateTimeState();
 });
-
 </script>
+
 <script>
 // -------------------------------
 // 2. Enforce 10‑digit mobile (optional)
