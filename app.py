@@ -4722,7 +4722,6 @@ def create_app():
 
         try:
             # Always start clean
-            db.session.rollback()
 
             # --------------------------------------------------------
             # SAVE LESSONS
