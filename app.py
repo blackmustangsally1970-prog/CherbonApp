@@ -2766,8 +2766,6 @@ def create_app():
     @app.route('/client_history/<client_name>')
     def client_history(client_name):
 
-        print("CLIENT RECEIVED:", repr(client_name))       
-
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
 
         rows = (
@@ -2777,13 +2775,26 @@ def create_app():
                 Lesson.lesson_date < today
             )
             .order_by(Lesson.lesson_date.desc(), Lesson.lesson_id.desc())
-            .limit(10)
+            .limit(50)   # fetch more so we can extract 10 unique
             .all()
         )
 
+        # Extract horse names, strip blanks
         horses = [(r.horse or "").strip() for r in rows]
+        clean = [h for h in horses if h]
 
-        return jsonify(horses)
+        # Preserve order but remove duplicates
+        unique = []
+        seen = set()
+        for h in clean:
+            if h not in seen:
+                unique.append(h)
+                seen.add(h)
+
+        # Limit to last 10 unique
+        result = unique[:10]
+
+        return jsonify(result)
 
     
     @app.route('/send_invite', methods=['POST'])
