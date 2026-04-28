@@ -1617,14 +1617,11 @@ body {
   {% set cid = client.client_id if client else None %}
 
   {% if cid %}
-    <a href="{{ url_for('client_view', client_filter=cid) }}"
-       class="client-link"
-       style="display:block; width:100%;"
-       {% if horses %}
-       title="{{ horses|join(', ') }}"
-       {% endif %}>
-       {{ display_name }}
-    </a>
+<a href="{{ url_for('client_view', client_filter=cid) }}"
+   class="client-link"
+   style="display:block; width:100%;">
+   {{ display_name }}
+</a>
   {% else %}
     {{ display_name }}
   {% endif %}
