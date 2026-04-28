@@ -3088,16 +3088,30 @@ document.getElementById("download-xlsx-btn").addEventListener("click", () => {
 (() => {
     console.log("BOOKING PANEL SCRIPT LOADED");
 
-    const panel        = document.getElementById("multi-lesson-booker");
-    const btnOpen      = document.getElementById("open-booking-panel");
-    const lessonCount  = document.getElementById("top_lesson_count");
-    const bookingType  = document.getElementById("booking_type");
-    bookingType.value = "existing";   // enforce default on load
-    const mobile       = document.getElementById("top_mobile");
-    const existing     = document.getElementById("top_existing_client");
-    const newName      = document.getElementById("top_new_client_name");
-    const rowsContainer = document.getElementById("booking-rows-container");
-    const smsName         = document.getElementById("smsName");
+// ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
+document.addEventListener("DOMContentLoaded", function () {
+
+    console.log("BOOKING PANEL SCRIPT LOADED");
+
+    // ⭐ Correct DOM bindings matching your HTML
+    const panel          = document.getElementById("multi-lesson-booker");
+    const btnOpen        = document.getElementById("open-booking-panel");
+    const lessonCount    = document.getElementById("top_lesson_count");
+    const bookingType    = document.getElementById("booking_type");
+    const mobile         = document.getElementById("top_mobile");
+    const existing       = document.getElementById("top_existing_client");
+    const newName        = document.getElementById("top_new_client_name");
+    const rowsContainer  = document.getElementById("booking-rows-container");
+
+    // ⭐ This element does NOT exist in your HTML anymore — keep null-safe
+    const smsName        = document.getElementById("smsName");
+
+    // ⭐ Enforce default safely
+    if (bookingType) bookingType.value = "existing";
+
+    // ⭐ EVENT LISTENERS GO HERE
+
+});
 
 
 // ⭐ Unified modal open handler — correct order of operations
@@ -3305,6 +3319,220 @@ $(row).find('.time-field').on('select2:select', function(e) {
         return text.startsWith(term) ? $.extend({}, data, true) : null;
     }
 
+<script>
+// ⭐ BOOKING PANEL — SINGLE SOURCE OF TRUTH
+document.addEventListener("DOMContentLoaded", function () {
+
+    console.log("BOOKING PANEL SCRIPT LOADED");
+
+    // ⭐ Correct DOM bindings matching your HTML
+    const panel          = document.getElementById("multi-lesson-booker");
+    const btnOpen        = document.getElementById("open-booking-panel");
+    const lessonCount    = document.getElementById("top_lesson_count");
+    const bookingType    = document.getElementById("booking_type");
+    const mobile         = document.getElementById("top_mobile");
+    const existing       = document.getElementById("top_existing_client");
+    const newName        = document.getElementById("top_new_client_name");
+    const rowsContainer  = document.getElementById("booking-rows-container");
+
+    // ⭐ This element may not exist — keep null-safe
+    const smsName        = document.getElementById("smsName");
+
+    // ⭐ Enforce default safely
+    if (bookingType) bookingType.value = "existing";
+
+    // ⭐ Unified modal open handler — correct order of operations
+    btnOpen.addEventListener("click", () => {
+        const visible = panel.style.display === "block";
+        panel.style.display = visible ? "none" : "block";
+
+        if (!visible) {
+            // 1. Sync hidden base date from date picker
+            const pickerVal = document.getElementById("date-picker").value;
+            document.getElementById("top_base_date").value = pickerVal;
+
+            // 2. HARD RESET — clear stale rows
+            rowsContainer.innerHTML = "";
+
+            // 3. Generate rows fresh using the correct base date
+            generateRows();
+
+            // 4. Sync row date-fields AFTER rows exist
+            setTimeout(() => {
+                document.querySelectorAll(".date-field").forEach(df => {
+                    df.value = pickerVal;
+                });
+            }, 10);
+
+            // 5. Fix Select2 AFTER rows exist
+            setTimeout(() => activateExistingClientSelect2(), 20);
+        }
+    });
+
+    function generateRows() {
+        rowsContainer.innerHTML = "";
+
+        const baseDate   = document.getElementById("top_base_date").value;
+        const recurrence = document.getElementById("recurrence_type").value;
+        const count      = parseInt(lessonCount.value || "1", 10);
+
+        function addDays(dateStr, days) {
+            const d = new Date(dateStr);
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split("T")[0];
+        }
+
+        const endOfYear = new Date(new Date(baseDate).getFullYear(), 11, 24);
+        let dates = [];
+
+        // SINGLE MODE — manual multi-lesson entry
+        if (recurrence === "S") {
+            for (let i = 0; i < count; i++) {
+                dates.push(baseDate);
+            }
+        }
+
+        // WEEKLY MODE — UI shows ONE row only
+        if (recurrence === "W") {
+            dates = [baseDate];
+        }
+
+        // FORTNIGHTLY MODE — UI shows ONE row only
+        if (recurrence === "F") {
+            dates = [baseDate];
+        }
+
+        // Build rows
+        dates.forEach(dateVal => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>
+                    <input type="date" class="form-control date-field" value="${dateVal}">
+                </td>
+
+                <td>
+                    <select class="form-select time-field searchable-dropdown">
+                        <option value=""></option>
+                        {% for t in times %}
+                            <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+
+                <td>
+                    <select class="form-select type-field">
+                        <option>Arena</option>
+                        <option>Roundyard</option>
+                        <option>Trail Ride</option>
+                        <option>Go Gallop</option>
+                        <option>Party</option>
+                        <option>Comp</option>
+                        <option>Voucher CR</option>
+                        <option>Payment</option>
+                    </select>
+                </td>
+
+                <td>
+                    <select class="form-select gp-field">
+                        {% for opt in ['CC','CT','G','GT','GY','IC','J','P','P2','P3','P4','SP1','SP2','SP3','SP4','SP5'] %}
+                            <option>{{ opt }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+
+                <td>
+                    <input type="text" class="form-control price-field" placeholder="$0.00">
+                </td>
+
+                <td>
+                    <input type="text" class="form-control payment-field" placeholder="$0.00">
+                </td>
+
+                <td class="sms-only-cell" style="display:none;">
+                    <select class="form-select riders-field">
+                        {% for i in range(1, 10) %}
+                            <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            `;
+
+            rowsContainer.appendChild(row);
+
+            // Activate Select2 (searchable dropdown)
+            safeSelect2($(row).find('.searchable-dropdown'), {
+                width: '100%',
+                matcher: prefixMatcher,
+                minimumResultsForSearch: 0,
+                selectOnClose: true
+            });
+
+            // Activate Select2 for time fields (tags mode)
+            safeSelect2($(row).find('.time-field'), {
+                tags: true,
+                width: '100%',
+                dropdownAutoWidth: true,
+                matcher: prefixMatcher,
+                placeholder: "Select or type a time",
+                createTag: function(params) {
+                    let v = params.term.trim();
+                    let re = /^([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)$/;
+                    if (!re.test(v)) return null;
+
+                    let [start, end] = v.split('-').map(s => s.trim());
+                    if (end <= start) return null;
+
+                    return { id: v, text: v, newTag: true };
+                }
+            });
+
+            // Auto‑insert NEW times into the DB
+            $(row).find('.time-field').on('select2:select', function(e) {
+                if (e.params.data.newTag) {
+                    fetch("/add_time", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ time: e.params.data.text })
+                    });
+                }
+            });
+        });
+
+        updateSMSVisibility();
+    }
+
+    // ⭐ SMS column visibility
+    function updateSMSVisibility() {
+        const show = bookingType.value === "sms";
+        document.querySelectorAll(".sms-only-header").forEach(h => h.style.display = show ? "" : "none");
+        document.querySelectorAll(".sms-only-cell").forEach(c => c.style.display = show ? "" : "none");
+    }
+
+    // ⭐ Booking type logic
+    function updateBookingFields() {
+        mobile.disabled   = true;
+        existing.disabled = true;
+        newName.disabled  = true;
+
+        if (bookingType.value === "sms")      mobile.disabled = false;
+        if (bookingType.value === "existing") existing.disabled = false;
+        if (bookingType.value === "new") {
+            newName.disabled = false;
+            mobile.disabled  = false;
+        }
+    }
+
+    // ⭐ TRUE PREFIX MATCHER
+    function prefixMatcher(params, data) {
+        if (!params.term) return data;
+        if (!data.text) return null;
+
+        const term = params.term.toLowerCase();
+        const text = data.text.toLowerCase();
+
+        return text.startsWith(term) ? $.extend({}, data, true) : null;
+    }
+
     // ⭐ SELECT2 activation
     function activateExistingClientSelect2() {
         $('#top_existing_client').select2({
@@ -3329,7 +3557,7 @@ $(row).find('.time-field').on('select2:select', function(e) {
     document.getElementById("recurrence_type").addEventListener("change", generateRows);
     document.getElementById("recurrence_count").addEventListener("change", generateRows);
 
-    // ⭐ STEP 9 — Collect all lesson rows into a clean array
+    // ⭐ Collect all lesson rows into a clean array
     function collectLessonRows() {
         const rows = [];
         const trs = rowsContainer.querySelectorAll("tr");
@@ -3357,77 +3585,74 @@ $(row).find('.time-field').on('select2:select', function(e) {
     }
     window.collectLessonRows = collectLessonRows;
 
+    function getBookingType() {
+        return bookingType.value;  // "existing", "new", or "sms"
+    }
 
-function getBookingType() {
-    return bookingType.value;  // "existing", "new", or "sms"
-}
+    function collectBookingInfo() {
+        const type = getBookingType();
 
-function collectBookingInfo() {
-    const type = getBookingType();
+        return {
+            booking_type: type,
+            mobile: mobile.value.trim(),
 
-    return {
-        booking_type: type,
-        mobile: mobile.value.trim(),
+            // Existing client (always integer or null)
+            client_id: (type === "existing")
+                ? parseInt(existing.value.trim(), 10)
+                : null,
 
-        // Existing client (always integer or null)
-        client_id: (type === "existing")
-            ? parseInt(existing.value.trim(), 10)
-            : null,
+            // New client
+            new_client_name: (type === "new")
+                ? newName.value.trim()
+                : "",
 
-        // New client
-        new_client_name: (type === "new")
-            ? newName.value.trim()
-            : "",
+            // SMS booking
+            sms_name: (type === "sms" && smsName)
+                ? smsName.value.trim()
+                : "",
 
-        // SMS booking
-        sms_name: (type === "sms")
-            ? smsName.value.trim()
-            : "",
+            // New client extra fields
+            weight_kg: (type === "new")
+                ? document.getElementById("new_weight_kg")?.value.trim() || ""
+                : "",
 
-        // New client extra fields
-        weight_kg: (type === "new")
-            ? document.getElementById("new_weight_kg")?.value.trim() || ""
-            : "",
+            height_cm: (type === "new")
+                ? document.getElementById("new_height_cm")?.value.trim() || ""
+                : "",
 
-        height_cm: (type === "new")
-            ? document.getElementById("new_height_cm")?.value.trim() || ""
-            : "",
+            notes: (type === "new")
+                ? document.getElementById("new_notes")?.value.trim() || ""
+                : ""
+        };
+    }
 
-        notes: (type === "new")
-            ? document.getElementById("new_notes")?.value.trim() || ""
-            : ""
-    };
-}
+    function isValidDate(dateStr) {
+        const d = new Date(dateStr + "T00:00:00");
+        return !isNaN(d.getTime());
+    }
 
-function isValidDate(dateStr) {
-    const d = new Date(dateStr + "T00:00:00");
-    return !isNaN(d.getTime());
-}
+    function hasDuplicateDates(lessons) {
+        const dates = lessons.map(l => l.lesson_date);
+        return new Set(dates).size !== dates.length;
+    }
 
-function hasDuplicateDates(lessons) {
-    const dates = lessons.map(l => l.lesson_date);
-    return new Set(dates).size !== dates.length;
-}
+    function canonicalTimeFrame(tf) {
+        if (!tf) return "";
 
-function canonicalTimeFrame(tf) {
-    if (!tf) return "";
+        tf = tf.replace(/\s+/g, "");
+        const [start, end] = tf.split("-");
 
-    // Remove spaces
-    tf = tf.replace(/\s+/g, "");
+        const pad = t => {
+            let [h, m] = t.split(":");
+            h = h.padStart(2, "0");
+            m = m.padStart(2, "0");
+            return `${h}:${m}`;
+        };
 
-    // Split
-    const [start, end] = tf.split("-");
+        return `${pad(start)} - ${pad(end)}`;
+    }
 
-    // Zero-pad
-    const pad = t => {
-        let [h, m] = t.split(":");
-        h = h.padStart(2, "0");
-        m = m.padStart(2, "0");
-        return `${h}:${m}`;
-    };
-
-    return `${pad(start)} - ${pad(end)}`;
-}
+});
 </script>
 <script>
 // ⭐ Show/hide extra fields when booking type changes
