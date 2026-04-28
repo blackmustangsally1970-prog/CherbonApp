@@ -82,22 +82,26 @@
 
 <table class="table table-bordered table-sm summaries-table" style="margin: 0 auto; width: 95%;">
     <thead class="table-light">
-        <tr>
-            <th>Week Start (Sun)</th>
-            <th>Sun</th>
-            <th>Mon</th>
-            <th>Tue</th>
-            <th>Wed</th>
-            <th>Thu</th>
-            <th>Fri</th>
-            <th>Sat</th>
-            <th>Weekly Total</th>
-            <th>YTD</th>
-            <th>Event 1</th>
-            <th>Event 2</th>
-            <th>Notes</th>
-        </tr>
-    </thead>
+<thead class="table-light">
+    <tr>
+        <th>Week Start (Sun)</th>
+        <th>Sun</th>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+        <th>Weekly Total</th>
+        <th>YTD</th>
+        <th>Y</th>
+        <th>N</th>
+        <th>C</th>
+        <th>Event 1</th>
+        <th>Event 2</th>
+        <th>Notes</th>
+    </tr>
+</thead>    </thead>
 
 <tbody>
     {% for row in weekly_data %}
@@ -117,6 +121,10 @@
 
         <td class="fw-bold">${{ '%.2f'|format(row.weekly_total) }}</td>
         <td class="fw-bold">${{ '%.2f'|format(row.ytd_total) }}</td>
+
+<td>{{ row.y }}</td>
+<td>{{ row.n }}</td>
+<td>{{ row.c }}</td>
 
         <td>{{ row.event1 or '' }}</td>
         <td>{{ row.event2 or '' }}</td>
