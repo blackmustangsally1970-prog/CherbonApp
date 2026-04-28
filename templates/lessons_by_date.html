@@ -2891,7 +2891,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const client = cell.dataset.client;
       if (!client) return;
 
-      fetch(`/client_history/${encodeURIComponent(client)}`)
+      fetch(`/client_history/${client}`, { method: "GET" })
         .then(r => r.json())
         .then(list => {
           tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
