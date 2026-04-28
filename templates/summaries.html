@@ -55,6 +55,12 @@
             font-weight: 600;
         }
 
+/* Hover highlight (except max/min attendance rows) */
+.summaries-table tbody tr:hover:not(.max-attendance):not(.min-attendance) {
+    background-color: #e6f2ff !important;   /* light blue */
+    cursor: pointer;
+}
+
         /* Zebra striping (except highlighted rows) */
         .summaries-table tbody tr:nth-child(even):not(.max-attendance):not(.min-attendance) {
             background-color: #f9f9f9;
