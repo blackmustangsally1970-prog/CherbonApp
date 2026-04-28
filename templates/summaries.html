@@ -29,31 +29,46 @@
             font-weight: 600;
         }
 
-        .summaries-table th,
-        .summaries-table td {
-            text-align: center;
-            vertical-align: middle;
-            padding: 4px 6px;
-            font-size: 0.85rem;
-        }
-
-        .summaries-table .fw-bold {
-            font-weight: 600;
-        }
-
         .fy-select {
             margin-bottom: 20px;
             font-size: 1rem;
             padding: 6px 10px;
         }
 
-    .max-attendance {
-        background-color: #d4edda !important;   /* soft green */
-    }
-    .min-attendance {
-        background-color: #f8d7da !important;   /* soft red */
-    }
+        /* Excel-style grid */
+        .summaries-table {
+            border-collapse: collapse;
+            width: 95%;
+            margin: 0 auto;
+        }
 
+        .summaries-table th,
+        .summaries-table td {
+            border: 1px solid #ccc;
+            padding: 4px 6px;
+            font-size: 0.85rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .fw-bold {
+            font-weight: 600;
+        }
+
+        /* Zebra striping (except highlighted rows) */
+        .summaries-table tbody tr:nth-child(even):not(.max-attendance):not(.min-attendance) {
+            background-color: #f9f9f9;
+        }
+
+        /* Highlight highest attendance */
+        .max-attendance {
+            background-color: #d4edda !important;   /* soft green */
+        }
+
+        /* Highlight lowest attendance */
+        .min-attendance {
+            background-color: #f8d7da !important;   /* soft red */
+        }
     </style>
 
 </head>
@@ -80,58 +95,57 @@
 
 {% if weekly_data %}
 
-<table class="table table-bordered table-sm summaries-table" style="margin: 0 auto; width: 95%;">
+<table class="summaries-table">
     <thead class="table-light">
-<thead class="table-light">
-    <tr>
-        <th>Week Start (Sun)</th>
-        <th>Sun</th>
-        <th>Mon</th>
-        <th>Tue</th>
-        <th>Wed</th>
-        <th>Thu</th>
-        <th>Fri</th>
-        <th>Sat</th>
-        <th>Weekly Total</th>
-        <th>YTD</th>
-        <th>Y</th>
-        <th>N</th>
-        <th>C</th>
-        <th>Event 1</th>
-        <th>Event 2</th>
-        <th>Notes</th>
-    </tr>
-</thead>    </thead>
+        <tr>
+            <th>Week Start (Sun)</th>
+            <th>Sun</th>
+            <th>Mon</th>
+            <th>Tue</th>
+            <th>Wed</th>
+            <th>Thu</th>
+            <th>Fri</th>
+            <th>Sat</th>
+            <th>Weekly Total</th>
+            <th>YTD</th>
+            <th>Y</th>
+            <th>N</th>
+            <th>C</th>
+            <th>Event 1</th>
+            <th>Event 2</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
 
-<tbody>
-    {% for row in weekly_data %}
-    <tr class="
-        {% if row.is_max_attendance %}max-attendance{% endif %}
-        {% if row.is_min_attendance %} min-attendance{% endif %}
-    ">
-        <td>{{ row.week_start.strftime('%d %b %Y') }}</td>
+    <tbody>
+        {% for row in weekly_data %}
+        <tr class="
+            {% if row.is_max_attendance %}max-attendance{% endif %}
+            {% if row.is_min_attendance %} min-attendance{% endif %}
+        ">
+            <td>{{ row.week_start.strftime('%d %b %Y') }}</td>
 
-        <td>${{ '%.2f'|format(row.sun) }}</td>
-        <td>${{ '%.2f'|format(row.mon) }}</td>
-        <td>${{ '%.2f'|format(row.tue) }}</td>
-        <td>${{ '%.2f'|format(row.wed) }}</td>
-        <td>${{ '%.2f'|format(row.thu) }}</td>
-        <td>${{ '%.2f'|format(row.fri) }}</td>
-        <td>${{ '%.2f'|format(row.sat) }}</td>
+            <td>${{ '%.2f'|format(row.sun) }}</td>
+            <td>${{ '%.2f'|format(row.mon) }}</td>
+            <td>${{ '%.2f'|format(row.tue) }}</td>
+            <td>${{ '%.2f'|format(row.wed) }}</td>
+            <td>${{ '%.2f'|format(row.thu) }}</td>
+            <td>${{ '%.2f'|format(row.fri) }}</td>
+            <td>${{ '%.2f'|format(row.sat) }}</td>
 
-        <td class="fw-bold">${{ '%.2f'|format(row.weekly_total) }}</td>
-        <td class="fw-bold">${{ '%.2f'|format(row.ytd_total) }}</td>
+            <td class="fw-bold">${{ '%.2f'|format(row.weekly_total) }}</td>
+            <td class="fw-bold">${{ '%.2f'|format(row.ytd_total) }}</td>
 
-<td>{{ row.y }}</td>
-<td>{{ row.n }}</td>
-<td>{{ row.c }}</td>
+            <td>{{ row.y }}</td>
+            <td>{{ row.n }}</td>
+            <td>{{ row.c }}</td>
 
-        <td>{{ row.event1 or '' }}</td>
-        <td>{{ row.event2 or '' }}</td>
-        <td>{{ row.notes or '' }}</td>
-    </tr>
-    {% endfor %}
-</tbody>
+            <td>{{ row.event1 or '' }}</td>
+            <td>{{ row.event2 or '' }}</td>
+            <td>{{ row.notes or '' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
 {% else %}
