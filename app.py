@@ -2782,7 +2782,6 @@ def create_app():
         horses = [(r.horse or "").strip() for r in rows]
 
         return jsonify(horses)
-
     
     @app.route('/send_invite', methods=['POST'])
     def send_invite():
