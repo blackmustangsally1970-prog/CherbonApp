@@ -2763,23 +2763,17 @@ def create_app():
         return redirect(url_for('client_view', client=client_id))
 
 
-    @app.route('/client_history/<client_key>')
-    def client_history(client_key):
-        clean = (client_key or "").strip().lower()
-
-        # If no client key, return empty list immediately
-        if not clean:
-            return jsonify([])
+    @app.route('/client_history/<int:client_id>')
+    def client_history(client_id):
 
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
 
         rows = (
             db.session.query(Lesson)
             .filter(
-                Lesson.client.isnot(None),  # prevent None from breaking lower()
-                func.replace(func.lower(Lesson.client), " ", "") == clean
+                Lesson.client_id == client_id,
+                Lesson.lesson_date < today
             )
-            .filter(Lesson.lesson_date < today)
             .order_by(Lesson.lesson_date.desc(), Lesson.lesson_id.desc())
             .limit(10)
             .all()

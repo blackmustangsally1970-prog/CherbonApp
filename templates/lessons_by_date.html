@@ -1609,20 +1609,18 @@ body {
     </td>
 
 {% set display_name = client.full_name if client else (lesson.client or '') %}
+{% set cid = client.client_id if client else None %}
 {% set client_key = (display_name or '')|lower|replace(' ', '') %}
-
 {% set horses = client_horse_history.get(client_key) %}
 
-<td class="client-cell" data-client="{{ client_key }}">
-
-  {% set cid = client.client_id if client else None %}
+<td class="client-cell" data-client="{{ cid }}">
 
   {% if cid %}
-<a href="{{ url_for('client_view', client_filter=cid) }}"
-   class="client-link"
-   style="display:block; width:100%;">
-   {{ display_name }}
-</a>
+    <a href="{{ url_for('client_view', client_filter=cid) }}"
+       class="client-link"
+       style="display:block; width:100%;">
+       {{ display_name }}
+    </a>
   {% else %}
     {{ display_name }}
   {% endif %}
