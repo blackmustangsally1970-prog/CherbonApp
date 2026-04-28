@@ -2883,24 +2883,29 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+    // MAIN HOVER HANDLER — supports both TD and A
     document.addEventListener('mouseover', function (e) {
 
       if (!toggle || !toggle.checked) return;
 
-      const cell = e.target.closest('.client-cell');
+      // Match either the TD or the A
+      const cell = e.target.closest(".client-cell, .client-link");
       if (!cell) return;
 
-      const client = cell.dataset.client;
+      // Always resolve to the TD that has data-client
+      const td = cell.closest(".client-cell");
+      if (!td) return;
+
+      const client = td.dataset.client;
       if (!client) return;
 
-      // ABSOLUTE URL — cannot break, cannot lose the slash
-      fetch("/client_history/" + client)
+      fetch("/client_history/" + encodeURIComponent(client))
         .then(r => r.json())
         .then(list => {
 
           tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
 
-          const rect = cell.getBoundingClientRect();
+          const rect = td.getBoundingClientRect();
           tip.style.top = (rect.top + window.scrollY) + "px";
           tip.style.left = (rect.right + window.scrollX + 4) + "px";
 
@@ -2913,9 +2918,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
+    // HIDE TOOLTIP
     document.addEventListener('mouseout', function (e) {
 
-      const cell = e.target.closest('.client-cell');
+      const cell = e.target.closest(".client-cell, .client-link");
       if (!cell) return;
 
       if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
@@ -4360,6 +4366,8 @@ function showSavedMessage() {
         z-index:9999;
      ">
 </div>
+
+<script src="{{ url_for('static', filename='js/client_history.js') }}"></script>
 
 
 </body>
