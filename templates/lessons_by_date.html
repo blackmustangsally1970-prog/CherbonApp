@@ -2882,7 +2882,8 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    document.addEventListener('mouseover', function(e) {
+    document.addEventListener('mouseover', function (e) {
+
       if (!toggle || !toggle.checked) return;
 
       const cell = e.target.closest('.client-cell');
@@ -2891,29 +2892,37 @@ document.addEventListener("DOMContentLoaded", function () {
       const client = cell.dataset.client;
       if (!client) return;
 
-      fetch(`/client_history/${client}`, { method: "GET" })
+      // ABSOLUTE URL — cannot break, cannot lose the slash
+      fetch("/client_history/" + client)
         .then(r => r.json())
         .then(list => {
+
           tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
 
           const rect = cell.getBoundingClientRect();
           tip.style.top = (rect.top + window.scrollY) + "px";
           tip.style.left = (rect.right + window.scrollX + 4) + "px";
 
-          tip.style.visibility = 'visible';
-          tip.style.opacity = '1';
+          tip.style.visibility = "visible";
+          tip.style.opacity = "1";
+        })
+        .catch(err => {
+          console.error("History fetch failed:", err);
         });
+
     });
 
-    document.addEventListener('mouseout', function(e) {
+    document.addEventListener('mouseout', function (e) {
+
       const cell = e.target.closest('.client-cell');
       if (!cell) return;
 
       if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
       if (cell.contains(e.relatedTarget)) return;
 
-      tip.style.visibility = 'hidden';
-      tip.style.opacity = '0';
+      tip.style.visibility = "hidden";
+      tip.style.opacity = "0";
+
     }, true);
 
   })();
