@@ -4281,14 +4281,14 @@ def create_app():
         return jsonify(success=False, error="Course not found")
 
 
-    @app.route('/fix_sort_orders', methods=['GET', 'POST'])
+    @app.route('/fix_sort_orders', methods=['POST'])
     def fix_sort_orders():
         courses = CourseReference.query.all()
         for c in courses:
             c.sort_order = compute_sort_order(c.day_of_week, c.timerange)
         db.session.commit()
         renumber_all_courses()
-        return jsonify(success=True)
+        return ("", 204)
 
 
     @app.route("/horses/delete/<int:hid>", methods=["POST"])
