@@ -3417,12 +3417,8 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${pad(start)} - ${pad(end)}`;
     }
 
-});
-</script>
-<script>
-// ⭐ Show/hide extra fields when booking type changes
-document.addEventListener("DOMContentLoaded", function () {
 
+    // ⭐ Show/hide extra fields when booking type changes
     $("#booking_type").on("change", function () {
         const type = $(this).val();
 
@@ -3433,295 +3429,282 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-});
+    // ⭐ Unified Save Handler (Option A — send time_frame only)
+    async function actuallySaveLessons() {
+        console.log("HANDLER ENTERED");
 
-</script>
+        const info = collectBookingInfo();
+        const lessons = collectLessonRows();
 
-<script>
-
-// ⭐ Unified Save Handler (Option A — send time_frame only)
-async function actuallySaveLessons() {
-    console.log("HANDLER ENTERED");
-
-    const info = collectBookingInfo();
-    const lessons = collectLessonRows();
-
-    if (lessons.length === 0) {
-        alert("No lessons to save.");
-        return;
-    }
-
-// ⭐ Validate rows
-for (const row of lessons) {
-
-    // ⭐ Allow Payment + Voucher CR to skip time
-    if (row.lesson_type !== "Payment" && row.lesson_type !== "Voucher CR") {
-        if (!row.lesson_date || !row.time_frame) {
-            alert("Each lesson requires a date and time.");
-            return;
-        }
-    }
-
-    if (!isValidDate(row.lesson_date)) {
-        alert("One or more dates are invalid.");
-        return;
-    }
-}
-
-    const freq = document.getElementById("recurrence_type").value;
-
-    // ============================================================
-    // ⭐ EXISTING CLIENT MODE
-    // ============================================================
-    if (info.booking_type === "existing") {
-
-        if (!info.client_id) {
-            alert("Please select an existing client.");
+        if (lessons.length === 0) {
+            alert("No lessons to save.");
             return;
         }
 
+        // ⭐ Validate rows
         for (const row of lessons) {
 
-            const form = new FormData();
-            form.append("date", row.lesson_date);
+            // ⭐ Allow Payment + Voucher CR to skip time
+            if (row.lesson_type !== "Payment" && row.lesson_type !== "Voucher CR") {
+                if (!row.lesson_date || !row.time_frame) {
+                    alert("Each lesson requires a date and time.");
+                    return;
+                }
+            }
 
-            // ⭐ Send full time frame (backend splits)
-            form.append("time_frame", canonicalTimeFrame(row.time_frame));
-
-
-
-            form.append("lesson_type", row.lesson_type);
-            form.append("group_priv", row.group_priv);
-            form.append("price_pl", row.price);
-            form.append("payment", row.payment);
-            form.append("recurrence_type", freq);
-            form.append("client_mode", "existing");
-            form.append("client_id", info.client_id);
-
-            form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
-
-
-
-            await fetch("/new_lesson", {
-                method: "POST",
-                body: form
-            });
+            if (!isValidDate(row.lesson_date)) {
+                alert("One or more dates are invalid.");
+                return;
+            }
         }
 
-        alert("Existing client booking saved!");
-        return;
-    }
+        const freq = document.getElementById("recurrence_type").value;
 
-    // ============================================================
-    // ⭐ NEW CLIENT MODE
-    // ============================================================
-    if (info.booking_type === "new") {
+        // ============================================================
+        // ⭐ EXISTING CLIENT MODE
+        // ============================================================
+        if (info.booking_type === "existing") {
 
-        if (!info.new_client_name) {
-            alert("Please enter the new client's name.");
+            if (!info.client_id) {
+                alert("Please select an existing client.");
+                return;
+            }
+
+            for (const row of lessons) {
+
+                const form = new FormData();
+                form.append("date", row.lesson_date);
+
+                // ⭐ Send full time frame (backend splits)
+                form.append("time_frame", canonicalTimeFrame(row.time_frame));
+
+                form.append("lesson_type", row.lesson_type);
+                form.append("group_priv", row.group_priv);
+                form.append("price_pl", row.price);
+                form.append("payment", row.payment);
+                form.append("recurrence_type", freq);
+                form.append("client_mode", "existing");
+                form.append("client_id", info.client_id);
+
+                form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
+
+                await fetch("/new_lesson", {
+                    method: "POST",
+                    body: form
+                });
+            }
+
+            alert("Existing client booking saved!");
             return;
         }
 
-        for (const row of lessons) {
+        // ============================================================
+        // ⭐ NEW CLIENT MODE
+        // ============================================================
+        if (info.booking_type === "new") {
 
-            const form = new FormData();
-            form.append("date", row.lesson_date);
+            if (!info.new_client_name) {
+                alert("Please enter the new client's name.");
+                return;
+            }
 
-            // ⭐ Send full time frame
-            form.append("time_frame", canonicalTimeFrame(row.time_frame));
+            for (const row of lessons) {
 
-            form.append("lesson_type", row.lesson_type);
-            form.append("group_priv", row.group_priv);
-            form.append("price_pl", row.price);
-            form.append("payment", row.payment);
-            form.append("recurrence_type", freq);
+                const form = new FormData();
+                form.append("date", row.lesson_date);
 
-            form.append("client_mode", "new");
-            form.append("client_name", info.new_client_name);
-            form.append("client_phone", info.mobile);
-            form.append("weight_kg", info.weight_kg);
-            form.append("height_cm", info.height_cm);
-            form.append("notes", info.notes);
-            form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
+                // ⭐ Send full time frame
+                form.append("time_frame", canonicalTimeFrame(row.time_frame));
 
+                form.append("lesson_type", row.lesson_type);
+                form.append("group_priv", row.group_priv);
+                form.append("price_pl", row.price);
+                form.append("payment", row.payment);
+                form.append("recurrence_type", freq);
 
+                form.append("client_mode", "new");
+                form.append("client_name", info.new_client_name);
+                form.append("client_phone", info.mobile);
+                form.append("weight_kg", info.weight_kg);
+                form.append("height_cm", info.height_cm);
+                form.append("notes", info.notes);
+                form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
 
-            await fetch("/new_lesson", {
-                method: "POST",
-                body: form
-            });
-        }
+                await fetch("/new_lesson", {
+                    method: "POST",
+                    body: form
+                });
+            }
 
-        alert("New client booking saved!");
-        return;
-    }
-
-    // ============================================================
-    // ⭐ SMS MODE
-    // ============================================================
-    if (info.booking_type === "sms") {
-
-        if (!info.mobile) {
-            alert("Mobile number is required for SMS invites.");
+            alert("New client booking saved!");
             return;
         }
 
-        const btn = document.getElementById("save-lessons-btn");
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = "Sending SMS Invites...";
+        // ============================================================
+        // ⭐ SMS MODE
+        // ============================================================
+        if (info.booking_type === "sms") {
+
+            if (!info.mobile) {
+                alert("Mobile number is required for SMS invites.");
+                return;
+            }
+
+            const btn = document.getElementById("save-lessons-btn");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "Sending SMS Invites...";
+            }
+
+            for (const row of lessons) {
+
+                const payload = new FormData();
+                payload.append("lesson_date", row.lesson_date);
+                payload.append("time_frame", canonicalTimeFrame(row.time_frame));
+                payload.append("lesson_type", row.lesson_type);
+                payload.append("group_priv", row.group_priv);
+                payload.append("mobile", info.mobile);
+                payload.append("riders", row.riders);
+                payload.append("price", row.price);
+
+                await fetch("/send_invite", {
+                    method: "POST",
+                    body: payload
+                });
+            }
+
+            if (btn) {
+                btn.textContent = "Invites Sent!";
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = "Save Lessons";
+                }, 1500);
+            }
+
+            return;
         }
-
-        for (const row of lessons) {
-
-            const payload = new FormData();
-            payload.append("lesson_date", row.lesson_date);
-            payload.append("time_frame", canonicalTimeFrame(row.time_frame));
-            payload.append("lesson_type", row.lesson_type);
-            payload.append("group_priv", row.group_priv);
-            payload.append("mobile", info.mobile);
-            payload.append("riders", row.riders);
-            payload.append("price", row.price);
-
-            await fetch("/send_invite", {
-                method: "POST",
-                body: payload
-            });
-        }
-
-        if (btn) {
-            btn.textContent = "Invites Sent!";
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.textContent = "Save Lessons";
-            }, 1500);
-        }
-
-        return;
     }
 
-}
+    // ⭐ Blockout-aware wrapper for Save Lessons
+    document.getElementById("save-lessons-btn").addEventListener("click", async (e) => {
+        e.preventDefault();
 
-// ⭐ Blockout-aware wrapper for Save Lessons
-document.getElementById("save-lessons-btn").addEventListener("click", async (e) => {
-    e.preventDefault();
+        const respect = document.getElementById("respect_blockouts").value;
+        const startDate = document.getElementById("top_base_date").value;
+        const freq = document.getElementById("recurrence_type").value;
 
-    const respect = document.getElementById("respect_blockouts").value;
-    const startDate = document.getElementById("top_base_date").value;
-    const freq = document.getElementById("recurrence_type").value;
-
-    // ⭐ If override → skip popup entirely
-    if (respect === "no") {
-        return actuallySaveLessons();
-    }
-
-    // ⭐ No date? Just save
-    if (!startDate) {
-        return actuallySaveLessons();
-    }
-
-    // ⭐ Call backend blockout checker
-    const resp = await fetch("/api/check_blockouts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            start_date: startDate,
-            freq: freq
-        })
-    });
-
-    const data = await resp.json();
-
-    // ⭐ No blockouts → save normally
-    if (!data.blocked) {
-        return actuallySaveLessons();
-    }
-
-    // ⭐ Blockouts found → show popup
-    showBlockoutPopup(data.blocked_dates);
-});
-
-function showBlockoutPopup(blockedDates) {
-    const modal = document.getElementById("blockout-warning-modal");
-    const list = document.getElementById("blockout-dates-list");
-
-    list.innerHTML = "";
-
-    blockedDates.forEach(item => {
-        const li = document.createElement("li");
-
-        // ⭐ Colour logic
-        if (item.reason.toLowerCase().includes("single")) {
-            // 🔴 Single‑day blockout
-            li.style.background = "#ffdddd";          // light red
-            li.style.borderLeft = "4px solid #d00";   // strong red
-        } else {
-            // 🟡 Range blockout
-            li.style.background = "#fff7cc";          // light yellow
-            li.style.borderLeft = "4px solid #e6b800"; // gold
+        // ⭐ If override → skip popup entirely
+        if (respect === "no") {
+            return actuallySaveLessons();
         }
 
-        li.style.padding = "6px 10px";
-        li.style.marginBottom = "6px";
-        li.style.borderRadius = "4px";
-        li.style.listStyle = "none";
+        // ⭐ No date? Just save
+        if (!startDate) {
+            return actuallySaveLessons();
+        }
 
-        li.textContent = `${item.date} — ${item.reason}`;
-        list.appendChild(li);
-    });
-
-    modal.style.display = "flex";
-}
-
-document.getElementById("blockout-keep-btn").addEventListener("click", () => {
-    document.getElementById("blockout-warning-modal").style.display = "none";
-    actuallySaveLessons();   // ⭐ proceed normally (respect blockouts still applies)
-});
-
-document.getElementById("blockout-change-btn").addEventListener("click", () => {
-    document.getElementById("blockout-warning-modal").style.display = "none";
-});
-</script>
-
-<script>
-function collectTeacherBlocks() {
-    const blocks = [];
-
-    $(".teacher-block-row").each(function () {
-        const row = $(this);
-
-        blocks.push({
-            id: row.attr("data-id") || null,
-            block_key: row.find(".teacher-block-key").val(),
-            horse: row.find(".teacher-block-horse").val(),
-            teacher_name: row.find(".teacher-block-name").val(),
-            notes: row.find(".teacher-block-notes").val()
+        // ⭐ Call backend blockout checker
+        const resp = await fetch("/api/check_blockouts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                start_date: startDate,
+                freq: freq
+            })
         });
+
+        const data = await resp.json();
+
+        // ⭐ No blockouts → save normally
+        if (!data.blocked) {
+            return actuallySaveLessons();
+        }
+
+        // ⭐ Blockouts found → show popup
+        showBlockoutPopup(data.blocked_dates);
     });
 
-    return blocks;
-}
-</script>
+    function showBlockoutPopup(blockedDates) {
+        const modal = document.getElementById("blockout-warning-modal");
+        const list = document.getElementById("blockout-dates-list");
 
-<script>
-document.getElementById('reset-grid-btn').onclick = function() {
-    if (!confirm("Are you sure you want to reset all overrides for this day?")) {
-        return;
+        list.innerHTML = "";
+
+        blockedDates.forEach(item => {
+            const li = document.createElement("li");
+
+            // ⭐ Colour logic
+            if (item.reason.toLowerCase().includes("single")) {
+                // 🔴 Single‑day blockout
+                li.style.background = "#ffdddd";          // light red
+                li.style.borderLeft = "4px solid #d00";   // strong red
+            } else {
+                // 🟡 Range blockout
+                li.style.background = "#fff7cc";          // light yellow
+                li.style.borderLeft = "4px solid #e6b800"; // gold
+            }
+
+            li.style.padding = "6px 10px";
+            li.style.marginBottom = "6px";
+            li.style.borderRadius = "4px";
+            li.style.listStyle = "none";
+
+            li.textContent = `${item.date} — ${item.reason}`;
+            list.appendChild(li);
+        });
+
+        modal.style.display = "flex";
     }
 
-    fetch('/reset_grid_overrides', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: selectedDate })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.status === 'ok') {
-            location.reload();
-        }
+    document.getElementById("blockout-keep-btn").addEventListener("click", () => {
+        document.getElementById("blockout-warning-modal").style.display = "none";
+        actuallySaveLessons();   // ⭐ proceed normally (respect blockouts still applies)
     });
-};
+
+    document.getElementById("blockout-change-btn").addEventListener("click", () => {
+        document.getElementById("blockout-warning-modal").style.display = "none";
+    });
+
+    function collectTeacherBlocks() {
+        const blocks = [];
+
+        $(".teacher-block-row").each(function () {
+            const row = $(this);
+
+            blocks.push({
+                id: row.attr("data-id") || null,
+                block_key: row.find(".teacher-block-key").val(),
+                horse: row.find(".teacher-block-horse").val(),
+                teacher_name: row.find(".teacher-block-name").val(),
+                notes: row.find(".teacher-block-notes").val()
+            });
+        });
+
+        return blocks;
+    }
+
+    document.getElementById('reset-grid-btn').onclick = function() {
+        if (!confirm("Are you sure you want to reset all overrides for this day?")) {
+            return;
+        }
+
+        fetch('/reset_grid_overrides', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: selectedDate })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                location.reload();
+            }
+        });
+    };
+
+});  // ✅ NOW we finally close the single DOMContentLoaded
 </script>
+
+
 
 
 
