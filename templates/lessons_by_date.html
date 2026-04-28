@@ -2872,53 +2872,55 @@ document.addEventListener("click", function (e) {
 </script>
 
 <script>
-(function clientHistoryHover() {
+document.addEventListener("DOMContentLoaded", function () {
 
-  const toggle = document.getElementById('toggle-horse-history');
-  const tip = document.getElementById('client-history-tip');
+  (function clientHistoryHover() {
 
-  // Show tooltip on hover
-  document.addEventListener('mouseover', function(e) {
-    if (!toggle || !toggle.checked) return;
+    const toggle = document.getElementById('toggle-horse-history');
+    const tip = document.getElementById('client-history-tip');
 
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
+    if (!tip) {
+      console.warn("client-history-tip not found");
+      return;
+    }
 
-    const client = cell.dataset.client;
-    if (!client) return;
+    document.addEventListener('mouseover', function(e) {
+      if (!toggle || !toggle.checked) return;
 
-    fetch(`/client_history/${encodeURIComponent(client)}`)
-      .then(r => r.json())
-      .then(list => {
-        tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
+      const cell = e.target.closest('.client-cell');
+      if (!cell) return;
 
-        const rect = cell.getBoundingClientRect();
+      const client = cell.dataset.client;
+      if (!client) return;
 
-        // ⭐ Position tooltip to the RIGHT of the client cell
-        tip.style.top = (rect.top + window.scrollY) + "px";
-        tip.style.left = (rect.right + window.scrollX + 4) + "px";
+      fetch(`/client_history/${encodeURIComponent(client)}`)
+        .then(r => r.json())
+        .then(list => {
+          tip.innerHTML = list.length ? list.join(", ") : "No recent horses";
 
-        tip.style.visibility = 'visible';
-        tip.style.opacity = '1';
-      });
-  });
+          const rect = cell.getBoundingClientRect();
+          tip.style.top = (rect.top + window.scrollY) + "px";
+          tip.style.left = (rect.right + window.scrollX + 4) + "px";
 
-  // Hide when leaving both the cell AND the tooltip
-  document.addEventListener('mouseout', function(e) {
-    const cell = e.target.closest('.client-cell');
-    if (!cell) return;
+          tip.style.visibility = 'visible';
+          tip.style.opacity = '1';
+        });
+    });
 
-    // If moving into the tooltip, do NOT hide
-    if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
+    document.addEventListener('mouseout', function(e) {
+      const cell = e.target.closest('.client-cell');
+      if (!cell) return;
 
-    // If still inside the cell, do NOT hide
-    if (cell.contains(e.relatedTarget)) return;
+      if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
+      if (cell.contains(e.relatedTarget)) return;
 
-    tip.style.visibility = 'hidden';
-    tip.style.opacity = '0';
-  }, true);
+      tip.style.visibility = 'hidden';
+      tip.style.opacity = '0';
+    }, true);
 
-})();
+  })();
+
+});
 </script>
 
 
