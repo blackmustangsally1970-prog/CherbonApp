@@ -758,18 +758,21 @@ body {
 
 </head>
 
+
 <body>
 
-
-<div id="top-controls" class="no-print" 
+<div id="top-controls" class="no-print"
      style="margin-bottom:0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
 
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
     <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
 
-    <button id="save-button" type="button" class="menu-btn">Save</button>
+    <!-- ⭐ Save button is OUTSIDE any form -->
+    <button id="save-button" type="button" class="menu-btn">
+        Save
+    </button>
 
-    <button id="toggle-teacher-btn" type="button" 
+    <button id="toggle-teacher-btn" type="button"
             style="margin-left:8px; padding:6px 10px; font-size:12px;">
         Show teachers
     </button>
@@ -789,16 +792,12 @@ body {
 
 <div id="page-wrapper">
 
-
 <div id="client-history-tip" class="client-history-tip"></div>
 
 <div id="save-status"
      style="position:fixed; top:10px; right:10px; z-index:99999;
             font-weight:bold; font-size:14px; color:#0645AD;">
 </div>
-
-
-
 
 {% if session.pop('show_flash', None) %}
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -812,65 +811,21 @@ body {
   {% endwith %}
 {% endif %}
 
-
 <span id="saved-message">Saved!</span>
-<form method="POST" action="/lessons_by_date" id="date-nav-form" style="display:flex; gap:8px; align-items:center;">
+
+<!-- ⭐ DATE FORM IS NOW ISOLATED -->
+<form method="POST" action="/lessons_by_date" id="date-nav-form"
+      style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+
   <button type="button" id="prev-day">←</button>
   <input type="date" name="date" id="date-picker" required>
   <button type="button" id="next-day">→</button>
+
+  <!-- ⭐ Only this button submits the form -->
   <button type="submit" style="margin-left:12px;">View</button>
-<!-- <button type="submit" form="update-lessons-form" style="margin-left:8px;">Save</button> -->
-
-
-
-<button type="button" id="print-page" style="margin-left:8px;">
-    Print
-</button>
-
-
-<button type="button" id="download-txt-btn" class="btn btn-primary" style="margin-left:8px;">
-    Download TXT
-</button>
-
-<button type="button" id="download-xlsx-btn" class="btn btn-success" style="margin-left:8px;">
-    Download Excel
-</button>
-
-
-<!--
-<button type="button" id="recalc-btn" class="btn btn-warning" style="margin-left:8px;">
-    Recalculate Balances
-</button>
--->
-
-
-<button type="button"
-        id="open-booking-panel"
-        class="btn btn-success"
-        style="margin-left:8px;">
-    Book Lessons
-</button>
-
-<button type="button" id="print-run-sheet" class="btn btn-danger" style="margin-left:8px;">
-    Print Run Sheet
-</button>
-
-<button type="button"
-        id="horse-print"
-        class="btn btn-danger"
-        style="margin-left:8px;"
-        onclick="window.open('{{ url_for('print_horse_by_date', date=selected_date) }}', '_blank');">
-    Horse Print
-</button>
-
-
-
-
-<!-- <button id="save-teachers" class="btn btn-primary">Save Teachers</button> -->
-
-
 
 </form>
+
 
 <form id="update-lessons-form">
   <input type="hidden" name="selected_date" value="{{ selected_date }}">
