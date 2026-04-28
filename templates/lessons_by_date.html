@@ -1609,11 +1609,11 @@ body {
     </td>
 
 {% set display_name = client.full_name if client else (lesson.client or '') %}
-{% set client_key = client.client_id %}
+{% set client_key = (display_name or '')|lower|replace(' ', '') %}
 
 {% set horses = client_horse_history.get(client_key) %}
 
-<td class="client-cell" data-client="{{ client.client_id }}">
+<td class="client-cell" data-client="{{ client_key }}">
 
   {% set cid = client.client_id if client else None %}
 
