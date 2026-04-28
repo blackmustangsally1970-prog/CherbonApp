@@ -761,18 +761,15 @@ body {
 
 <body>
 
-<div id="top-controls" class="no-print"
+<div id="top-controls" class="no-print" 
      style="margin-bottom:0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
 
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
     <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
 
-    <!-- ⭐ Save button is OUTSIDE any form -->
-    <button id="save-button" type="button" class="menu-btn">
-        Save
-    </button>
+    <button id="save-button" type="button" class="menu-btn">Save</button>
 
-    <button id="toggle-teacher-btn" type="button"
+    <button id="toggle-teacher-btn" type="button" 
             style="margin-left:8px; padding:6px 10px; font-size:12px;">
         Show teachers
     </button>
@@ -790,13 +787,38 @@ body {
 </div>
 
 
-<div id="page-wrapper">
+<!-- ⭐ ACTION BAR (all your buttons restored) -->
+<div id="action-bar" class="no-print"
+     style="display:flex; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap;">
 
-<div id="client-history-tip" class="client-history-tip"></div>
+    <button type="button" id="print-page" style="margin-left:8px;">
+        Print
+    </button>
 
-<div id="save-status"
-     style="position:fixed; top:10px; right:10px; z-index:99999;
-            font-weight:bold; font-size:14px; color:#0645AD;">
+    <button type="button" id="download-txt-btn" class="btn btn-primary" style="margin-left:8px;">
+        Download TXT
+    </button>
+
+    <button type="button" id="download-xlsx-btn" class="btn btn-success" style="margin-left:8px;">
+        Download Excel
+    </button>
+
+    <button type="button" id="open-booking-panel" class="btn btn-success" style="margin-left:8px;">
+        Book Lessons
+    </button>
+
+    <button type="button" id="print-run-sheet" class="btn btn-danger" style="margin-left:8px;">
+        Print Run Sheet
+    </button>
+
+    <button type="button"
+            id="horse-print"
+            class="btn btn-danger"
+            style="margin-left:8px;"
+            onclick="window.open('{{ url_for('print_horse_by_date', date=selected_date) }}', '_blank');">
+        Horse Print
+    </button>
+
 </div>
 
 {% if session.pop('show_flash', None) %}
@@ -4221,6 +4243,67 @@ document.addEventListener("input", function (e) {
     }
 });
 </script>
+
+<script>
+
+/* ================================
+   SAVE ALL LESSON FIELDS
+   ================================ */
+
+document.getElementById("save-button").addEventListener("click", saveAllLessons);
+
+function saveAllLessons() {
+    const rows = document.querySelectorAll(".lesson-row");
+    let pending = 0;
+
+    rows.forEach(row => {
+        const lesson_id = row.dataset.lessonId;
+
+        const attendance = row.querySelector(".attendance-select")?.value || "";
+        const payment = row.querySelector(".payment-input")?.value || "";
+        const price_pl = row.querySelector(".price-pl-input")?.value || "";
+        const adjust = row.querySelector(".adjust-input")?.value || "";
+        const notes = row.querySelector(".notes-input")?.value || "";
+
+        pending += queueUpdate(lesson_id, "attendance", attendance);
+        pending += queueUpdate(lesson_id, "payment", payment);
+        pending += queueUpdate(lesson_id, "price_pl", price_pl);
+        pending += queueUpdate(lesson_id, "adjust", adjust);
+        pending += queueUpdate(lesson_id, "lesson_notes", notes);
+    });
+
+    if (pending === 0) {
+        showSavedMessage();
+    }
+}
+
+function queueUpdate(lesson_id, field, value) {
+    if (!lesson_id) return 0;
+
+    fetch("/update_lesson_field", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lesson_id, field, value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            console.error("Update failed:", data.error);
+        }
+    })
+    .catch(err => console.error("Network error:", err));
+
+    return 1;
+}
+
+function showSavedMessage() {
+    const msg = document.getElementById("saved-message");
+    msg.style.opacity = 1;
+    setTimeout(() => msg.style.opacity = 0, 1500);
+}
+</script>
+
+
 
 </div>
 </body>
