@@ -3736,102 +3736,75 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 <script>
-document.getElementById("save-button").addEventListener("click", async () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-    const statusBox = document.getElementById("save-status");
-    statusBox.textContent = "Saving…";
+    document.getElementById("save-button").addEventListener("click", async () => {
 
-    const rows = document.querySelectorAll("tr[data-lesson-id]");
-    const selectedDate = document.getElementById("date-picker").value;
+        const statusBox = document.getElementById("save-status");
+        statusBox.textContent = "Saving…";
 
-    const payload = {
-        date: selectedDate,
-        teacher_blocks: collectTeacherBlocks(),   // ⭐ ADD THIS LINE
-        lessons: []
-    };
-    // ⭐ ADD THIS BLOCK HERE
-    document.querySelectorAll("select.searchable-dropdown").forEach(sel => {
-        sel.dispatchEvent(new Event("change"));
-    });
+        const rows = document.querySelectorAll("tr[data-lesson-id]");
+        const selectedDate = document.getElementById("date-picker").value;
 
-    for (const row of rows) {
-        const lessonId = row.dataset.lessonId;
-        if (!lessonId) continue;
-
-        const clientId = row.querySelector(".meta-client-id")?.value || "";
-        const notesField = clientId
-            ? row.querySelector(`input[name='notes_${clientId}']`)
-            : null;
-
-        const notesVal = notesField ? notesField.value : "";
-        console.log("HORSE READ:", lessonId, $(row).find(`select[name='horse_${lessonId}']`).val());
-        payload.lessons.push({
-            lesson_id: lessonId,
-
-            horse: $(`select[name='horse_${lessonId}']`).val() || "",
-            attendance: row.querySelector(`select[name='attendance_${lessonId}']`)?.value || "",
-            payment: row.querySelector(`input[name='payment_${lessonId}']`)?.value || "",
-            price_pl: row.querySelector(`input[name='price_pl_${lessonId}']`)?.value || "",
-            notes: notesVal,
-            group_priv: row.querySelector(".meta-group-priv")?.value || "",
-            lesson_type: row.querySelector(".meta-lesson-type")?.value || "",
-            start: row.querySelector(".meta-start")?.value || "",
-            end: row.querySelector(".meta-end")?.value || ""
-        });
-    }
-
-    // ⭐ Save lesson details
-    await fetch("/save_all_lessons", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-
-
-
-const legacyChecked = document.querySelector(
-    ".t1-checkbox:checked, .t2-checkbox:checked, .t3-checkbox:checked, .t4-checkbox:checked, .t5-checkbox:checked"
-);
-
-if (legacyChecked) {
-    console.warn("LEGACY TEACHER CHECKBOXES ARE CHECKED BUT IGNORED BY SAVE LOGIC.");
-}
-
-
-    // ⭐ Save teacher slots (5-slot engine)
-    await fetch("/save_teacher_slots", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        const payload = {
             date: selectedDate,
-            slots: {
-                1: document.querySelector("#teacher_select_1")?.value || "",
-                2: document.querySelector("#teacher_select_2")?.value || "",
-                3: document.querySelector("#teacher_select_3")?.value || "",
-                4: document.querySelector("#teacher_select_4")?.value || "",
-                5: document.querySelector("#teacher_select_5")?.value || ""
-            }
-        })
+            teacher_blocks: collectTeacherBlocks(),
+            lessons: []
+        };
+
+        document.querySelectorAll("select.searchable-dropdown").forEach(sel => {
+            sel.dispatchEvent(new Event("change"));
+        });
+
+        for (const row of rows) {
+            const lessonId = row.dataset.lessonId;
+            if (!lessonId) continue;
+
+            const clientId = row.querySelector(".meta-client-id")?.value || "";
+            const notesField = clientId
+                ? row.querySelector(`input[name='notes_${clientId}']`)
+                : null;
+
+            const notesVal = notesField ? notesField.value : "";
+
+            payload.lessons.push({
+                lesson_id: lessonId,
+                horse: $(`select[name='horse_${lessonId}']`).val() || "",
+                attendance: row.querySelector(`select[name='attendance_${lessonId}']`)?.value || "",
+                payment: row.querySelector(`input[name='payment_${lessonId}']`)?.value || "",
+                price_pl: row.querySelector(`input[name='price_pl_${lessonId}']`)?.value || "",
+                notes: notesVal,
+                group_priv: row.querySelector(".meta-group-priv")?.value || "",
+                lesson_type: row.querySelector(".meta-lesson-type")?.value || "",
+                start: row.querySelector(".meta-start")?.value || "",
+                end: row.querySelector(".meta-end")?.value || ""
+            });
+        }
+
+        await fetch("/save_all_lessons", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const overrides = collectLessonOverrides();
+
+        await fetch("/save_teacher_tags", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                date: selectedDate,
+                overrides: overrides
+            })
+        });
+
+        statusBox.textContent = "Saved!";
+
+        setTimeout(() => {
+            window.location = `/lessons_by_date?date=${selectedDate}`;
+        }, 400);
     });
 
-// ⭐ NEW: Save lesson-level teacher tag overrides
-const overrides = collectLessonOverrides();
-
-await fetch("/save_teacher_tags", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-        date: selectedDate,
-        overrides: overrides
-    })
-});
-
-
-    statusBox.textContent = "Saved!";
-
-    setTimeout(() => {
-        window.location = `/lessons_by_date?date=${selectedDate}`;
-    }, 400);
 });
 </script>
 
