@@ -184,13 +184,16 @@ def strip_old_spans(text):
     return re.sub(r"</?span[^>]*>", "", text, flags=re.IGNORECASE)
 
 def highlight(text, query):
-    if not text or not query:
+    if not text:
         return ""
 
-    # 1) Strip ALL existing span junk from DB/text
-    text = strip_old_spans(text)
+    # 1) Remove RAW <span ...> tags
+    text = re.sub(r"</?span[^>]*>", "", text, flags=re.IGNORECASE)
 
-    # 2) Escape safely
+    # 2) Remove ESCAPED &lt;span ...&gt; tags
+    text = re.sub(r"&lt;/?span[^&]*&gt;", "", text, flags=re.IGNORECASE)
+
+    # 3) Escape clean text
     text_safe = escape(text)
     q_safe = escape(query)
 
@@ -199,11 +202,10 @@ def highlight(text, query):
 
     start = lower_text.find(lower_q)
     if start == -1:
-        return text_safe  # no match
+        return text_safe
 
     end = start + len(q_safe)
 
-    # 3) Inject clean highlight
     return Markup(
         text_safe[:start]
         + f"<span class='hl'>{text_safe[start:end]}</span>"
