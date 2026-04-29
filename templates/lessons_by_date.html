@@ -2899,7 +2899,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // -----------------------------------------------------------
     table.addEventListener('mouseover', function (e) {
 
+      const toggle = document.getElementById('toggle-horse-history');
       if (!toggle || !toggle.checked) return;
+
 
       const cell = e.target.closest(".client-cell, .client-link");
       if (!cell) return;
