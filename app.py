@@ -179,40 +179,48 @@ def recalc_client_cascade(client_name: str):
     db.session.commit()
 
 
-
 def strip_old_spans(text):
     if not text:
         return ""
-    # Remove ANY <span ...> or </span> regardless of attributes/case
-    return re.sub(r"</?span[^>]*>", "", text, flags=re.IGNORECASE)
+    # Remove ANY real <span ...> or </span> tags
+    text = re.sub(r"</?span[^>]*>", "", text, flags=re.IGNORECASE)
+    # Remove ANY escaped &lt;span ...&gt; or &lt;/span&gt; tags
+    text = re.sub(r"&lt;/?span[^&]*&gt;", "", text, flags=re.IGNORECASE)
+    return text
 
 def highlight(text, query):
     if not text:
         return ""
+    if not query:
+        # Just escape the raw text safely
+        return Markup(escape(text))
 
-    # 1) Remove RAW <span ...> tags
-    text = re.sub(r"</?span[^>]*>", "", text, flags=re.IGNORECASE)
+    # 1) Strip any old spans (real or escaped)
+    clean = strip_old_spans(text)
 
-    # 2) Remove ESCAPED &lt;span ...&gt; tags
-    text = re.sub(r"&lt;/?span[^&]*&gt;", "", text, flags=re.IGNORECASE)
+    # 2) Case-insensitive search on the raw text
+    lower_clean = clean.lower()
+    lower_q = query.lower()
 
-    # 3) Escape clean text
-    text_safe = escape(text)
-    q_safe = escape(query)
-
-    lower_text = text_safe.lower()
-    lower_q = q_safe.lower()
-
-    start = lower_text.find(lower_q)
+    start = lower_clean.find(lower_q)
     if start == -1:
-        return text_safe
+        # No match: just escape safely
+        return Markup(escape(clean))
 
-    end = start + len(q_safe)
+    end = start + len(query)
+
+    # 3) Split into parts
+    before = clean[:start]
+    match = clean[start:end]
+    after = clean[end:]
+
+    # 4) Escape each part, but wrap the MATCH in a span
+    before_safe = escape(before)
+    match_safe = escape(match)
+    after_safe = escape(after)
 
     return Markup(
-        text_safe[:start]
-        + f"<span class='hl'>{text_safe[start:end]}</span>"
-        + text_safe[end:]
+        f"{before_safe}<span class='hl'>{match_safe}</span>{after_safe}"
     )
 
 def login_required(f):
