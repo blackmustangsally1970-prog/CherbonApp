@@ -56,15 +56,26 @@
         thead { display: table-header-group; }
         tfoot { display: table-footer-group; }
 
-        /* ⭐ BLUE BLOCK HEADER — MUST COME AFTER td RULE */
-        .block-header-row td {
-            background: #d9e7ff !important;
-            color: #003366 !important;
-            font-weight: bold;
-            font-size: 11pt;
-            padding: 6px 8px;
-            border: 1px solid #003366 !important;
-        }
+.block-header-row td {
+    background: #d9e7ff !important;
+    color: #003366 !important;
+    font-weight: bold;
+    font-size: 11pt;
+    padding: 6px 8px;
+    border: 1px solid #003366 !important;
+
+    /* ⭐ REQUIRED FOR CHROME PRINT BUG */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    display: table-cell !important;
+}
+
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
 
         /* Buttons */
         .print-btn,
