@@ -3732,13 +3732,18 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
-
-
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-    document.getElementById("save-button").addEventListener("click", async () => {
+    const btn = document.getElementById("save-button");
+
+    // ⭐ WIPE ALL OLD CLICK HANDLERS
+    const cleanBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(cleanBtn, btn);
+
+    // ⭐ ATTACH YOUR NEW SAVE HANDLER TO THE CLEAN BUTTON
+    cleanBtn.addEventListener("click", async () => {
+        console.log("NEW SAVE HANDLER FIRED");
 
         const statusBox = document.getElementById("save-status");
         statusBox.textContent = "Saving…";
@@ -3807,8 +3812,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
-
 
 
 <script>
