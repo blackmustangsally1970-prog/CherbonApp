@@ -3732,6 +3732,51 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+
+
+
+<script>
+function collectTeacherBlocks() {
+    return {
+        1: document.querySelector("#teacher_select_1")?.value || "",
+        2: document.querySelector("#teacher_select_2")?.value || "",
+        3: document.querySelector("#teacher_select_3")?.value || "",
+        4: document.querySelector("#teacher_select_4")?.value || "",
+        5: document.querySelector("#teacher_select_5")?.value || ""
+    };
+}
+</script>
+
+<script>
+function recalcBalance(lessonId) {
+    const paymentField = document.querySelector(`input[name='payment_${lessonId}']`);
+    const priceField   = document.querySelector(`input[name='price_pl_${lessonId}']`);
+    const adjustField  = document.querySelector(`input[name='adjust_${lessonId}']`);
+    const carryField   = document.querySelector(`input[name='carry_fwd_${lessonId}']`);
+    const attField     = document.querySelector(`select[name='attendance_${lessonId}']`);
+
+    const payment = parseFloat(paymentField?.value || 0) || 0;
+    let   price   = parseFloat(priceField?.value || 0) || 0;
+    const adjust  = parseFloat(adjustField?.value || 0) || 0;
+    const carry   = parseFloat(carryField?.value || 0) || 0;
+    const att     = attField?.value || "";
+
+    // Cancelled lessons have no price
+    if (att === "C" || att === "") {
+        price = 0;
+    }
+
+    const balance = carry + payment - price + adjust;
+
+    const display = document.getElementById(`balance_display_${lessonId}`);
+    if (display) {
+        display.textContent = `$${balance.toFixed(2)}`;
+    }
+}
+</script>
+
+
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -3904,38 +3949,6 @@ function resetSaveLessonButton() {
     $('#save-overlay').fadeOut(150);
 }
 </script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const btn = document.getElementById("save-button");
-    if (!btn) return;
-
-    btn.addEventListener("click", function () {
-
-        btn.disabled = true;
-        btn.innerHTML = 'Saving… <span class="save-spinner"></span>';
-
-        setTimeout(() => {
-            btn.disabled = false;
-            btn.innerHTML = 'Save';
-        }, 1500);
-    });
-});
-</script>
-
-
-<script>
-function collectTeacherBlocks() {
-    return {
-        1: document.querySelector("#teacher_select_1")?.value || "",
-        2: document.querySelector("#teacher_select_2")?.value || "",
-        3: document.querySelector("#teacher_select_3")?.value || "",
-        4: document.querySelector("#teacher_select_4")?.value || "",
-        5: document.querySelector("#teacher_select_5")?.value || ""
-    };
-}
-</script>
-
 
 
 {% block scripts %}
@@ -4218,6 +4231,9 @@ document.addEventListener("DOMContentLoaded", function () {
      ">
     Saved
 </div>
+
+
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
