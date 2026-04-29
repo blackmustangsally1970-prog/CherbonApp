@@ -58,7 +58,7 @@
 
 <h1>Super Lookup</h1>
 
-<form method="POST">
+<form method="POST" action="{{ url_for('superlookup') }}">
     <label>Search any name, guardian, email, or phone:</label><br>
     <input type="text" name="q" value="{{ q }}" style="width:300px;">
     <button>Search</button>
