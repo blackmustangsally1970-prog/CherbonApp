@@ -4402,5 +4402,32 @@ function showSavedMessage() {
 <script src="{{ url_for('static', filename='js/client_history.js') }}"></script>
 
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const picker = document.getElementById("date-picker");
+    const prevBtn = document.getElementById("prev-day");
+    const nextBtn = document.getElementById("next-day");
+    const form = document.getElementById("date-nav-form");
+
+    function shiftDate(days) {
+        const current = picker.value;   // always YYYY-MM-DD now
+        if (!current) return;
+
+        const d = new Date(current);
+        d.setDate(d.getDate() + days);
+
+        const iso = d.toISOString().split("T")[0];
+        picker.value = iso;
+
+        form.submit();
+    }
+
+    prevBtn.addEventListener("click", () => shiftDate(-1));
+    nextBtn.addEventListener("click", () => shiftDate(1));
+});
+</script>
+
+
+
 </body>
 </html>
