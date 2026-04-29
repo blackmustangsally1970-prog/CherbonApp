@@ -53,6 +53,7 @@ from functools import lru_cache, wraps
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 from app import db
+from markupsafe import Markup, escape
 
 # Third‑party libs
 import requests
@@ -171,6 +172,29 @@ def recalc_client_cascade(client_name: str):
         running_balance = balance
 
     db.session.commit()
+
+
+
+def highlight(text, q):
+    if not text:
+        return ""
+    t = text or ""
+    q_lower = q.lower()
+    t_lower = t.lower()
+
+    start = t_lower.find(q_lower)
+    if start == -1:
+        return escape(t)
+
+    end = start + len(q)
+
+    return Markup(
+        escape(t[:start]) +
+        "<span class='hl'>" +
+        escape(t[start:end]) +
+        "</span>" +
+        escape(t[end:])
+    )
 
 
 
@@ -1063,6 +1087,7 @@ def create_app():
     )
 
 
+
     app.config['SQLALCHEMY_ECHO'] = True
     db.init_app(app)
 
@@ -1306,6 +1331,32 @@ def create_app():
             return render_template("login.html", error="Invalid username or password")
 
         return render_template("login.html")
+
+    @app.route("/superlookup", methods=["GET", "POST"])
+    def superlookup():
+        q = request.form.get("q", "").strip()
+        results = []
+
+        if q:
+            q_lower = q.lower()
+            matches = Client.query.filter(
+                db.or_(
+                    Client.full_name.ilike(f"%{q_lower}%"),
+                    Client.guardian_name.ilike(f"%{q_lower}%"),
+                    Client.email.ilike(f"%{q_lower}%"),
+                    Client.mobile.ilike(f"%{q_lower}%")
+                )
+            ).all()
+
+            for c in matches:
+                results.append({
+                    "name": highlight(c.full_name, q),
+                    "mobile": highlight(c.mobile, q),
+                    "guardian": highlight(c.guardian_name, q),
+                    "email": highlight(c.email, q)
+                })
+
+        return render_template("superlookup.html", q=q, results=results)
 
 
     @app.route("/logout")

@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Super Lookup</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+
+        .menu-btn-small {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+
+        .hl {
+            background: yellow;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f0f0f0;
+            text-align: left;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+    </style>
+</head>
+
+<body>
+
+<a href="{{ url_for('other_tools') }}" class="menu-btn-small">← Other Tools</a>
+<a href="{{ url_for('dashboard') }}" class="menu-btn-small">🏠 Main Menu</a>
+
+<h1>Super Lookup</h1>
+
+<form method="POST">
+    <label>Search any name, guardian, email, or phone:</label><br>
+    <input type="text" name="q" value="{{ q }}" style="width:300px;">
+    <button>Search</button>
+</form>
+
+{% if results %}
+<div class="result-box">
+    <h3>Matches ({{ results|length }})</h3>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Guardian</th>
+            <th>Email</th>
+        </tr>
+
+        {% for r in results %}
+        <tr>
+            <td>{{ r.name|safe }}</td>
+            <td>{{ r.mobile|safe }}</td>
+            <td>{{ r.guardian|safe }}</td>
+            <td>{{ r.email|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% elif q %}
+<div class="result-box">
+    <p>No matches found for <strong>{{ q }}</strong>.</p>
+</div>
+{% endif %}
+
+</body>
+</html>
