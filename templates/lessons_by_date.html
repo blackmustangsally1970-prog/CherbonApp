@@ -892,6 +892,11 @@ body {
 
 </form>
 
+<!-- ⭐ PUT THE SCRIPT *RIGHT HERE*, DIRECTLY AFTER THE DATE PICKER FORM -->
+<script>
+document.getElementById("date-picker").value =
+    new Date().toISOString().split("T")[0];
+</script>
 
 <form id="update-lessons-form">
   
