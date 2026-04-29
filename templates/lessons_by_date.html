@@ -2049,60 +2049,81 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    const dateInput = document.getElementById('date-picker');
-    const form = document.getElementById('date-nav-form');
+  (function clientHistoryHover() {
 
-    // ⭐ 1. Read date from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlDate = urlParams.get("date");
+    const tip = document.getElementById('client-history-tip');
+    const table = document.getElementById('lesson-table');
 
-    // ⭐ 2. Read date from Flask (if provided)
-    const flaskDate = "{{ selected_date }}";   // may be empty
-
-    let finalDate = "";
-
-    // ⭐ Priority order:
-    // 1. URL date
-    // 2. Flask date
-    // 3. Today
-    if (urlDate) {
-        finalDate = urlDate;
-    } else if (flaskDate) {
-        finalDate = flaskDate;
-    } else {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        finalDate = `${yyyy}-${mm}-${dd}`;
+    if (!tip || !table) {
+      console.warn("Tooltip or table wrapper missing");
+      return;
     }
 
-    // ⭐ Apply final date to picker + modal hidden field
-    dateInput.value = finalDate;
+    // -----------------------------------------------------------
+    // MAIN HOVER HANDLER — correct order
+    // -----------------------------------------------------------
+    table.addEventListener('mouseover', function (e) {
 
-    const hiddenBase = document.getElementById("top_base_date");
-    if (hiddenBase) hiddenBase.value = finalDate;
+        // 1. Only react to client cells
+        const cell = e.target.closest(".client-cell, .client-link");
+        if (!cell) return;
 
-    // ⭐ Prev/next day buttons
-    function shiftDate(days) {
-        const current = new Date(dateInput.value || new Date());
-        current.setDate(current.getDate() + days);
+        // 2. NOW check the toggle
+        const toggle = document.getElementById('toggle-horse-history');
+        if (!toggle || !toggle.checked) return;
 
-        const yyyy = current.getFullYear();
-        const mm = String(current.getMonth() + 1).padStart(2, '0');
-        const dd = String(current.getDate()).padStart(2, '0');
-        const newDate = `${yyyy}-${mm}-${dd}`;
+        // 3. Continue as normal
+        const td = cell.closest(".client-cell");
+        if (!td) return;
 
-        dateInput.value = newDate;
-        if (hiddenBase) hiddenBase.value = newDate;
+        const client = td.dataset.client;
+        if (!client) return;
 
-        setTimeout(() => form.submit(), 10);
-    }
+        fetch("/client_history/" + encodeURIComponent(client))
+            .then(r => r.json())
+            .then(list => {
 
-    const prevBtn = document.getElementById('prev-day');
-    const nextBtn = document.getElementById('next-day');
-    if (prevBtn) prevBtn.addEventListener('click', () => shiftDate(-1));
-    if (nextBtn) nextBtn.addEventListener('click', () => shiftDate(1));
+                const clean = list.filter(x => x && x.trim());
+                tip.innerHTML = clean.length ? clean.join(", ") : "No recent horses";
+
+                const rect = td.getBoundingClientRect();
+                tip.style.top = (rect.top + window.scrollY) + "px";
+                tip.style.left = (rect.right + window.scrollX + 4) + "px";
+
+                tip.style.visibility = "visible";
+                tip.style.opacity = "1";
+            });
+    });
+
+
+    // -----------------------------------------------------------
+    // HIDE TOOLTIP — mouseout boundary logic
+    // -----------------------------------------------------------
+    table.addEventListener('mouseout', function (e) {
+
+        const cell = e.target.closest(".client-cell, .client-link");
+        if (!cell) return;
+
+        if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
+        if (cell.contains(e.relatedTarget)) return;
+
+        tip.style.visibility = "hidden";
+        tip.style.opacity = "0";
+        tip.innerHTML = "";
+
+    }, true);
+
+
+    // -----------------------------------------------------------
+    // EXTRA SAFETY — leaving the entire table hides tooltip
+    // -----------------------------------------------------------
+    table.addEventListener("mouseleave", function () {
+        tip.style.visibility = "hidden";
+        tip.style.opacity = "0";
+        tip.innerHTML = "";
+    }, true);
+
+  })();
 
 });
 </script>
