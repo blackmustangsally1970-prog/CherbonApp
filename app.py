@@ -1363,6 +1363,9 @@ def create_app():
             ).all()
 
             for c in matches:
+                print("RAW:", c.full_name)
+                print("HIGHLIGHTED:", highlight(c.full_name, q))
+
                 results.append({
                     "name": highlight(c.full_name, q),
                     "mobile": highlight(c.mobile, q),
