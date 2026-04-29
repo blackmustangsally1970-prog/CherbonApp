@@ -54,6 +54,8 @@ from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 from app import db
 from markupsafe import Markup, escape
+from sqlalchemy import func
+
 
 # Third‑party libs
 import requests
@@ -1341,10 +1343,10 @@ def create_app():
             q_lower = q.lower()
             matches = Client.query.filter(
                 db.or_(
-                    Client.full_name.ilike(f"%{q_lower}%"),
-                    Client.guardian_name.ilike(f"%{q_lower}%"),
-                    Client.email.ilike(f"%{q_lower}%"),
-                    Client.mobile.ilike(f"%{q_lower}%")
+                    func.coalesce(Client.full_name, '').ilike(f"%{q_lower}%"),
+                    func.coalesce(Client.guardian_name, '').ilike(f"%{q_lower}%"),
+                    func.coalesce(Client.email, '').ilike(f"%{q_lower}%"),
+                    func.coalesce(Client.mobile, '').ilike(f"%{q_lower}%")
                 )
             ).all()
 
