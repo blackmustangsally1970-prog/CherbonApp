@@ -21,22 +21,13 @@
             margin: 0 0 10px 0;
         }
 
-        /* ⭐ BLUE BLOCK HEADER (inside table) */
-        .block-header-row td {
-            background: #d9e7ff;
-            color: #003366;
-            font-weight: bold;
-            font-size: 11pt;
-            padding: 6px 8px;
-            border: 1px solid #003366;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 12px;
         }
 
+        /* ⭐ Base cell styling */
         th, td {
             border: 1px solid #000;
             padding: 3px 4px;
@@ -55,15 +46,25 @@
         th:nth-child(3), td:nth-child(3) { width: 35px; }   /* Att */
         th:nth-child(4), td:nth-child(4) { width: 120px; }  /* Teacher */
 
-        /* ⭐ Keep blocks together */
+        /* ⭐ Keep lesson rows together */
         .lesson-block {
             break-inside: avoid;
             page-break-inside: avoid;
         }
 
-        /* ⭐ Repeat header on each printed page */
+        /* ⭐ Repeat table header on each printed page */
         thead { display: table-header-group; }
         tfoot { display: table-footer-group; }
+
+        /* ⭐ BLUE BLOCK HEADER — MUST COME AFTER td RULE */
+        .block-header-row td {
+            background: #d9e7ff !important;
+            color: #003366 !important;
+            font-weight: bold;
+            font-size: 11pt;
+            padding: 6px 8px;
+            border: 1px solid #003366 !important;
+        }
 
         /* Buttons */
         .print-btn,
@@ -99,7 +100,6 @@
 
 <h1>Cherbon Waters Equestrian Centre – Horse Print – {{ date }}</h1>
 
-<!-- ⭐ ONE TABLE FOR THE WHOLE PRINT -->
 <table>
     <thead>
         <tr>
@@ -113,7 +113,6 @@
     <tbody>
 
     {% for block in grouped %}
-        <!-- ⭐ BLUE BLOCK HEADER INSIDE TABLE -->
         <tr class="block-header-row">
             <td colspan="4">
                 {{ block.time }} {{ block.lesson_type }} {{ block.group_priv }}
