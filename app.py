@@ -1,3 +1,6 @@
+
+print(">>> FILE LOADED:", __file__)
+
 from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, make_response, after_this_request, flash,
