@@ -3108,11 +3108,11 @@ function collectLessonState() {
 
 document.getElementById("download-txt-btn").addEventListener("click", () => {
     const payload = {
-        date: document.getElementById("date-picker").value,
+        selected_date: document.getElementById("date-picker").value,
         lessons: collectLessonState()
     };
 
-    fetch("/save_txt?selected_date=" + payload.date, {
+    fetch("/save_txt?selected_date=" + payload.selected_date, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -3130,11 +3130,11 @@ document.getElementById("download-txt-btn").addEventListener("click", () => {
 
 document.getElementById("download-xlsx-btn").addEventListener("click", () => {
     const payload = {
-        date: document.getElementById("date-picker").value,
+        selected_date: document.getElementById("date-picker").value,
         lessons: collectLessonState()
     };
 
-    fetch("/save_xlsx?selected_date=" + payload.date, {
+    fetch("/save_xlsx?selected_date=" + payload.selected_date, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
