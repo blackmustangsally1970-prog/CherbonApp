@@ -894,8 +894,16 @@ body {
 
 <!-- ⭐ PUT THE SCRIPT *RIGHT HERE*, DIRECTLY AFTER THE DATE PICKER FORM -->
 <script>
-document.getElementById("date-picker").value =
-    new Date().toISOString().split("T")[0];
+const picker = document.getElementById("date-picker");
+
+// Only set a default if the picker is EMPTY (first load, no ?date= param)
+if (picker && !picker.value) {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    picker.value = `${yyyy}-${mm}-${dd}`;
+}
 </script>
 
 <form id="update-lessons-form">
