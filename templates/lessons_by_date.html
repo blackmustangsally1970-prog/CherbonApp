@@ -3924,6 +3924,20 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+<script>
+function collectTeacherBlocks() {
+    return {
+        1: document.querySelector("#teacher_select_1")?.value || "",
+        2: document.querySelector("#teacher_select_2")?.value || "",
+        3: document.querySelector("#teacher_select_3")?.value || "",
+        4: document.querySelector("#teacher_select_4")?.value || "",
+        5: document.querySelector("#teacher_select_5")?.value || ""
+    };
+}
+</script>
+
+
+
 {% block scripts %}
 <script>
 window.addEventListener('load', function () {
