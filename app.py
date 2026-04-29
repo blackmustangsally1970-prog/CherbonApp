@@ -175,11 +175,18 @@ def recalc_client_cascade(client_name: str):
 
     db.session.commit()
 
-
-
+def strip_old_spans(text):
+    if not text:
+        return ""
+    # Remove ANY <span ... hl ...>...</span>
+    return re.sub(r"<span[^>]*hl[^>]*>(.*?)</span>", r"\1", text, flags=re.IGNORECASE)
+super
 def highlight(text, query):
     if not text:
         return ""
+
+    # Remove old span-based highlights
+    text = re.sub(r"<span class='hl'>(.*?)</span>", r"\1", text)
 
     text_safe = escape(text)
     q_safe = escape(query)
@@ -189,7 +196,7 @@ def highlight(text, query):
 
     start = lower_text.find(lower_q)
     if start == -1:
-        return text_safe  # no match
+        return text_safe
 
     end = start + len(q_safe)
 
