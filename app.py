@@ -175,20 +175,22 @@ def recalc_client_cascade(client_name: str):
 
     db.session.commit()
 
+
+
 def strip_old_spans(text):
     if not text:
         return ""
-    # Remove ANY <span ... hl ...>...</span> regardless of case, quotes, spacing, attributes
-    return re.sub(r"<span[^>]*hl[^>]*>(.*?)</span>", r"\1", text, flags=re.IGNORECASE)
-
+    # Remove ANY <span ...> or </span> regardless of attributes/case
+    return re.sub(r"</?span[^>]*>", "", text, flags=re.IGNORECASE)
 
 def highlight(text, query):
-    if not text:
+    if not text or not query:
         return ""
 
-    # Remove ANY old <span ... hl ...>...</span> variants
-    text = re.sub(r"<span[^>]*hl[^>]*>(.*?)</span>", r"\1", text, flags=re.IGNORECASE)
+    # 1) Strip ALL existing span junk from DB/text
+    text = strip_old_spans(text)
 
+    # 2) Escape safely
     text_safe = escape(text)
     q_safe = escape(query)
 
@@ -201,12 +203,12 @@ def highlight(text, query):
 
     end = start + len(q_safe)
 
+    # 3) Inject clean highlight
     return Markup(
         text_safe[:start]
         + f"<span class='hl'>{text_safe[start:end]}</span>"
         + text_safe[end:]
     )
-
 
 def login_required(f):
     @wraps(f)
