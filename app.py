@@ -1336,6 +1336,7 @@ def create_app():
 
     @app.route("/superlookup", methods=["GET", "POST"])
     def superlookup():
+        print(">>> SUPERLOOKUP ROUTE HIT")
         q = request.form.get("q", "").strip()
         results = []
 
