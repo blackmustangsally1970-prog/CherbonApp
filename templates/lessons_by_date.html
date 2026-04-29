@@ -2853,25 +2853,21 @@ document.addEventListener("click", function (e) {
     const isSave = e.target.classList.contains("save-lesson-btn");
     const isFinalInvite = e.target.classList.contains("submit-invite-btn");
 
-    // Only validate on Save or Final Invite
     if (!isSave && !isFinalInvite) return;
 
     const form = e.target.closest("form");
     const popup = e.target.closest(".lesson-popup");
     if (!form || !popup) return;
 
-    // FORCE SAVE to always use /new_lesson
     if (isSave) {
         form.action = "/new_lesson";
     }
 
-    // Extract start + end
     const start = popup.querySelector("input[name='start']")?.value?.trim();
     const end =
         popup.querySelector("select[name='end']")?.value?.trim() ||
         popup.querySelector(".popup-end-select")?.value?.trim();
 
-    // Block submit if missing time
     if (!start || !end) {
         e.preventDefault();
         alert("Please select a valid lesson time before continuing.");
@@ -2880,14 +2876,14 @@ document.addEventListener("click", function (e) {
 });
 </script>
 
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
   (function clientHistoryHover() {
 
-    const toggle = document.getElementById('toggle-horse-history');
     const tip = document.getElementById('client-history-tip');
-    const table = document.getElementById('lesson-table');   // ⭐ correct scope
+    const table = document.getElementById('lesson-table');
 
     if (!tip || !table) {
       console.warn("Tooltip or table wrapper missing");
@@ -2895,65 +2891,64 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // -----------------------------------------------------------
-    // MAIN HOVER HANDLER — ONLY inside the lesson table
+    // MAIN HOVER HANDLER — ALWAYS re-read the toggle
     // -----------------------------------------------------------
     table.addEventListener('mouseover', function (e) {
 
-      const toggle = document.getElementById('toggle-horse-history');
-      if (!toggle || !toggle.checked) return;
+        const toggle = document.getElementById('toggle-horse-history');
+        if (!toggle || !toggle.checked) return;
 
+        const cell = e.target.closest(".client-cell, .client-link");
+        if (!cell) return;
 
-      const cell = e.target.closest(".client-cell, .client-link");
-      if (!cell) return;
+        const td = cell.closest(".client-cell");
+        if (!td) return;
 
-      const td = cell.closest(".client-cell");
-      if (!td) return;
+        const client = td.dataset.client;
+        if (!client) return;
 
-      const client = td.dataset.client;
-      if (!client) return;
+        fetch("/client_history/" + encodeURIComponent(client))
+            .then(r => r.json())
+            .then(list => {
 
-      fetch("/client_history/" + encodeURIComponent(client))
-        .then(r => r.json())
-        .then(list => {
+                const clean = list.filter(x => x && x.trim());
+                tip.innerHTML = clean.length ? clean.join(", ") : "No recent horses";
 
-          const clean = list.filter(x => x && x.trim());
-          tip.innerHTML = clean.length ? clean.join(", ") : "No recent horses";
+                const rect = td.getBoundingClientRect();
+                tip.style.top = (rect.top + window.scrollY) + "px";
+                tip.style.left = (rect.right + window.scrollX + 4) + "px";
 
-          const rect = td.getBoundingClientRect();
-          tip.style.top = (rect.top + window.scrollY) + "px";
-          tip.style.left = (rect.right + window.scrollX + 4) + "px";
-
-          tip.style.visibility = "visible";
-          tip.style.opacity = "1";
-        })
-        .catch(err => console.error("History fetch failed:", err));
-
+                tip.style.visibility = "visible";
+                tip.style.opacity = "1";
+            });
     });
 
+
     // -----------------------------------------------------------
-    // HIDE TOOLTIP — ONLY when leaving a client cell inside table
+    // HIDE TOOLTIP — mouseout boundary logic
     // -----------------------------------------------------------
     table.addEventListener('mouseout', function (e) {
 
-      const cell = e.target.closest(".client-cell, .client-link");
-      if (!cell) return;
+        const cell = e.target.closest(".client-cell, .client-link");
+        if (!cell) return;
 
-      if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
-      if (cell.contains(e.relatedTarget)) return;
+        if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
+        if (cell.contains(e.relatedTarget)) return;
 
-      tip.style.visibility = "hidden";
-      tip.style.opacity = "0";
-      tip.innerHTML = "";
+        tip.style.visibility = "hidden";
+        tip.style.opacity = "0";
+        tip.innerHTML = "";
 
     }, true);
+
 
     // -----------------------------------------------------------
     // EXTRA SAFETY — leaving the entire table hides tooltip
     // -----------------------------------------------------------
     table.addEventListener("mouseleave", function () {
-      tip.style.visibility = "hidden";
-      tip.style.opacity = "0";
-      tip.innerHTML = "";
+        tip.style.visibility = "hidden";
+        tip.style.opacity = "0";
+        tip.innerHTML = "";
     }, true);
 
   })();
