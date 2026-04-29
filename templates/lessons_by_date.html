@@ -2929,10 +2929,21 @@ document.addEventListener("DOMContentLoaded", function () {
       if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
       if (cell.contains(e.relatedTarget)) return;
 
-      tip.style.visibility = "hidden";
-      tip.style.opacity = "0";
+tip.style.visibility = "hidden";
+tip.style.opacity = "0";
+tip.innerHTML = "";   // ⭐ clears content so it cannot linger
+
 
     }, true);
+// EXTRA SAFETY: hide tooltip if mouse leaves the entire table
+document.addEventListener("mouseleave", function(e) {
+    if (e.target.closest(".client-cell")) {
+        tip.style.visibility = "hidden";
+        tip.style.opacity = "0";
+        tip.innerHTML = "";
+    }
+}, true);
+
 
   })();
 
