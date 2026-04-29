@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3772,7 +3771,8 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch('/reset_grid_overrides', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: selectedDate })
+            body: JSON.stringify({ date: document.getElementById("date-picker").value })
+
         })
         .then(r => r.json())
         .then(data => {
