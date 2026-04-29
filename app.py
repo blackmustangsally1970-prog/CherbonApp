@@ -180,26 +180,24 @@ def recalc_client_cascade(client_name: str):
 def highlight(text, query):
     if not text:
         return ""
+
     text_safe = escape(text)
     q_safe = escape(query)
 
-    # Case‑insensitive replace without regex
     lower_text = text_safe.lower()
     lower_q = q_safe.lower()
 
-    result = ""
-    i = 0
-    q_len = len(q_safe)
+    start = lower_text.find(lower_q)
+    if start == -1:
+        return text_safe  # no match
 
-    while i < len(text_safe):
-        if lower_text[i:i+q_len] == lower_q:
-            result += f"<mark>{text_safe[i:i+q_len]}</mark>"
-            i += q_len
-        else:
-            result += text_safe[i]
-            i += 1
+    end = start + len(q_safe)
 
-    return Markup(result)
+    return Markup(
+        text_safe[:start]
+        + f"<span class='hl'>{text_safe[start:end]}</span>"
+        + text_safe[end:]
+    )
 
 
 def login_required(f):
