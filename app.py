@@ -4553,7 +4553,6 @@ def create_app():
 
         respect_blockouts = request.form.get("respect_blockouts", "yes")
 
-        # ⭐ Accept time_frame directly from modal (Option A)
         time_frame_raw = request.form.get("time_frame")
 
         if time_frame_raw:
@@ -4567,11 +4566,10 @@ def create_app():
         client_name   = request.form.get("client_name", "").strip()
         client_phone  = request.form.get("client_phone", "").strip()
         horse         = request.form.get("horse", "").strip()
-        # ⭐ NEW FIELDS
+
         weight_kg = request.form.get("weight_kg")
         height_cm = request.form.get("height_cm")
         notes     = request.form.get("notes")
-
 
         print("DEBUG FORM:", dict(request.form))
 
@@ -4650,6 +4648,12 @@ def create_app():
 
             db.session.commit()
 
+            # ⭐ LOG: EDIT
+            log_admin_action(
+                f"Lesson updated for {lesson.client} on {lesson.lesson_date} "
+                f"({lesson.time_frame}, {lesson.lesson_type} {lesson.group_priv})"
+            )
+
             try:
                 if freq in ["W", "F"] and group_priv not in ["J", "CT", "CC", "D"]:
                     future_lessons = Lesson.query.filter(
@@ -4672,20 +4676,15 @@ def create_app():
         start_token, end_token = _parse_times(start_raw, end_raw)
         time_range = _clean_time_range(f"{start_token} - {end_token}")
 
-        # ---------------------------------------------------------
-        # TIME REQUIREMENTS (Payment / Voucher CR EXEMPT)
-        # ---------------------------------------------------------
         if lesson_type not in ["Payment", "Voucher CR"]:
             if not start_token or not end_token or "-" not in time_range:
                 print("[DEBUG] Missing or invalid time range for NEW lesson, rejecting.")
                 return redirect(url_for("lessons_by_date", date=lesson_date_str))
         else:
-            # Force blank time for Payment / Voucher CR
             start_token = ""
             end_token = ""
             time_range = ""
             time_frame = ""
-
 
         time_frame = time_range
 
@@ -4754,7 +4753,10 @@ def create_app():
             print(f"[DEBUG] candidate={d} blocked={blocked} respect_blockouts={respect_blockouts}")
 
             if respect_blockouts == "yes" and blocked:
-                print(f"[DEBUG] skipped {d} due to blockout")
+                # ⭐ LOG: SKIPPED BLOCKOUT
+                log_admin_action(
+                    f"Lesson skipped for {canonical_name} on {d} due to blockout"
+                )
                 continue
 
             payment_raw = request.form.get("payment", "").replace("$", "").strip()
@@ -4776,7 +4778,12 @@ def create_app():
             )
             db.session.add(lesson)
             added += 1
-            print(f"[DEBUG] added lesson for {d} client={canonical_name} horse={horse}")
+
+            # ⭐ LOG: NEW LESSON
+            log_admin_action(
+                f"Lesson created for {canonical_name} on {d} "
+                f"({time_frame}, {lesson_type} {group_priv})"
+            )
 
         db.session.commit()
         print(f"[DEBUG] commit done, total lessons added={added}")
