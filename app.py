@@ -1336,7 +1336,6 @@ def create_app():
 
     @app.route("/superlookup", methods=["GET", "POST"])
     def superlookup():
-        print(">>> SUPERLOOKUP ROUTE HIT")
         q = request.form.get("q", "").strip()
         results = []
 
@@ -1346,7 +1345,7 @@ def create_app():
                 db.or_(
                     func.coalesce(Client.full_name, '').ilike(f"%{q_lower}%"),
                     func.coalesce(Client.guardian_name, '').ilike(f"%{q_lower}%"),
-                    func.coalesce(Client.email, '').ilike(f"%{q_lower}%"),
+                    func.coalesce(Client.email_primary, '').ilike(f"%{q_lower}%"),
                     func.coalesce(Client.mobile, '').ilike(f"%{q_lower}%")
                 )
             ).all()
@@ -1356,11 +1355,10 @@ def create_app():
                     "name": highlight(c.full_name, q),
                     "mobile": highlight(c.mobile, q),
                     "guardian": highlight(c.guardian_name, q),
-                    "email": highlight(c.email, q)
+                    "email": highlight(c.email_primary, q)
                 })
 
         return render_template("superlookup.html", q=q, results=results)
-
 
     @app.route("/logout")
     def logout():
