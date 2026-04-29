@@ -2891,16 +2891,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // -----------------------------------------------------------
-    // MAIN HOVER HANDLER — ALWAYS re-read the toggle
+    // MAIN HOVER HANDLER — correct order
     // -----------------------------------------------------------
     table.addEventListener('mouseover', function (e) {
 
-        const toggle = document.getElementById('toggle-horse-history');
-        if (!toggle || !toggle.checked) return;
-
+        // 1. Only react to client cells
         const cell = e.target.closest(".client-cell, .client-link");
         if (!cell) return;
 
+        // 2. NOW check the toggle
+        const toggle = document.getElementById('toggle-horse-history');
+        if (!toggle || !toggle.checked) return;
+
+        // 3. Continue as normal
         const td = cell.closest(".client-cell");
         if (!td) return;
 
