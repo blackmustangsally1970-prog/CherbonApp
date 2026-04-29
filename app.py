@@ -2228,6 +2228,9 @@ def create_app():
 
         # Brisbane weekday
         weekday_int = datetime.now(ZoneInfo("Australia/Brisbane")).weekday()
+        
+        # ⭐⭐ INSERT THIS LINE HERE ⭐⭐
+        selected_date_iso = selected_date.strftime("%Y-%m-%d")
 
         # DEBUG: trace incoming date and DB sample for forensic inspection
         print("=== DEBUG lessons_by_date ENTRY ===")
@@ -2301,6 +2304,7 @@ def create_app():
             'lessons_by_date.html',
             grouped_lessons=grouped_lessons,
             selected_date=selected_date_str,
+            selected_date_iso=selected_date_iso,   # ⭐ REQUIRED
             weekday_int=weekday_int,
             horse_list=horse_list,
             horse_schedule=horse_schedule,

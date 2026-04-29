@@ -883,14 +883,17 @@ body {
       style="display:flex; gap:8px; align-items:center; margin-top:6px;">
 
   <button type="button" id="prev-day">←</button>
-  <input type="date" name="date" id="date-picker" required>
+
+  <!-- ⭐ FIXED: picker now receives ISO date from backend -->
+  <input type="date" name="date" id="date-picker"
+         value="{{ selected_date_iso }}" required>
+
   <button type="button" id="next-day">→</button>
 
   <!-- ⭐ Only this button submits the form -->
   <button type="submit" style="margin-left:12px;">View</button>
 
 </form>
-
 
 <form id="update-lessons-form">
   
