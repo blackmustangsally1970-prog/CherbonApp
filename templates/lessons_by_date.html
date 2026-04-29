@@ -1558,7 +1558,7 @@ body {
 
       <!-- ⭐ Your lesson-table continues below this point -->
 
-<div class="lesson-table">
+<div class="lesson-table" id="lesson-table">
 
         <table>
 
@@ -2880,22 +2880,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const toggle = document.getElementById('toggle-horse-history');
     const tip = document.getElementById('client-history-tip');
+    const table = document.getElementById('lesson-table');   // ⭐ correct scope
 
-    if (!tip) {
-      console.warn("client-history-tip not found");
+    if (!tip || !table) {
+      console.warn("Tooltip or table wrapper missing");
       return;
     }
 
-    // MAIN HOVER HANDLER — supports both TD and A
-    document.addEventListener('mouseover', function (e) {
+    // -----------------------------------------------------------
+    // MAIN HOVER HANDLER — ONLY inside the lesson table
+    // -----------------------------------------------------------
+    table.addEventListener('mouseover', function (e) {
 
       if (!toggle || !toggle.checked) return;
 
-      // Match either the TD or the A
       const cell = e.target.closest(".client-cell, .client-link");
       if (!cell) return;
 
-      // Always resolve to the TD that has data-client
       const td = cell.closest(".client-cell");
       if (!td) return;
 
@@ -2916,14 +2917,14 @@ document.addEventListener("DOMContentLoaded", function () {
           tip.style.visibility = "visible";
           tip.style.opacity = "1";
         })
-        .catch(err => {
-          console.error("History fetch failed:", err);
-        });
+        .catch(err => console.error("History fetch failed:", err));
 
     });
 
-    // HIDE TOOLTIP
-    document.addEventListener('mouseout', function (e) {
+    // -----------------------------------------------------------
+    // HIDE TOOLTIP — ONLY when leaving a client cell inside table
+    // -----------------------------------------------------------
+    table.addEventListener('mouseout', function (e) {
 
       const cell = e.target.closest(".client-cell, .client-link");
       if (!cell) return;
@@ -2931,21 +2932,20 @@ document.addEventListener("DOMContentLoaded", function () {
       if (e.relatedTarget && e.relatedTarget.closest('#client-history-tip')) return;
       if (cell.contains(e.relatedTarget)) return;
 
-tip.style.visibility = "hidden";
-tip.style.opacity = "0";
-tip.innerHTML = "";   // ⭐ clears content so it cannot linger
-
+      tip.style.visibility = "hidden";
+      tip.style.opacity = "0";
+      tip.innerHTML = "";
 
     }, true);
-// EXTRA SAFETY: hide tooltip if mouse leaves the entire table
-document.addEventListener("mouseleave", function(e) {
-    if (e.target.closest(".client-cell")) {
-        tip.style.visibility = "hidden";
-        tip.style.opacity = "0";
-        tip.innerHTML = "";
-    }
-}, true);
 
+    // -----------------------------------------------------------
+    // EXTRA SAFETY — leaving the entire table hides tooltip
+    // -----------------------------------------------------------
+    table.addEventListener("mouseleave", function () {
+      tip.style.visibility = "hidden";
+      tip.style.opacity = "0";
+      tip.innerHTML = "";
+    }, true);
 
   })();
 
