@@ -2687,10 +2687,8 @@ def create_app():
 
                 rows.append({
                     "lesson": l,
-                    "carry": carry,
                     "payment": payment,
                     "charge": charge,
-                    "adjust": adjust,
                     "running_balance": balance
                 })
 

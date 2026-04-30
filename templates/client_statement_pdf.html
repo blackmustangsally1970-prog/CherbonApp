@@ -52,7 +52,6 @@
         <th>Date</th>
         <th>Type</th>
         <th>Att</th>
-        <th>Carry</th>
         <th>Payment</th>
         <th>Charge</th>
         <th>Balance</th>
@@ -64,9 +63,18 @@
             <td>{{ l.lesson_date }}</td>
             <td>{{ l.lesson_type }}</td>
             <td>{{ l.attendance }}</td>
-            <td>${{ "%.2f"|format(r.carry) }}</td>
-            <td>${{ "%.2f"|format(r.payment) }}</td>
+
+            <!-- Payment: blank if zero -->
+            <td>
+                {% if r.payment != 0 %}
+                    ${{ "%.2f"|format(r.payment) }}
+                {% endif %}
+            </td>
+
+            <!-- Charge always shown -->
             <td>${{ "%.2f"|format(r.charge) }}</td>
+
+            <!-- Running balance -->
             <td>${{ "%.2f"|format(r.running_balance) }}</td>
         </tr>
     {% endfor %}
@@ -77,7 +85,7 @@
     <p><strong>Total Payments:</strong> ${{ "%.2f"|format(total_payments) }}</p>
     <p><strong>Total Charges:</strong> ${{ "%.2f"|format(total_charges) }}</p>
     <p><strong>Final Balance:</strong> ${{ "%.2f"|format(final_balance) }}</p>
-    <p><strong>GST Included (11% of payments):</strong> ${{ "%.2f"|format(gst_amount) }}</p>
+    <p><strong>GST Included:</strong> ${{ "%.2f"|format(gst_amount) }}</p>
 </div>
 
 </body>
