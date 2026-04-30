@@ -45,7 +45,7 @@
 <h2>Client Statement</h2>
 
 <p><strong>Client:</strong> {{ client.full_name }}</p>
-<p><strong>Period:</strong> {{ start_date }} → {{ end_date }}</p>
+<p><strong>Period:</strong> {{ start_date.strftime("%d-%m-%Y") }} → {{ end_date.strftime("%d-%m-%Y") }}</p>
 
 <table>
     <tr>
@@ -53,15 +53,20 @@
         <th>Type</th>
         <th>Att</th>
         <th>Payment</th>
-        <th>Charge</th>
+        <th>Price</th>
         <th>Balance</th>
     </tr>
 
     {% for r in rows %}
         {% set l = r.lesson %}
         <tr>
-            <td>{{ l.lesson_date }}</td>
+            <!-- Date -->
+            <td>{{ l.lesson_date.strftime("%d-%m-%Y") }}</td>
+
+            <!-- Lesson Type -->
             <td>{{ l.lesson_type }}</td>
+
+            <!-- Attendance -->
             <td>{{ l.attendance }}</td>
 
             <!-- Payment: blank if zero -->
@@ -71,10 +76,10 @@
                 {% endif %}
             </td>
 
-            <!-- Charge always shown -->
+            <!-- Charge -->
             <td>${{ "%.2f"|format(r.charge) }}</td>
 
-            <!-- Running balance -->
+            <!-- Running Balance -->
             <td>${{ "%.2f"|format(r.running_balance) }}</td>
         </tr>
     {% endfor %}
