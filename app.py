@@ -231,6 +231,15 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+def log_admin_action(action):
+    user = session.get("username") or "system"
+    uid  = session.get("user_id") or "?"
+    ts   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with open("admin_actions.log", "a") as f:
+        f.write(f"[{ts}] by {user} (ID {uid}) | {action}\n")
+
+
 def role_required(*roles):
     def decorator(f):
         @wraps(f)
