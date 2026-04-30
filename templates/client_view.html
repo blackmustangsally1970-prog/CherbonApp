@@ -203,24 +203,18 @@
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
     <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
     <button id="scroll-to-today" class="menu-btn">⬇ Jump to Today</button>
-</div>
 
-{% if client_obj %}
-<div style="margin:12px 0;">
-    <form action="{{ url_for('recalculate_client_cascade_route') }}" method="post">
+    {% if client_obj %}
+    <form action="{{ url_for('recalculate_client_cascade_route') }}" method="post" style="display:inline;">
         <input type="hidden" name="client" value="{{ client_obj.full_name }}">
-        <button type="submit" class="btn btn-warning">
-            Recalculate Lessons for {{ client_obj.full_name }}
+        <button type="submit" class="menu-btn">
+            Recalc {{ client_obj.full_name }}
         </button>
     </form>
-</div>
-{% endif %}
+    {% endif %}
 
-
-
-<div style="margin:12px 0;">
-    <button type="button" class="btn btn-danger" onclick="recalcAllLessons()">
-        Recalculate All Lessons
+    <button type="button" class="menu-btn" onclick="recalcAllLessons()">
+        Recalc All Lessons
     </button>
 </div>
 
