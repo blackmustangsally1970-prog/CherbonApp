@@ -2656,7 +2656,7 @@ def create_app():
         lessons = (
             Lesson.query
             .filter(
-                Lesson.client_id == client_id,
+                Lesson.client == client.full_name,
                 Lesson.lesson_date >= start_date,
                 Lesson.lesson_date <= end_date
             )
