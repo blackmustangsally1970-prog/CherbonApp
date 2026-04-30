@@ -2633,67 +2633,47 @@ def create_app():
             return f"Processed {len(created_lessons)} riders into lessons; errors: {len(errors)}"
         return f"Processed {len(created_lessons)} riders into lessons"
 
-    @app.route("/client/<int:client_id>/statement_pdf")
+    @app.route('/client/<int:client_id>/statement')
     def client_statement_pdf(client_id):
-        from weasyprint import HTML
-        from flask import render_template, send_file
-        import io
-        from datetime import datetime
-
-        client = Client.query.get_or_404(client_id)
-
-        # Parse dates from query string
-        start = request.args.get("start")
-        end = request.args.get("end")
-
         try:
-            start_date = datetime.strptime(start, "%Y-%m-%d").date()
-            end_date = datetime.strptime(end, "%Y-%m-%d").date()
-        except:
-            return "Invalid date format"
+            # existing code here
+            client = Client.query.get_or_404(client_id)
 
-        # Query lessons for this client in the date range
-        lessons = (
-            Lesson.query
-            .filter(
-                Lesson.client == client.full_name,
-                Lesson.lesson_date >= start_date,
-                Lesson.lesson_date <= end_date
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
+
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
+            lessons = (
+                Lesson.query
+                .filter(
+                    Lesson.client == client.full_name,
+                    Lesson.lesson_date >= start_date,
+                    Lesson.lesson_date <= end_date
+                )
+                .order_by(Lesson.lesson_date.asc())
+                .all()
             )
-            .order_by(Lesson.lesson_date.asc())
-            .all()
-        )
 
-        # Basic totals (expand later)
-        total_payments = sum(l.payment_amount or 0 for l in lessons)
-        total_price = sum(l.price or 0 for l in lessons)
-        lesson_count = len(lessons)
-        final_balance = total_payments - total_price
+            html = render_template('client_statement_pdf.html',
+                                   client=client,
+                                   lessons=lessons,
+                                   start_date=start_date,
+                                   end_date=end_date)
 
-        # Render HTML template
-        html = render_template(
-            "client_statement_pdf.html",
-            client=client,
-            lessons=lessons,
-            start_date=start_date,
-            end_date=end_date,
-            total_payments=total_payments,
-            total_price=total_price,
-            lesson_count=lesson_count,
-            final_balance=final_balance
-        )
+            pdf = HTML(string=html).write_pdf()
+            return send_file(
+                io.BytesIO(pdf),
+                mimetype='application/pdf',
+                download_name=f"{client.full_name}_statement.pdf"
+            )
 
-        # Convert HTML → PDF
-        pdf_bytes = HTML(string=html).write_pdf()
-
-        # Return PDF as download
-        return send_file(
-            io.BytesIO(pdf_bytes),
-            mimetype="application/pdf",
-            as_attachment=True,
-            download_name=f"{client.full_name.replace(' ', '_')}_statement.pdf"
-        )
-
+        except Exception as e:
+            import traceback, sys
+            print(">>> PDF ROUTE ERROR:", e, file=sys.stderr)
+            traceback.print_exc()
+            raise
 
 
     @app.route('/lessons_by_date_pdf')
