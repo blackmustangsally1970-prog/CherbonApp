@@ -9,22 +9,18 @@
             margin: 25px;
         }
 
-        h1 {
+        h1, h2 {
             text-align: center;
-            margin-bottom: 5px;
+            margin: 0;
         }
 
-        h2 {
-            text-align: center;
-            margin-top: 0;
-            font-weight: normal;
-            font-size: 14px;
-        }
+        h1 { margin-bottom: 5px; }
+        h2 { margin-bottom: 15px; font-size: 14px; }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         th, td {
@@ -33,18 +29,14 @@
             text-align: left;
         }
 
-        tr:nth-child(even) {
-            background: #f7f7f7;
-        }
+        tr:nth-child(even) { background: #f7f7f7; }
 
         .summary {
             margin-top: 20px;
             font-size: 13px;
         }
 
-        .summary p {
-            margin: 4px 0;
-        }
+        .summary p { margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -59,27 +51,33 @@
     <tr>
         <th>Date</th>
         <th>Type</th>
-        <th>Attendance</th>
+        <th>Att</th>
+        <th>Carry</th>
         <th>Payment</th>
-        <th>Price</th>
+        <th>Charge</th>
+        <th>Balance</th>
     </tr>
 
-    {% for l in lessons %}
-    <tr>
-        <td>{{ l.lesson_date }}</td>
-        <td>{{ l.lesson_type }}</td>
-        <td>{{ l.attendance }}</td>
-        <td>${{ "%.2f"|format(l.payment or 0) }}</td>
-        <td>${{ "%.2f"|format(l.price_pl or 0) }}</td>    
-     </tr>
+    {% for r in rows %}
+        {% set l = r.lesson %}
+        <tr>
+            <td>{{ l.lesson_date }}</td>
+            <td>{{ l.lesson_type }}</td>
+            <td>{{ l.attendance }}</td>
+            <td>${{ "%.2f"|format(r.carry) }}</td>
+            <td>${{ "%.2f"|format(r.payment) }}</td>
+            <td>${{ "%.2f"|format(r.charge) }}</td>
+            <td>${{ "%.2f"|format(r.running_balance) }}</td>
+        </tr>
     {% endfor %}
 </table>
 
 <div class="summary">
     <p><strong>Total Lessons:</strong> {{ lesson_count }}</p>
     <p><strong>Total Payments:</strong> ${{ "%.2f"|format(total_payments) }}</p>
-    <p><strong>Total Price:</strong> ${{ "%.2f"|format(total_price) }}</p>
+    <p><strong>Total Charges:</strong> ${{ "%.2f"|format(total_charges) }}</p>
     <p><strong>Final Balance:</strong> ${{ "%.2f"|format(final_balance) }}</p>
+    <p><strong>GST Included (11% of payments):</strong> ${{ "%.2f"|format(gst_amount) }}</p>
 </div>
 
 </body>

@@ -2652,27 +2652,68 @@ def create_app():
                     Lesson.lesson_date >= start_date,
                     Lesson.lesson_date <= end_date
                 )
-                .order_by(Lesson.lesson_date.asc())
+                .order_by(
+                    db.func.date(Lesson.lesson_date).asc(),
+                    Lesson.lesson_id.asc()
+                )
                 .all()
             )
 
-            # ---- SUMMARY TOTALS REQUIRED BY TEMPLATE ----
-            lesson_count = len(lessons)
-            total_payments = sum((l.payment or 0) for l in lessons)
-            total_price = sum((l.price_pl or 0) for l in lessons)
-            final_balance = total_price - total_payments
-            # ------------------------------------------------
+            # ---- BUILD ROWS USING TRUE SYSTEM LOGIC ----
+            running_balance = None
+            rows = []
+
+            for l in lessons:
+                price = l.price_pl or 0
+                payment = l.payment or 0
+                adjust = l.adjust or 0
+                att = (l.attendance or '').strip().upper()
+
+                # FIRST LESSON → PRESERVE IMPORTED carry_fwd
+                if running_balance is None:
+                    carry = l.carry_fwd or 0
+                else:
+                    carry = running_balance
+
+                # BASE BALANCE
+                balance = carry + payment + adjust
+
+                # APPLY CHARGE ONLY IF ATTENDED
+                charge = price if att in ['Y', 'N'] else 0
+                balance -= charge
+
+                # RUNNING BALANCE
+                running_balance = balance
+
+                rows.append({
+                    "lesson": l,
+                    "carry": carry,
+                    "payment": payment,
+                    "charge": charge,
+                    "adjust": adjust,
+                    "running_balance": balance
+                })
+
+            # ---- SUMMARY TOTALS ----
+            lesson_count = len(rows)
+            total_payments = sum(r["payment"] for r in rows)
+            total_charges = sum(r["charge"] for r in rows)
+            final_balance = rows[-1]["running_balance"] if rows else 0
+
+            # GST = 11% of payments
+            gst_amount = total_payments * 0.11
 
             html = render_template(
                 'client_statement_pdf.html',
                 client=client,
-                lessons=lessons,
+                rows=rows,
                 start_date=start_date,
                 end_date=end_date,
                 lesson_count=lesson_count,
                 total_payments=total_payments,
-                total_price=total_price,
-                final_balance=final_balance
+                total_charges=total_charges,
+                final_balance=final_balance,
+                gst_amount=gst_amount
             )
 
             pdf = HTML(string=html).write_pdf()
@@ -2687,7 +2728,6 @@ def create_app():
             print(">>> PDF ROUTE ERROR:", e, file=sys.stderr)
             traceback.print_exc()
             raise
-
 
     @app.route('/lessons_by_date_pdf')
     def lessons_by_date_pdf():
