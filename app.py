@@ -40,6 +40,7 @@ from models import (
 
 # Core libs
 import os
+import io
 import re
 import json
 import hashlib
