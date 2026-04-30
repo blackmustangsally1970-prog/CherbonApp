@@ -2855,6 +2855,41 @@ def create_app():
         return redirect(url_for('client_view', client=client_id))
 
 
+    @app.route("/export_clients_xlsx")
+    @login_required
+    @role_required("admin")
+    def export_clients_xlsx():
+        from openpyxl import Workbook
+        from flask import send_file
+        import io
+
+        # Correct model: Client (not Clients)
+        clients = Client.query.order_by(Client.full_name.asc()).all()
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Clients"
+
+        ws["A1"] = "Client"
+        ws["B1"] = "Disclaimer Number"
+
+        row = 2
+        for c in clients:
+            ws[f"A{row}"] = c.full_name
+            ws[f"B{row}"] = c.disclaimer
+            row += 1
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name="clients_alpha.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
     @app.route('/client_history/<client_name>')
     def client_history(client_name):
 
