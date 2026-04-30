@@ -1,6 +1,4 @@
 
-print(">>> FILE LOADED:", __file__)
-
 from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, make_response, after_this_request, flash,
@@ -2634,6 +2632,69 @@ def create_app():
         if errors:
             return f"Processed {len(created_lessons)} riders into lessons; errors: {len(errors)}"
         return f"Processed {len(created_lessons)} riders into lessons"
+
+    @app.route("/client/<int:client_id>/statement_pdf")
+    def client_statement_pdf(client_id):
+        from weasyprint import HTML
+        from flask import render_template, send_file
+        import io
+        from datetime import datetime
+
+        client = Client.query.get_or_404(client_id)
+
+        # Parse dates from query string
+        start = request.args.get("start")
+        end = request.args.get("end")
+
+        try:
+            start_date = datetime.strptime(start, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end, "%Y-%m-%d").date()
+        except:
+            return "Invalid date format"
+
+        # Query lessons for this client in the date range
+        lessons = (
+            Lesson.query
+            .filter(
+                Lesson.client_id == client_id,
+                Lesson.lesson_date >= start_date,
+                Lesson.lesson_date <= end_date
+            )
+            .order_by(Lesson.lesson_date.asc())
+            .all()
+        )
+
+        # Basic totals (expand later)
+        total_payments = sum(l.payment_amount or 0 for l in lessons)
+        total_price = sum(l.price or 0 for l in lessons)
+        lesson_count = len(lessons)
+        final_balance = total_payments - total_price
+
+        # Render HTML template
+        html = render_template(
+            "client_statement_pdf.html",
+            client=client,
+            lessons=lessons,
+            start_date=start_date,
+            end_date=end_date,
+            total_payments=total_payments,
+            total_price=total_price,
+            lesson_count=lesson_count,
+            final_balance=final_balance
+        )
+
+        # Convert HTML → PDF
+        pdf_bytes = HTML(string=html).write_pdf()
+
+        # Return PDF as download
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"{client.full_name.replace(' ', '_')}_statement.pdf"
+        )
+
+
 
     @app.route('/lessons_by_date_pdf')
     def lessons_by_date_pdf():

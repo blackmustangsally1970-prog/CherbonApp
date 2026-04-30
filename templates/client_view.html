@@ -274,6 +274,24 @@
         <button type="submit">Filter</button>
     </form>
 
+<a href="#"
+   onclick="
+       const cid = document.getElementById('client-select').value;
+       const start = document.querySelector('input[name=start_date]').value;
+       const end = document.querySelector('input[name=end_date]').value;
+       if (cid && start && end) {
+           window.location = `/client/${cid}/statement_pdf?start=${start}&end=${end}`;
+       } else {
+           alert('Please select a client and date range first.');
+       }
+   "
+   class="menu-btn"
+   style="margin-left: 10px;">
+    📄 PDF Statement
+</a>
+
+
+
 
         <!-- 🔼 START -->
 
