@@ -3229,7 +3229,8 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             // Activate Select2 for time fields (tags mode)
-            safeSelect2($(row).find('.time-field'), {
+            $(row).find('.time-field').select2({
+
                 tags: true,
                 width: '100%',
                 dropdownAutoWidth: true,
