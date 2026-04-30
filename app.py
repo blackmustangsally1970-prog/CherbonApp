@@ -2636,7 +2636,6 @@ def create_app():
     @app.route('/client/<int:client_id>/statement')
     def client_statement_pdf(client_id):
         try:
-            # existing code here
             client = Client.query.get_or_404(client_id)
 
             start_date_str = request.args.get('start_date')
@@ -2656,11 +2655,24 @@ def create_app():
                 .all()
             )
 
-            html = render_template('client_statement_pdf.html',
-                                   client=client,
-                                   lessons=lessons,
-                                   start_date=start_date,
-                                   end_date=end_date)
+            # ---- SUMMARY TOTALS REQUIRED BY TEMPLATE ----
+            lesson_count = len(lessons)
+            total_payments = sum((l.payment or 0) for l in lessons)
+            total_price = sum((l.price_pl or 0) for l in lessons)
+            final_balance = total_price - total_payments
+            # ------------------------------------------------
+
+            html = render_template(
+                'client_statement_pdf.html',
+                client=client,
+                lessons=lessons,
+                start_date=start_date,
+                end_date=end_date,
+                lesson_count=lesson_count,
+                total_payments=total_payments,
+                total_price=total_price,
+                final_balance=final_balance
+            )
 
             pdf = HTML(string=html).write_pdf()
             return send_file(

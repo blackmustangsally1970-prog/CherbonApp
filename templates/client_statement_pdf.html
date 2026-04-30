@@ -69,9 +69,9 @@
         <td>{{ l.lesson_date }}</td>
         <td>{{ l.lesson_type }}</td>
         <td>{{ l.attendance }}</td>
-        <td>${{ "%.2f"|format(l.payment_amount or 0) }}</td>
-        <td>${{ "%.2f"|format(l.price or 0) }}</td>
-    </tr>
+        <td>${{ "%.2f"|format(l.payment or 0) }}</td>
+        <td>${{ "%.2f"|format(l.price_pl or 0) }}</td>    
+     </tr>
     {% endfor %}
 </table>
 
