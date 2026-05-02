@@ -2342,6 +2342,14 @@ def create_app():
             for tb in teacher_blocks
         ]
 
+        for block in teacher_blocks:
+            if isinstance(block.date, str):
+                try:
+                    block.date = datetime.strptime(block.date, "%Y-%m-%d").date()
+                except:
+                    block.date = None
+
+
         grouped_lessons = ctx["grouped_lessons"]
         horse_list = ctx["horse_list"]
         horse_schedule = ctx["horse_schedule"]
