@@ -5327,102 +5327,122 @@ def create_app():
             log_admin_action(f"Reindex failed: {str(e)}", user="system")
         return redirect(url_for('debug_page'))
 
-    @app.route('/import-lessons-with-clients', methods=['GET', 'POST'])
-    def import_lessons_with_clients():
-        if request.method == 'POST':
-            file = request.files.get('file')
-            if not file:
-                flash("No file uploaded", "danger")
-                return redirect(request.url)
+    @app.route('/import_lessons_xlsx', methods=['POST'])
+    def import_lessons_xlsx():
+        file = request.files.get('file')
+        if not file:
+            return jsonify({"status": "error", "message": "No file uploaded"}), 400
 
-            wb = openpyxl.load_workbook(file)
-            sheet = wb.active
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
 
-            # Expected columns:
-            # client | age | weight_kg | height_cm | lesson_date | time_frame | horse | lesson_type | price_pl
-            headers = [cell.value for cell in sheet[1]]
-            rows = []
+        # Extract header row
+        headers = []
+        for cell in ws[1]:
+            headers.append(cell.value.strip() if cell.value else None)
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
-                rows.append(dict(zip(headers, row)))
+        # Valid DB fields
+        valid_fields = [col.name for col in Lesson.__table__.columns]
 
-            new_clients = 0
-            new_lessons = 0
-            touched_clients = set()
+        # Map XLSX column index -> DB field name
+        field_map = {}
+        for idx, header in enumerate(headers):
+            if header in valid_fields:
+                field_map[idx] = header
 
-            for row in rows:
-                client_name = (row.get("client") or "").strip()
-                if not client_name:
-                    continue
+        inserted = 0
+        skipped = 0
 
-                # --- CLIENT LOOKUP OR CREATE ---
-                client = Client.query.filter_by(full_name=client_name).first()
+        # Process each row
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            row_data = {}
 
-                if not client:
-                    client = Client(
-                        full_name=client_name,
-                        age=row.get("age"),
-                        weight_kg=row.get("weight_kg"),
-                        height_cm=row.get("height_cm"),
-                        guardian_name=None,
-                        guardian_contact=None,
-                        guardian2_name=None,
-                        mobile=None,
-                        mobile2=None,
-                        email_primary=None,
-                        email_secondary=None,
-                        email_guardian2=None,
-                        disclaimer=0,
-                        invoice_required=False,
-                        jotform_submission_id=None,
-                        ndis_number=None,
-                        ndis_code=None,
-                        notes=None,
-                        notes2=None
-                    )
-                    db.session.add(client)
-                    db.session.flush()
-                    new_clients += 1
+            # Map known fields + normalize blanks
+            for idx, value in enumerate(row):
+                if idx in field_map:
+                    if isinstance(value, str) and value.strip() == "":
+                        value = None
+                    row_data[field_map[idx]] = value
 
-                # Track client for recalc
-                touched_clients.add(client.full_name)
+            # Skip fully empty rows
+            if not any(row_data.values()):
+                skipped += 1
+                continue
 
-                # --- LESSON CREATION ---
-                lesson = Lesson(
-                    lesson_date=row.get("lesson_date"),
-                    time_frame=row.get("time_frame"),
-                    client=client.full_name,   # GOLDEN RULE
-                    horse=row.get("horse"),
-                    lesson_type=row.get("lesson_type"),
-                    price_pl=row.get("price_pl") or 0,
+            # --- TEXT NORMALISATION ---
+            for key, val in row_data.items():
+                if isinstance(val, str):
+                    row_data[key] = " ".join(val.split())
 
-                    # Defaults for unused fields
-                    group_priv="GT",
-                    freq="S",
-                    lesson_notes="",
-                    payment=0,
-                    attendance="",
-                    balance=0,
-                    adjust=0,
-                    carry_fwd=0,
-                    block_key=None,
-                    blockends=None,
-                    lesson_no=None
-                )
+            # --- REQUIRED FIELDS ---
+            required_fields = ["client", "lesson_date"]
+            missing = [f for f in required_fields if not row_data.get(f)]
+            if missing:
+                print(f"SKIPPED ROW — missing required fields {missing} | {row_data}")
+                skipped += 1
+                continue
 
+            # --- AUTO-CREATE CLIENT IF MISSING ---
+            client_name = row_data["client"]
+            client = Client.query.filter_by(full_name=client_name).first()
+            if client is None:
+                client = Client(full_name=client_name)
+                db.session.add(client)
+                db.session.commit()
+
+            # --- DATE NORMALIZATION ---
+            if "lesson_date" in row_data and row_data["lesson_date"]:
+                val = row_data["lesson_date"]
+
+                if isinstance(val, (datetime, date)):
+                    row_data["lesson_date"] = val.date() if isinstance(val, datetime) else val
+
+                elif isinstance(val, str):
+                    try:
+                        row_data["lesson_date"] = datetime.strptime(val.strip(), "%d/%m/%Y").date()
+                    except ValueError:
+                        print(f"BAD DATE FORMAT — {val} | {row_data}")
+                        skipped += 1
+                        continue
+
+            # --- NUMERIC NORMALISATION ---
+            numeric_fields = ["payment", "price_pl", "adjust", "carry_fwd", "balance"]
+
+            for key in numeric_fields:
+                if key in row_data:
+                    val = row_data[key]
+
+                    if val in [None, "", " ", "None"]:
+                        row_data[key] = None
+                        continue
+
+                    try:
+                        row_data[key] = float(val)
+                    except:
+                        print(f"BAD NUMERIC VALUE — {key}={val} | forcing to None")
+                        row_data[key] = None
+
+            # Create lesson safely
+            try:
+                lesson = Lesson(**row_data)
                 db.session.add(lesson)
-                new_lessons += 1
+                inserted += 1
+            except Exception as e:
+                print(f"ROW FAILED — {e} | {row_data}")
+                skipped += 1
+                continue
 
-            # --- RECALC CASCADE FOR ALL TOUCHED CLIENTS ---
-            for cname in touched_clients:
-                recalc_client_cascade(cname)
+        # Commit all valid rows
+        db.session.commit()
 
-            db.session.commit()
+        # Recalc
+        try:
+            recalc_all_lessons()
+        except Exception as e:
+            flash(f"Import succeeded but recalc failed: {e}", "error")
 
-            flash(f"Imported {new_lessons} lessons and created {new_clients} new clients.", "success")
-            return redirect(url_for('other_tools'))
-
-        return render_template('import_lessons_with_clients.html')
+        flash(f"Imported {inserted} lessons. Skipped {skipped} rows.", "success")
+        return redirect(url_for('other_tools'))
 
 
 
