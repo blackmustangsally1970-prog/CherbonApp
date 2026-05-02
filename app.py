@@ -1116,6 +1116,7 @@ def create_app():
     print(">>> JOTFORM KEY IN APP:", os.getenv("JOTFORM_API_KEY"))
     app = Flask(__name__)
     app.config["DEBUG"] = True   # ⭐ ADD THIS LINE ⭐
+    app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
     app.config.from_object(Config())
     app.config['JOTFORM_API_KEY'] = os.getenv("JOTFORM_API_KEY", "")
