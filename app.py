@@ -4354,33 +4354,96 @@ def create_app():
         return render_template("minus_balances.html", rows=final_output)
 
 
-    @app.route("/print/horses/<date>")
-    @role_required("admin", "management")
-    def print_horse_by_date(date):
-        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
+    @app.route("/print/lessons/<date>")
+    def print_lessons(date):
+        from datetime import datetime
+        from collections import defaultdict
 
+        # -----------------------------
+        # PARSE DATE
+        # -----------------------------
+        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
+        dow = lesson_date.strftime("%A")
+        pretty_date = lesson_date.strftime("%d %B %Y")
+
+        # -----------------------------
+        # FETCH ALL LESSON ROWS
+        # -----------------------------
         lessons = (
             Lesson.query
-            .filter(Lesson.lesson_date == lesson_date)
-            .order_by(db.func.substr(Lesson.time_frame, 1, 5))
+            .filter_by(lesson_date=lesson_date)
+            .order_by(Lesson.time_frame)
             .all()
         )
 
-        # Build dictionaries
+        # -----------------------------
+        # FILTER OUT NON-LESSON TYPES
+        # -----------------------------
+        SAFE_TYPES = ("Payment", "Voucher CR", "Camp")
+        lessons = [l for l in lessons if l.lesson_type not in SAFE_TYPES]
+
+        # -----------------------------
+        # BUILD CLEAN DATA DICTIONARIES
+        # -----------------------------
         data = []
         for l in lessons:
+
+            # -----------------------------
+            # AUTO-CREATE MISSING CLIENT
+            # -----------------------------
+            client = Client.query.filter_by(full_name=l.client).first()
+            if client is None:
+                client = Client(full_name=l.client)
+                db.session.add(client)
+                db.session.commit()
+
+            # SAFE DISCLAIMER
+            raw = str(getattr(client, "disclaimer", "")).strip()
+            disclaimer_val = int(raw) if raw.isdigit() else 0
+
+            # SAFE BALANCE
+            raw_balance = str(getattr(l, "balance", "")).strip()
+            if raw_balance.lower() == "none" or raw_balance == "":
+                balance = 0.0
+            else:
+                try:
+                    balance = float(raw_balance)
+                except:
+                    balance = 0.0
+
+            # CLEAN TIME FRAME
+            tf = (l.time_frame or "").strip().replace("–", "-").replace("—", "-")
+
+            # SKIP ANYTHING WITH NO TIME
+            if not tf or "-" not in tf:
+                continue
+
             data.append({
-                "time_frame": (l.time_frame or "").strip().replace("–", "-"),
+                "time_frame": tf,
                 "lesson_type": (l.lesson_type or "").strip(),
                 "group_priv": (l.group_priv or "").strip().upper(),
+
                 "client_name": l.client or "",
+                "freq": getattr(l, "freq", "") or "",
+                "att": getattr(l, "attendance", False),
+                "payment": float(str(getattr(l, "payment", 0)).strip() or 0),
+                "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
+                "balance": balance,
+
+                "age": getattr(client, "age", "") or "",
+                "guardian": getattr(client, "guardian_name", "") or "",
+                "mobile": getattr(client, "mobile", "") or "",
+                "weight": getattr(client, "weight_kg", "") or "",
+                "height": getattr(client, "height_cm", "") or "",
+                "notes": getattr(client, "notes", "") or "",
+                "disclaimer": disclaimer_val,
+
                 "horse": getattr(l, "horse", "") or "",
-                "att": (l.attendance or "").strip().upper(),
             })
 
-        # ---------------------------------------------------------
-        # ASSIGN UNIQUE INDEX TO PURE PRIVATE LESSONS ("P")
-        # ---------------------------------------------------------
+        # -----------------------------
+        # PRIVATE LESSON INDEXING
+        # -----------------------------
         private_counter = defaultdict(int)
         for d in data:
             if d["group_priv"] == "P":
@@ -4390,38 +4453,60 @@ def create_app():
             else:
                 d["priv_index"] = 0
 
-        # Sort by chronological start time
-        data.sort(key=lambda x: parse_start(x["time_frame"]))
+        # -----------------------------
+        # SAFE TIME PARSER
+        # -----------------------------
+        def parse_start(tf):
+            try:
+                start = tf.split("-")[0].strip()
+                h, m = start.split(":")
+                return int(h) * 60 + int(m)
+            except:
+                return 99999
 
-        # ---------------------------------------------------------
-        # GROUP BLOCKS (same engine as lesson print)
-        # ---------------------------------------------------------
-        blocks = defaultdict(list)
-        for r in data:
-            key = (
-                r["time_frame"],
-                r["lesson_type"],
-                r["group_priv"],
-                r["priv_index"]
-            )
-            blocks[key].append(r)
+        # -----------------------------
+        # SPLIT ARENA VS OTHERS
+        # -----------------------------
+        arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
+        others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
 
-        grouped = []
-        for (time, ltype, gp, priv_i), riders in sorted(
-            blocks.items(),
-            key=lambda k: parse_start(k[0][0])
-        ):
-            grouped.append({
-                "time": time,
-                "lesson_type": ltype,
-                "group_priv": gp,
-                "riders": sorted(riders, key=lambda x: x["horse"].lower())
-            })
+        arena.sort(key=lambda x: parse_start(x["time_frame"]))
+        others.sort(key=lambda x: parse_start(x["time_frame"]))
 
+        # -----------------------------
+        # GROUP BLOCKS SAFELY
+        # -----------------------------
+        def group_blocks(rows):
+            blocks = defaultdict(list)
+            for r in rows:
+                key = (r["time_frame"], r["lesson_type"], r["group_priv"], r["priv_index"])
+                blocks[key].append(r)
+
+            grouped = []
+            for (time, ltype, gp, priv_i), riders in sorted(
+                blocks.items(),
+                key=lambda k: parse_start(k[0][0])
+            ):
+                grouped.append({
+                    "time": time,
+                    "lesson_type": ltype,
+                    "group_priv": gp,
+                    "riders": sorted(riders, key=lambda x: x["client_name"].lower())
+                })
+            return grouped
+
+        arena_blocks = group_blocks(arena)
+        other_blocks = group_blocks(others)
+
+        # -----------------------------
+        # RENDER TEMPLATE
+        # -----------------------------
         return render_template(
-            "horse_print.html",
-            date=lesson_date,
-            grouped=grouped
+            "print_lessons.html",
+            dow=dow,
+            pretty_date=pretty_date,
+            arena_blocks=arena_blocks,
+            other_blocks=other_blocks,
         )
 
     @app.route("/manage_teachers")
@@ -6271,7 +6356,7 @@ Cherbon Waters Admin
                 skipped += 1
                 continue
 
-            # --- TEXT NORMALISATION (Excel TRIM) ---
+            # --- TEXT NORMALISATION ---
             for key, val in row_data.items():
                 if isinstance(val, str):
                     row_data[key] = " ".join(val.split())
@@ -6284,15 +6369,21 @@ Cherbon Waters Admin
                 skipped += 1
                 continue
 
+            # --- AUTO-CREATE CLIENT IF MISSING ---
+            client_name = row_data["client"]
+            client = Client.query.filter_by(full_name=client_name).first()
+            if client is None:
+                client = Client(full_name=client_name)
+                db.session.add(client)
+                db.session.commit()
+
             # --- DATE NORMALIZATION ---
             if "lesson_date" in row_data and row_data["lesson_date"]:
                 val = row_data["lesson_date"]
 
-                # Excel real date/datetime
                 if isinstance(val, (datetime, date)):
                     row_data["lesson_date"] = val.date() if isinstance(val, datetime) else val
 
-                # AU string date "17/04/2026"
                 elif isinstance(val, str):
                     try:
                         row_data["lesson_date"] = datetime.strptime(val.strip(), "%d/%m/%Y").date()
@@ -6308,12 +6399,10 @@ Cherbon Waters Admin
                 if key in row_data:
                     val = row_data[key]
 
-                    # Treat blanks, spaces, "None", None as null
                     if val in [None, "", " ", "None"]:
                         row_data[key] = None
                         continue
 
-                    # Convert valid numbers
                     try:
                         row_data[key] = float(val)
                     except:
