@@ -1479,14 +1479,9 @@ def create_app():
 
         # -----------------------------
         # FILTER OUT NON-LESSON TYPES
-        # (Payment, Voucher CR, Camp)
         # -----------------------------
         SAFE_TYPES = ("Payment", "Voucher CR", "Camp")
-
-        lessons = [
-            l for l in lessons
-            if l.lesson_type not in SAFE_TYPES
-        ]
+        lessons = [l for l in lessons if l.lesson_type not in SAFE_TYPES]
 
         # -----------------------------
         # BUILD CLEAN DATA DICTIONARIES
@@ -1516,6 +1511,20 @@ def create_app():
             if not tf or "-" not in tf:
                 continue
 
+            # SAFE PAYMENT
+            raw_payment = getattr(l, "payment", 0)
+            try:
+                payment = float(raw_payment) if raw_payment not in (None, "", "None") else 0.0
+            except:
+                payment = 0.0
+
+            # SAFE PRICE
+            raw_price = getattr(l, "price_pl", 0)
+            try:
+                price = float(raw_price) if raw_price not in (None, "", "None") else 0.0
+            except:
+                price = 0.0
+
             data.append({
                 "time_frame": tf,
                 "lesson_type": (l.lesson_type or "").strip(),
@@ -1524,8 +1533,9 @@ def create_app():
                 "client_name": l.client or "",
                 "freq": getattr(l, "freq", "") or "",
                 "att": getattr(l, "attendance", False),
-                "payment": float(str(getattr(l, "payment", 0)).strip() or 0),
-                "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
+
+                "payment": payment,
+                "price": price,
                 "balance": balance,
 
                 "age": getattr(client, "age", "") or "",
@@ -1553,7 +1563,6 @@ def create_app():
 
         # -----------------------------
         # SAFE TIME PARSER
-        # NEVER CRASHES
         # -----------------------------
         def parse_start(tf):
             try:
@@ -1561,7 +1570,7 @@ def create_app():
                 h, m = start.split(":")
                 return int(h) * 60 + int(m)
             except:
-                return 99999  # push bad rows to bottom safely
+                return 99999
 
         # -----------------------------
         # SPLIT ARENA VS OTHERS
