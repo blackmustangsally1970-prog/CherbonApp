@@ -2330,6 +2330,18 @@ def create_app():
 
 
         teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+
+        # ⭐ DETACH ORM OBJECTS SO SQLALCHEMY DOES NOT UPDATE THE DB ⭐
+        db.session.expunge_all()
+
+        # ⭐ NORMALIZE DATES SAFELY (NO DB WRITES) ⭐
+        for block in teacher_blocks:
+            if isinstance(block.date, str):
+                try:
+                    block.date = datetime.strptime(block.date, "%Y-%m-%d").date()
+                except:
+                    block.date = None
+
         teacher_blocks_json = [
             {
                 "id": tb.id,
@@ -2341,13 +2353,6 @@ def create_app():
             }
             for tb in teacher_blocks
         ]
-
-        for block in teacher_blocks:
-            if isinstance(block.date, str):
-                try:
-                    block.date = datetime.strptime(block.date, "%Y-%m-%d").date()
-                except:
-                    block.date = None
 
 
         grouped_lessons = ctx["grouped_lessons"]
