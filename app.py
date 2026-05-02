@@ -525,9 +525,22 @@ def log_disclaimer_processed(names):
         print("Failed to write disclaimer log:", e)
 
 def parse_start(tframe):
-    # "09:30 - 10:20" → datetime.time(9,30)
-    start = tframe.split("-")[0].strip()
-    return datetime.strptime(start, "%H:%M").time()
+    """
+    Safely extract start time in minutes from 'HH:MM - HH:MM'.
+    Returns a large number for invalid/missing times so they sort last.
+    NEVER crashes.
+    """
+    try:
+        if not tframe:
+            return 99999
+        tframe = tframe.replace("–", "-").replace("—", "-")
+        start = tframe.split("-")[0].strip()
+        if ":" not in start:
+            return 99999
+        h, m = start.split(":")
+        return int(h) * 60 + int(m)
+    except:
+        return 99999
 
 def group_blocks(rows):
     blocks = defaultdict(list)
@@ -1442,10 +1455,19 @@ def create_app():
 
     @app.route("/print/lessons/<date>")
     def print_lessons(date):
+        from datetime import datetime
+        from collections import defaultdict
+
+        # -----------------------------
+        # PARSE DATE
+        # -----------------------------
         lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
         dow = lesson_date.strftime("%A")
         pretty_date = lesson_date.strftime("%d %B %Y")
 
+        # -----------------------------
+        # FETCH ALL LESSON ROWS
+        # -----------------------------
         lessons = (
             Lesson.query
             .filter_by(lesson_date=lesson_date)
@@ -1453,15 +1475,29 @@ def create_app():
             .all()
         )
 
-        # Build full rider dictionaries
+        # -----------------------------
+        # FILTER OUT NON-LESSON TYPES
+        # (Payment, Voucher CR, Camp)
+        # -----------------------------
+        SAFE_TYPES = ("Payment", "Voucher CR", "Camp")
+
+        lessons = [
+            l for l in lessons
+            if l.lesson_type not in SAFE_TYPES
+        ]
+
+        # -----------------------------
+        # BUILD CLEAN DATA DICTIONARIES
+        # -----------------------------
         data = []
         for l in lessons:
             client = Client.query.filter_by(full_name=l.client).first()
 
-            # SAFE DISCLAIMER PARSING
+            # SAFE DISCLAIMER
             raw = str(getattr(client, "disclaimer", "")).strip()
+            disclaimer_val = int(raw) if raw.isdigit() else 0
 
-            # SAFE BALANCE PARSING
+            # SAFE BALANCE
             raw_balance = str(getattr(l, "balance", "")).strip()
             if raw_balance.lower() == "none" or raw_balance == "":
                 balance = 0.0
@@ -1471,12 +1507,18 @@ def create_app():
                 except:
                     balance = 0.0
 
+            # CLEAN TIME FRAME
+            tf = (l.time_frame or "").strip().replace("–", "-").replace("—", "-")
+
+            # SKIP ANYTHING WITH NO TIME
+            if not tf or "-" not in tf:
+                continue
+
             data.append({
-                "time_frame": (l.time_frame or "").strip().replace("–", "-"),
+                "time_frame": tf,
                 "lesson_type": (l.lesson_type or "").strip(),
                 "group_priv": (l.group_priv or "").strip().upper(),
 
-                # LESSON FIELDS
                 "client_name": l.client or "",
                 "freq": getattr(l, "freq", "") or "",
                 "att": getattr(l, "attendance", False),
@@ -1484,40 +1526,53 @@ def create_app():
                 "price": float(str(getattr(l, "price_pl", 0)).strip() or 0),
                 "balance": balance,
 
-                # CLIENT FIELDS
                 "age": getattr(client, "age", "") or "",
                 "guardian": getattr(client, "guardian_name", "") or "",
                 "mobile": getattr(client, "mobile", "") or "",
                 "weight": getattr(client, "weight_kg", "") or "",
                 "height": getattr(client, "height_cm", "") or "",
                 "notes": getattr(client, "notes", "") or "",
-                "disclaimer": int(raw) if raw.isdigit() else 0,
+                "disclaimer": disclaimer_val,
 
-                # HORSE
                 "horse": getattr(l, "horse", "") or "",
             })
 
-        # ---------------------------------------------------------
-        # ASSIGN UNIQUE INDEX TO PURE PRIVATE LESSONS ("P")
-        # ---------------------------------------------------------
+        # -----------------------------
+        # PRIVATE LESSON INDEXING
+        # -----------------------------
         private_counter = defaultdict(int)
         for d in data:
-            if d["group_priv"] == "P":  # pure private only
+            if d["group_priv"] == "P":
                 key = (d["time_frame"], d["lesson_type"])
                 private_counter[key] += 1
                 d["priv_index"] = private_counter[key]
             else:
                 d["priv_index"] = 0
 
-        # Split Arena vs Others
+        # -----------------------------
+        # SAFE TIME PARSER
+        # NEVER CRASHES
+        # -----------------------------
+        def parse_start(tf):
+            try:
+                start = tf.split("-")[0].strip()
+                h, m = start.split(":")
+                return int(h) * 60 + int(m)
+            except:
+                return 99999  # push bad rows to bottom safely
+
+        # -----------------------------
+        # SPLIT ARENA VS OTHERS
+        # -----------------------------
         arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
         others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
 
-        # Sort by chronological start time
         arena.sort(key=lambda x: parse_start(x["time_frame"]))
         others.sort(key=lambda x: parse_start(x["time_frame"]))
 
-        # Group blocks
+        # -----------------------------
+        # GROUP BLOCKS SAFELY
+        # -----------------------------
         def group_blocks(rows):
             blocks = defaultdict(list)
             for r in rows:
@@ -1540,6 +1595,9 @@ def create_app():
         arena_blocks = group_blocks(arena)
         other_blocks = group_blocks(others)
 
+        # -----------------------------
+        # RENDER TEMPLATE
+        # -----------------------------
         return render_template(
             "print_lessons.html",
             dow=dow,
@@ -1547,7 +1605,6 @@ def create_app():
             arena_blocks=arena_blocks,
             other_blocks=other_blocks,
         )
-
 
     @app.post("/recalculate_all")
     def recalculate_all():
