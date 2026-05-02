@@ -5173,122 +5173,6 @@ def create_app():
             log_admin_action(f"Reindex failed: {str(e)}", user="system")
         return redirect(url_for('debug_page'))
 
-    @app.route('/import_lessons_xlsx', methods=['POST'])
-    def import_lessons_xlsx():
-        file = request.files.get('file')
-        if not file:
-            return jsonify({"status": "error", "message": "No file uploaded"}), 400
-
-        wb = openpyxl.load_workbook(file)
-        ws = wb.active
-
-        # Extract header row
-        headers = []
-        for cell in ws[1]:
-            headers.append(cell.value.strip() if cell.value else None)
-
-        # Valid DB fields
-        valid_fields = [col.name for col in Lesson.__table__.columns]
-
-        # Map XLSX column index -> DB field name
-        field_map = {}
-        for idx, header in enumerate(headers):
-            if header in valid_fields:
-                field_map[idx] = header
-
-        inserted = 0
-        skipped = 0
-
-        # Process each row
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            row_data = {}
-
-            # Map known fields + normalize blanks
-            for idx, value in enumerate(row):
-                if idx in field_map:
-                    if isinstance(value, str) and value.strip() == "":
-                        value = None
-                    row_data[field_map[idx]] = value
-
-            # Skip fully empty rows
-            if not any(row_data.values()):
-                skipped += 1
-                continue
-
-            # --- TEXT NORMALISATION ---
-            for key, val in row_data.items():
-                if isinstance(val, str):
-                    row_data[key] = " ".join(val.split())
-
-            # --- REQUIRED FIELDS ---
-            required_fields = ["client", "lesson_date"]
-            missing = [f for f in required_fields if not row_data.get(f)]
-            if missing:
-                print(f"SKIPPED ROW — missing required fields {missing} | {row_data}")
-                skipped += 1
-                continue
-
-            # --- AUTO-CREATE CLIENT IF MISSING ---
-            client_name = row_data["client"]
-            client = Client.query.filter_by(full_name=client_name).first()
-            if client is None:
-                client = Client(full_name=client_name)
-                db.session.add(client)
-                db.session.commit()
-
-            # --- DATE NORMALIZATION ---
-            if "lesson_date" in row_data and row_data["lesson_date"]:
-                val = row_data["lesson_date"]
-
-                if isinstance(val, (datetime, date)):
-                    row_data["lesson_date"] = val.date() if isinstance(val, datetime) else val
-
-                elif isinstance(val, str):
-                    try:
-                        row_data["lesson_date"] = datetime.strptime(val.strip(), "%d/%m/%Y").date()
-                    except ValueError:
-                        print(f"BAD DATE FORMAT — {val} | {row_data}")
-                        skipped += 1
-                        continue
-
-            # --- NUMERIC NORMALISATION ---
-            numeric_fields = ["payment", "price_pl", "adjust", "carry_fwd", "balance"]
-
-            for key in numeric_fields:
-                if key in row_data:
-                    val = row_data[key]
-
-                    if val in [None, "", " ", "None"]:
-                        row_data[key] = None
-                        continue
-
-                    try:
-                        row_data[key] = float(val)
-                    except:
-                        print(f"BAD NUMERIC VALUE — {key}={val} | forcing to None")
-                        row_data[key] = None
-
-            # Create lesson safely
-            try:
-                lesson = Lesson(**row_data)
-                db.session.add(lesson)
-                inserted += 1
-            except Exception as e:
-                print(f"ROW FAILED — {e} | {row_data}")
-                skipped += 1
-                continue
-
-        # Commit all valid rows
-        db.session.commit()
-
-        # Recalc
-        try:
-            recalc_all_lessons()
-        except Exception as e:
-            flash(f"Import succeeded but recalc failed: {e}", "error")
-
-        flash(f"Imported {inserted} lessons. Skipped {skipped} rows.", "success")
-        return redirect(url_for('other_tools'))
 
 
 
@@ -6718,6 +6602,123 @@ Cherbon Waters Admin
 
         return render_template("phone_lookup.html", client=client, number=number)
 
+
+    @app.route('/import_lessons_xlsx', methods=['POST'])
+    def import_lessons_xlsx():
+        file = request.files.get('file')
+        if not file:
+            return jsonify({"status": "error", "message": "No file uploaded"}), 400
+
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+
+        # Extract header row
+        headers = []
+        for cell in ws[1]:
+            headers.append(cell.value.strip() if cell.value else None)
+
+        # Valid DB fields
+        valid_fields = [col.name for col in Lesson.__table__.columns]
+
+        # Map XLSX column index -> DB field name
+        field_map = {}
+        for idx, header in enumerate(headers):
+            if header in valid_fields:
+                field_map[idx] = header
+
+        inserted = 0
+        skipped = 0
+
+        # Process each row
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            row_data = {}
+
+            # Map known fields + normalize blanks
+            for idx, value in enumerate(row):
+                if idx in field_map:
+                    if isinstance(value, str) and value.strip() == "":
+                        value = None
+                    row_data[field_map[idx]] = value
+
+            # Skip fully empty rows
+            if not any(row_data.values()):
+                skipped += 1
+                continue
+
+            # --- TEXT NORMALISATION ---
+            for key, val in row_data.items():
+                if isinstance(val, str):
+                    row_data[key] = " ".join(val.split())
+
+            # --- REQUIRED FIELDS ---
+            required_fields = ["client", "lesson_date"]
+            missing = [f for f in required_fields if not row_data.get(f)]
+            if missing:
+                print(f"SKIPPED ROW — missing required fields {missing} | {row_data}")
+                skipped += 1
+                continue
+
+            # --- AUTO-CREATE CLIENT IF MISSING ---
+            client_name = row_data["client"]
+            client = Client.query.filter_by(full_name=client_name).first()
+            if client is None:
+                client = Client(full_name=client_name)
+                db.session.add(client)
+                db.session.commit()
+
+            # --- DATE NORMALIZATION ---
+            if "lesson_date" in row_data and row_data["lesson_date"]:
+                val = row_data["lesson_date"]
+
+                if isinstance(val, (datetime, date)):
+                    row_data["lesson_date"] = val.date() if isinstance(val, datetime) else val
+
+                elif isinstance(val, str):
+                    try:
+                        row_data["lesson_date"] = datetime.strptime(val.strip(), "%d/%m/%Y").date()
+                    except ValueError:
+                        print(f"BAD DATE FORMAT — {val} | {row_data}")
+                        skipped += 1
+                        continue
+
+            # --- NUMERIC NORMALISATION ---
+            numeric_fields = ["payment", "price_pl", "adjust", "carry_fwd", "balance"]
+
+            for key in numeric_fields:
+                if key in row_data:
+                    val = row_data[key]
+
+                    if val in [None, "", " ", "None"]:
+                        row_data[key] = None
+                        continue
+
+                    try:
+                        row_data[key] = float(val)
+                    except:
+                        print(f"BAD NUMERIC VALUE — {key}={val} | forcing to None")
+                        row_data[key] = None
+
+            # Create lesson safely
+            try:
+                lesson = Lesson(**row_data)
+                db.session.add(lesson)
+                inserted += 1
+            except Exception as e:
+                print(f"ROW FAILED — {e} | {row_data}")
+                skipped += 1
+                continue
+
+        # Commit all valid rows
+        db.session.commit()
+
+        # Recalc
+        try:
+            recalc_all_lessons()
+        except Exception as e:
+            flash(f"Import succeeded but recalc failed: {e}", "error")
+
+        flash(f"Imported {inserted} lessons. Skipped {skipped} rows.", "success")
+        return redirect(url_for('other_tools'))
 
 
     @app.route("/save_teacher_tags", methods=["POST"])
