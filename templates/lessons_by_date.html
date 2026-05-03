@@ -815,10 +815,20 @@ body {
 
     <button id="save-button" type="button" class="menu-btn">Save</button>
 
+<button id="recalc-all-btn"
+        type="button"
+        class="menu-btn"
+        style="margin-left:8px;">
+    Recalculate All
+</button>
+
+
     <button id="toggle-teacher-btn" type="button" 
             style="margin-left:8px; padding:6px 10px; font-size:12px;">
         Show teachers
     </button>
+
+
 
     <label style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
         <input type="checkbox" id="toggle-all-lessons" checked>
@@ -4265,53 +4275,46 @@ document.addEventListener("input", function (e) {
 <script>
 
 /* ================================
-   SAVE ALL LESSON FIELDS
+   SAVE ALL LESSON FIELDS (BULK)
    ================================ */
 
 document.getElementById("save-button").addEventListener("click", saveAllLessons);
 
-function saveAllLessons() {
+async function saveAllLessons() {
     const rows = document.querySelectorAll(".lesson-row");
-    let pending = 0;
+    const updates = [];
 
     rows.forEach(row => {
         const lesson_id = row.dataset.lessonId;
 
-        const attendance = row.querySelector(".attendance-select")?.value || "";
-        const payment = row.querySelector(".payment-input")?.value || "";
-        const price_pl = row.querySelector(".price-pl-input")?.value || "";
-        const adjust = row.querySelector(".adjust-input")?.value || "";
-        const notes = row.querySelector(".notes-input")?.value || "";
-
-        pending += queueUpdate(lesson_id, "attendance", attendance);
-        pending += queueUpdate(lesson_id, "payment", payment);
-        pending += queueUpdate(lesson_id, "price_pl", price_pl);
-        pending += queueUpdate(lesson_id, "adjust", adjust);
-        pending += queueUpdate(lesson_id, "lesson_notes", notes);
+        updates.push({
+            lesson_id,
+            attendance: row.querySelector(".attendance-select")?.value || "",
+            payment: row.querySelector(".payment-input")?.value || "",
+            price_pl: row.querySelector(".price-pl-input")?.value || "",
+            adjust: row.querySelector(".adjust-input")?.value || "",
+            notes: row.querySelector(".notes-input")?.value || ""
+        });
     });
 
-    if (pending === 0) {
-        showSavedMessage();
-    }
-}
+    try {
+        const resp = await fetch("/bulk_update_lessons", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ updates })
+        });
 
-function queueUpdate(lesson_id, field, value) {
-    if (!lesson_id) return 0;
-
-    fetch("/update_lesson_field", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lesson_id, field, value })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) {
-            console.error("Update failed:", data.error);
+        if (!resp.ok) {
+            alert("Save failed.");
+            return;
         }
-    })
-    .catch(err => console.error("Network error:", err));
 
-    return 1;
+        showSavedMessage();
+
+    } catch (err) {
+        console.error(err);
+        alert("Network error during save.");
+    }
 }
 
 function showSavedMessage() {
@@ -4319,6 +4322,7 @@ function showSavedMessage() {
     msg.style.opacity = 1;
     setTimeout(() => msg.style.opacity = 0, 1500);
 }
+
 </script>
 
 
@@ -4352,6 +4356,28 @@ document.addEventListener("DOMContentLoaded", () => {
     nextBtn.addEventListener("click", () => shiftDate(1));
 });
 </script>
+<script>
+document.getElementById("recalc-all-btn").addEventListener("click", async () => {
+    try {
+        const resp = await fetch("/recalc_all_lessons", {
+            method: "POST"
+        });
+
+        if (!resp.ok) {
+            alert("Recalc failed.");
+            return;
+        }
+
+        alert("All lessons recalculated.");
+        location.reload();
+
+    } catch (err) {
+        console.error(err);
+        alert("Error running recalc.");
+    }
+});
+</script>
+
 
 
 
