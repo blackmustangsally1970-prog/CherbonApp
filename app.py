@@ -18,6 +18,7 @@ from models import (
     Horse,
     UpgradeItem,
     IncomingSubmission,
+    JotformFetchState,
     Lesson,
     LessonBlockTag,
     LessonInvite,
@@ -3553,7 +3554,7 @@ def build_lessons_context(selected_date, selected_date_str):
         fetch_state = JotformFetchState.query.first()
         if not fetch_state:
             fetch_state = JotformFetchState(
-                last_fetched_submission_id=0,
+                last_fetched_submission_id="0",
                 last_fetched_timestamp=datetime(1970, 1, 1)
             )
             db.session.add(fetch_state)

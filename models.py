@@ -42,6 +42,14 @@ class Client(db.Model):
     notes = db.Column(db.String)
     notes2 = db.Column(db.String)
 
+class JotformFetchState(db.Model):
+    __tablename__ = 'jotform_fetch_state'
+
+    id = db.Column(db.Integer, primary_key=True)
+    last_fetched_submission_id = db.Column(db.String, default="0")
+    last_fetched_timestamp = db.Column(db.DateTime)
+
+
 
 class Term(db.Model):
     id = db.Column(db.Integer, primary_key=True)
