@@ -2395,11 +2395,11 @@ def create_app():
 
         # Brisbane weekday
         weekday_int = datetime.now(ZoneInfo("Australia/Brisbane")).weekday()
-        
-        # ⭐⭐ INSERT THIS LINE HERE ⭐⭐
+
+        # ⭐ REQUIRED FOR DATE INPUTS ⭐
         selected_date_iso = selected_date.strftime("%Y-%m-%d")
 
-        # DEBUG: trace incoming date and DB sample for forensic inspection
+        # DEBUG
         print("=== DEBUG lessons_by_date ENTRY ===")
         print("method:", request.method)
         print("request.values:", dict(request.values))
@@ -2417,8 +2417,9 @@ def create_app():
             print("  sample:", r.lesson_id, getattr(r, 'client', None), getattr(r, 'lesson_date', None))
         print("=== END DEBUG ===")
 
-        # ⭐⭐ INSERT THE NEW BLOCK RIGHT HERE ⭐⭐
+        # ⭐ BUILD CONTEXT ⭐
         ctx = build_lessons_context(selected_date, selected_date_str)
+
         # ⭐ LOAD GRID OVERRIDES ⭐
         overrides = TeacherGridOverride.query.filter_by(
             override_date=selected_date
@@ -2429,14 +2430,13 @@ def create_app():
             for o in overrides
         }
 
-
-
+        # ⭐ LOAD TEACHER BLOCKS ⭐
         teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
 
-        # ⭐ DETACH ORM OBJECTS SO SQLALCHEMY DOES NOT UPDATE THE DB ⭐
+        # ⭐ DETACH ORM OBJECTS ⭐
         db.session.expunge_all()
 
-        # ⭐ NORMALIZE DATES SAFELY (NO DB WRITES) ⭐
+        # ⭐ NORMALIZE DATES ⭐
         for block in teacher_blocks:
             if isinstance(block.date, str):
                 try:
@@ -2456,7 +2456,7 @@ def create_app():
             for tb in teacher_blocks
         ]
 
-
+        # ⭐ UNPACK CONTEXT ⭐
         grouped_lessons = ctx["grouped_lessons"]
         horse_list = ctx["horse_list"]
         horse_schedule = ctx["horse_schedule"]
@@ -2471,7 +2471,22 @@ def create_app():
         clients = ctx["clients"]
         teacher_horse_usage = ctx["teacher_horse_usage"]
         slot_map = ctx["slot_map"]
-        # ⭐⭐ END INSERT ⭐⭐
+
+        # ⭐ FILTER OUT INVALID LESSON ROWS (CRITICAL FIX) ⭐
+        safe_lesson_rows = []
+        for l in lesson_rows:
+            if l.lesson_type in ("Payment", "Voucher CR", "Camp", "Comp"):
+                continue
+            if not l.time_frame:
+                continue
+            if not l.group_priv:
+                continue
+            if not l.lesson_type:
+                continue
+            safe_lesson_rows.append(l)
+
+        # Replace lesson_rows with safe version
+        lesson_rows = safe_lesson_rows
 
         print("=== PRICE DEBUG ===")
         for l in lesson_rows:
@@ -2484,7 +2499,7 @@ def create_app():
             'lessons_by_date.html',
             grouped_lessons=grouped_lessons,
             selected_date=selected_date_str,
-            selected_date_iso=selected_date_iso,   # ⭐ REQUIRED
+            selected_date_iso=selected_date_iso,
             weekday_int=weekday_int,
             horse_list=horse_list,
             horse_schedule=horse_schedule,
