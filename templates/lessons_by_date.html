@@ -861,14 +861,13 @@ body {
         Print Run Sheet
     </button>
 
-    <button type="button"
-            id="horse-print"
-            class="btn btn-danger"
-            style="margin-left:8px;"
-            onclick="window.open('{{ url_for('print_lessons', date=selected_date) }}', '_blank');">
-        Horse Print
-    </button>
-
+<button type="button"
+        id="horse-print"
+        class="btn btn-danger"
+        style="margin-left:8px;"
+        onclick="window.open('{{ url_for('print_horses', date=selected_date) }}', '_blank');">
+    Horse Print
+</button>
 </div>
 
 {% if session.pop('show_flash', None) %}
