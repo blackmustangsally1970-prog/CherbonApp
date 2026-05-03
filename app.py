@@ -3548,33 +3548,33 @@ def build_lessons_context(selected_date, selected_date_str):
         current_max_disclaimer = state.max_disclaimer_number or 0
 
         # ---------------------------------------------------------
-        # 1. DYNAMIC CUTOFF — ignore anything older than 30 days
+        # 1. LOAD WATERMARK (last fetched timestamp)
         # ---------------------------------------------------------
-        CUTOFF = datetime.utcnow() - timedelta(days=30)
+        fetch_state = JotformFetchState.query.first()
+        if not fetch_state:
+            fetch_state = JotformFetchState(
+                last_fetched_submission_id=0,
+                last_fetched_timestamp=datetime(1970, 1, 1)
+            )
+            db.session.add(fetch_state)
+            db.session.commit()
+
+        last_ts = fetch_state.last_fetched_timestamp
 
         # ---------------------------------------------------------
-        # 2. CHECKPOINT — latest submission (ANY state)
-        # ---------------------------------------------------------
-        latest_any = (
-            db.session.query(IncomingSubmission)
-            .filter(IncomingSubmission.form_id == FORM_ID)
-            .order_by(IncomingSubmission.received_at.desc())
-            .first()
-        )
-        latest_ts = latest_any.received_at if latest_any else None
-
-        # ---------------------------------------------------------
-        # 3. PAGINATION — fetch ALL pages from JotForm
+        # 2. FETCH ONLY NEW SUBMISSIONS FROM JOTFORM
         # ---------------------------------------------------------
         submissions = []
         offset = 0
-        limit = 1000  # JotForm max per page
+        limit = 1000
 
         while True:
             url = (
                 f"https://api.jotform.com/form/{FORM_ID}/submissions"
                 f"?apiKey={API_KEY}&offset={offset}&limit={limit}"
+                f"&filter[created_at][gt]={last_ts.isoformat()}"
             )
+
             r = requests.get(url)
             if r.status_code != 200:
                 print("ERROR: JotForm API failed:", r.text)
@@ -3587,13 +3587,14 @@ def build_lessons_context(selected_date, selected_date_str):
             submissions.extend(page)
             offset += limit
 
-        print(f"Fetched {len(submissions)} submissions from JotForm.")
+        print(f"Fetched {len(submissions)} NEW submissions from JotForm.")
 
         inserted = 0
         new_global_max = current_max_disclaimer
+        newest_timestamp = last_ts
 
         # ---------------------------------------------------------
-        # 4. PROCESS EACH SUBMISSION
+        # 3. PROCESS ONLY NEW SUBMISSIONS
         # ---------------------------------------------------------
         for sub in submissions:
             submission_id = str(sub.get("id"))
@@ -3607,7 +3608,7 @@ def build_lessons_context(selected_date, selected_date_str):
             if existing:
                 continue
 
-            # EXTRACT ALL DISCLAIMER NUMBERS FROM PAYLOAD
+            # EXTRACT DISCLAIMER NUMBERS
             answers = sub.get("answers", {}) or {}
             disclaimer_numbers = []
 
@@ -3620,53 +3621,36 @@ def build_lessons_context(selected_date, selected_date_str):
                     elif ans is not None:
                         disclaimer_numbers.append(ans)
 
-            # NORMALISE TO INTS AND FIND MAX
             numeric_disclaimers = []
             for dn in disclaimer_numbers:
                 try:
                     numeric_disclaimers.append(int(str(dn).strip()))
-                except Exception:
+                except:
                     continue
 
-            if numeric_disclaimers:
-                max_in_submission = max(numeric_disclaimers)
-            else:
-                max_in_submission = None
+            max_in_submission = max(numeric_disclaimers) if numeric_disclaimers else None
 
-            # HARD RULE:
-            # If this submission's max disclaimer number is
-            # <= global max, it is OLD and must be ignored.
+            # IGNORE OLD SUBMISSIONS BASED ON DISCLAIMER NUMBER
             if max_in_submission is not None:
                 if max_in_submission <= current_max_disclaimer:
                     continue
-                # Track the highest we've seen this run
                 if max_in_submission > new_global_max:
                     new_global_max = max_in_submission
 
-            # SECONDARY DEDUPE — hash of payload
+            # HASH DEDUPE
             payload_str = json.dumps(sub, sort_keys=True)
             payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
 
             # TIMESTAMP
             submission_created = sub.get("created_at") or sub.get("updated_at")
-
             try:
-                if submission_created:
-                    # JotForm sends ISO8601 strings, not epoch ints
-                    submission_dt = datetime.fromisoformat(
-                        submission_created.replace("Z", "")
-                    )
-                else:
-                    submission_dt = datetime.utcnow()
-            except Exception as e:
-                print("TIMESTAMP ERROR:", e, "RAW VALUE:", submission_created)
+                submission_dt = datetime.fromisoformat(submission_created.replace("Z", ""))
+            except:
                 submission_dt = datetime.utcnow()
 
-
-
-            # CUTOFF
-            if submission_dt < CUTOFF:
-                continue
+            # TRACK NEWEST TIMESTAMP FOR WATERMARK
+            if submission_dt > newest_timestamp:
+                newest_timestamp = submission_dt
 
             # INSERT NEW ROW
             row = IncomingSubmission(
@@ -3682,17 +3666,20 @@ def build_lessons_context(selected_date, selected_date_str):
             inserted += 1
 
         # ---------------------------------------------------------
-        # 5. UPDATE GLOBAL MAX DISCLAIMER NUMBER
+        # 4. UPDATE GLOBAL MAX DISCLAIMER NUMBER
         # ---------------------------------------------------------
         if new_global_max > current_max_disclaimer:
             state.max_disclaimer_number = new_global_max
-            db.session.commit()
-            print(f"Updated max disclaimer number to {new_global_max}")
-        else:
-            db.session.commit()
+
+        # ---------------------------------------------------------
+        # 5. UPDATE WATERMARK
+        # ---------------------------------------------------------
+        if inserted > 0:
+            fetch_state.last_fetched_timestamp = newest_timestamp
+
+        db.session.commit()
 
         print(f"Inserted {inserted} new submissions.")
-
         return redirect(url_for('notifications'))
 
 
