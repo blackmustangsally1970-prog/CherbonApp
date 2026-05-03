@@ -2185,199 +2185,220 @@ def create_app():
         return resp
 
 
-    def build_lessons_context(selected_date, selected_date_str):
-        """
-        Takes a date + its string form and returns the full context
-        needed by lessons_by_date.html.
-        """
-        grouped_lessons = {}
-        horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
-        horse_schedule = defaultdict(list)
-        client_horse_history = defaultdict(list)
-        times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
-        teacher_names = [t.teacher for t in get_static_teachers()]
-        block_tag_lookup = {}
-        invoice_clients = []
-        if selected_date:
-            lesson_rows = (
-                db.session.query(Lesson)
-                .filter(
-                    Lesson.lesson_date == selected_date,
-                    Lesson.lesson_type.notin_(["Payment", "Voucher CR"])
-                )
-                .order_by(Lesson.time_frame)
-                .all()
+def build_lessons_context(selected_date, selected_date_str):
+    """
+    Takes a date + its string form and returns the full context
+    needed by lessons_by_date.html.
+    """
+    grouped_lessons = {}
+    horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
+    horse_schedule = defaultdict(list)
+    client_horse_history = defaultdict(list)
+    times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
+    teacher_names = [t.teacher for t in get_static_teachers()]
+    block_tag_lookup = {}
+    invoice_clients = []
+
+    if selected_date:
+        lesson_rows = (
+            db.session.query(Lesson)
+            .filter(
+                Lesson.lesson_date == selected_date,
+                Lesson.lesson_type.notin_(["Payment", "Voucher CR"])
             )
-        else:
-            lesson_rows = []
-
-        # Load per-lesson T1–T5 overrides
-        override_rows = (
-            db.session.query(LessonTeacherTag)
-            .filter_by(lesson_date=selected_date)
+            .order_by(Lesson.time_frame)
             .all()
         )
+    else:
+        lesson_rows = []
 
-        lesson_tag_overrides = {
-            row.lesson_id: {
-                "T1": row.t1,
-                "T2": row.t2,
-                "T3": row.t3,
-                "T4": row.t4,
-                "T5": row.t5,
-            }
-            for row in override_rows
+    # ⭐ SAFETY FILTER – ONLY REAL, WELL-FORMED LESSONS ⭐
+    safe = []
+    for lesson in lesson_rows:
+        lt = (lesson.lesson_type or "").strip()
+        tf = (lesson.time_frame or "").strip()
+        gp = (lesson.group_priv or "").strip()
+
+        # Skip non-lesson types
+        if lt in ("Camp", "Comp"):
+            continue
+
+        # Require core fields
+        if not tf or not gp or not lt:
+            continue
+
+        safe.append(lesson)
+
+    lesson_rows = safe
+    # ⭐ END SAFETY FILTER ⭐
+
+    # Load per-lesson T1–T5 overrides
+    override_rows = (
+        db.session.query(LessonTeacherTag)
+        .filter_by(lesson_date=selected_date)
+        .all()
+    )
+
+    lesson_tag_overrides = {
+        row.lesson_id: {
+            "T1": row.t1,
+            "T2": row.t2,
+            "T3": row.t3,
+            "T4": row.t4,
+            "T5": row.t5,
         }
+        for row in override_rows
+    }
 
+    # Populate horse_schedule from lesson_rows
+    for lesson in lesson_rows:
+        horse_name = to_proper_case(lesson.horse)
+        att = (lesson.attendance or '').strip().upper()
+        time_frame = (lesson.time_frame or '').strip()
 
-        # Populate horse_schedule from lesson_rows
-        for lesson in lesson_rows:
-            horse_name = to_proper_case(lesson.horse)
-            att = (lesson.attendance or '').strip().upper()
-            time_frame = (lesson.time_frame or '').strip()
+        if horse_name and time_frame and att != 'C':
+            horse_schedule[horse_name].append(time_frame)
 
-            if horse_name and time_frame and att != 'C':
-                horse_schedule[horse_name].append(time_frame)
+    # Build time lookup
+    time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
 
-        # Build time lookup
-        time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
+    # Build client lookup
+    client_lookup = {}
+    clients = db.session.query(Client).all()
 
-        # Build client lookup
-        client_lookup = {}
-        clients = db.session.query(Client).all()
+    for c in clients:
+        full = c.full_name or ''
+        key = normalize_name_for_lookup(full)
+        client_lookup[key] = c
+        client_lookup[(full or '').lower().replace(' ', '')] = c
 
-        for c in clients:
-            full = c.full_name or ''
-            key = normalize_name_for_lookup(full)
-            client_lookup[key] = c
-            client_lookup[(full or '').lower().replace(' ', '')] = c
+    # Group lessons
+    grouped = defaultdict(list)
+    for lesson in lesson_rows:
+        time_key = norm(lesson.time_frame)
+        time_obj = time_lookup.get(time_key)
+        client_key = normalize_name_for_lookup(lesson.client or '')
+        client_obj = client_lookup.get(client_key)
 
-        # Group lessons
-        grouped = defaultdict(list)
-        for lesson in lesson_rows:
-            time_key = norm(lesson.time_frame)
-            time_obj = time_lookup.get(time_key)
-            client_key = normalize_name_for_lookup(lesson.client or '')
-            client_obj = client_lookup.get(client_key)
+        if not client_obj:
+            alt_key = (lesson.client or '').lower().replace(' ', '')
+            client_obj = client_lookup.get(alt_key)
 
-            if not client_obj:
-                alt_key = (lesson.client or '').lower().replace(' ', '')
-                client_obj = client_lookup.get(alt_key)
+        timerange_display = time_obj.timerange if time_obj else (lesson.time_frame or '—')
+        group_key = (timerange_display, lesson.lesson_type or '', lesson.group_priv or '')
+        grouped[group_key].append((lesson, client_obj))
 
-            timerange_display = time_obj.timerange if time_obj else (lesson.time_frame or '—')
-            group_key = (timerange_display, lesson.lesson_type or '', lesson.group_priv or '')
-            grouped[group_key].append((lesson, client_obj))
+    # Sorting helper
+    def time_sort_key(timerange):
+        try:
+            return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
+        except Exception:
+            return time.min
 
-        # Sorting helper
-        def time_sort_key(timerange):
-            try:
-                return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
-            except Exception:
-                return time.min
+    sorted_keys = sorted(
+        grouped.keys(),
+        key=lambda k: (0 if (k[1] or '').lower() == 'arena' else 1, time_sort_key(k[0]))
+    )
 
-        sorted_keys = sorted(
-            grouped.keys(),
-            key=lambda k: (0 if (k[1] or '').lower() == 'arena' else 1, time_sort_key(k[0]))
+    grouped_lessons = {
+        k: sorted(
+            grouped[k],
+            key=lambda pair: ((pair[1].full_name if pair[1] else pair[0].client) or '').lower()
         )
+        for k in sorted_keys
+    }
 
-        grouped_lessons = {
-            k: sorted(grouped[k], key=lambda pair: ((pair[1].full_name if pair[1] else pair[0].client) or '').lower())
-            for k in sorted_keys
-        }
+    # Build block_tag_lookup from DB
+    block_tag_lookup = {}
+    rows = db.session.query(LessonBlockTag).filter_by(lesson_date=selected_date).all()
+    for r in rows:
+        key = norm_timerange_key(r.time_range)
+        tags = [t.strip() for t in (r.teacher_tags or '').split(',') if t.strip()]
+        block_tag_lookup[key] = tags
 
-        # Build block_tag_lookup from DB
-        block_tag_lookup = {}
-        rows = db.session.query(LessonBlockTag).filter_by(lesson_date=selected_date).all()
-        for r in rows:
-            key = norm_timerange_key(r.time_range)
-            tags = [t.strip() for t in (r.teacher_tags or '').split(',') if t.strip()]
-            block_tag_lookup[key] = tags
-
-        # Apply fallback tags based on lesson type
-        for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
-            block_key = norm_timerange_key(timerange)
-            if block_key not in block_tag_lookup:
-                if (lesson_type or '').lower() == 'arena':
-                    block_tag_lookup[block_key] = ['T1']
-                else:
-                    block_tag_lookup[block_key] = ['T2']
-
-        # Merge lesson-level overrides with block defaults
-        merged_tags = {}
-
-        for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
-            for lesson, client_obj in lesson_group:
-                lid = lesson.lesson_id
-
-                # 1. Lesson-level override exists → highest priority
-                if lid in lesson_tag_overrides:
-                    merged_tags[lid] = [
-                        tag for tag, val in lesson_tag_overrides[lid].items() if val
-                    ]
-                    continue
-
-                # 2. Block-level tags
-                block_key = norm_timerange_key(timerange)
-                if block_key in block_tag_lookup:
-                    merged_tags[lid] = block_tag_lookup[block_key]
-                    continue
-
-                # 3. Fallback defaults (Arena → T1, others → T2)
-                if (lesson.lesson_type or '').lower() == 'arena':
-                    merged_tags[lid] = ['T1']
-                else:
-                    merged_tags[lid] = ['T2']
-
-
-        # Build teacher_horse_usage
-        teacher_horse_usage = {}
-        teacher_rows = db.session.query(TeacherHorse).filter(
-            TeacherHorse.date == selected_date
-        ).all()
-
-        for th in teacher_rows:
-            bk = (th.block_key or "").strip()
-            if len(bk) == 8 and bk.isdigit():
-                start, end = bk[:4], bk[4:]
-                time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
+    # Apply fallback tags based on lesson type
+    for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
+        block_key = norm_timerange_key(timerange)
+        if block_key not in block_tag_lookup:
+            if (lesson_type or '').lower() == 'arena':
+                block_tag_lookup[block_key] = ['T1']
             else:
-                time_slot = bk or "??:??"
+                block_tag_lookup[block_key] = ['T2']
 
-            for raw_h in (th.horse1, th.horse2):
-                if raw_h:
-                    name = to_proper_case(str(raw_h).strip())
-                    teacher_horse_usage.setdefault(name, []).append(time_slot)
+    # Merge lesson-level overrides with block defaults
+    merged_tags = {}
 
-        # Deduplicate + sort
-        for h, usage_times in teacher_horse_usage.items():
-            teacher_horse_usage[h] = sorted(set(usage_times))
+    for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
+        for lesson, client_obj in lesson_group:
+            lid = lesson.lesson_id
 
-        # Build slot_map
-        slot_rows = (
-            db.session.query(TeacherSlot)
-            .filter_by(lesson_date=selected_date)
-            .all()
-        )
-        slot_map = {s.slot_number: s.teacher_name for s in slot_rows}
+            # 1. Lesson-level override exists → highest priority
+            if lid in lesson_tag_overrides:
+                merged_tags[lid] = [
+                    tag for tag, val in lesson_tag_overrides[lid].items() if val
+                ]
+                continue
 
+            # 2. Block-level tags
+            block_key = norm_timerange_key(timerange)
+            if block_key in block_tag_lookup:
+                merged_tags[lid] = block_tag_lookup[block_key]
+                continue
 
-        return {
-            "grouped_lessons": grouped_lessons,
-            "horse_list": horse_list,
-            "horse_schedule": horse_schedule,
-            "client_horse_history": client_horse_history,
-            "times": times,
-            "teacher_names": teacher_names,
-            "block_tag_lookup": block_tag_lookup,
-            "invoice_clients": invoice_clients,
-            "lesson_rows": lesson_rows,
-            "time_lookup": time_lookup,
-            "client_lookup": client_lookup,
-            "clients": clients,
-            "teacher_horse_usage": teacher_horse_usage,
-            "slot_map": slot_map,
-            "merged_tags": merged_tags,             
-        }
+            # 3. Fallback defaults (Arena → T1, others → T2)
+            if (lesson.lesson_type or '').lower() == 'arena':
+                merged_tags[lid] = ['T1']
+            else:
+                merged_tags[lid] = ['T2']
+
+    # Build teacher_horse_usage
+    teacher_horse_usage = {}
+    teacher_rows = db.session.query(TeacherHorse).filter(
+        TeacherHorse.date == selected_date
+    ).all()
+
+    for th in teacher_rows:
+        bk = (th.block_key or "").strip()
+        if len(bk) == 8 and bk.isdigit():
+            start, end = bk[:4], bk[4:]
+            time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
+        else:
+            time_slot = bk or "??:??"
+
+        for raw_h in (th.horse1, th.horse2):
+            if raw_h:
+                name = to_proper_case(str(raw_h).strip())
+                teacher_horse_usage.setdefault(name, []).append(time_slot)
+
+    # Deduplicate + sort
+    for h, usage_times in teacher_horse_usage.items():
+        teacher_horse_usage[h] = sorted(set(usage_times))
+
+    # Build slot_map
+    slot_rows = (
+        db.session.query(TeacherSlot)
+        .filter_by(lesson_date=selected_date)
+        .all()
+    )
+    slot_map = {s.slot_number: s.teacher_name for s in slot_rows}
+
+    return {
+        "grouped_lessons": grouped_lessons,
+        "horse_list": horse_list,
+        "horse_schedule": horse_schedule,
+        "client_horse_history": client_horse_history,
+        "times": times,
+        "teacher_names": teacher_names,
+        "block_tag_lookup": block_tag_lookup,
+        "invoice_clients": invoice_clients,
+        "lesson_rows": lesson_rows,
+        "time_lookup": time_lookup,
+        "client_lookup": client_lookup,
+        "clients": clients,
+        "teacher_horse_usage": teacher_horse_usage,
+        "slot_map": slot_map,
+        "merged_tags": merged_tags,
+    }
 
 
 
