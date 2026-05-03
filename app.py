@@ -1617,6 +1617,97 @@ def create_app():
             other_blocks=other_blocks,
         )
 
+
+    @app.route("/print/horses/<date>")
+    def print_horses(date):
+        from datetime import datetime
+        from collections import defaultdict
+
+        # -----------------------------
+        # PARSE DATE
+        # -----------------------------
+        lesson_date = datetime.strptime(date, "%Y-%m-%d").date()
+        pretty_date = lesson_date.strftime("%d %B %Y")
+
+        # -----------------------------
+        # FETCH ALL LESSON ROWS
+        # -----------------------------
+        lessons = (
+            Lesson.query
+            .filter_by(lesson_date=lesson_date)
+            .order_by(Lesson.time_frame)
+            .all()
+        )
+
+        # -----------------------------
+        # FILTER OUT NON-LESSON TYPES
+        # -----------------------------
+        SAFE_TYPES = ("Payment", "Voucher CR", "Camp")
+        lessons = [l for l in lessons if l.lesson_type not in SAFE_TYPES]
+
+        # -----------------------------
+        # BUILD CLEAN DATA
+        # -----------------------------
+        data = []
+        for l in lessons:
+            client = Client.query.filter_by(full_name=l.client).first()
+
+            tf = (l.time_frame or "").strip().replace("–", "-").replace("—", "-")
+            if not tf or "-" not in tf:
+                continue
+
+            data.append({
+                "time_frame": tf,
+                "lesson_type": (l.lesson_type or "").strip(),
+                "group_priv": (l.group_priv or "").strip().upper(),
+                "client_name": l.client or "",
+                "att": getattr(l, "attendance", False),
+                "teacher": getattr(l, "teacher", "") or "",
+                "horse": getattr(l, "horse", "") or "",
+            })
+
+        # -----------------------------
+        # SAFE TIME PARSER
+        # -----------------------------
+        def parse_start(tf):
+            try:
+                start = tf.split("-")[0].strip()
+                h, m = start.split(":")
+                return int(h) * 60 + int(m)
+            except:
+                return 99999
+
+        # -----------------------------
+        # GROUP BY TIME + LESSON TYPE + PRIV
+        # -----------------------------
+        blocks = defaultdict(list)
+        for d in data:
+            key = (d["time_frame"], d["lesson_type"], d["group_priv"])
+            blocks[key].append(d)
+
+        grouped = []
+        for (time, ltype, gp), riders in sorted(
+            blocks.items(),
+            key=lambda k: parse_start(k[0][0])
+        ):
+            grouped.append({
+                "time": time,
+                "lesson_type": ltype,
+                "group_priv": gp,
+                "riders": sorted(riders, key=lambda x: x["horse"].lower())
+            })
+
+        # -----------------------------
+        # RENDER TEMPLATE
+        # -----------------------------
+        return render_template(
+            "horse_print.html",
+            date=pretty_date,
+            grouped=grouped
+        )
+
+
+
     @app.post("/recalculate_all")
     def recalculate_all():
         try:
