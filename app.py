@@ -7250,6 +7250,40 @@ Cherbon Waters Admin
         return jsonify({"status": "ok"})
 
 
+    @app.route("/bulk_update_lessons", methods=["POST"])
+    def bulk_update_lessons():
+        data = request.get_json() or {}
+        updates = data.get("updates", [])
+
+        if not isinstance(updates, list):
+            return jsonify({"status": "error", "message": "Invalid payload"}), 400
+
+        try:
+            for item in updates:
+                lesson_id = item.get("lesson_id")
+                if not lesson_id:
+                    continue
+
+                lesson = Lesson.query.get(int(lesson_id))
+                if not lesson:
+                    continue
+
+                # Update fields
+                lesson.attendance = item.get("attendance", "")
+                lesson.payment    = parse_money(item.get("payment", "0"))
+                lesson.price_pl   = parse_money(item.get("price_pl", "0"))
+                lesson.adjust     = parse_money(item.get("adjust", "0"))
+                lesson.notes      = item.get("notes", "")
+
+            db.session.commit()
+            return jsonify({"status": "ok"}), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print("Bulk update error:", e)
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+
     @app.post("/bulk_delete_day")
     def bulk_delete_day():
         # Reset poisoned session
