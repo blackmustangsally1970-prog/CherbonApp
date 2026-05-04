@@ -2170,6 +2170,12 @@ def create_app():
         return {"status": "ok"}
 
 
+    @app.get('/api/test')
+    def api_test():
+        print("TEST ROUTE HIT")
+        return {"status": "ok"}
+
+
     @app.route("/pdf/<date>")
     def pdf_for_date(date):
         # 1. Render the HTML using the existing lessons_by_date logic
