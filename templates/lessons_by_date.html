@@ -822,7 +822,6 @@ body {
     Recalculate All
 </button>
 
-
     <button id="toggle-teacher-btn" type="button" 
             style="margin-left:8px; padding:6px 10px; font-size:12px;">
         Show teachers
@@ -4356,8 +4355,16 @@ document.addEventListener("DOMContentLoaded", () => {
     nextBtn.addEventListener("click", () => shiftDate(1));
 });
 </script>
+
+
 <script>
 document.getElementById("recalc-all-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("recalc-all-btn");
+
+    // Visual feedback immediately
+    btn.disabled = true;
+    btn.textContent = "Recalculating…";
+
     try {
         const resp = await fetch("/recalc_all_lessons", {
             method: "POST"
@@ -4365,6 +4372,8 @@ document.getElementById("recalc-all-btn").addEventListener("click", async () => 
 
         if (!resp.ok) {
             alert("Recalc failed.");
+            btn.disabled = false;
+            btn.textContent = "Recalculate All";
             return;
         }
 
@@ -4374,10 +4383,11 @@ document.getElementById("recalc-all-btn").addEventListener("click", async () => 
     } catch (err) {
         console.error(err);
         alert("Error running recalc.");
+        btn.disabled = false;
+        btn.textContent = "Recalculate All";
     }
 });
 </script>
-
 
 
 
