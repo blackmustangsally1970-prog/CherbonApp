@@ -1118,7 +1118,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 def create_app():
     print(">>> JOTFORM KEY IN APP:", os.getenv("JOTFORM_API_KEY"))
     app = Flask(__name__)
-    app.config["DEBUG"] = True   # ⭐ ADD THIS LINE ⭐
+
     app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
     app.config.from_object(Config())
