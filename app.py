@@ -48,6 +48,7 @@ import hashlib
 import secrets
 import string
 import tempfile
+import time
 import subprocess
 import unicodedata
 import openpyxl
@@ -7274,12 +7275,16 @@ Cherbon Waters Admin
                 lesson.price_pl   = parse_money(item.get("price_pl", "0"))
                 lesson.adjust     = parse_money(item.get("adjust", "0"))
 
-                # ⭐ Update CLIENT notes (correct table)
+                # Update CLIENT notes
                 client = Client.query.filter_by(full_name=lesson.client).first()
                 if client:
                     client.notes = item.get("notes", "")
 
+            import time
+            start = time.time()
             db.session.commit()
+            print("COMMIT TIME:", time.time() - start)
+
             return jsonify({"status": "ok"}), 200
 
         except Exception as e:
