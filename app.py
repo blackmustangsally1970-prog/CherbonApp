@@ -5222,7 +5222,6 @@ def create_app():
             # --------------------------------------------------------
             # FINAL COMMIT
             # --------------------------------------------------------
-            recalc_all_lessons()   # run the NEW global cascade
 
             db.session.commit()
             print("✅ COMMIT OK")
