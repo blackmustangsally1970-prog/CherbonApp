@@ -7268,12 +7268,16 @@ Cherbon Waters Admin
                 if not lesson:
                     continue
 
-                # Update fields
+                # Update lesson fields
                 lesson.attendance = item.get("attendance", "")
                 lesson.payment    = parse_money(item.get("payment", "0"))
                 lesson.price_pl   = parse_money(item.get("price_pl", "0"))
                 lesson.adjust     = parse_money(item.get("adjust", "0"))
-                lesson.notes      = item.get("notes", "")
+
+                # ⭐ Update CLIENT notes (correct table)
+                client = Client.query.filter_by(full_name=lesson.client).first()
+                if client:
+                    client.notes = item.get("notes", "")
 
             db.session.commit()
             return jsonify({"status": "ok"}), 200
