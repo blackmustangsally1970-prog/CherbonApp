@@ -6594,6 +6594,17 @@ Cherbon Waters Admin
         return redirect(f"/summaries?fy={fy}")
 
 
+    @app.route("/recalc_all_lessons", methods=["POST"])
+    def recalc_all_lessons_route():
+        try:
+            recalc_all_lessons()   # call your function
+            return "OK", 200
+        except Exception as e:
+            print("Recalc error:", e)
+            return "ERROR", 500
+
+
+
     @app.route('/debug_payload/<int:id>')
     def debug_payload(id):
         row = db.session.query(IncomingSubmission).get(id)
