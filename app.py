@@ -2169,22 +2169,23 @@ def create_app():
     def api_add_client():
         data = request.json
 
-        payload = {
-            "full_name": data.get("full_name"),
-            "weight_kg": data.get("weight_kg"),
-            "height_cm": data.get("height_cm"),
-            "mobile": data.get("mobile"),
-            "email_primary": data.get("email_primary"),
-            "notes": data.get("notes"),
-            "age": data.get("age"),
+        new_client = Client(
+            full_name=data.get("full_name"),
+            weight_kg=data.get("weight_kg"),
+            height_cm=data.get("height_cm"),
+            mobile=data.get("mobile"),
+            email_primary=data.get("email_primary"),
+            notes=data.get("notes"),
+            age=data.get("age"),
+        )
+
+        db.session.add(new_client)
+        db.session.commit()
+
+        return {
+            "status": "ok",
+            "client_id": new_client.client_id
         }
-
-        print("FINAL PAYLOAD:", payload)
-
-        result = supabase.table("clients").insert(payload).execute()
-        print("SUPABASE RESULT:", result)
-
-        return {"status": "ok", "result": str(result)}
 
 
     @app.get('/api/test')
