@@ -7,6 +7,7 @@ from flask import (
 
 from collections import defaultdict
 from config import Config
+from supabase import create_client, Client
 from extensions import db
 from models import (
     BlockoutDate,
@@ -87,6 +88,11 @@ from helpers_jf import (
     parse_general_enquiry_payload       # ⭐ ADD THIS
 )
 
+
+SUPABASE_URL = "YOUR_SUPABASE_URL"
+SUPABASE_KEY = "YOUR_SUPABASE_KEY"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_ROOT = os.path.join(BASE_DIR, "lesson_logs")
