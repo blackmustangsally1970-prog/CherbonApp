@@ -35,6 +35,9 @@
 <label>Full Name *</label>
 <input id="clientName" type="text" required>
 
+<label>Age (optional)</label>
+<input id="clientAge" type="number">
+
 <label>Mobile (optional)</label>
 <input id="clientMobile" type="text">
 
@@ -57,9 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("saveClientBtn").onclick = async () => {
 
-        alert("CLICKED"); // ← ADD THIS LINE     
-
         const name = document.getElementById("clientName").value.trim();
+        const age = document.getElementById("clientAge").value.trim();
         const mobile = document.getElementById("clientMobile").value.trim();
         const email = document.getElementById("clientEmail").value.trim();
         const weight = document.getElementById("clientWeight").value.trim();
@@ -73,22 +75,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const payload = {
             full_name: name,
+            age: age || null,
             mobile: mobile || null,
             email_primary: email || null,
             weight_kg: weight || null,
             height_cm: height || null,
-            notes2: notes || "",
-            disclaimer: null,
-            invoice_required: false,
-
-            age: null,
-            guardian_name: null,
-            guardian2_name: null,
-            mobile2: null,
-            email_secondary: null,
-            email_guardian2: null,
-            ndis_number: null,
-            ndis_code: null
+            notes: notes || ""
         };
 
         const res = await fetch("/api/add_client", {

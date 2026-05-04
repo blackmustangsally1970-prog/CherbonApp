@@ -2166,8 +2166,23 @@ def create_app():
     @app.post('/api/add_client')
     def api_add_client():
         data = request.json
-        supabase.table("clients").insert(data).execute()
-        return {"status": "ok"}
+
+        payload = {
+            "full_name": data.get("full_name"),
+            "weight_kg": data.get("weight_kg"),
+            "height_cm": data.get("height_cm"),
+            "mobile": data.get("mobile"),
+            "email_primary": data.get("email_primary"),
+            "notes": data.get("notes"),
+            "age": data.get("age"),
+        }
+
+        print("FINAL PAYLOAD:", payload)
+
+        result = supabase.table("clients").insert(payload).execute()
+        print("SUPABASE RESULT:", result)
+
+        return {"status": "ok", "result": str(result)}
 
 
     @app.get('/api/test')
