@@ -18,7 +18,6 @@ from models import (
     Horse,
     UpgradeItem,
     IncomingSubmission,
-    JotformFetchState,
     Lesson,
     LessonBlockTag,
     LessonInvite,
@@ -2164,6 +2163,12 @@ def create_app():
         return render_template("index.html")
 
 
+    @app.post('/api/add_client')
+    def api_add_client():
+        data = request.json
+        supabase.table("clients").insert(data).execute()
+        return {"status": "ok"}
+
 
     @app.route("/pdf/<date>")
     def pdf_for_date(date):
@@ -2186,220 +2191,199 @@ def create_app():
         return resp
 
 
-def build_lessons_context(selected_date, selected_date_str):
-    """
-    Takes a date + its string form and returns the full context
-    needed by lessons_by_date.html.
-    """
-    grouped_lessons = {}
-    horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
-    horse_schedule = defaultdict(list)
-    client_horse_history = defaultdict(list)
-    times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
-    teacher_names = [t.teacher for t in get_static_teachers()]
-    block_tag_lookup = {}
-    invoice_clients = []
-
-    if selected_date:
-        lesson_rows = (
-            db.session.query(Lesson)
-            .filter(
-                Lesson.lesson_date == selected_date,
-                Lesson.lesson_type.notin_(["Payment", "Voucher CR"])
+    def build_lessons_context(selected_date, selected_date_str):
+        """
+        Takes a date + its string form and returns the full context
+        needed by lessons_by_date.html.
+        """
+        grouped_lessons = {}
+        horse_list = [to_proper_case(h.horse) for h in get_static_horses()]
+        horse_schedule = defaultdict(list)
+        client_horse_history = defaultdict(list)
+        times = [t.timerange for t in db.session.query(Time).order_by(Time.timerange).all()]
+        teacher_names = [t.teacher for t in get_static_teachers()]
+        block_tag_lookup = {}
+        invoice_clients = []
+        if selected_date:
+            lesson_rows = (
+                db.session.query(Lesson)
+                .filter(
+                    Lesson.lesson_date == selected_date,
+                    Lesson.lesson_type.notin_(["Payment", "Voucher CR"])
+                )
+                .order_by(Lesson.time_frame)
+                .all()
             )
-            .order_by(Lesson.time_frame)
+        else:
+            lesson_rows = []
+
+        # Load per-lesson T1–T5 overrides
+        override_rows = (
+            db.session.query(LessonTeacherTag)
+            .filter_by(lesson_date=selected_date)
             .all()
         )
-    else:
-        lesson_rows = []
 
-    # ⭐ SAFETY FILTER – ONLY REAL, WELL-FORMED LESSONS ⭐
-    safe = []
-    for lesson in lesson_rows:
-        lt = (lesson.lesson_type or "").strip()
-        tf = (lesson.time_frame or "").strip()
-        gp = (lesson.group_priv or "").strip()
-
-        # Skip non-lesson types
-        if lt in ("Camp", "Comp"):
-            continue
-
-        # Require core fields
-        if not tf or not gp or not lt:
-            continue
-
-        safe.append(lesson)
-
-    lesson_rows = safe
-    # ⭐ END SAFETY FILTER ⭐
-
-    # Load per-lesson T1–T5 overrides
-    override_rows = (
-        db.session.query(LessonTeacherTag)
-        .filter_by(lesson_date=selected_date)
-        .all()
-    )
-
-    lesson_tag_overrides = {
-        row.lesson_id: {
-            "T1": row.t1,
-            "T2": row.t2,
-            "T3": row.t3,
-            "T4": row.t4,
-            "T5": row.t5,
+        lesson_tag_overrides = {
+            row.lesson_id: {
+                "T1": row.t1,
+                "T2": row.t2,
+                "T3": row.t3,
+                "T4": row.t4,
+                "T5": row.t5,
+            }
+            for row in override_rows
         }
-        for row in override_rows
-    }
 
-    # Populate horse_schedule from lesson_rows
-    for lesson in lesson_rows:
-        horse_name = to_proper_case(lesson.horse)
-        att = (lesson.attendance or '').strip().upper()
-        time_frame = (lesson.time_frame or '').strip()
 
-        if horse_name and time_frame and att != 'C':
-            horse_schedule[horse_name].append(time_frame)
+        # Populate horse_schedule from lesson_rows
+        for lesson in lesson_rows:
+            horse_name = to_proper_case(lesson.horse)
+            att = (lesson.attendance or '').strip().upper()
+            time_frame = (lesson.time_frame or '').strip()
 
-    # Build time lookup
-    time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
+            if horse_name and time_frame and att != 'C':
+                horse_schedule[horse_name].append(time_frame)
 
-    # Build client lookup
-    client_lookup = {}
-    clients = db.session.query(Client).all()
+        # Build time lookup
+        time_lookup = {norm(t.timerange): t for t in db.session.query(Time).all()}
 
-    for c in clients:
-        full = c.full_name or ''
-        key = normalize_name_for_lookup(full)
-        client_lookup[key] = c
-        client_lookup[(full or '').lower().replace(' ', '')] = c
+        # Build client lookup
+        client_lookup = {}
+        clients = db.session.query(Client).all()
 
-    # Group lessons
-    grouped = defaultdict(list)
-    for lesson in lesson_rows:
-        time_key = norm(lesson.time_frame)
-        time_obj = time_lookup.get(time_key)
-        client_key = normalize_name_for_lookup(lesson.client or '')
-        client_obj = client_lookup.get(client_key)
+        for c in clients:
+            full = c.full_name or ''
+            key = normalize_name_for_lookup(full)
+            client_lookup[key] = c
+            client_lookup[(full or '').lower().replace(' ', '')] = c
 
-        if not client_obj:
-            alt_key = (lesson.client or '').lower().replace(' ', '')
-            client_obj = client_lookup.get(alt_key)
+        # Group lessons
+        grouped = defaultdict(list)
+        for lesson in lesson_rows:
+            time_key = norm(lesson.time_frame)
+            time_obj = time_lookup.get(time_key)
+            client_key = normalize_name_for_lookup(lesson.client or '')
+            client_obj = client_lookup.get(client_key)
 
-        timerange_display = time_obj.timerange if time_obj else (lesson.time_frame or '—')
-        group_key = (timerange_display, lesson.lesson_type or '', lesson.group_priv or '')
-        grouped[group_key].append((lesson, client_obj))
+            if not client_obj:
+                alt_key = (lesson.client or '').lower().replace(' ', '')
+                client_obj = client_lookup.get(alt_key)
 
-    # Sorting helper
-    def time_sort_key(timerange):
-        try:
-            return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
-        except Exception:
-            return time.min
+            timerange_display = time_obj.timerange if time_obj else (lesson.time_frame or '—')
+            group_key = (timerange_display, lesson.lesson_type or '', lesson.group_priv or '')
+            grouped[group_key].append((lesson, client_obj))
 
-    sorted_keys = sorted(
-        grouped.keys(),
-        key=lambda k: (0 if (k[1] or '').lower() == 'arena' else 1, time_sort_key(k[0]))
-    )
+        # Sorting helper
+        def time_sort_key(timerange):
+            try:
+                return datetime.strptime(timerange.split('-')[0].strip(), '%H:%M').time()
+            except Exception:
+                return time.min
 
-    grouped_lessons = {
-        k: sorted(
-            grouped[k],
-            key=lambda pair: ((pair[1].full_name if pair[1] else pair[0].client) or '').lower()
+        sorted_keys = sorted(
+            grouped.keys(),
+            key=lambda k: (0 if (k[1] or '').lower() == 'arena' else 1, time_sort_key(k[0]))
         )
-        for k in sorted_keys
-    }
 
-    # Build block_tag_lookup from DB
-    block_tag_lookup = {}
-    rows = db.session.query(LessonBlockTag).filter_by(lesson_date=selected_date).all()
-    for r in rows:
-        key = norm_timerange_key(r.time_range)
-        tags = [t.strip() for t in (r.teacher_tags or '').split(',') if t.strip()]
-        block_tag_lookup[key] = tags
+        grouped_lessons = {
+            k: sorted(grouped[k], key=lambda pair: ((pair[1].full_name if pair[1] else pair[0].client) or '').lower())
+            for k in sorted_keys
+        }
 
-    # Apply fallback tags based on lesson type
-    for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
-        block_key = norm_timerange_key(timerange)
-        if block_key not in block_tag_lookup:
-            if (lesson_type or '').lower() == 'arena':
-                block_tag_lookup[block_key] = ['T1']
-            else:
-                block_tag_lookup[block_key] = ['T2']
+        # Build block_tag_lookup from DB
+        block_tag_lookup = {}
+        rows = db.session.query(LessonBlockTag).filter_by(lesson_date=selected_date).all()
+        for r in rows:
+            key = norm_timerange_key(r.time_range)
+            tags = [t.strip() for t in (r.teacher_tags or '').split(',') if t.strip()]
+            block_tag_lookup[key] = tags
 
-    # Merge lesson-level overrides with block defaults
-    merged_tags = {}
-
-    for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
-        for lesson, client_obj in lesson_group:
-            lid = lesson.lesson_id
-
-            # 1. Lesson-level override exists → highest priority
-            if lid in lesson_tag_overrides:
-                merged_tags[lid] = [
-                    tag for tag, val in lesson_tag_overrides[lid].items() if val
-                ]
-                continue
-
-            # 2. Block-level tags
+        # Apply fallback tags based on lesson type
+        for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
             block_key = norm_timerange_key(timerange)
-            if block_key in block_tag_lookup:
-                merged_tags[lid] = block_tag_lookup[block_key]
-                continue
+            if block_key not in block_tag_lookup:
+                if (lesson_type or '').lower() == 'arena':
+                    block_tag_lookup[block_key] = ['T1']
+                else:
+                    block_tag_lookup[block_key] = ['T2']
 
-            # 3. Fallback defaults (Arena → T1, others → T2)
-            if (lesson.lesson_type or '').lower() == 'arena':
-                merged_tags[lid] = ['T1']
+        # Merge lesson-level overrides with block defaults
+        merged_tags = {}
+
+        for (timerange, lesson_type, group_priv), lesson_group in grouped_lessons.items():
+            for lesson, client_obj in lesson_group:
+                lid = lesson.lesson_id
+
+                # 1. Lesson-level override exists → highest priority
+                if lid in lesson_tag_overrides:
+                    merged_tags[lid] = [
+                        tag for tag, val in lesson_tag_overrides[lid].items() if val
+                    ]
+                    continue
+
+                # 2. Block-level tags
+                block_key = norm_timerange_key(timerange)
+                if block_key in block_tag_lookup:
+                    merged_tags[lid] = block_tag_lookup[block_key]
+                    continue
+
+                # 3. Fallback defaults (Arena → T1, others → T2)
+                if (lesson.lesson_type or '').lower() == 'arena':
+                    merged_tags[lid] = ['T1']
+                else:
+                    merged_tags[lid] = ['T2']
+
+
+        # Build teacher_horse_usage
+        teacher_horse_usage = {}
+        teacher_rows = db.session.query(TeacherHorse).filter(
+            TeacherHorse.date == selected_date
+        ).all()
+
+        for th in teacher_rows:
+            bk = (th.block_key or "").strip()
+            if len(bk) == 8 and bk.isdigit():
+                start, end = bk[:4], bk[4:]
+                time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
             else:
-                merged_tags[lid] = ['T2']
+                time_slot = bk or "??:??"
 
-    # Build teacher_horse_usage
-    teacher_horse_usage = {}
-    teacher_rows = db.session.query(TeacherHorse).filter(
-        TeacherHorse.date == selected_date
-    ).all()
+            for raw_h in (th.horse1, th.horse2):
+                if raw_h:
+                    name = to_proper_case(str(raw_h).strip())
+                    teacher_horse_usage.setdefault(name, []).append(time_slot)
 
-    for th in teacher_rows:
-        bk = (th.block_key or "").strip()
-        if len(bk) == 8 and bk.isdigit():
-            start, end = bk[:4], bk[4:]
-            time_slot = f"{start[:2]}:{start[2:]} - {end[:2]}:{end[2:]}"
-        else:
-            time_slot = bk or "??:??"
+        # Deduplicate + sort
+        for h, usage_times in teacher_horse_usage.items():
+            teacher_horse_usage[h] = sorted(set(usage_times))
 
-        for raw_h in (th.horse1, th.horse2):
-            if raw_h:
-                name = to_proper_case(str(raw_h).strip())
-                teacher_horse_usage.setdefault(name, []).append(time_slot)
+        # Build slot_map
+        slot_rows = (
+            db.session.query(TeacherSlot)
+            .filter_by(lesson_date=selected_date)
+            .all()
+        )
+        slot_map = {s.slot_number: s.teacher_name for s in slot_rows}
 
-    # Deduplicate + sort
-    for h, usage_times in teacher_horse_usage.items():
-        teacher_horse_usage[h] = sorted(set(usage_times))
 
-    # Build slot_map
-    slot_rows = (
-        db.session.query(TeacherSlot)
-        .filter_by(lesson_date=selected_date)
-        .all()
-    )
-    slot_map = {s.slot_number: s.teacher_name for s in slot_rows}
-
-    return {
-        "grouped_lessons": grouped_lessons,
-        "horse_list": horse_list,
-        "horse_schedule": horse_schedule,
-        "client_horse_history": client_horse_history,
-        "times": times,
-        "teacher_names": teacher_names,
-        "block_tag_lookup": block_tag_lookup,
-        "invoice_clients": invoice_clients,
-        "lesson_rows": lesson_rows,
-        "time_lookup": time_lookup,
-        "client_lookup": client_lookup,
-        "clients": clients,
-        "teacher_horse_usage": teacher_horse_usage,
-        "slot_map": slot_map,
-        "merged_tags": merged_tags,
-    }
+        return {
+            "grouped_lessons": grouped_lessons,
+            "horse_list": horse_list,
+            "horse_schedule": horse_schedule,
+            "client_horse_history": client_horse_history,
+            "times": times,
+            "teacher_names": teacher_names,
+            "block_tag_lookup": block_tag_lookup,
+            "invoice_clients": invoice_clients,
+            "lesson_rows": lesson_rows,
+            "time_lookup": time_lookup,
+            "client_lookup": client_lookup,
+            "clients": clients,
+            "teacher_horse_usage": teacher_horse_usage,
+            "slot_map": slot_map,
+            "merged_tags": merged_tags,             
+        }
 
 
 
@@ -3549,33 +3533,33 @@ def build_lessons_context(selected_date, selected_date_str):
         current_max_disclaimer = state.max_disclaimer_number or 0
 
         # ---------------------------------------------------------
-        # 1. LOAD WATERMARK (last fetched timestamp)
+        # 1. DYNAMIC CUTOFF — ignore anything older than 30 days
         # ---------------------------------------------------------
-        fetch_state = JotformFetchState.query.first()
-        if not fetch_state:
-            fetch_state = JotformFetchState(
-                last_fetched_submission_id="0",
-                last_fetched_timestamp=datetime(1970, 1, 1)
-            )
-            db.session.add(fetch_state)
-            db.session.commit()
-
-        last_ts = fetch_state.last_fetched_timestamp
+        CUTOFF = datetime.utcnow() - timedelta(days=30)
 
         # ---------------------------------------------------------
-        # 2. FETCH ONLY NEW SUBMISSIONS FROM JOTFORM
+        # 2. CHECKPOINT — latest submission (ANY state)
+        # ---------------------------------------------------------
+        latest_any = (
+            db.session.query(IncomingSubmission)
+            .filter(IncomingSubmission.form_id == FORM_ID)
+            .order_by(IncomingSubmission.received_at.desc())
+            .first()
+        )
+        latest_ts = latest_any.received_at if latest_any else None
+
+        # ---------------------------------------------------------
+        # 3. PAGINATION — fetch ALL pages from JotForm
         # ---------------------------------------------------------
         submissions = []
         offset = 0
-        limit = 1000
+        limit = 1000  # JotForm max per page
 
         while True:
             url = (
                 f"https://api.jotform.com/form/{FORM_ID}/submissions"
                 f"?apiKey={API_KEY}&offset={offset}&limit={limit}"
-                f"&filter[created_at][gt]={last_ts.isoformat()}"
             )
-
             r = requests.get(url)
             if r.status_code != 200:
                 print("ERROR: JotForm API failed:", r.text)
@@ -3588,14 +3572,13 @@ def build_lessons_context(selected_date, selected_date_str):
             submissions.extend(page)
             offset += limit
 
-        print(f"Fetched {len(submissions)} NEW submissions from JotForm.")
+        print(f"Fetched {len(submissions)} submissions from JotForm.")
 
         inserted = 0
         new_global_max = current_max_disclaimer
-        newest_timestamp = last_ts
 
         # ---------------------------------------------------------
-        # 3. PROCESS ONLY NEW SUBMISSIONS
+        # 4. PROCESS EACH SUBMISSION
         # ---------------------------------------------------------
         for sub in submissions:
             submission_id = str(sub.get("id"))
@@ -3609,7 +3592,7 @@ def build_lessons_context(selected_date, selected_date_str):
             if existing:
                 continue
 
-            # EXTRACT DISCLAIMER NUMBERS
+            # EXTRACT ALL DISCLAIMER NUMBERS FROM PAYLOAD
             answers = sub.get("answers", {}) or {}
             disclaimer_numbers = []
 
@@ -3622,36 +3605,53 @@ def build_lessons_context(selected_date, selected_date_str):
                     elif ans is not None:
                         disclaimer_numbers.append(ans)
 
+            # NORMALISE TO INTS AND FIND MAX
             numeric_disclaimers = []
             for dn in disclaimer_numbers:
                 try:
                     numeric_disclaimers.append(int(str(dn).strip()))
-                except:
+                except Exception:
                     continue
 
-            max_in_submission = max(numeric_disclaimers) if numeric_disclaimers else None
+            if numeric_disclaimers:
+                max_in_submission = max(numeric_disclaimers)
+            else:
+                max_in_submission = None
 
-            # IGNORE OLD SUBMISSIONS BASED ON DISCLAIMER NUMBER
+            # HARD RULE:
+            # If this submission's max disclaimer number is
+            # <= global max, it is OLD and must be ignored.
             if max_in_submission is not None:
                 if max_in_submission <= current_max_disclaimer:
                     continue
+                # Track the highest we've seen this run
                 if max_in_submission > new_global_max:
                     new_global_max = max_in_submission
 
-            # HASH DEDUPE
+            # SECONDARY DEDUPE — hash of payload
             payload_str = json.dumps(sub, sort_keys=True)
             payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
 
             # TIMESTAMP
             submission_created = sub.get("created_at") or sub.get("updated_at")
+
             try:
-                submission_dt = datetime.fromisoformat(submission_created.replace("Z", ""))
-            except:
+                if submission_created:
+                    # JotForm sends ISO8601 strings, not epoch ints
+                    submission_dt = datetime.fromisoformat(
+                        submission_created.replace("Z", "")
+                    )
+                else:
+                    submission_dt = datetime.utcnow()
+            except Exception as e:
+                print("TIMESTAMP ERROR:", e, "RAW VALUE:", submission_created)
                 submission_dt = datetime.utcnow()
 
-            # TRACK NEWEST TIMESTAMP FOR WATERMARK
-            if submission_dt > newest_timestamp:
-                newest_timestamp = submission_dt
+
+
+            # CUTOFF
+            if submission_dt < CUTOFF:
+                continue
 
             # INSERT NEW ROW
             row = IncomingSubmission(
@@ -3667,20 +3667,17 @@ def build_lessons_context(selected_date, selected_date_str):
             inserted += 1
 
         # ---------------------------------------------------------
-        # 4. UPDATE GLOBAL MAX DISCLAIMER NUMBER
+        # 5. UPDATE GLOBAL MAX DISCLAIMER NUMBER
         # ---------------------------------------------------------
         if new_global_max > current_max_disclaimer:
             state.max_disclaimer_number = new_global_max
-
-        # ---------------------------------------------------------
-        # 5. UPDATE WATERMARK
-        # ---------------------------------------------------------
-        if inserted > 0:
-            fetch_state.last_fetched_timestamp = newest_timestamp
-
-        db.session.commit()
+            db.session.commit()
+            print(f"Updated max disclaimer number to {new_global_max}")
+        else:
+            db.session.commit()
 
         print(f"Inserted {inserted} new submissions.")
+
         return redirect(url_for('notifications'))
 
 
@@ -7088,6 +7085,12 @@ Cherbon Waters Admin
                 return redirect(url_for('wedding_staffing'))
 
         return render_template('add_wedding.html')
+
+
+    @app.route('/add_client_page')
+    def add_client_page():
+        return render_template('add_client_page.html')
+
 
     @app.route("/db-health")
     def db_health():

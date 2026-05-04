@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Add New Client</title>
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    label { display:block; margin-top: 12px; font-weight: bold; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 18px;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 14px;
+      font-size: 20px;
+      width: 100%;
+      background: #4a6bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Add New Client</h1>
+
+<label>Full Name *</label>
+<input id="clientName" type="text" required>
+
+<label>Mobile (optional)</label>
+<input id="clientMobile" type="text">
+
+<label>Email (optional)</label>
+<input id="clientEmail" type="email">
+
+<label>Weight (kg) (optional)</label>
+<input id="clientWeight" type="number" step="0.1">
+
+<label>Height (cm) (optional)</label>
+<input id="clientHeight" type="number" step="0.1">
+
+<label>Notes (optional)</label>
+<textarea id="clientNotes"></textarea>
+
+<button id="saveClientBtn">Save Client</button>
+
+<script>
+document.getElementById("saveClientBtn").onclick = async () => {
+
+    const name = document.getElementById("clientName").value.trim();
+    const mobile = document.getElementById("clientMobile").value.trim();
+    const email = document.getElementById("clientEmail").value.trim();
+    const weight = document.getElementById("clientWeight").value.trim();
+    const height = document.getElementById("clientHeight").value.trim();
+    const notes = document.getElementById("clientNotes").value.trim();
+
+    if (!name) {
+        alert("Name is required");
+        return;
+    }
+
+    const payload = {
+        full_name: name,
+        mobile: mobile || null,
+        email_primary: email || null,
+        weight_kg: weight || null,
+        height_cm: height || null,
+        notes2: notes || "",
+        disclaimer: null,
+        invoice_required: false,
+
+        age: null,
+        guardian_name: null,
+        guardian2_name: null,
+        mobile2: null,
+        email_secondary: null,
+        email_guardian2: null,
+        ndis_number: null,
+        ndis_code: null
+    };
+
+    const res = await fetch("/api/add_client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+        alert("Error: " + data.error);
+        return;
+    }
+
+    alert("Client added successfully");
+    window.location.href = "/client_view";
+};
+</script>
+
+</body>
+</html>
