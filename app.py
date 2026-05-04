@@ -55,7 +55,7 @@ from datetime import date, datetime, time, timedelta
 from functools import lru_cache, wraps
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
-from app import db
+
 from markupsafe import Markup, escape
 from sqlalchemy import func
 
