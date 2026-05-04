@@ -53,56 +53,62 @@
 <button id="saveClientBtn">Save Client</button>
 
 <script>
-document.getElementById("saveClientBtn").onclick = async () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-    const name = document.getElementById("clientName").value.trim();
-    const mobile = document.getElementById("clientMobile").value.trim();
-    const email = document.getElementById("clientEmail").value.trim();
-    const weight = document.getElementById("clientWeight").value.trim();
-    const height = document.getElementById("clientHeight").value.trim();
-    const notes = document.getElementById("clientNotes").value.trim();
+    document.getElementById("saveClientBtn").onclick = async () => {
 
-    if (!name) {
-        alert("Name is required");
-        return;
-    }
+        alert("CLICKED"); // ← ADD THIS LINE     
 
-    const payload = {
-        full_name: name,
-        mobile: mobile || null,
-        email_primary: email || null,
-        weight_kg: weight || null,
-        height_cm: height || null,
-        notes2: notes || "",
-        disclaimer: null,
-        invoice_required: false,
+        const name = document.getElementById("clientName").value.trim();
+        const mobile = document.getElementById("clientMobile").value.trim();
+        const email = document.getElementById("clientEmail").value.trim();
+        const weight = document.getElementById("clientWeight").value.trim();
+        const height = document.getElementById("clientHeight").value.trim();
+        const notes = document.getElementById("clientNotes").value.trim();
 
-        age: null,
-        guardian_name: null,
-        guardian2_name: null,
-        mobile2: null,
-        email_secondary: null,
-        email_guardian2: null,
-        ndis_number: null,
-        ndis_code: null
+        if (!name) {
+            alert("Name is required");
+            return;
+        }
+
+        const payload = {
+            full_name: name,
+            mobile: mobile || null,
+            email_primary: email || null,
+            weight_kg: weight || null,
+            height_cm: height || null,
+            notes2: notes || "",
+            disclaimer: null,
+            invoice_required: false,
+
+            age: null,
+            guardian_name: null,
+            guardian2_name: null,
+            mobile2: null,
+            email_secondary: null,
+            email_guardian2: null,
+            ndis_number: null,
+            ndis_code: null
+        };
+
+        const res = await fetch("/api/add_client", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+            alert("Error: " + data.error);
+            return;
+        }
+
+        alert("Client added successfully");
+        window.location.href = "/client_view";
     };
 
-    const res = await fetch("/api/add_client", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-        alert("Error: " + data.error);
-        return;
-    }
-
-    alert("Client added successfully");
-    window.location.href = "/client_view";
-};
+});
 </script>
 
 </body>
