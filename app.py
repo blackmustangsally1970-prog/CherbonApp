@@ -2503,12 +2503,6 @@ def create_app():
         teacher_horse_usage = ctx["teacher_horse_usage"]
         slot_map = ctx["slot_map"]
 
-        print("=== PRICE DEBUG ===")
-        for l in lesson_rows:
-            print(l.lesson_id, l.client, "price_pl:", repr(l.price_pl))
-        print("=== END PRICE DEBUG ===")
-
-        print("ABOUT TO RENDER TEMPLATE — ALL DATA LOADED OK")
 
         return render_template(
             'lessons_by_date.html',
