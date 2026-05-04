@@ -815,6 +815,9 @@ body {
 
     <button id="save-button" type="button" class="menu-btn">Save</button>
 
+<div id="saved-timestamp" style="font-size: 12px; color: #666; margin-top: 4px;"></div>
+
+
 <button id="recalc-all-btn"
         type="button"
         class="menu-btn"
@@ -4271,15 +4274,17 @@ document.addEventListener("input", function (e) {
 });
 </script>
 
-<script>
 
 /* ================================
    SAVE ALL LESSON FIELDS (BULK)
    ================================ */
+document.getElementById("save-button").addEventListener("click", async () => {
+    const btn = document.getElementById("save-button");
 
-document.getElementById("save-button").addEventListener("click", saveAllLessons);
+    // Visual feedback
+    btn.disabled = true;
+    btn.textContent = "Saving…";
 
-async function saveAllLessons() {
     const rows = document.querySelectorAll(".lesson-row");
     const updates = [];
 
@@ -4305,24 +4310,40 @@ async function saveAllLessons() {
 
         if (!resp.ok) {
             alert("Save failed.");
+            btn.disabled = false;
+            btn.textContent = "Save";
             return;
         }
 
-        showSavedMessage();
+        // Show “Saved!”
+        const msg = document.getElementById("saved-message");
+        msg.style.opacity = 1;
+
+        // ⭐ NEW: Update timestamp
+        const ts = document.getElementById("saved-timestamp");
+        if (ts) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString("en-AU", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+            ts.textContent = `Saved at ${timeString}`;
+        }
+
+        // Fade out after 1.5s
+        setTimeout(() => {
+            msg.style.opacity = 0;
+            btn.disabled = false;
+            btn.textContent = "Save";
+        }, 1500);
 
     } catch (err) {
         console.error(err);
         alert("Network error during save.");
+        btn.disabled = false;
+        btn.textContent = "Save";
     }
-}
-
-function showSavedMessage() {
-    const msg = document.getElementById("saved-message");
-    msg.style.opacity = 1;
-    setTimeout(() => msg.style.opacity = 0, 1500);
-}
-
-</script>
+});
 
 
 
