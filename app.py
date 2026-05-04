@@ -7108,7 +7108,7 @@ Cherbon Waters Admin
         return render_template('add_wedding.html')
 
 
-    @app.route('/add_client_page')
+    @app.get('/add_client')
     def add_client_page():
         return render_template('add_client_page.html')
 
