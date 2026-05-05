@@ -4506,6 +4506,7 @@ def create_app():
 
             final_output.append({
                 "client": c.full_name,
+                "guardian": c.guardian_name or "",
                 "mobile": c.mobile,
                 "current_balance": latest.balance,
                 "lessons": trimmed
