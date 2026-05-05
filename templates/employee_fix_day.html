@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Day</title>
+    <style>
+        body {
+            font-family: Arial;
+            background:#f5f5f5;
+            padding:40px;
+            text-align:center;
+        }
+        h2 {
+            font-size:32px;
+            margin-bottom:30px;
+        }
+        .field-block {
+            background:white;
+            padding:20px;
+            margin:15px auto;
+            width:340px;
+            border-radius:12px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+            text-align:left;
+            font-size:20px;
+        }
+        input {
+            width:100%;
+            padding:12px;
+            font-size:20px;
+            margin-top:10px;
+            border-radius:8px;
+            border:1px solid #ccc;
+        }
+        .save-btn {
+            padding:20px;
+            background:#2a7ae2;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:24px;
+            margin-top:25px;
+            width:300px;
+            cursor:pointer;
+        }
+        .save-btn:hover { background:#1f5fb4; }
+
+        .back-btn {
+            padding:18px;
+            background:#777;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            margin-top:20px;
+            width:260px;
+            cursor:pointer;
+        }
+        .back-btn:hover { background:#555; }
+    </style>
+</head>
+<body>
+
+<h2>Fix {{ row.date.strftime('%A %d %B %Y') }}</h2>
+
+<form method="POST">
+
+    <div class="field-block">
+        <label>Start Work</label>
+        <input type="datetime-local" name="sign_in"
+               value="{{ row.sign_in.strftime('%Y-%m-%dT%H:%M') if row.sign_in }}">
+    </div>
+
+    <div class="field-block">
+        <label>Break Start</label>
+        <input type="datetime-local" name="break_start"
+               value="{{ row.break_start.strftime('%Y-%m-%dT%H:%M') if row.break_start }}">
+    </div>
+
+    <div class="field-block">
+        <label>Break End</label>
+        <input type="datetime-local" name="break_end"
+               value="{{ row.break_end.strftime('%Y-%m-%dT%H:%M') if row.break_end }}">
+    </div>
+
+    <div class="field-block">
+        <label>Finish Work</label>
+        <input type="datetime-local" name="sign_out"
+               value="{{ row.sign_out.strftime('%Y-%m-%dT%H:%M') if row.sign_out }}">
+    </div>
+
+    <button class="save-btn" type="submit">Save Changes</button>
+</form>
+
+<button class="back-btn" onclick="window.location.href='/employeehours/fix'">
+    Back
+</button>
+
+</body>
+</html>

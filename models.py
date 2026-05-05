@@ -1,6 +1,6 @@
 from extensions import db
 from datetime import datetime
-
+from app import db
 
 
 class Employee(db.Model):
@@ -12,17 +12,19 @@ class Employee(db.Model):
     pin_hash = db.Column(db.String(200))                 # hashed PIN
     active = db.Column(db.Boolean, default=True)
 
-class EmployeeHours(db.Model):
-    __tablename__ = "employee_hours"
 
+class EmployeeHours(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"))
-    date = db.Column(db.Date, nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"))
+    date = db.Column(db.Date)
     sign_in = db.Column(db.DateTime)
     break_start = db.Column(db.DateTime)
     break_end = db.Column(db.DateTime)
     sign_out = db.Column(db.DateTime)
-    auto_prompted = db.Column(db.Boolean, default=False)
+
+    corrected = db.Column(db.Boolean, default=False)
+    corrected_at = db.Column(db.DateTime)
+    corrected_by = db.Column(db.Integer)  # admin user ID
 
 class Client(db.Model):
     __tablename__ = 'clients'

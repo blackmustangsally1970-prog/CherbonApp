@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ emp.full_name }} — Hours</title>
+    <style>
+        body {
+            font-family: Arial;
+            background:#f5f5f5;
+            padding:40px;
+        }
+        h2 {
+            font-size:32px;
+            margin-bottom:25px;
+        }
+        .entry {
+            background:white;
+            padding:20px;
+            margin-bottom:15px;
+            border-radius:10px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.15);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        .date {
+            font-size:22px;
+            font-weight:bold;
+        }
+        .edit-btn {
+            padding:14px 22px;
+            background:#2a7ae2;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:18px;
+            cursor:pointer;
+        }
+        .edit-btn:hover {
+            background:#1f5fb4;
+        }
+        .back-btn {
+            padding:18px;
+            background:#777;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            margin-top:30px;
+            width:260px;
+            cursor:pointer;
+        }
+        .back-btn:hover {
+            background:#555;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Hours for {{ emp.full_name }}</h2>
+
+{% for r in rows %}
+    <div class="entry">
+        <div class="date">
+            {{ r.date.strftime('%A %d %B %Y') }}
+        </div>
+
+        <button class="edit-btn"
+                onclick="window.location.href='/admin/employee/hours/{{ r.id }}/edit'">
+            Edit
+        </button>
+    </div>
+{% endfor %}
+
+<button class="back-btn" onclick="window.location.href='/admin'">
+    Back to Admin
+</button>
+
+</body>
+</html>

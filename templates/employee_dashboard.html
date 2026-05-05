@@ -22,6 +22,20 @@
         }
         .btn:hover { background:#1f5fb4; }
 
+        /* Fix Previous Days button */
+        .fix-days-btn {
+            padding:25px;
+            background:#e67e22;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:26px;
+            margin:15px;
+            width:280px;
+            cursor:pointer;
+        }
+        .fix-days-btn:hover { background:#cf6d1c; }
+
         /* Bottom sheet modal */
         #timeModal {
             position: fixed;
@@ -93,6 +107,13 @@
 
 {% else %}
     <p style="font-size:24px;">You have finished work for today.</p>
+{% endif %}
+
+<!-- ⭐ STEP 4 BUTTON -->
+{% if incomplete_days and incomplete_days|length > 0 %}
+    <button class="fix-days-btn" onclick="window.location.href='/employeehours/fix'">
+        Fix Previous Days
+    </button>
 {% endif %}
 
 <!-- Error box -->

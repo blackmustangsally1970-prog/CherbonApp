@@ -130,6 +130,20 @@ def get_static_teacher_time():
         TeacherTime.time
     ).all()
 
+def get_incomplete_days(employee_id):
+    sql = """
+        SELECT work_date, sign_in, sign_out
+        FROM employee_hours
+        WHERE employee_id = %s
+          AND work_date < CURRENT_DATE
+          AND (sign_in IS NULL OR sign_out IS NULL)
+        ORDER BY work_date DESC;
+    """
+    cur = mysql.connection.cursor()
+    cur.execute(sql, (employee_id,))
+    rows = cur.fetchall()
+    cur.close()
+    return rows
 
 
 def recalc_all_lessons():
@@ -7213,10 +7227,119 @@ Cherbon Waters Admin
 
         emp = Employee.query.get(emp_id)
 
+        # ⭐ STEP 10A — Auto‑Prompt Missing Days
         today = date.today()
+
+        incomplete_days = EmployeeHours.query.filter(
+            EmployeeHours.employee_id == emp.id,
+            EmployeeHours.date < today,
+            ((EmployeeHours.sign_in == None) | (EmployeeHours.sign_out == None)),
+            EmployeeHours.auto_prompted == False
+        ).all()
+
+        if incomplete_days:
+            for d in incomplete_days:
+                d.auto_prompted = True
+            db.session.commit()
+            return redirect("/employeehours/fix")
+
+        # Normal dashboard row for today
         row = EmployeeHours.query.filter_by(employee_id=emp.id, date=today).first()
 
         return render_template("employee_dashboard.html", emp=emp, row=row)
+
+
+    @app.route("/admin/employee/<int:emp_id>/hours")
+    def admin_employee_hours_list(emp_id):
+        emp = Employee.query.get(emp_id)
+        if not emp:
+            return "Employee not found", 404
+
+        rows = EmployeeHours.query.filter_by(employee_id=emp_id).order_by(
+            EmployeeHours.date.desc()
+        ).all()
+
+        return render_template("admin_employee_hours_list.html", emp=emp, rows=rows)
+
+    @app.route("/admin/employee/hours/<int:row_id>/edit")
+    def admin_edit_hours(row_id):
+        row = EmployeeHours.query.get(row_id)
+        if not row:
+            return "Not found", 404
+
+        emp = Employee.query.get(row.employee_id)
+
+        return render_template("admin_edit_hours.html", emp=emp, row=row)
+
+    @app.route("/employeehours/summary")
+    def employee_weekly_summary():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        emp = Employee.query.get(emp_id)
+
+        # Determine current week (Mon–Sun)
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+
+        rows = EmployeeHours.query.filter(
+            EmployeeHours.employee_id == emp.id,
+            EmployeeHours.date >= start_of_week,
+            EmployeeHours.date <= end_of_week
+        ).order_by(EmployeeHours.date.asc()).all()
+
+        # Calculate totals
+        total_work = timedelta()
+        total_break = timedelta()
+
+        for r in rows:
+            if r.sign_in and r.sign_out:
+                total_work += (r.sign_out - r.sign_in)
+
+            if r.break_start and r.break_end:
+                total_break += (r.break_end - r.break_start)
+
+        net_hours = total_work - total_break
+
+        return render_template(
+            "employee_weekly_summary.html",
+            emp=emp,
+            rows=rows,
+            start_of_week=start_of_week,
+            end_of_week=end_of_week,
+            total_work=total_work,
+            total_break=total_break,
+            net_hours=net_hours
+        )
+
+
+    @app.route("/admin/employee/hours/<int:row_id>/edit", methods=["POST"])
+    def admin_edit_hours_save(row_id):
+        row = EmployeeHours.query.get(row_id)
+        if not row:
+            return "Not found", 404
+
+        from datetime import datetime
+
+        def parse_or_none(val):
+            return datetime.fromisoformat(val) if val else None
+
+        row.sign_in = parse_or_none(request.form.get("sign_in"))
+        row.break_start = parse_or_none(request.form.get("break_start"))
+        row.break_end = parse_or_none(request.form.get("break_end"))
+        row.sign_out = parse_or_none(request.form.get("sign_out"))
+
+        # Mark as corrected by admin
+        row.corrected = True
+        row.corrected_at = datetime.now()
+        row.corrected_by = "admin"
+
+        db.session.commit()
+
+        return redirect(f"/admin/employee/{row.employee_id}/hours")
+
 
     @app.route("/employeehours/signin", methods=["POST"])
     def employee_signin():
@@ -7427,6 +7550,117 @@ Cherbon Waters Admin
     @app.route("/employeehours")
     def employeehours_login_page():
         return render_template("employee_pin_login.html")
+
+    @app.route("/employeehours/fix")
+    def employee_fix_list():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        today = date.today()
+
+        incomplete_days = EmployeeHours.query.filter(
+            EmployeeHours.employee_id == emp_id,
+            EmployeeHours.date < today,
+            ((EmployeeHours.sign_in == None) | (EmployeeHours.sign_out == None))
+        ).order_by(EmployeeHours.date.desc()).all()
+
+        return render_template("employee_fix_list.html", incomplete_days=incomplete_days)
+
+    @app.route("/employeehours/fix/<int:row_id>")
+    def employee_fix_day(row_id):
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        row = EmployeeHours.query.get(row_id)
+        if not row or row.employee_id != emp_id:
+            return "Not allowed", 403
+
+        return render_template("employee_fix_day.html", row=row)
+
+    @app.route("/employeehours/fix/<int:row_id>", methods=["POST"])
+    def employee_fix_day_save(row_id):
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        row = EmployeeHours.query.get(row_id)
+        if not row or row.employee_id != emp_id:
+            return "Not allowed", 403
+
+        from datetime import datetime, date
+
+        def parse_or_none(val):
+            return datetime.fromisoformat(val) if val else None
+
+        sign_in = parse_or_none(request.form.get("sign_in"))
+        break_start = parse_or_none(request.form.get("break_start"))
+        break_end = parse_or_none(request.form.get("break_end"))
+        sign_out = parse_or_none(request.form.get("sign_out"))
+
+        # RULE 1: No future timestamps
+        now = datetime.now()
+        for t in [sign_in, break_start, break_end, sign_out]:
+            if t and t > now:
+                return "Times cannot be in the future", 400
+
+        # RULE 2: All timestamps must match the row's date
+        row_date = row.date
+        for t in [sign_in, break_start, break_end, sign_out]:
+            if t and t.date() != row_date:
+                return "All times must be on the same date", 400
+
+        # RULE 3: sign_in must exist
+        if not sign_in:
+            return "Start Work time is required", 400
+
+        # RULE 4: sign_out must exist
+        if not sign_out:
+            return "Finish Work time is required", 400
+
+        # RULE 5: sign_in < sign_out
+        if sign_in >= sign_out:
+            return "Start Work must be before Finish Work", 400
+
+        # RULE 6: If break_start exists, it must be after sign_in
+        if break_start and break_start <= sign_in:
+            return "Break Start must be after Start Work", 400
+
+        # RULE 7: If break_end exists, it must be after break_start
+        if break_start and break_end and break_end <= break_start:
+            return "Break End must be after Break Start", 400
+
+        # RULE 8: Break must be inside the work period
+        if break_start and break_start >= sign_out:
+            return "Break Start must be before Finish Work", 400
+
+        if break_end and break_end >= sign_out:
+            return "Break End must be before Finish Work", 400
+
+        # ⭐ All good — save
+        row.sign_in = sign_in
+        row.break_start = break_start
+        row.break_end = break_end
+        row.sign_out = sign_out
+
+        # ⭐ STEP 8B — Mark as corrected
+        row.corrected = True
+        row.corrected_at = datetime.now()
+        row.corrected_by = None
+
+        db.session.commit()
+
+        return redirect("/employeehours/fix")
+
+    @app.route("/admin/corrections")
+    def admin_corrections():
+        rows = EmployeeHours.query.filter(
+            EmployeeHours.corrected == True
+        ).order_by(EmployeeHours.corrected_at.desc()).all()
+
+        return render_template("admin_corrections.html", rows=rows)
+
 
 
 

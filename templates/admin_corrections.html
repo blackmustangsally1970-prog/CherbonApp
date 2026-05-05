@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Corrected Employee Hours</title>
+    <style>
+        body {
+            font-family: Arial;
+            background:#f5f5f5;
+            padding:40px;
+        }
+        h2 {
+            font-size:32px;
+            margin-bottom:30px;
+        }
+        .entry {
+            background:white;
+            padding:20px;
+            margin-bottom:20px;
+            border-radius:10px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+        }
+        .date-line {
+            font-size:22px;
+            font-weight:bold;
+            margin-bottom:10px;
+        }
+        .times {
+            font-size:18px;
+            line-height:1.6;
+        }
+        .meta {
+            margin-top:10px;
+            font-size:16px;
+            color:#777;
+        }
+        .back-btn {
+            padding:18px;
+            background:#777;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            margin-top:30px;
+            width:260px;
+            cursor:pointer;
+        }
+        .back-btn:hover {
+            background:#555;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Corrected Employee Hours</h2>
+
+{% if rows|length == 0 %}
+    <p style="font-size:22px;">No corrections have been made yet.</p>
+{% else %}
+    {% for r in rows %}
+        <div class="entry">
+            <div class="date-line">
+                {{ r.date.strftime('%A %d %B %Y') }} — {{ r.employee.full_name }}
+            </div>
+
+            <div class="times">
+                Start Work: {{ r.sign_in.strftime('%H:%M') if r.sign_in else '—' }}<br>
+                Break Start: {{ r.break_start.strftime('%H:%M') if r.break_start else '—' }}<br>
+                Break End: {{ r.break_end.strftime('%H:%M') if r.break_end else '—' }}<br>
+                Finish Work: {{ r.sign_out.strftime('%H:%M') if r.sign_out else '—' }}
+            </div>
+
+            <div class="meta">
+                Corrected at: {{ r.corrected_at.strftime('%d %b %Y %H:%M') }}
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<button class="back-btn" onclick="window.location.href='/admin'">
+    Back to Admin
+</button>
+
+</body>
+</html>
