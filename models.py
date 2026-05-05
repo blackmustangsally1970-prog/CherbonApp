@@ -15,7 +15,7 @@ class Employee(db.Model):
 
 class EmployeeHours(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"))
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"))
     date = db.Column(db.Date)
     sign_in = db.Column(db.DateTime)
     break_start = db.Column(db.DateTime)
