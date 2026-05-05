@@ -235,6 +235,17 @@
             document.getElementById("preview_modal").style.display = "none";
         }
 
+        function resetStandard() {
+            document.getElementById("msg_standard").value =
+                "Hi {guardian},{client} account bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin";
+        }
+
+        function resetTerm() {
+            document.getElementById("msg_term").value =
+                "Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin";
+        }
+
+
         function sendSMSConfirmed() {
             const templateChoice = getSelectedTemplateChoice();
             const msgStandard = document.getElementById("msg_standard").value;
@@ -331,19 +342,6 @@
 
 <h1>Clients With Negative Balances</h1>
 
-<div style="border:1px solid #aaa; padding:12px; margin-bottom:20px; background:#f9f9f9;">
-    <h3 style="margin-top:0;">Raw Default SMS Templates (Copy + Paste)</h3>
-
-    <p><strong>Standard:</strong></p>
-    <pre style="background:#eee; padding:10px; white-space:pre-wrap;">
-Hi {guardian},{client} account bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin
-    </pre>
-
-    <p><strong>Term Course:</strong></p>
-    <pre style="background:#eee; padding:10px; white-space:pre-wrap;">
-Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin
-    </pre>
-</div>
 
 
 <div class="template-block">
@@ -352,6 +350,11 @@ Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to kee
         Standard Negative Balance Message
     </label>
     <textarea id="msg_standard">Hi {guardian},{client} account bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
+<button type="button"
+            onclick="resetStandard()"
+            style="margin-top:6px; padding:4px 10px; font-size:13px;">
+        Restore Default
+    </button>
 </div>
 
 <div class="template-block">
@@ -360,6 +363,11 @@ Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to kee
         Term Course Balance Message
     </label>
     <textarea id="msg_term">Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
+    <button type="button"
+            onclick="resetTerm()"
+            style="margin-top:6px; padding:4px 10px; font-size:13px;">
+        Restore Default
+    </button>
 </div>
 
 <div class="test-mode">
@@ -399,7 +407,7 @@ Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to kee
 
         <button id="{{ btn_id }}" class="sms-btn"
                 onclick="openPreview('{{ row.client }}',
-                                     '{{ row.guardian.split()[0] }}',
+                                     '{{ (row.guardian or "").split()[0] if (row.guardian or "").split() else "" }}',
                                      '{{ row.mobile }}',
                                      '{{ '%.2f'|format(row.current_balance) }}',
                                      '{{ tc_id }}',
