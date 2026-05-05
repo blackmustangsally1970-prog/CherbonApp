@@ -588,6 +588,9 @@ def log_wedding_sms(result, message):
             f.write(line + "\n")
 
 
+def parse_dt(dt_str):
+    return datetime.strptime(dt_str, "%Y-%m-%dT%H:%M")
+
 def normalize_name_for_lookup(name: str) -> str:
     """
     Normalize a client name for accent-insensitive lookup.
@@ -7218,51 +7221,159 @@ Cherbon Waters Admin
     @app.route("/employeehours/signin", methods=["POST"])
     def employee_signin():
         emp_id = session.get("employee_id")
-        now = datetime.now()
+        selected = request.form.get("time")
+        selected_dt = parse_dt(selected)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
-        if not row:
-            row = EmployeeHours(employee_id=emp_id, date=now.date(), sign_in=now)
-            db.session.add(row)
-        else:
-            row.sign_in = now
+        # Check if row exists for selected date
+        existing = EmployeeHours.query.filter_by(
+            employee_id=emp_id,
+            date=selected_dt.date()
+        ).first()
 
+        today = date.today()
+
+        if existing and selected_dt.date() != today:
+            return {
+                "error": "You already have a record for this date.",
+                "existing": {
+                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
+                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
+                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
+                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
+                }
+            }
+
+        # TODAY: update existing or create new
+        if existing:
+            existing.sign_in = selected_dt
+            db.session.commit()
+            return {"status": "ok"}
+
+        # NEW DATE: create row
+        row = EmployeeHours(
+            employee_id=emp_id,
+            date=selected_dt.date(),
+            sign_in=selected_dt
+        )
+        db.session.add(row)
         db.session.commit()
+
         return {"status": "ok"}
 
     @app.route("/employeehours/startbreak", methods=["POST"])
     def employee_start_break():
         emp_id = session.get("employee_id")
-        now = datetime.now()
+        selected = request.form.get("time")
+        selected_dt = parse_dt(selected)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
-        if row:
-            row.break_start = now
+        existing = EmployeeHours.query.filter_by(
+            employee_id=emp_id,
+            date=selected_dt.date()
+        ).first()
+
+        today = date.today()
+
+        if existing and selected_dt.date() != today:
+            return {
+                "error": "You already have a record for this date.",
+                "existing": {
+                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
+                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
+                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
+                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
+                }
+            }
+
+        if existing:
+            existing.break_start = selected_dt
             db.session.commit()
+            return {"status": "ok"}
+
+        row = EmployeeHours(
+            employee_id=emp_id,
+            date=selected_dt.date(),
+            break_start=selected_dt
+        )
+        db.session.add(row)
+        db.session.commit()
 
         return {"status": "ok"}
 
     @app.route("/employeehours/endbreak", methods=["POST"])
     def employee_end_break():
         emp_id = session.get("employee_id")
-        now = datetime.now()
+        selected = request.form.get("time")
+        selected_dt = parse_dt(selected)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
-        if row:
-            row.break_end = now
+        existing = EmployeeHours.query.filter_by(
+            employee_id=emp_id,
+            date=selected_dt.date()
+        ).first()
+
+        today = date.today()
+
+        if existing and selected_dt.date() != today:
+            return {
+                "error": "You already have a record for this date.",
+                "existing": {
+                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
+                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
+                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
+                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
+                }
+            }
+
+        if existing:
+            existing.break_end = selected_dt
             db.session.commit()
+            return {"status": "ok"}
+
+        row = EmployeeHours(
+            employee_id=emp_id,
+            date=selected_dt.date(),
+            break_end=selected_dt
+        )
+        db.session.add(row)
+        db.session.commit()
 
         return {"status": "ok"}
 
     @app.route("/employeehours/signout", methods=["POST"])
-    def employee_signout():
+    def employee_sign_out():
         emp_id = session.get("employee_id")
-        now = datetime.now()
+        selected = request.form.get("time")
+        selected_dt = parse_dt(selected)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
-        if row:
-            row.sign_out = now
+        existing = EmployeeHours.query.filter_by(
+            employee_id=emp_id,
+            date=selected_dt.date()
+        ).first()
+
+        today = date.today()
+
+        if existing and selected_dt.date() != today:
+            return {
+                "error": "You already have a record for this date.",
+                "existing": {
+                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
+                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
+                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
+                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
+                }
+            }
+
+        if existing:
+            existing.sign_out = selected_dt
             db.session.commit()
+            return {"status": "ok"}
+
+        row = EmployeeHours(
+            employee_id=emp_id,
+            date=selected_dt.date(),
+            sign_out=selected_dt
+        )
+        db.session.add(row)
+        db.session.commit()
 
         return {"status": "ok"}
 

@@ -3,42 +3,169 @@
 <head>
     <title>Work Dashboard</title>
     <style>
-        body { font-family: Arial; background:#f5f5f5; padding:40px; text-align:center; }
-        .btn { padding:20px; background:#2a7ae2; color:white; border:none; border-radius:6px; font-size:22px; margin:10px; width:250px; cursor:pointer; }
+        body { 
+            font-family: Arial; 
+            background:#f5f5f5; 
+            padding:40px; 
+            text-align:center; 
+        }
+        .btn { 
+            padding:20px; 
+            background:#2a7ae2; 
+            color:white; 
+            border:none; 
+            border-radius:6px; 
+            font-size:22px; 
+            margin:10px; 
+            width:250px; 
+            cursor:pointer; 
+        }
         .btn:hover { background:#1f5fb4; }
+
+        /* Bottom sheet modal */
+        #timeModal {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: -400px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+            transition: bottom 0.3s ease;
+            text-align: left;
+            z-index: 9999;
+        }
+        #timeModal.show {
+            bottom: 0;
+        }
+        #modalTitle {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        #timeInput {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .modal-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 10px;
+        }
+        .confirm { background:#2a7ae2; color:white; }
+        .cancel { background:#ccc; }
+
+        #errorBox {
+            background:#ffdddd;
+            color:#a00;
+            padding:15px;
+            border-radius:8px;
+            margin-top:20px;
+            display:none;
+            text-align:left;
+        }
     </style>
 </head>
 <body>
 
 <h2>Welcome, {{ emp.full_name }}</h2>
 
-{% if not row %}
-    <!-- No record for today = NOT SIGNED IN -->
-    <button class="btn" onclick="action('signin')">Start Work</button>
+{% if not row or not row.sign_in %}
+    <button class="btn" onclick="openModal('signin')">Start Work</button>
 
 {% elif row.sign_in and not row.break_start and not row.sign_out %}
-    <!-- Signed in, not on break -->
-    <button class="btn" onclick="action('startbreak')">Start Break</button>
-    <button class="btn" onclick="action('signout')">Sign Out</button>
+    <button class="btn" onclick="openModal('startbreak')">Start Break</button>
+    <button class="btn" onclick="openModal('signout')">Sign Out</button>
 
 {% elif row.break_start and not row.break_end %}
-    <!-- On break -->
-    <button class="btn" onclick="action('endbreak')">End Break</button>
+    <button class="btn" onclick="openModal('endbreak')">End Break</button>
 
 {% elif row.break_end and not row.sign_out %}
-    <!-- Break ended, still working -->
-    <button class="btn" onclick="action('signout')">Sign Out</button>
+    <button class="btn" onclick="openModal('signout')">Sign Out</button>
 
 {% else %}
-    <!-- Fully completed day -->
     <p>You have finished work for today.</p>
 {% endif %}
 
+<!-- Error box -->
+<div id="errorBox"></div>
+
+<!-- Bottom sheet modal -->
+<div id="timeModal">
+    <div id="modalTitle"></div>
+    <input type="datetime-local" id="timeInput">
+
+    <button class="modal-btn confirm" onclick="submitTime()">Confirm</button>
+    <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+</div>
+
 <script>
-function action(type) {
-    fetch("/employeehours/" + type, { method: "POST" })
+let currentAction = "";
+
+function openModal(type) {
+    currentAction = type;
+
+    // Default to NOW
+    document.getElementById("timeInput").value =
+        new Date().toISOString().slice(0,16);
+
+    const titles = {
+        signin: "What time did you start work?",
+        startbreak: "What time did your break start?",
+        endbreak: "What time did your break end?",
+        signout: "What time did you finish work?"
+    };
+    document.getElementById("modalTitle").innerText = titles[type];
+
+    document.getElementById("timeModal").classList.add("show");
+}
+
+function closeModal() {
+    document.getElementById("timeModal").classList.remove("show");
+}
+
+function submitTime() {
+    let t = document.getElementById("timeInput").value;
+
+    fetch("/employeehours/" + currentAction, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ time: t })
+    })
     .then(r => r.json())
-    .then(() => location.reload());
+    .then(d => {
+        if (d.error) {
+            showError(d.error, d.existing);
+        } else {
+            location.reload();
+        }
+    });
+}
+
+function showError(msg, existing) {
+    let box = document.getElementById("errorBox");
+
+    let html = "<strong>" + msg + "</strong><br><br>";
+
+    if (existing) {
+        html += "Existing times:<br>";
+        html += "• Start Work: " + (existing.sign_in || "—") + "<br>";
+        html += "• Break Start: " + (existing.break_start || "—") + "<br>";
+        html += "• Break End: " + (existing.break_end || "—") + "<br>";
+        html += "• Sign Out: " + (existing.sign_out || "—") + "<br>";
+    }
+
+    html += "<br>Please choose a different date or ask admin to correct it.";
+
+    box.innerHTML = html;
+    box.style.display = "block";
+
+    closeModal();
 }
 </script>
 
