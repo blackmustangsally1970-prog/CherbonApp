@@ -188,18 +188,6 @@
 
 </style>
 
-<button onclick="window.print()" 
-        style="padding:12px 20px; 
-               font-size:18px; 
-               background:#2a7ae2; 
-               color:white; 
-               border:none; 
-               border-radius:8px; 
-               cursor:pointer; 
-               margin-bottom:20px;">
-    Print Simple Report
-</button>
-
 
     <script>
         let currentClient = null;
@@ -324,6 +312,20 @@
 
 <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
 
+
+<button onclick="window.print()" 
+        style="padding:12px 20px; 
+               font-size:18px; 
+               background:#2a7ae2; 
+               color:white; 
+               border:none; 
+               border-radius:8px; 
+               cursor:pointer; 
+               margin-bottom:20px;">
+    Print Simple Report
+</button>
+
+
 <h1>Clients With Negative Balances</h1>
 
 <div class="template-block">
@@ -434,7 +436,9 @@
 </div>
 
 
-<div id="print-simple-report" style="display:none;">
+<div id="print-simple-report" style="display:block; visibility:hidden;">
+
+
     <h2 style="margin-bottom:20px;">
         Minus Balances Report – {{ date.today().strftime("%d %B %Y") }}
     </h2>
