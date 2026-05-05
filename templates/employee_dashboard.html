@@ -10,14 +10,14 @@
             text-align:center; 
         }
         .btn { 
-            padding:20px; 
+            padding:25px; 
             background:#2a7ae2; 
             color:white; 
             border:none; 
-            border-radius:6px; 
-            font-size:22px; 
-            margin:10px; 
-            width:250px; 
+            border-radius:10px; 
+            font-size:26px; 
+            margin:15px; 
+            width:280px; 
             cursor:pointer; 
         }
         .btn:hover { background:#1f5fb4; }
@@ -27,11 +27,11 @@
             position: fixed;
             left: 0;
             right: 0;
-            bottom: -400px;
+            bottom: -450px;
             background: white;
-            padding: 20px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+            padding: 25px;
+            border-radius: 25px 25px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
             transition: bottom 0.3s ease;
             text-align: left;
             z-index: 9999;
@@ -40,22 +40,24 @@
             bottom: 0;
         }
         #modalTitle {
-            font-size: 22px;
-            margin-bottom: 10px;
+            font-size: 26px;
+            margin-bottom: 15px;
         }
         #timeInput {
             width: 100%;
-            padding: 12px;
-            font-size: 18px;
-            margin-bottom: 20px;
+            padding: 18px;
+            font-size: 22px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
         }
         .modal-btn {
             width: 100%;
-            padding: 15px;
-            font-size: 20px;
-            border-radius: 8px;
+            padding: 20px;
+            font-size: 24px;
+            border-radius: 10px;
             border: none;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .confirm { background:#2a7ae2; color:white; }
         .cancel { background:#ccc; }
@@ -63,17 +65,18 @@
         #errorBox {
             background:#ffdddd;
             color:#a00;
-            padding:15px;
-            border-radius:8px;
-            margin-top:20px;
+            padding:20px;
+            border-radius:10px;
+            margin-top:25px;
             display:none;
             text-align:left;
+            font-size:20px;
         }
     </style>
 </head>
 <body>
 
-<h2>Welcome, {{ emp.full_name }}</h2>
+<h2 style="font-size:30px;">Welcome, {{ emp.full_name }}</h2>
 
 {% if not row or not row.sign_in %}
     <button class="btn" onclick="openModal('signin')">Start Work</button>
@@ -89,7 +92,7 @@
     <button class="btn" onclick="openModal('signout')">Sign Out</button>
 
 {% else %}
-    <p>You have finished work for today.</p>
+    <p style="font-size:24px;">You have finished work for today.</p>
 {% endif %}
 
 <!-- Error box -->
@@ -107,12 +110,22 @@
 <script>
 let currentAction = "";
 
+/* ⭐ Brisbane Local Time Helper */
+function getBrisbaneLocalISO() {
+    const now = new Date();
+
+    // Brisbane = UTC+10, no DST
+    const brisbaneOffsetMinutes = 10 * 60;
+    const local = new Date(now.getTime() + (brisbaneOffsetMinutes * 60000));
+
+    return local.toISOString().slice(0,16);
+}
+
 function openModal(type) {
     currentAction = type;
 
-    // Default to NOW
-    document.getElementById("timeInput").value =
-        new Date().toISOString().slice(0,16);
+    // Default to Brisbane NOW
+    document.getElementById("timeInput").value = getBrisbaneLocalISO();
 
     const titles = {
         signin: "What time did you start work?",
