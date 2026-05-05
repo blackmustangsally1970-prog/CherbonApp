@@ -50,6 +50,7 @@
         <td>{{ "Yes" if e.active else "No" }}</td>
         <td>
             {% if e.active %}
+                <button class="reset-pin-btn" data-id="{{ e.id }}">Reset PIN</button>
                 <button class="btn deact" onclick="deactivate({{ e.id }})">Deactivate</button>
             {% else %}
                 —
@@ -85,6 +86,39 @@ function deactivate(id) {
         .then(() => location.reload());
 }
 </script>
+
+<script>
+    document.querySelectorAll(".reset-pin-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const id = btn.dataset.id;
+
+            if (!confirm("Reset this employee's PIN? They will receive a new setup link.")) {
+                return;
+            }
+
+            fetch(`/admin/reset_pin/${id}`, {
+                method: "POST"
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+
+                alert(
+                    "PIN Reset for: " + data.employee + "\n\n" +
+                    "Send them this link:\n" + data.reset_link
+                );
+            })
+            .catch(err => {
+                alert("Unexpected error resetting PIN.");
+            });
+        });
+    });
+</script>
+
+
 
 </body>
 </html>
