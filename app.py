@@ -4510,8 +4510,8 @@ def create_app():
                 "current_balance": latest.balance,
                 "lessons": trimmed
             })
-
-        return render_template("minus_balances.html", rows=final_output)
+        
+        return render_template("minus_balances.html", rows=final_output, date=date)
 
 
 
