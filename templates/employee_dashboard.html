@@ -22,7 +22,6 @@
         }
         .btn:hover { background:#1f5fb4; }
 
-        /* Fix Previous Days button */
         .fix-days-btn {
             padding:25px;
             background:#e67e22;
@@ -36,7 +35,6 @@
         }
         .fix-days-btn:hover { background:#cf6d1c; }
 
-        /* Bottom sheet modal */
         #timeModal {
             position: fixed;
             left: 0;
@@ -57,7 +55,7 @@
             font-size: 26px;
             margin-bottom: 15px;
         }
-        #timeInput {
+        #timeInput, #timeInput2 {
             width: 100%;
             padding: 18px;
             font-size: 22px;
@@ -93,36 +91,39 @@
 <h2 style="font-size:30px;">Welcome, {{ emp.full_name }}</h2>
 
 {% if not row or not row.sign_in %}
+    <!-- ⭐ STAGE 1 -->
     <button class="btn" onclick="openModal('signin')">Start Work</button>
 
-{% elif row.sign_in and not row.break_start and not row.sign_out %}
-    <button class="btn" onclick="openModal('startbreak')">Start Break</button>
-    <button class="btn" onclick="openModal('signout')">Sign Out</button>
+{% elif row.sign_in and not row.break_start and not row.break_end %}
+    <!-- ⭐ STAGE 2 (Start + End Break together) -->
+    <button class="btn" onclick="openModal('breaks')">Breaks</button>
 
-{% elif row.break_start and not row.break_end %}
-    <button class="btn" onclick="openModal('endbreak')">End Break</button>
-
-{% elif row.break_end and not row.sign_out %}
+{% elif row.break_start and row.break_end and not row.sign_out %}
+    <!-- ⭐ STAGE 3 -->
     <button class="btn" onclick="openModal('signout')">Sign Out</button>
 
 {% else %}
+    <!-- ⭐ FINISHED -->
     <p style="font-size:24px;">You have finished work for today.</p>
 {% endif %}
 
-<!-- ⭐ STEP 4 BUTTON -->
 {% if incomplete_days and incomplete_days|length > 0 %}
     <button class="fix-days-btn" onclick="window.location.href='/employeehours/fix'">
         Fix Previous Days
     </button>
 {% endif %}
 
-<!-- Error box -->
 <div id="errorBox"></div>
 
-<!-- Bottom sheet modal -->
+<!-- ⭐ MODAL -->
 <div id="timeModal">
     <div id="modalTitle"></div>
+
+    <!-- Stage 1 + Stage 3 use ONE input -->
     <input type="datetime-local" id="timeInput">
+
+    <!-- Stage 2 uses TWO inputs -->
+    <input type="datetime-local" id="timeInput2" style="display:none;">
 
     <button class="modal-btn confirm" onclick="submitTime()">Confirm</button>
     <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
@@ -134,27 +135,28 @@ let currentAction = "";
 /* ⭐ Brisbane Local Time Helper */
 function getBrisbaneLocalISO() {
     const now = new Date();
-
-    // Brisbane = UTC+10, no DST
     const brisbaneOffsetMinutes = 10 * 60;
     const local = new Date(now.getTime() + (brisbaneOffsetMinutes * 60000));
-
     return local.toISOString().slice(0,16);
 }
 
 function openModal(type) {
     currentAction = type;
 
-    // Default to Brisbane NOW
     document.getElementById("timeInput").value = getBrisbaneLocalISO();
+    document.getElementById("timeInput2").value = getBrisbaneLocalISO();
 
-    const titles = {
-        signin: "What time did you start work?",
-        startbreak: "What time did your break start?",
-        endbreak: "What time did your break end?",
-        signout: "What time did you finish work?"
-    };
-    document.getElementById("modalTitle").innerText = titles[type];
+    if (type === "breaks") {
+        document.getElementById("modalTitle").innerText = "Enter Break Start and End";
+        document.getElementById("timeInput2").style.display = "block";
+    } else {
+        const titles = {
+            signin: "What time did you start work?",
+            signout: "What time did you finish work?"
+        };
+        document.getElementById("modalTitle").innerText = titles[type];
+        document.getElementById("timeInput2").style.display = "none";
+    }
 
     document.getElementById("timeModal").classList.add("show");
 }
@@ -164,41 +166,47 @@ function closeModal() {
 }
 
 function submitTime() {
-    let t = document.getElementById("timeInput").value;
+    let t1 = document.getElementById("timeInput").value;
+    let t2 = document.getElementById("timeInput2").value;
 
-    fetch("/employeehours/" + currentAction, {
+    let url = "";
+    let body = "";
+
+    if (currentAction === "signin") {
+        url = "/employeehours/signin";
+        body = new URLSearchParams({ time: t1 });
+
+    } else if (currentAction === "breaks") {
+        url = "/employeehours/breaks";
+        body = new URLSearchParams({
+            break_start: t1,
+            break_end: t2
+        });
+
+    } else if (currentAction === "signout") {
+        url = "/employeehours/signout";
+        body = new URLSearchParams({ time: t1 });
+    }
+
+    fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ time: t })
+        body
     })
     .then(r => r.json())
     .then(d => {
         if (d.error) {
-            showError(d.error, d.existing);
+            showError(d.error);
         } else {
             location.reload();
         }
     });
 }
 
-function showError(msg, existing) {
+function showError(msg) {
     let box = document.getElementById("errorBox");
-
-    let html = "<strong>" + msg + "</strong><br><br>";
-
-    if (existing) {
-        html += "Existing times:<br>";
-        html += "• Start Work: " + (existing.sign_in || "—") + "<br>";
-        html += "• Break Start: " + (existing.break_start || "—") + "<br>";
-        html += "• Break End: " + (existing.break_end || "—") + "<br>";
-        html += "• Sign Out: " + (existing.sign_out || "—") + "<br>";
-    }
-
-    html += "<br>Please choose a different date or ask admin to correct it.";
-
-    box.innerHTML = html;
+    box.innerHTML = "<strong>" + msg + "</strong>";
     box.style.display = "block";
-
     closeModal();
 }
 </script>

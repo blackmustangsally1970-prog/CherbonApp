@@ -7368,170 +7368,158 @@ Cherbon Waters Admin
 
 
     @app.route("/employeehours/signin", methods=["POST"])
-    def employee_signin():
+    def employee_signin_stage1():
         emp_id = session.get("employee_id")
-        selected = request.form.get("time")
-        selected_dt = parse_dt(selected)
+        if not emp_id:
+            return jsonify({"error": "Not logged in"}), 401
 
-        # Check if row exists for selected date
-        existing = EmployeeHours.query.filter_by(
+        selected = request.form.get("time")
+        if not selected:
+            return jsonify({"error": "Missing time"}), 400
+
+        selected_dt = parse_dt(selected)
+        today = date.today()
+
+        # Get today's row (or create)
+        entry = EmployeeHours.query.filter_by(
             employee_id=emp_id,
-            date=selected_dt.date()
+            date=today
         ).first()
+
+        if entry and entry.sign_in:
+            return jsonify({"error": "Sign-in already recorded"}), 400
+
+        # VALIDATION: Sign-in CAN be in the future (today only)
+        start_of_day = datetime.combine(today, time(0, 0))
+        end_of_day = datetime.combine(today, time(23, 59, 59))
+
+        if not (start_of_day <= selected_dt <= end_of_day):
+            return jsonify({"error": "Sign-in must be today only"}), 400
+
+        # Create row if missing
+        if not entry:
+            entry = EmployeeHours(
+                employee_id=emp_id,
+                date=today
+            )
+            db.session.add(entry)
+
+        # LOCK SIGN-IN
+        entry.sign_in = selected_dt
+        db.session.commit()
+
+        return jsonify({"status": "ok", "next": "breaks"})
+
+
+    @app.route("/employeehours/breaks", methods=["POST"])
+    def employee_breaks_stage2():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        start_raw = request.form.get("break_start")
+        end_raw = request.form.get("break_end")
+
+        if not start_raw or not end_raw:
+            return jsonify({"error": "Missing break times"}), 400
+
+        try:
+            start_dt = parse_dt(start_raw)
+            end_dt = parse_dt(end_raw)
+        except:
+            return jsonify({"error": "Invalid time format"}), 400
 
         today = date.today()
 
-        if existing and selected_dt.date() != today:
-            return jsonify({
-                "error": "You already have a record for this date.",
-                "existing": {
-                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
-                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
-                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
-                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
-                }
-            })
-
-        # TODAY: update existing or create new
-        if existing:
-            existing.sign_in = selected_dt
-            db.session.commit()
-            return jsonify({"status": "ok"})
-
-
-        # NEW DATE: create row
-        row = EmployeeHours(
+        entry = EmployeeHours.query.filter_by(
             employee_id=emp_id,
-            date=selected_dt.date(),
-            sign_in=selected_dt
-        )
-        db.session.add(row)
-        db.session.commit()
-
-        return jsonify({"status": "ok"})
-
-
-    @app.route("/employeehours/startbreak", methods=["POST"])
-    def employee_start_break():
-        emp_id = session.get("employee_id")
-        selected = request.form.get("time")
-        selected_dt = parse_dt(selected)
-
-        existing = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=selected_dt.date()
+            date=today
         ).first()
 
-        today = date.today()
+        if not entry or not entry.sign_in:
+            return jsonify({"error": "Sign-in required first"}), 400
 
-        if existing and selected_dt.date() != today:
-            return jsonify({
-                "error": "You already have a record for this date.",
-                "existing": {
-                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
-                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
-                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
-                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
-                }
-            })
+        # Already done → go to Stage 3
+        if entry.break_start and entry.break_end:
+            return jsonify({"error": "Breaks already recorded"}), 400
 
-        if existing:
-            existing.break_start = selected_dt
-            db.session.commit()
-            return jsonify({"status": "ok"})
+        # VALIDATION: must be today
+        start_of_day = datetime.combine(today, time(0, 0))
+        end_of_day = datetime.combine(today, time(23, 59, 59))
 
+        if not (start_of_day <= start_dt <= end_of_day):
+            return jsonify({"error": "Break start must be today"}), 400
 
-        row = EmployeeHours(
-            employee_id=emp_id,
-            date=selected_dt.date(),
-            break_start=selected_dt
-        )
-        db.session.add(row)
+        if not (start_of_day <= end_dt <= end_of_day):
+            return jsonify({"error": "Break end must be today"}), 400
+
+        # Break end must be after break start
+        if end_dt <= start_dt:
+            return jsonify({"error": "Break end must be after break start"}), 400
+
+        # LOCK BREAKS
+        entry.break_start = start_dt
+        entry.break_end = end_dt
         db.session.commit()
 
-        return jsonify({"status": "ok"})
-
-
-    @app.route("/employeehours/endbreak", methods=["POST"])
-    def employee_end_break():
-        emp_id = session.get("employee_id")
-        selected = request.form.get("time")
-        selected_dt = parse_dt(selected)
-
-        existing = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=selected_dt.date()
-        ).first()
-
-        today = date.today()
-
-        if existing and selected_dt.date() != today:
-            return jsonify({
-                "error": "You already have a record for this date.",
-                "existing": {
-                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
-                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
-                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
-                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
-                }
-            })
-
-        if existing:
-            existing.break_end = selected_dt
-            db.session.commit()
-            return jsonify({"status": "ok"})
-
-
-        row = EmployeeHours(
-            employee_id=emp_id,
-            date=selected_dt.date(),
-            break_end=selected_dt
-        )
-        db.session.add(row)
-        db.session.commit()
-
-        return jsonify({"status": "ok"})
+        return jsonify({"status": "ok", "next": "signout"})
 
 
     @app.route("/employeehours/signout", methods=["POST"])
-    def employee_sign_out():
+    def employee_signout_stage3():
         emp_id = session.get("employee_id")
-        selected = request.form.get("time")
-        selected_dt = parse_dt(selected)
+        if not emp_id:
+            return jsonify({"error": "Not logged in"}), 401
 
-        existing = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=selected_dt.date()
-        ).first()
+        selected = request.form.get("time")
+        if not selected:
+            return jsonify({"error": "Missing time"}), 400
+
+        try:
+            selected_dt = parse_dt(selected)
+        except:
+            return jsonify({"error": "Invalid time format"}), 400
 
         today = date.today()
+        now = datetime.now()
 
-        if existing and selected_dt.date() != today:
-            return jsonify({
-                "error": "You already have a record for this date.",
-                "existing": {
-                    "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
-                    "break_start": existing.break_start.strftime("%H:%M") if existing.break_start else None,
-                    "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
-                    "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
-                }
-            })
-
-        if existing:
-            existing.sign_out = selected_dt
-            db.session.commit()
-            return jsonify({"status": "ok"})
-
-
-        row = EmployeeHours(
+        # Get today's entry
+        entry = EmployeeHours.query.filter_by(
             employee_id=emp_id,
-            date=selected_dt.date(),
-            sign_out=selected_dt
-        )
-        db.session.add(row)
+            date=today
+        ).first()
+
+        if not entry or not entry.sign_in:
+            return jsonify({"error": "Sign-in required first"}), 400
+
+        # Already signed out → locked
+        if entry.sign_out:
+            return jsonify({"error": "Sign-out already recorded"}), 400
+
+        # VALIDATION: Sign-out MUST be today
+        start_of_day = datetime.combine(today, time(0, 0))
+        end_of_day = datetime.combine(today, time(23, 59, 59))
+
+        if not (start_of_day <= selected_dt <= end_of_day):
+            return jsonify({"error": "Sign-out must be today"}), 400
+
+        # VALIDATION: Sign-out CANNOT be in the future
+        if selected_dt > now:
+            return jsonify({"error": "Cannot sign out in advance"}), 400
+
+        # VALIDATION: Must be after sign-in
+        if selected_dt <= entry.sign_in:
+            return jsonify({"error": "Sign-out must be after sign-in"}), 400
+
+        # VALIDATION: Must be after break_end (if break exists)
+        if entry.break_end and selected_dt <= entry.break_end:
+            return jsonify({"error": "Sign-out must be after break end"}), 400
+
+        # LOCK SIGN-OUT
+        entry.sign_out = selected_dt
         db.session.commit()
 
-        return jsonify({"status": "ok"})
+        return jsonify({"status": "ok", "next": "done"})
 
 
     @app.route("/admin/employeehours")

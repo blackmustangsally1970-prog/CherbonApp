@@ -165,7 +165,41 @@
         }
 
 
-    </style>
+@media print {
+
+    /* Hide everything */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Show only the print report */
+    #print-simple-report, 
+    #print-simple-report * {
+        visibility: visible;
+    }
+
+    #print-simple-report {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 95%;
+    }
+}
+
+</style>
+
+<button onclick="window.print()" 
+        style="padding:12px 20px; 
+               font-size:18px; 
+               background:#2a7ae2; 
+               color:white; 
+               border:none; 
+               border-radius:8px; 
+               cursor:pointer; 
+               margin-bottom:20px;">
+    Print Simple Report
+</button>
+
 
     <script>
         let currentClient = null;
@@ -397,6 +431,32 @@
             <button class="sms-btn" onclick="sendSMSConfirmed()">Send</button>
         </div>
     </div>
+</div>
+
+
+<div id="print-simple-report" style="display:none;">
+    <h2 style="margin-bottom:20px;">
+        Minus Balances Report – {{ date.today().strftime("%d %B %Y") }}
+    </h2>
+
+    <table style="width:100%; border-collapse:collapse; font-size:20px;">
+        <thead>
+            <tr>
+                <th style="border:2px solid #000; padding:12px;">Client</th>
+                <th style="border:2px solid #000; padding:12px;">Balance</th>
+                <th style="border:2px solid #000; padding:12px;">Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td style="border:1px solid #000; padding:18px;">{{ row.client }}</td>
+                <td style="border:1px solid #000; padding:18px;">${{ row.current_balance }}</td>
+                <td style="border:1px solid #000; padding:18px;">&nbsp;</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
 </body>
