@@ -7187,6 +7187,7 @@ Cherbon Waters Admin
 
         return {"status": "ok", "setup_code": setup_code}
 
+
     @app.route("/employeehours/login", methods=["POST"])
     def employee_pin_login():
         pin = request.form.get("pin")
@@ -7283,7 +7284,9 @@ Cherbon Waters Admin
             db.session.commit()
         return {"status": "ok"}
 
-
+    @app.route("/employee/setup")
+    def employee_setup_page():
+        return render_template("employee_setup.html")
 
     @app.route("/employee/setup", methods=["POST"])
     def employee_setup():
