@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Login</title>
+    <style>
+        body { font-family: Arial; background:#f5f5f5; padding:40px; text-align:center; }
+        #pin { font-size:32px; letter-spacing:8px; margin-bottom:20px; }
+        .keypad { max-width:300px; margin:auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+        .btn { padding:20px; background:white; border:1px solid #ccc; font-size:24px; border-radius:6px; cursor:pointer; }
+        .btn:hover { background:#e8e8e8; }
+        .go { grid-column:span 3; background:#2a7ae2; color:white; }
+        .go:hover { background:#1f5fb4; }
+        .error { color:red; margin-top:10px; }
+    </style>
+</head>
+<body>
+
+<h2>Employee Login</h2>
+
+<div id="pin"></div>
+
+<div class="keypad">
+    <div class="btn" onclick="add(1)">1</div>
+    <div class="btn" onclick="add(2)">2</div>
+    <div class="btn" onclick="add(3)">3</div>
+    <div class="btn" onclick="add(4)">4</div>
+    <div class="btn" onclick="add(5)">5</div>
+    <div class="btn" onclick="add(6)">6</div>
+    <div class="btn" onclick="add(7)">7</div>
+    <div class="btn" onclick="add(8)">8</div>
+    <div class="btn" onclick="add(9)">9</div>
+    <div class="btn" onclick="add(0)">0</div>
+    <div class="btn" onclick="clr()">Clear</div>
+    <div class="btn go" onclick="submitPIN()">Login</div>
+</div>
+
+<div id="msg"></div>
+
+<script>
+let pin = "";
+
+function add(n) {
+    if (pin.length < 6) {
+        pin += n;
+        document.getElementById("pin").innerText = "*".repeat(pin.length);
+    }
+}
+
+function clr() {
+    pin = "";
+    document.getElementById("pin").innerText = "";
+}
+
+function submitPIN() {
+    fetch("/employeehours/login", {
+        method: "POST",
+        body: new URLSearchParams({ pin })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.status === "ok") {
+            window.location = "/employeehours/dashboard";
+        } else {
+            document.getElementById("msg").innerHTML = "<div class='error'>Invalid PIN</div>";
+            clr();
+        }
+    });
+}
+</script>
+
+</body>
+</html>

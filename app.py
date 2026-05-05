@@ -8,6 +8,7 @@ from flask import (
 from collections import defaultdict
 from config import Config
 
+# Database + Models
 from extensions import db
 from models import (
     BlockoutDate,
@@ -36,7 +37,9 @@ from models import (
     WeddingAssignment,
     WeddingStaff,
     WeddingStaffUnavailability,
-    WeeklyEvent
+    WeeklyEvent,
+    Employee,                 # ⭐ NEW
+    EmployeeHours             # ⭐ NEW
 )
 
 # Core libs
@@ -58,18 +61,16 @@ from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 from markupsafe import Markup, escape
-from sqlalchemy import func
-
+from sqlalchemy import func, text
+from sqlalchemy.orm import joinedload
 
 # Third‑party libs
 import requests
 import clicksend_client
 from clicksend_client import SmsMessage
 from clicksend_client.rest import ApiException
-from sqlalchemy import func, text
-from sqlalchemy.orm import joinedload
-import os
 
+# Conditional imports
 if os.environ.get("DISABLE_WEASYPRINT") != "1":
     from weasyprint import HTML
 else:
@@ -79,14 +80,17 @@ if os.environ.get("DISABLE_PLAYWRIGHT") != "1":
     from playwright.sync_api import sync_playwright
 else:
     sync_playwright = None
+
+# Security helpers
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Custom helpers
 from helpers_jf import (
     extract_riders_from_submission,
     get_main_contact_fields,
     TRAIL_FORM_ID,
-    GENERAL_ENQUIRY_FORM_ID,            # ⭐ ADD THIS
-    parse_general_enquiry_payload       # ⭐ ADD THIS
+    GENERAL_ENQUIRY_FORM_ID,       # ⭐ already added
+    parse_general_enquiry_payload  # ⭐ already added
 )
 
 
@@ -7166,6 +7170,149 @@ Cherbon Waters Admin
 
         flash("Upgrade item deleted.", "success")
         return redirect(url_for('upgrade_items_list'))
+
+
+    @app.route("/admin/employees/new", methods=["POST"])
+    def create_employee():
+        name = request.form.get("full_name")
+        if not name:
+            return "Missing name", 400
+
+        import secrets
+        setup_code = "CW-" + secrets.token_hex(3).upper()
+
+        emp = Employee(full_name=name, setup_code=setup_code)
+        db.session.add(emp)
+        db.session.commit()
+
+        return {"status": "ok", "setup_code": setup_code}
+
+    @app.route("/employeehours/login", methods=["POST"])
+    def employee_pin_login():
+        pin = request.form.get("pin")
+
+        from werkzeug.security import check_password_hash
+
+        employees = Employee.query.filter(Employee.pin_hash.isnot(None)).all()
+        for emp in employees:
+            if check_password_hash(emp.pin_hash, pin):
+                session["employee_id"] = emp.id
+                return {"status": "ok"}
+
+        return {"status": "error", "message": "Invalid PIN"}, 400
+
+    @app.route("/employeehours/dashboard")
+    def employee_dashboard():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        emp = Employee.query.get(emp_id)
+
+        today = date.today()
+        row = EmployeeHours.query.filter_by(employee_id=emp.id, date=today).first()
+
+        return render_template("employee_dashboard.html", emp=emp, row=row)
+
+    @app.route("/employeehours/signin", methods=["POST"])
+    def employee_signin():
+        emp_id = session.get("employee_id")
+        now = datetime.now()
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
+        if not row:
+            row = EmployeeHours(employee_id=emp_id, date=now.date(), sign_in=now)
+            db.session.add(row)
+        else:
+            row.sign_in = now
+
+        db.session.commit()
+        return {"status": "ok"}
+
+    @app.route("/employeehours/startbreak", methods=["POST"])
+    def employee_start_break():
+        emp_id = session.get("employee_id")
+        now = datetime.now()
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
+        if row:
+            row.break_start = now
+            db.session.commit()
+
+        return {"status": "ok"}
+
+    @app.route("/employeehours/endbreak", methods=["POST"])
+    def employee_end_break():
+        emp_id = session.get("employee_id")
+        now = datetime.now()
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
+        if row:
+            row.break_end = now
+            db.session.commit()
+
+        return {"status": "ok"}
+
+    @app.route("/employeehours/signout", methods=["POST"])
+    def employee_signout():
+        emp_id = session.get("employee_id")
+        now = datetime.now()
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=now.date()).first()
+        if row:
+            row.sign_out = now
+            db.session.commit()
+
+        return {"status": "ok"}
+
+    @app.route("/admin/employeehours")
+    def admin_employee_hours():
+        rows = EmployeeHours.query.order_by(EmployeeHours.date.desc()).all()
+        return render_template("admin_employee_hours.html", rows=rows)
+
+    @app.route("/admin/employees")
+    def admin_employees():
+        employees = Employee.query.order_by(Employee.full_name.asc()).all()
+        return render_template("admin_employees.html", employees=employees)
+
+    @app.route("/admin/employees/deactivate/<int:emp_id>", methods=["POST"])
+    def admin_deactivate_employee(emp_id):
+        emp = Employee.query.get(emp_id)
+        if emp:
+            emp.active = False
+            db.session.commit()
+        return {"status": "ok"}
+
+
+
+    @app.route("/employee/setup", methods=["POST"])
+    def employee_setup():
+        code = request.form.get("setup_code")
+        pin = request.form.get("pin")
+
+        emp = Employee.query.filter_by(setup_code=code).first()
+        if not emp:
+            return "Invalid setup code", 400
+
+        if not pin or len(pin) < 4 or len(pin) > 6:
+            return "Invalid PIN", 400
+
+        # enforce unique PIN
+        from werkzeug.security import generate_password_hash, check_password_hash
+        existing = Employee.query.all()
+        for e in existing:
+            if e.pin_hash and check_password_hash(e.pin_hash, pin):
+                return "PIN already taken", 400
+
+        emp.pin_hash = generate_password_hash(pin)
+        emp.setup_code = None  # one-time use only
+        db.session.commit()
+
+        return {"status": "ok"}
+
+
+
+
 
     @app.route("/other_tools")
     def other_tools():

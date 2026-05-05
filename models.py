@@ -2,6 +2,28 @@ from extensions import db
 from datetime import datetime
 
 
+
+class Employee(db.Model):
+    __tablename__ = "employees"
+
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(120), nullable=False)
+    setup_code = db.Column(db.String(20), unique=True)   # one-time onboarding code
+    pin_hash = db.Column(db.String(200))                 # hashed PIN
+    active = db.Column(db.Boolean, default=True)
+
+class EmployeeHours(db.Model):
+    __tablename__ = "employee_hours"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"))
+    date = db.Column(db.Date, nullable=False)
+    sign_in = db.Column(db.DateTime)
+    break_start = db.Column(db.DateTime)
+    break_end = db.Column(db.DateTime)
+    sign_out = db.Column(db.DateTime)
+    auto_prompted = db.Column(db.Boolean, default=False)
+
 class Client(db.Model):
     __tablename__ = 'clients'
 
