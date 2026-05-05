@@ -204,8 +204,9 @@
             return "standard";
         }
 
-        function openPreview(client, mobile, balance, tcInputId, buttonId) {
+        function openPreview(client, guardian, mobile, balance, tcInputId, buttonId) {
             currentClient = client;
+            currentGuardian = guardian;   // ⭐ NEW
             currentMobile = mobile;
             currentBalance = balance;
             currentTcBalanceInputId = tcInputId;
@@ -220,6 +221,7 @@
 
             let preview = template
                 .replace("{client}", client)
+                .replace("{guardian}", guardian)   // ⭐ NEW
                 .replace("{balance}", balance)
                 .replace("{tc_balance}", tcBalance);
 
@@ -242,6 +244,7 @@
 
             const formData = new FormData();
             formData.append("client_name", currentClient);
+            formData.append("guardian", currentGuardian);
             formData.append("mobile", currentMobile);
             formData.append("balance", currentBalance);
             formData.append("tc_balance", tcBalance);
@@ -328,12 +331,27 @@
 
 <h1>Clients With Negative Balances</h1>
 
+<div style="border:1px solid #aaa; padding:12px; margin-bottom:20px; background:#f9f9f9;">
+    <h3 style="margin-top:0;">Raw Default SMS Templates (Copy + Paste)</h3>
+
+    <p><strong>Standard:</strong></p>
+    <pre style="background:#eee; padding:10px; white-space:pre-wrap;">
+Hi {guardian},{client} account bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin
+    </pre>
+
+    <p><strong>Term Course:</strong></p>
+    <pre style="background:#eee; padding:10px; white-space:pre-wrap;">
+Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin
+    </pre>
+</div>
+
+
 <div class="template-block">
     <label>
         <input type="radio" name="template_choice" value="standard" checked>
         Standard Negative Balance Message
     </label>
-    <textarea id="msg_standard">Hi {client}, your account balance is ${balance}. Please make payment today to keep your bookings current. Thank you, CW Admin</textarea>
+    <textarea id="msg_standard">Hi {guardian},{client} account bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
 </div>
 
 <div class="template-block">
@@ -341,7 +359,7 @@
         <input type="radio" name="template_choice" value="term">
         Term Course Balance Message
     </label>
-    <textarea id="msg_term">Hi {client}, your Term Course balance is ${tc_balance}. Please pay now to keep your bookings current. Thank you, CW Admin</textarea>
+    <textarea id="msg_term">Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
 </div>
 
 <div class="test-mode">
@@ -362,6 +380,10 @@
             {{ row.client }}
         </div>
 
+    <div class="client-guardian" style="width:30ch; white-space:nowrap;">
+        Guardian: {{ row.guardian }}
+    </div>
+
         <div class="client-owes">
             — Owes ${{ "%.2f"|format(row.current_balance) }}
         </div>
@@ -377,6 +399,7 @@
 
         <button id="{{ btn_id }}" class="sms-btn"
                 onclick="openPreview('{{ row.client }}',
+                                     '{{ row.guardian.split()[0] }}',
                                      '{{ row.mobile }}',
                                      '{{ '%.2f'|format(row.current_balance) }}',
                                      '{{ tc_id }}',
