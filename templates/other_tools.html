@@ -137,6 +137,12 @@
 </a>
 
 
+    <a href="{{ url_for('admin_employees') }}" class="menu-btn">
+        👥 Manage Employees
+    </a>
+
+
+
 <div id="xlsxUpload" style="display:none; margin-top:20px;">
     <form action="{{ url_for('import_lessons_xlsx') }}" method="POST" enctype="multipart/form-data">
         <input type="file" name="file" accept=".xlsx" required

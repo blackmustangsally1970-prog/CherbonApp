@@ -7271,6 +7271,32 @@ Cherbon Waters Admin
 
         return render_template("admin_edit_hours.html", emp=emp, row=row)
 
+        @app.route("/admin/reset_pin/<int:emp_id>", methods=["POST"])
+        def admin_reset_pin(emp_id):
+            # Must be admin
+            if not session.get("is_admin"):
+                return jsonify({"error": "Unauthorized"}), 403
+
+            emp = Employee.query.get(emp_id)
+            if not emp:
+                return jsonify({"error": "Employee not found"}), 404
+
+            # Generate new setup code
+            import secrets
+            new_code = secrets.token_hex(4)
+
+            emp.setup_code = new_code
+            db.session.commit()
+
+            reset_link = f"https://cherbonwaters.com/employee/setup?code={new_code}"
+
+            return jsonify({
+                "status": "ok",
+                "employee": emp.full_name,
+                "reset_link": reset_link
+            })
+
+
     @app.route("/employeehours/summary")
     def employee_weekly_summary():
         emp_id = session.get("employee_id")
