@@ -1,41 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Employee Hours</title>
+    <title>Work Dashboard</title>
     <style>
         body { font-family: Arial; background:#f5f5f5; padding:40px; text-align:center; }
-        .box { background:white; padding:30px; max-width:400px; margin:auto; border-radius:8px; }
-        button { width:100%; padding:18px; margin:10px 0; font-size:22px; border:none; border-radius:6px; cursor:pointer; }
-        .in { background:#2ecc71; color:white; }
-        .break { background:#f1c40f; color:black; }
-        .out { background:#e74c3c; color:white; }
+        .btn { padding:20px; background:#2a7ae2; color:white; border:none; border-radius:6px; font-size:22px; margin:10px; width:250px; cursor:pointer; }
+        .btn:hover { background:#1f5fb4; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>{{ emp.full_name }}</h2>
+<h2>Welcome, {{ emp.full_name }}</h2>
 
-    {% if not row or not row.sign_in %}
-        <button class="in" onclick="go('/employeehours/signin')">SIGN IN</button>
+{% if not row %}
+    <!-- No record for today = NOT SIGNED IN -->
+    <button class="btn" onclick="action('signin')">Start Work</button>
 
-    {% elif row.sign_in and not row.break_start %}
-        <button class="break" onclick="go('/employeehours/startbreak')">START BREAK</button>
-        <button class="out" onclick="go('/employeehours/signout')">SIGN OUT</button>
+{% elif row.sign_in and not row.break_start and not row.sign_out %}
+    <!-- Signed in, not on break -->
+    <button class="btn" onclick="action('startbreak')">Start Break</button>
+    <button class="btn" onclick="action('signout')">Sign Out</button>
 
-    {% elif row.break_start and not row.break_end %}
-        <button class="in" onclick="go('/employeehours/endbreak')">END BREAK</button>
-        <button class="out" onclick="go('/employeehours/signout')">SIGN OUT</button>
+{% elif row.break_start and not row.break_end %}
+    <!-- On break -->
+    <button class="btn" onclick="action('endbreak')">End Break</button>
 
-    {% else %}
-        <button class="out" onclick="go('/employeehours/signout')">SIGN OUT</button>
-    {% endif %}
-</div>
+{% elif row.break_end and not row.sign_out %}
+    <!-- Break ended, still working -->
+    <button class="btn" onclick="action('signout')">Sign Out</button>
+
+{% else %}
+    <!-- Fully completed day -->
+    <p>You have finished work for today.</p>
+{% endif %}
 
 <script>
-function go(url) {
-    fetch(url, { method:"POST" })
-        .then(() => window.location.reload());
+function action(type) {
+    fetch("/employeehours/" + type, { method: "POST" })
+    .then(r => r.json())
+    .then(() => location.reload());
 }
 </script>
 
