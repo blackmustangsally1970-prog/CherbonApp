@@ -7356,7 +7356,7 @@ Cherbon Waters Admin
         today = date.today()
 
         if existing and selected_dt.date() != today:
-            return {
+            return jsonify({
                 "error": "You already have a record for this date.",
                 "existing": {
                     "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
@@ -7364,13 +7364,14 @@ Cherbon Waters Admin
                     "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
                     "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
                 }
-            }
+            })
 
         # TODAY: update existing or create new
         if existing:
             existing.sign_in = selected_dt
             db.session.commit()
-            return {"status": "ok"}
+            return jsonify({"status": "ok"})
+
 
         # NEW DATE: create row
         row = EmployeeHours(
@@ -7381,7 +7382,8 @@ Cherbon Waters Admin
         db.session.add(row)
         db.session.commit()
 
-        return {"status": "ok"}
+        return jsonify({"status": "ok"})
+
 
     @app.route("/employeehours/startbreak", methods=["POST"])
     def employee_start_break():
@@ -7397,7 +7399,7 @@ Cherbon Waters Admin
         today = date.today()
 
         if existing and selected_dt.date() != today:
-            return {
+            return jsonify({
                 "error": "You already have a record for this date.",
                 "existing": {
                     "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
@@ -7405,12 +7407,13 @@ Cherbon Waters Admin
                     "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
                     "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
                 }
-            }
+            })
 
         if existing:
             existing.break_start = selected_dt
             db.session.commit()
-            return {"status": "ok"}
+            return jsonify({"status": "ok"})
+
 
         row = EmployeeHours(
             employee_id=emp_id,
@@ -7420,7 +7423,8 @@ Cherbon Waters Admin
         db.session.add(row)
         db.session.commit()
 
-        return {"status": "ok"}
+        return jsonify({"status": "ok"})
+
 
     @app.route("/employeehours/endbreak", methods=["POST"])
     def employee_end_break():
@@ -7436,7 +7440,7 @@ Cherbon Waters Admin
         today = date.today()
 
         if existing and selected_dt.date() != today:
-            return {
+            return jsonify({
                 "error": "You already have a record for this date.",
                 "existing": {
                     "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
@@ -7444,12 +7448,13 @@ Cherbon Waters Admin
                     "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
                     "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
                 }
-            }
+            })
 
         if existing:
             existing.break_end = selected_dt
             db.session.commit()
-            return {"status": "ok"}
+            return jsonify({"status": "ok"})
+
 
         row = EmployeeHours(
             employee_id=emp_id,
@@ -7459,7 +7464,8 @@ Cherbon Waters Admin
         db.session.add(row)
         db.session.commit()
 
-        return {"status": "ok"}
+        return jsonify({"status": "ok"})
+
 
     @app.route("/employeehours/signout", methods=["POST"])
     def employee_sign_out():
@@ -7475,7 +7481,7 @@ Cherbon Waters Admin
         today = date.today()
 
         if existing and selected_dt.date() != today:
-            return {
+            return jsonify({
                 "error": "You already have a record for this date.",
                 "existing": {
                     "sign_in": existing.sign_in.strftime("%H:%M") if existing.sign_in else None,
@@ -7483,12 +7489,13 @@ Cherbon Waters Admin
                     "break_end": existing.break_end.strftime("%H:%M") if existing.break_end else None,
                     "sign_out": existing.sign_out.strftime("%H:%M") if existing.sign_out else None,
                 }
-            }
+            })
 
         if existing:
             existing.sign_out = selected_dt
             db.session.commit()
-            return {"status": "ok"}
+            return jsonify({"status": "ok"})
+
 
         row = EmployeeHours(
             employee_id=emp_id,
@@ -7498,7 +7505,8 @@ Cherbon Waters Admin
         db.session.add(row)
         db.session.commit()
 
-        return {"status": "ok"}
+        return jsonify({"status": "ok"})
+
 
     @app.route("/admin/employeehours")
     def admin_employee_hours():
