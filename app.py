@@ -7313,6 +7313,9 @@ Cherbon Waters Admin
 
         return {"status": "ok"}
 
+    @app.route("/employeehours")
+    def employeehours_login_page():
+        return render_template("employee_pin_login.html")
 
 
 
