@@ -1,0 +1,24 @@
+<h1>Weekly Summary (All Employees)</h1>
+
+<p>
+    Week: {{ start_of_week.strftime("%d %b %Y") }} 
+    → {{ end_of_week.strftime("%d %b %Y") }}
+</p>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th>Employee</th>
+        <th>Total Work</th>
+        <th>Total Break</th>
+        <th>Net Hours</th>
+    </tr>
+
+    {% for row in summary %}
+    <tr>
+        <td>{{ row.emp.full_name }}</td>
+        <td>{{ row.total_work }}</td>
+        <td>{{ row.total_break }}</td>
+        <td>{{ row.net }}</td>
+    </tr>
+    {% endfor %}
+</table>

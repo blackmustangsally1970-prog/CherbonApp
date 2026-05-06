@@ -7298,6 +7298,53 @@ Cherbon Waters Admin
         })
 
 
+    @app.route("/admin/weekly_summary")
+    def admin_weekly_summary():
+        # Must be admin
+        if not session.get("is_admin"):
+            return redirect("/")
+
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())  # Monday
+        end_of_week = start_of_week + timedelta(days=6)          # Sunday
+
+        employees = Employee.query.order_by(Employee.full_name.asc()).all()
+
+        summary = []
+
+        for emp in employees:
+            rows = EmployeeHours.query.filter(
+                EmployeeHours.employee_id == emp.id,
+                EmployeeHours.date >= start_of_week,
+                EmployeeHours.date <= end_of_week
+            ).all()
+
+            total_work = timedelta()
+            total_break = timedelta()
+
+            for r in rows:
+                if r.sign_in and r.sign_out:
+                    total_work += (r.sign_out - r.sign_in)
+                if r.break_start and r.break_end:
+                    total_break += (r.break_end - r.break_start)
+
+            net = total_work - total_break
+
+            summary.append({
+                "emp": emp,
+                "total_work": total_work,
+                "total_break": total_break,
+                "net": net
+            })
+
+        return render_template(
+            "admin_weekly_summary.html",
+            summary=summary,
+            start_of_week=start_of_week,
+            end_of_week=end_of_week
+        )
+
+
     @app.route("/employeehours/summary")
     def employee_weekly_summary():
         emp_id = session.get("employee_id")
