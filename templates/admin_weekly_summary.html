@@ -46,11 +46,51 @@
     background-color: #f0f0f0;
     font-weight: bold;
 }
+
+.week-nav {
+    margin: 10px 0 20px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.nav-btn {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.nav-btn:hover {
+    background-color: #0056b3;
+}
+
+.nav-btn.disabled {
+    background-color: #999;
+    pointer-events: none;
+}
+
+
 </style>
 
 <div class="top-controls">
     <a href="{{ url_for('other_tools') }}" class="menu-btn-small">⬅ Back to Other Tools</a>
 </div>
+
+<div class="week-nav">
+    <a href="{{ url_for('admin_weekly_summary', fy=fy, week=selected_week-1) }}" 
+       class="nav-btn {% if selected_week == 1 %}disabled{% endif %}">
+        ← Previous Week
+    </a>
+
+    <a href="{{ url_for('admin_weekly_summary', fy=fy, week=selected_week+1) }}" 
+       class="nav-btn {% if selected_week == weeks|length %}disabled{% endif %}">
+        Next Week →
+    </a>
+</div>
+
 
 <form method="get" class="fy-selector">
     <label>Financial Year:</label>

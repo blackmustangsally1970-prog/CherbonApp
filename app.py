@@ -7363,6 +7363,12 @@ Cherbon Waters Admin
                         week_num = w["week_number"]
                         break
 
+        # Clamp week_num inside valid range (AFTER default logic)
+        if week_num < 1:
+            week_num = 1
+        if week_num > len(weeks):
+            week_num = len(weeks)
+
         selected = weeks[week_num - 1]
         start_of_week = selected["start"]
         end_of_week = selected["end"]
@@ -7390,7 +7396,7 @@ Cherbon Waters Admin
 
                     brk = timedelta()
                     if row.break_start and row.break_end:
-                        brk = row.break_end - row.break_start
+                        brk = row.break_end - brk.break_start
 
                     net = work - brk
                     running_total += net
@@ -7421,7 +7427,6 @@ Cherbon Waters Admin
             start_of_week=start_of_week,
             end_of_week=end_of_week
         )
-
 
     @app.route("/employeehours/summary")
     def employee_weekly_summary():
