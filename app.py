@@ -7815,7 +7815,9 @@ Cherbon Waters Admin
         return render_template("admin_corrections.html", rows=rows)
 
 
-
+    @app.route("/employees")
+    def employees_home():
+        return render_template("employees_home.html")
 
 
     @app.route("/other_tools")

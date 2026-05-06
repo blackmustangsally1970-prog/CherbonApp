@@ -121,21 +121,6 @@
     📄 Import Courses (XLSX)
 </a>
 
-<a href="{{ url_for('admin_employees') }}" class="menu-btn">
-    👥 Manage Employees
-</a>
-<a href="{{ url_for('admin_employee_hours') }}" class="menu-btn">
-    ⏱️ Employee Hours / Timesheets
-</a>
-
-<a href="{{ url_for('admin_corrections') }}" class="menu-btn">
-    📝 Corrections Log
-</a>
-
-<a href="{{ url_for('admin_weekly_summary') }}" class="menu-btn">
-    📊 Weekly Summary
-</a>
-
 
 <div id="xlsxUpload" style="display:none; margin-top:20px;">
     <form action="{{ url_for('import_lessons_xlsx') }}" method="POST" enctype="multipart/form-data">
