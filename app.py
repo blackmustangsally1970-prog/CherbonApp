@@ -7332,23 +7332,36 @@ Cherbon Waters Admin
 
     @app.route("/admin/weekly_summary")
     def admin_weekly_summary():
-        fy = int(request.args.get("fy", date.today().year))
+        today = date.today()
+
+        # AU FY default: FY starts 1 July → 30 June
+        default_fy = today.year if today.month >= 7 else today.year - 1
+        fy = int(request.args.get("fy", default_fy))
+
         week_num = int(request.args.get("week", 0))
 
         # Build FY weeks
         weeks = build_fy_weeks(fy)
 
-        # Default to current FY + current week (with Monday showing previous week)
+        # Default to current FY + correct week (Monday shows previous week)
         if week_num == 0:
             today = date.today()
 
-            # If today is Monday → use yesterday (Sunday)
+            # Monday should show the week just completed
             effective_day = today - timedelta(days=1) if today.weekday() == 0 else today
 
-            for w in weeks:
-                if w["start"] <= effective_day <= w["end"]:
-                    week_num = w["week_number"]
-                    break
+            first_start = weeks[0]["start"]
+            last_end = weeks[-1]["end"]
+
+            if effective_day < first_start:
+                week_num = weeks[0]["week_number"]
+            elif effective_day > last_end:
+                week_num = weeks[-1]["week_number"]
+            else:
+                for w in weeks:
+                    if w["start"] <= effective_day <= w["end"]:
+                        week_num = w["week_number"]
+                        break
 
         selected = weeks[week_num - 1]
         start_of_week = selected["start"]
