@@ -7396,7 +7396,7 @@ Cherbon Waters Admin
 
                     brk = timedelta()
                     if row.break_start and row.break_end:
-                        brk = row.break_end - brk.break_start
+                        brk = row.break_end - row.break_start
 
                     net = work - brk
                     running_total += net
