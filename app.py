@@ -7400,7 +7400,9 @@ Cherbon Waters Admin
             summary=summary,
             weeks=weeks,
             fy=fy,
-            selected_week=week_num
+            selected_week=week_num,
+            start_of_week=start_of_week,
+            end_of_week=end_of_week
         )
 
 
