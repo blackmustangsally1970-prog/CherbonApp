@@ -145,6 +145,38 @@ def get_incomplete_days(employee_id):
     cur.close()
     return rows
 
+def fy_week1_monday(year):
+    fy_start = date(year, 7, 1)
+    return fy_start - timedelta(days=fy_start.weekday())
+
+def build_fy_weeks(year):
+    week1 = fy_week1_monday(year)
+    fy_end = date(year + 1, 6, 30)
+
+    weeks = []
+    wk = 1
+    current = week1
+
+    while True:
+        start = current
+        end = current + timedelta(days=6)
+
+        # If the next week would cross into July, STOP
+        if end > fy_end:
+            break
+
+        weeks.append({
+            "week_number": wk,
+            "start": start,
+            "end": end
+        })
+
+        wk += 1
+        current += timedelta(days=7)
+
+    return weeks
+
+
 
 def recalc_all_lessons():
     from sqlalchemy import distinct
@@ -7300,44 +7332,75 @@ Cherbon Waters Admin
 
     @app.route("/admin/weekly_summary")
     def admin_weekly_summary():
-        today = date.today()
-        start_of_week = today - timedelta(days=today.weekday())  # Monday
-        end_of_week = start_of_week + timedelta(days=6)          # Sunday
+        fy = int(request.args.get("fy", date.today().year))
+        week_num = int(request.args.get("week", 0))
+
+        # Build FY weeks
+        weeks = build_fy_weeks(fy)
+
+        # Default to current week if none selected
+        if week_num == 0:
+            today = date.today()
+            for w in weeks:
+                if w["start"] <= today <= w["end"]:
+                    week_num = w["week_number"]
+                    break
+
+        selected = weeks[week_num - 1]
+        start_of_week = selected["start"]
+        end_of_week = selected["end"]
 
         employees = Employee.query.order_by(Employee.full_name.asc()).all()
 
         summary = []
 
         for emp in employees:
-            rows = EmployeeHours.query.filter(
-                EmployeeHours.employee_id == emp.id,
-                EmployeeHours.date >= start_of_week,
-                EmployeeHours.date <= end_of_week
-            ).all()
+            week_rows = []
+            running_total = timedelta()
 
-            total_work = timedelta()
-            total_break = timedelta()
+            for i in range(7):
+                day = start_of_week + timedelta(days=i)
 
-            for r in rows:
-                if r.sign_in and r.sign_out:
-                    total_work += (r.sign_out - r.sign_in)
-                if r.break_start and r.break_end:
-                    total_break += (r.break_end - r.break_start)
+                row = EmployeeHours.query.filter_by(
+                    employee_id=emp.id,
+                    date=day
+                ).first()
 
-            net = total_work - total_break
+                if row:
+                    work = timedelta()
+                    if row.sign_in and row.sign_out:
+                        work = row.sign_out - row.sign_in
+
+                    brk = timedelta()
+                    if row.break_start and row.break_end:
+                        brk = row.break_end - row.break_start
+
+                    net = work - brk
+                    running_total += net
+                else:
+                    work = brk = net = None
+
+                week_rows.append({
+                    "date": day,
+                    "row": row,
+                    "work": work,
+                    "break": brk,
+                    "net": net,
+                    "running_total": running_total
+                })
 
             summary.append({
                 "emp": emp,
-                "total_work": total_work,
-                "total_break": total_break,
-                "net": net
+                "week_rows": week_rows,
+                "week_total": running_total
             })
 
         return render_template(
             "admin_weekly_summary.html",
             summary=summary,
-            start_of_week=start_of_week,
-            end_of_week=end_of_week
+            weeks=weeks,
+            fy=fy,
+            selected_week=week_num
         )
 
 

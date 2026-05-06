@@ -1,24 +1,130 @@
+<style>
+.top-controls {
+    margin-bottom: 15px;
+}
+
+.menu-btn-small {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.menu-btn-small:hover {
+    background-color: #0056b3;
+}
+
+.fy-selector {
+    margin-bottom: 20px;
+}
+
+.fy-selector select {
+    margin-right: 10px;
+    padding: 4px 6px;
+}
+
+.week-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.week-table th, .week-table td {
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+}
+
+.sunday {
+    background-color: #d8ffd8; /* light green */
+}
+
+.total-row {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+</style>
+
+<div class="top-controls">
+    <a href="{{ url_for('other_tools') }}" class="menu-btn-small">⬅ Back to Other Tools</a>
+</div>
+
+<form method="get" class="fy-selector">
+    <label>Financial Year:</label>
+    <select name="fy">
+        {% for y in range(2020, 2035) %}
+            <option value="{{ y }}" {% if y == fy %}selected{% endif %}>
+                {{ y }}–{{ y+1 }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <label>Week:</label>
+    <select name="week">
+        {% for w in weeks %}
+            <option value="{{ w.week_number }}" {% if w.week_number == selected_week %}selected{% endif %}>
+                WK{{ w.week_number }} ({{ w.start.strftime("%d %b") }} – {{ w.end.strftime("%d %b") }})
+            </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Go</button>
+</form>
+
 <h1>Weekly Summary (All Employees)</h1>
 
 <p>
-    Week: {{ start_of_week.strftime("%d %b %Y") }} 
+    Week: {{ start_of_week.strftime("%d %b %Y") }}
     → {{ end_of_week.strftime("%d %b %Y") }}
 </p>
 
-<table border="1" cellpadding="8" cellspacing="0">
-    <tr>
-        <th>Employee</th>
-        <th>Total Work</th>
-        <th>Total Break</th>
-        <th>Net Hours</th>
-    </tr>
+{% for block in summary %}
+    <h2>{{ block.emp.full_name }}</h2>
 
-    {% for row in summary %}
-    <tr>
-        <td>{{ row.emp.full_name }}</td>
-        <td>{{ row.total_work }}</td>
-        <td>{{ row.total_break }}</td>
-        <td>{{ row.net }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <table class="week-table">
+        <tr>
+            <th>Date</th>
+            <th>Start</th>
+            <th>Break Start</th>
+            <th>Break End</th>
+            <th>Finish</th>
+            <th>Daily Total</th>
+            <th>Running Total</th>
+        </tr>
+
+        {% for d in block.week_rows %}
+        <tr class="{% if d.date.weekday() == 6 %}sunday{% endif %}">
+            <td>{{ d.date.strftime("%a %d %b") }}</td>
+
+            <td>{{ d.row.sign_in.strftime("%H:%M") if d.row and d.row.sign_in else "" }}</td>
+            <td>{{ d.row.break_start.strftime("%H:%M") if d.row and d.row.break_start else "" }}</td>
+            <td>{{ d.row.break_end.strftime("%H:%M") if d.row and d.row.break_end else "" }}</td>
+            <td>{{ d.row.sign_out.strftime("%H:%M") if d.row and d.row.sign_out else "" }}</td>
+
+            <td>
+                {% if d.net %}
+                    {{ "%02d:%02d" % (d.net.seconds//3600, (d.net.seconds//60)%60) }}
+                {% endif %}
+            </td>
+
+            <td>
+                {% if d.running_total %}
+                    {{ "%02d:%02d" % (d.running_total.seconds//3600, (d.running_total.seconds//60)%60) }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+
+        <tr class="total-row">
+            <td colspan="5"><strong>Weekly Total</strong></td>
+            <td colspan="2">
+                {{ "%02d:%02d" % (block.week_total.seconds//3600, (block.week_total.seconds//60)%60) }}
+            </td>
+        </tr>
+    </table>
+
+    <br><br>
+{% endfor %}
