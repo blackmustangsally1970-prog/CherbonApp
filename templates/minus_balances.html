@@ -343,13 +343,12 @@
 <h1>Clients With Negative Balances</h1>
 
 
-
 <div class="template-block">
     <label>
         <input type="radio" name="template_choice" value="standard" checked>
         Standard Negative Balance Message
     </label>
-    <textarea id="msg_standard">Hi {guardian},{client} account bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
+    <textarea id="msg_standard">Hi {guardian},{client} - acc bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
 <button type="button"
             onclick="resetStandard()"
             style="margin-top:6px; padding:4px 10px; font-size:13px;">
@@ -362,13 +361,14 @@
         <input type="radio" name="template_choice" value="term">
         Term Course Balance Message
     </label>
-    <textarea id="msg_term">Hi {guardian},{client} Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
+    <textarea id="msg_term">Hi {guardian},{client} - Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
     <button type="button"
             onclick="resetTerm()"
             style="margin-top:6px; padding:4px 10px; font-size:13px;">
         Restore Default
     </button>
 </div>
+
 
 <div class="test-mode">
     <label>
