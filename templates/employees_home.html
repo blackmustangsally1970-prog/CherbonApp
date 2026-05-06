@@ -1,42 +1,109 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Employee Tools</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
+  <meta charset="utf-8">
+  <title>Employee Tools</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { margin-bottom: 20px; }
 
+    .menu-btn-small {
+        display: inline-block;
+        background: #eee;
+        border: 1px solid #aaa;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #0645AD;
+        text-decoration: none;
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+        margin-right: 12px;
+    }
+
+    .menu-btn-small:hover {
+        background: #ddd;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .menu-btn {
+      display: block;
+      width: 100%;
+      background: #dce6ff;
+      border: 4px solid #4a6bff;
+      padding: 40px 28px;
+      border-radius: 18px;
+      font-size: 34px;
+      font-weight: 900;
+      color: #001a66;
+      text-decoration: none;
+      text-align: center;
+      box-sizing: border-box;
+      margin-bottom: 28px;
+      letter-spacing: 1px;
+      line-height: 1.35;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .menu-btn:hover {
+      background: #c7d6ff;
+      transform: scale(1.04);
+      text-decoration: none;
+    }
+
+    @media (min-width: 800px) {
+      .menu-btn {
+        padding: 20px 18px !important;
+        font-size: 20px !important;
+        border-radius: 10px !important;
+        margin-bottom: 16px !important;
+      }
+    }
+  </style>
+</head>
 <body>
 
-<div class="container">
-
-    <h1 class="page-title">🧑‍🤝‍🧑 Employee Tools</h1>
-
-    <div class="menu-grid">
-
-        <a href="{{ url_for('admin_employees') }}" class="menu-btn">
-            👥 Manage Employees
-        </a>
-
-        <a href="{{ url_for('admin_employee_hours') }}" class="menu-btn">
-            ⏱️ Employee Hours / Timesheets
-        </a>
-
-        <a href="{{ url_for('admin_corrections') }}" class="menu-btn">
-            📝 Corrections Log
-        </a>
-
-        <a href="{{ url_for('admin_weekly_summary') }}" class="menu-btn">
-            📊 Weekly Summary
-        </a>
-
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div style="margin-bottom:20px;">
+      {% for category, message in messages %}
+        <div style="
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            {% if category == 'success' %}
+                background: #d4ffd4; border: 2px solid #2e8b57; color: #003300;
+            {% else %}
+                background: #ffd4d4; border: 2px solid #8b2e2e; color: #330000;
+            {% endif %}
+        ">
+          {{ message }}
+        </div>
+      {% endfor %}
     </div>
+  {% endif %}
+{% endwith %}
 
-    <div style="margin-top: 30px;">
-        <a href="{{ url_for('dashboard') }}" class="back-btn">⬅ Back to Dashboard</a>
-    </div>
+<a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
 
-</div>
+<h1>Employee Tools</h1>
+
+<a href="{{ url_for('admin_employees') }}" class="menu-btn">
+    👥 Manage Employees
+</a>
+
+<a href="{{ url_for('admin_employee_hours') }}" class="menu-btn">
+    ⏱️ Employee Hours / Timesheets
+</a>
+
+<a href="{{ url_for('admin_corrections') }}" class="menu-btn">
+    📝 Corrections Log
+</a>
+
+<a href="{{ url_for('admin_weekly_summary') }}" class="menu-btn">
+    📊 Weekly Summary
+</a>
 
 </body>
 </html>
