@@ -7300,10 +7300,6 @@ Cherbon Waters Admin
 
     @app.route("/admin/weekly_summary")
     def admin_weekly_summary():
-        # Must be admin
-        if not session.get("is_admin"):
-            return redirect("/")
-
         today = date.today()
         start_of_week = today - timedelta(days=today.weekday())  # Monday
         end_of_week = start_of_week + timedelta(days=6)          # Sunday
