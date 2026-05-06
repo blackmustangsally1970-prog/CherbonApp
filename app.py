@@ -7338,11 +7338,15 @@ Cherbon Waters Admin
         # Build FY weeks
         weeks = build_fy_weeks(fy)
 
-        # Default to current week if none selected
+        # Default to current FY + current week (with Monday showing previous week)
         if week_num == 0:
             today = date.today()
+
+            # If today is Monday → use yesterday (Sunday)
+            effective_day = today - timedelta(days=1) if today.weekday() == 0 else today
+
             for w in weeks:
-                if w["start"] <= today <= w["end"]:
+                if w["start"] <= effective_day <= w["end"]:
                     week_num = w["week_number"]
                     break
 
