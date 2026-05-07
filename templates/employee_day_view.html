@@ -80,45 +80,74 @@
     top:0; left:0;
     width:100%; height:100%;
     background:rgba(0,0,0,0.6);
-    padding-top:0;
 ">
 
     <div style="
         background:white;
         margin:0;
-        padding:40px;
+        padding:30px;
         width:100%;
         height:100%;
         border-radius:0;
         text-align:center;
         overflow-y:auto;
+        box-sizing:border-box;
     ">
 
-        <h3 id="modal-title" style="font-size:42px; margin-bottom:30px;"></h3>
+        <h3 id="modal-title" style="font-size:36px; margin-bottom:25px;"></h3>
 
         <form id="modal-form" method="POST" action="/employeehours/day?date={{ date }}">
 
             <input type="hidden" name="action" id="modal-action">
 
             <input type="time" name="time" required
-                   style="padding:30px; font-size:36px; width:100%; margin-bottom:30px; border-radius:14px;">
+                   style="
+                       padding:22px;
+                       font-size:28px;
+                       width:100%;
+                       margin-bottom:25px;
+                       border-radius:12px;
+                       box-sizing:border-box;
+                   ">
 
             <textarea name="notes" placeholder="Notes (optional)"
-                      style="width:100%; height:200px; padding:25px; font-size:28px; border-radius:14px; margin-bottom:30px;"></textarea>
+                      style="
+                          width:100%;
+                          height:160px;
+                          padding:20px;
+                          font-size:24px;
+                          border-radius:12px;
+                          margin-bottom:30px;
+                          box-sizing:border-box;
+                      "></textarea>
 
             <button class="btn" type="submit"
-                    style="padding:50px; font-size:40px; border-radius:14px;">
+                    style="
+                        padding:32px;
+                        font-size:30px;
+                        border-radius:14px;
+                        width:100%;
+                        box-sizing:border-box;
+                    ">
                 Save
             </button>
         </form>
 
         <button class="back-btn" onclick="closeModal()"
-                style="padding:50px; font-size:40px; border-radius:14px; width:100%; margin-top:40px;">
+                style="
+                    padding:32px;
+                    font-size:30px;
+                    border-radius:14px;
+                    width:100%;
+                    margin-top:30px;
+                    box-sizing:border-box;
+                ">
             Cancel
         </button>
 
     </div>
 </div>
+
 
 <script>
 function openModal(action) {
