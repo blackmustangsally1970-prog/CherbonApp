@@ -100,15 +100,17 @@
 
             <input type="hidden" name="action" id="modal-action">
 
-            <input type="time" name="time" required
-                   style="
-                       padding:22px;
-                       font-size:28px;
-                       width:100%;
-                       margin-bottom:25px;
-                       border-radius:12px;
-                       box-sizing:border-box;
-                   ">
+<input type="time" name="time" required
+       style="
+           padding:22px;
+           font-size:28px;
+           width:100%;
+           max-width:380px;     /* ⭐ keeps it from going too wide */
+           margin:0 auto 25px auto;
+           display:block;
+           border-radius:12px;
+           box-sizing:border-box;
+       ">
 
             <textarea name="notes" placeholder="Notes (optional)"
                       style="
