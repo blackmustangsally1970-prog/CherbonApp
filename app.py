@@ -7276,7 +7276,7 @@ Cherbon Waters Admin
 
         db.session.commit()
 
-        return {"status": "ok", "setup_code": setup_code}
+        return redirect(url_for("admin_employees"))
 
     @app.route("/employeehours/login", methods=["POST"])
     def employeehours_login():
