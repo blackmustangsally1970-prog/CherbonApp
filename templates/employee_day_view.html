@@ -58,8 +58,10 @@
         <button class="btn" onclick="openModal('start')">Start Work</button>
     {% endif %}
 
+{% if editable %}
     <button class="btn" onclick="openModal('break_start')">Break Start</button>
     <button class="btn" onclick="openModal('break_end')">Break End</button>
+{% endif %}
 
     {% if not row or not row.sign_out %}
         <button class="btn" onclick="openModal('finish')">Finish Work</button>

@@ -7305,7 +7305,8 @@ Cherbon Waters Admin
         is_incomplete = (not row) or (not row.sign_in) or (not row.sign_out)
 
         # Editable if today OR past incomplete
-        editable = is_today or is_incomplete
+        is_future = d > today
+        editable = (not is_future) and (is_today or is_incomplete)
 
         if request.method == "POST":
 
