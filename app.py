@@ -7279,7 +7279,7 @@ Cherbon Waters Admin
         return redirect(url_for("admin_employees"))
 
     @app.route("/employeehours/day")
-    def employee_day_view():
+    def employeehours_day_view():
         emp_id = session.get("employee_id")
         if not emp_id:
             return redirect("/employeehours")
