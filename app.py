@@ -7298,7 +7298,7 @@ Cherbon Waters Admin
         row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
 
         # Determine editability rules
-        today = date.today()
+        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
         is_today = (d == today)
 
         # Incomplete if missing sign_in OR sign_out OR row doesn't exist
