@@ -7505,6 +7505,36 @@ Cherbon Waters Admin
         db.session.commit()
         return redirect("/employeehours/week")
 
+    @app.route("/admin/weekly_summary")
+    def admin_weekly_summary():
+        # Determine the current week (Mon–Sun)
+        today = date.today()
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
+
+        # Query all employees
+        employees = Employee.query.order_by(Employee.full_name).all()
+
+        summary = []
+        for emp in employees:
+            total = (
+                db.session.query(func.sum(Hours.total_hours))
+                .filter(
+                    Hours.employee_id == emp.id,
+                    Hours.date >= start_date,
+                    Hours.date <= end_date
+                )
+                .scalar()
+            ) or 0
+
+            summary.append((emp, total))
+
+        return render_template(
+            "admin_weekly_summary.html",
+            start_date=start_date,
+            end_date=end_date,
+            summary=summary
+        )
 
 
     @app.route("/employeehours/day/<date>", methods=["GET", "POST"])
