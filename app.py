@@ -7735,6 +7735,8 @@ Cherbon Waters Admin
         if not emp_id:
             return redirect("/employeehours")
 
+        emp = Employee.query.get(emp_id)  # ⭐ load employee for welcome message
+
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
         start_of_week = today - timedelta(days=today.weekday())
         days = []
@@ -7759,8 +7761,12 @@ Cherbon Waters Admin
                 "status": status
             })
 
-        return render_template("employee_week_view.html", days=days, today=today)
-
+        return render_template(
+            "employee_week_view.html",
+            days=days,
+            today=today,
+            emp=emp
+        )
 
 
 
