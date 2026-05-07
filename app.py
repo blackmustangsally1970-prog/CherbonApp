@@ -7278,6 +7278,26 @@ Cherbon Waters Admin
 
         return redirect(url_for("admin_employees"))
 
+    @app.route("/employeehours/day")
+    def employee_day_view():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        date_str = request.args.get("date")
+        if not date_str:
+            return "Missing date", 400
+
+        try:
+            d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except:
+            return "Invalid date", 400
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
+
+        return render_template("employee_day_view.html", date=d, row=row)
+
+
     @app.route("/employeehours/login", methods=["POST"])
     def employeehours_login():
         pin = request.form.get("pin", "").strip()
