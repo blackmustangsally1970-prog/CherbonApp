@@ -7297,7 +7297,22 @@ Cherbon Waters Admin
         # Load existing row if any
         row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
 
+        # Determine editability rules
+        today = date.today()
+        is_today = (d == today)
+
+        # Incomplete if missing sign_in OR sign_out OR row doesn't exist
+        is_incomplete = (not row) or (not row.sign_in) or (not row.sign_out)
+
+        # Editable if today OR past incomplete
+        editable = is_today or is_incomplete
+
         if request.method == "POST":
+
+            # Backend safety: block editing completed past days
+            if not editable:
+                return "This day is complete and cannot be edited", 403
+
             action = request.form.get("action")
             time_str = request.form.get("time")
             notes = request.form.get("notes", "")
@@ -7331,7 +7346,14 @@ Cherbon Waters Admin
             # Reload the same day
             return redirect(f"/employeehours/day?date={date_str}")
 
-        return render_template("employee_day_view.html", date=d, row=row)
+        return render_template(
+            "employee_day_view.html",
+            date=d,
+            row=row,
+            editable=editable,
+            is_today=is_today,
+            is_incomplete=is_incomplete
+        )
 
 
     @app.route("/employeehours/login", methods=["POST"])

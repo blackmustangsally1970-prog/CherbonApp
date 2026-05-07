@@ -22,6 +22,9 @@
             border-radius:10px; font-size:20px; cursor:pointer;
         }
         .back-btn:hover { background:#555; }
+        .locked {
+            margin-top:20px; font-size:18px; color:#777;
+        }
     </style>
 </head>
 <body>
@@ -35,10 +38,24 @@
     <div class="row"><strong>Finish:</strong> {{ row.sign_out.strftime("%-I:%M %p") if row and row.sign_out else "—" }}</div>
 </div>
 
-<button class="btn" onclick="openModal('start')">Start Work</button>
-<button class="btn" onclick="openModal('break_start')">Break Start</button>
-<button class="btn" onclick="openModal('break_end')">Break End</button>
-<button class="btn" onclick="openModal('finish')">Finish Work</button>
+{% if editable %}
+
+    {% if not row or not row.sign_in %}
+        <button class="btn" onclick="openModal('start')">Start Work</button>
+    {% endif %}
+
+    <button class="btn" onclick="openModal('break_start')">Break Start</button>
+    <button class="btn" onclick="openModal('break_end')">Break End</button>
+
+    {% if not row or not row.sign_out %}
+        <button class="btn" onclick="openModal('finish')">Finish Work</button>
+    {% endif %}
+
+{% else %}
+    <div class="locked">
+        This day is complete and cannot be edited.
+    </div>
+{% endif %}
 
 <button class="back-btn" onclick="window.location.href='/employeehours/week'">Back to Week</button>
 
@@ -49,7 +66,6 @@
          border-radius:12px; text-align:center;">
         <h3 id="modal-title"></h3>
 
-        <!-- Correct POST target -->
         <form id="modal-form" method="POST" action="/employeehours/day?date={{ date }}">
             <input type="hidden" name="action" id="modal-action">
 
