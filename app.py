@@ -7944,7 +7944,18 @@ Cherbon Waters Admin
 
     @app.route("/employeehours")
     def employeehours_login_page():
+        # Already logged in → go to week view
+        if "employee_id" in session:
+            return redirect("/employeehours/week")
+
+        # If a setup code is in the URL → go to setup page
+        code = request.args.get("code")
+        if code:
+            return redirect(url_for("employeehours_setup", code=code))
+
+        # Otherwise show PIN login page
         return render_template("employee_pin_login.html")
+
 
 
     @app.route("/admin/corrections")
