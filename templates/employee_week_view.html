@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-container">
+
+    <h2 class="week-title">
+        Week of {{ start_date.strftime("%-d %B %Y") }}
+    </h2>
+
+    <div class="day-list">
+
+        {% for d, row in days %}
+            <div class="day-entry"
+                 onclick="window.location.href='/employeehours/day/{{ d }}'">
+
+                <div class="day-left">
+                    <div class="day-name">{{ d.strftime("%A") }}</div>
+                    <div class="day-date">{{ d.strftime("%-d %b") }}</div>
+                </div>
+
+                <div class="day-status">
+                    {% if row and row.sign_in %}
+                        ✔
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+
+            </div>
+        {% endfor %}
+
+    </div>
+
+    <button class="logout-btn" onclick="window.location.href='/employeehours/logout'">
+        Log Out
+    </button>
+
+</div>
+
+<style>
+    .week-container {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .week-title {
+        font-size: 28px;
+        margin-bottom: 25px;
+        font-weight: bold;
+    }
+
+    .day-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .day-entry {
+        background: white;
+        padding: 18px;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: 0.15s;
+    }
+
+    .day-entry:hover {
+        background: #f0f0f0;
+    }
+
+    .day-left {
+        text-align: left;
+    }
+
+    .day-name {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .day-date {
+        font-size: 16px;
+        color: #555;
+    }
+
+    .day-status {
+        font-size: 26px;
+        font-weight: bold;
+        color: #4caf50;
+    }
+
+    .logout-btn {
+        margin-top: 30px;
+        padding: 14px 20px;
+        background: #777;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 20px;
+        cursor: pointer;
+        width: 260px;
+    }
+
+    .logout-btn:hover {
+        background: #555;
+    }
+</style>
+
+{% endblock %}

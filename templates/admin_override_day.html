@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Override — {{ emp.full_name }}</title>
+    <style>
+        body { font-family: Arial; background:#f5f5f5; padding:40px; }
+        h2 { font-size:32px; margin-bottom:25px; }
+        .box {
+            background:white; padding:25px; border-radius:12px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.15); margin-bottom:20px;
+        }
+        label { font-size:18px; font-weight:bold; display:block; margin-top:15px; }
+        input { width:100%; padding:12px; font-size:18px; border-radius:8px; border:1px solid #ccc; }
+        .btn {
+            margin-top:25px; width:100%; padding:16px;
+            background:#2a7ae2; color:white; border:none;
+            border-radius:10px; font-size:20px; cursor:pointer;
+        }
+        .btn:hover { background:#1f5fb4; }
+        .back-btn {
+            margin-top:20px; width:260px; padding:16px;
+            background:#777; color:white; border:none;
+            border-radius:10px; font-size:20px; cursor:pointer;
+        }
+        .back-btn:hover { background:#555; }
+    </style>
+</head>
+<body>
+
+<h2>{{ date.strftime("%A %-d %B %Y") }} — {{ emp.full_name }}</h2>
+
+<form method="POST" action="/admin/employeehours/save_day" class="box">
+
+    <input type="hidden" name="emp_id" value="{{ emp.id }}">
+    <input type="hidden" name="date" value="{{ date }}">
+
+    <label>Start Work</label>
+    <input type="time" name="sign_in" value="{{ row.sign_in.strftime('%H:%M') if row and row.sign_in else '' }}">
+
+    <label>Break Start</label>
+    <input type="time" name="break_start" value="{{ row.break_start.strftime('%H:%M') if row and row.break_start else '' }}">
+
+    <label>Break End</label>
+    <input type="time" name="break_end" value="{{ row.break_end.strftime('%H:%M') if row and row.break_end else '' }}">
+
+    <label>Finish Work</label>
+    <input type="time" name="sign_out" value="{{ row.sign_out.strftime('%H:%M') if row and row.sign_out else '' }}">
+
+    <button class="btn" type="submit">Save Changes</button>
+</form>
+
+<button class="back-btn" onclick="window.location.href='/admin/employee/{{ emp.id }}/hours'">Back</button>
+
+</body>
+</html>

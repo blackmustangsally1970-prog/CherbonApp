@@ -1,38 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Corrected Employee Hours</title>
+    <title>Corrections — Admin</title>
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             background:#f5f5f5;
             padding:40px;
         }
+
         h2 {
             font-size:32px;
-            margin-bottom:30px;
+            margin-bottom:25px;
         }
+
         .entry {
             background:white;
             padding:20px;
-            margin-bottom:20px;
+            margin-bottom:15px;
             border-radius:10px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+            box-shadow:0 3px 10px rgba(0,0,0,0.15);
         }
-        .date-line {
-            font-size:22px;
-            font-weight:bold;
+
+        .row-header {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
             margin-bottom:10px;
         }
-        .times {
-            font-size:18px;
-            line-height:1.6;
+
+        .emp-name {
+            font-size:22px;
+            font-weight:bold;
         }
-        .meta {
+
+        .date {
+            font-size:18px;
+            color:#444;
+        }
+
+        .details {
             margin-top:10px;
             font-size:16px;
-            color:#777;
+            line-height:1.5;
         }
+
+        .edit-btn {
+            margin-top:15px;
+            padding:12px 20px;
+            background:#2a7ae2;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        .edit-btn:hover {
+            background:#1f5fb4;
+        }
+
         .back-btn {
             padding:18px;
             background:#777;
@@ -44,62 +71,53 @@
             width:260px;
             cursor:pointer;
         }
+
         .back-btn:hover {
             background:#555;
         }
-
-.menu-btn-small {
-    display: inline-block;
-    background: #eee;
-    border: 1px solid #aaa;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #0645AD;
-    text-decoration: none;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-    margin-right: 12px;
-}
-
-.menu-btn-small:hover {
-    background: #ddd;
-    text-decoration: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
-
-
-
     </style>
 </head>
 <body>
 
-<a href="{{ url_for('employees_home') }}" class="menu-btn-small">← Employees Menu</a>
-
-
-<h2>Corrected Employee Hours</h2>
+<h2>Corrected Entries</h2>
 
 {% if rows|length == 0 %}
-    <p style="font-size:22px;">No corrections have been made yet.</p>
-{% else %}
-    {% for r in rows %}
-        <div class="entry">
-            <div class="date-line">
-                {{ r.date.strftime('%A %d %B %Y') }} — {{ r.employee.full_name }}
-            </div>
-
-            <div class="times">
-                Start Work: {{ r.sign_in.strftime('%H:%M') if r.sign_in else '—' }}<br>
-                Break Start: {{ r.break_start.strftime('%H:%M') if r.break_start else '—' }}<br>
-                Break End: {{ r.break_end.strftime('%H:%M') if r.break_end else '—' }}<br>
-                Finish Work: {{ r.sign_out.strftime('%H:%M') if r.sign_out else '—' }}
-            </div>
-
-            <div class="meta">
-                Corrected at: {{ r.corrected_at.strftime('%d %b %Y %H:%M') }}
-            </div>
-        </div>
-    {% endfor %}
+    <p>No corrections found.</p>
 {% endif %}
+
+{% for r in rows %}
+    <div class="entry">
+
+        <div class="row-header">
+            <div class="emp-name">{{ r.employee.full_name }}</div>
+            <div class="date">{{ r.date.strftime('%A %d %B %Y') }}</div>
+        </div>
+
+        <div class="details">
+            <strong>Start Work:</strong>
+            {% if r.sign_in %}{{ r.sign_in.strftime('%-I:%M %p') }}{% else %}—{% endif %}<br>
+
+            <strong>Break Start:</strong>
+            {% if r.break_start %}{{ r.break_start.strftime('%-I:%M %p') }}{% else %}—{% endif %}<br>
+
+            <strong>Break End:</strong>
+            {% if r.break_end %}{{ r.break_end.strftime('%-I:%M %p') }}{% else %}—{% endif %}<br>
+
+            <strong>Finish Work:</strong>
+            {% if r.sign_out %}{{ r.sign_out.strftime('%-I:%M %p') }}{% else %}—{% endif %}<br>
+
+            <br>
+            <strong>Corrected By:</strong> {{ r.corrected_by }}<br>
+            <strong>Corrected At:</strong> {{ r.corrected_at.strftime('%d %B %Y %-I:%M %p') }}
+        </div>
+
+        <button class="edit-btn"
+                onclick="window.location.href='/admin/employeehours/day/{{ r.date }}/{{ r.employee.id }}'">
+            Edit Again
+        </button>
+
+    </div>
+{% endfor %}
 
 <button class="back-btn" onclick="window.location.href='/admin'">
     Back to Admin

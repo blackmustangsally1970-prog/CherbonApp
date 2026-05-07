@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Employee — Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background:#f5f5f5;
+            padding:40px;
+            text-align:center;
+        }
+
+        h2 {
+            font-size:36px;
+            margin-bottom:35px;
+        }
+
+        .form-box {
+            background:white;
+            padding:30px;
+            max-width:500px;
+            margin:0 auto;
+            border-radius:12px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.15);
+            text-align:left;
+        }
+
+        label {
+            font-size:18px;
+            font-weight:bold;
+            display:block;
+            margin-top:20px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"] {
+            width:100%;
+            padding:14px;
+            font-size:18px;
+            margin-top:8px;
+            border-radius:8px;
+            border:1px solid #ccc;
+        }
+
+        .save-btn {
+            margin-top:30px;
+            width:100%;
+            padding:16px;
+            background:#4caf50;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            cursor:pointer;
+        }
+
+        .save-btn:hover {
+            background:#3e8e41;
+        }
+
+        .back-btn {
+            margin-top:25px;
+            width:100%;
+            padding:16px;
+            background:#777;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            cursor:pointer;
+        }
+
+        .back-btn:hover {
+            background:#555;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Add New Employee</h2>
+
+<div class="form-box">
+
+    <form method="POST" action="/admin/employees/add">
+
+        <label>Full Name</label>
+        <input type="text" name="full_name" required>
+
+        <label>PIN (4 digits)</label>
+        <input type="password" name="pin" minlength="4" maxlength="4" required>
+
+        <label>Hourly Rate (optional)</label>
+        <input type="number" name="hourly_rate" step="0.01">
+
+        <button class="save-btn" type="submit">
+            Save Employee
+        </button>
+
+    </form>
+
+</div>
+
+<button class="back-btn" onclick="window.location.href='/admin/employees'">
+    Back to Employees
+</button>
+
+</body>
+</html>

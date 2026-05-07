@@ -1,175 +1,87 @@
-<style>
-.top-controls {
-    margin-bottom: 15px;
-}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weekly Summary — Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background:#f5f5f5;
+            padding:40px;
+        }
 
-.menu-btn-small {
-    display: inline-block;
-    background: #eee;
-    border: 1px solid #aaa;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #0645AD;
-    text-decoration: none;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-    margin-right: 12px;
-}
+        h2 {
+            font-size:32px;
+            margin-bottom:25px;
+        }
 
-.menu-btn-small:hover {
-    background: #ddd;
-    text-decoration: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
+        .week-range {
+            font-size:20px;
+            margin-bottom:30px;
+            color:#444;
+        }
 
-.fy-selector {
-    margin-bottom: 20px;
-}
+        .entry {
+            background:white;
+            padding:20px;
+            margin-bottom:15px;
+            border-radius:10px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.15);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
 
-.fy-selector select {
-    margin-right: 10px;
-    padding: 4px 6px;
-}
+        .name {
+            font-size:22px;
+            font-weight:bold;
+        }
 
-.week-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-}
+        .hours {
+            font-size:20px;
+            color:#2a7ae2;
+            font-weight:bold;
+        }
 
-.week-table th, .week-table td {
-    border: 1px solid #ccc;
-    padding: 6px 10px;
-    text-align: center;
-}
+        .back-btn {
+            padding:18px;
+            background:#777;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            margin-top:30px;
+            width:260px;
+            cursor:pointer;
+        }
 
-.sunday {
-    background-color: #d8ffd8; /* light green */
-}
+        .back-btn:hover {
+            background:#555;
+        }
+    </style>
+</head>
+<body>
 
-.total-row {
-    background-color: #f0f0f0;
-    font-weight: bold;
-}
+<h2>Weekly Summary</h2>
 
-.week-nav {
-    margin: 10px 0 20px 0;
-    display: flex;
-    justify-content: space-between;
-}
-
-.nav-btn {
-    display: inline-block;
-    background-color: #007bff;
-    color: white;
-    padding: 6px 14px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.nav-btn:hover {
-    background-color: #0056b3;
-}
-
-.nav-btn.disabled {
-    background-color: #999;
-    pointer-events: none;
-}
-
-
-</style>
-
-<div class="top-controls">
-<a href="{{ url_for('employees_home') }}" class="menu-btn-small">← Employees Menu</a>
+<div class="week-range">
+    {{ start_date.strftime('%A %d %B %Y') }} → {{ end_date.strftime('%A %d %B %Y') }}
 </div>
 
-<div class="week-nav">
-    <a href="{{ url_for('admin_weekly_summary', fy=fy, week=selected_week-1) }}" 
-       class="nav-btn {% if selected_week == 1 %}disabled{% endif %}">
-        ← Previous Week
-    </a>
+{% for emp, total in summary %}
+    <div class="entry">
+        <div class="name">
+            {{ emp.full_name }}
+        </div>
 
-    <a href="{{ url_for('admin_weekly_summary', fy=fy, week=selected_week+1) }}" 
-       class="nav-btn {% if selected_week == weeks|length %}disabled{% endif %}">
-        Next Week →
-    </a>
-</div>
-
-
-<form method="get" class="fy-selector">
-    <label>Financial Year:</label>
-    <select name="fy">
-        {% for y in range(2020, 2035) %}
-            <option value="{{ y }}" {% if y == fy %}selected{% endif %}>
-                {{ y }}–{{ y+1 }}
-            </option>
-        {% endfor %}
-    </select>
-
-    <label>Week:</label>
-    <select name="week">
-        {% for w in weeks %}
-            <option value="{{ w.week_number }}" {% if w.week_number == selected_week %}selected{% endif %}>
-                WK{{ w.week_number }} ({{ w.start.strftime("%d %b") }} – {{ w.end.strftime("%d %b") }})
-            </option>
-        {% endfor %}
-    </select>
-
-    <button type="submit">Go</button>
-</form>
-
-<h1>Weekly Summary (All Employees)</h1>
-
-<p>
-    Week: {{ start_of_week.strftime("%d %b %Y") }}
-    → {{ end_of_week.strftime("%d %b %Y") }}
-</p>
-
-{% for block in summary %}
-    <h2>{{ block.emp.full_name }}</h2>
-
-    <table class="week-table">
-        <tr>
-            <th>Date</th>
-            <th>Start</th>
-            <th>Break Start</th>
-            <th>Break End</th>
-            <th>Finish</th>
-            <th>Daily Total</th>
-            <th>Running Total</th>
-        </tr>
-
-        {% for d in block.week_rows %}
-        <tr class="{% if d.date.weekday() == 6 %}sunday{% endif %}">
-            <td>{{ d.date.strftime("%a %d %b") }}</td>
-
-            <td>{{ d.row.sign_in.strftime("%H:%M") if d.row and d.row.sign_in else "" }}</td>
-            <td>{{ d.row.break_start.strftime("%H:%M") if d.row and d.row.break_start else "" }}</td>
-            <td>{{ d.row.break_end.strftime("%H:%M") if d.row and d.row.break_end else "" }}</td>
-            <td>{{ d.row.sign_out.strftime("%H:%M") if d.row and d.row.sign_out else "" }}</td>
-
-            <td>
-                {% if d.net %}
-                    {{ "%02d:%02d" % (d.net.seconds//3600, (d.net.seconds//60)%60) }}
-                {% endif %}
-            </td>
-
-            <td>
-                {% if d.running_total %}
-                    {{ "%02d:%02d" % (d.running_total.seconds//3600, (d.running_total.seconds//60)%60) }}
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-
-        <tr class="total-row">
-            <td colspan="5"><strong>Weekly Total</strong></td>
-            <td colspan="2">
-                {{ "%02d:%02d" % (block.week_total.seconds//3600, (block.week_total.seconds//60)%60) }}
-            </td>
-        </tr>
-    </table>
-
-    <br><br>
+        <div class="hours">
+            {{ "%.2f"|format(total) }} hrs
+        </div>
+    </div>
 {% endfor %}
+
+<button class="back-btn" onclick="window.location.href='/admin'">
+    Back to Admin
+</button>
+
+</body>
+</html>

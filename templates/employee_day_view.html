@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ date.strftime("%A %-d %B %Y") }}</title>
+    <style>
+        body { font-family: Arial; background:#f5f5f5; padding:40px; }
+        h2 { font-size:32px; margin-bottom:25px; }
+        .box {
+            background:white; padding:25px; border-radius:12px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.15); margin-bottom:20px;
+        }
+        .row { margin-bottom:12px; font-size:20px; }
+        .btn {
+            width:100%; padding:16px; margin-top:15px;
+            background:#2a7ae2; color:white; border:none;
+            border-radius:10px; font-size:20px; cursor:pointer;
+        }
+        .btn:hover { background:#1f5fb4; }
+        .back-btn {
+            margin-top:30px; width:260px; padding:16px;
+            background:#777; color:white; border:none;
+            border-radius:10px; font-size:20px; cursor:pointer;
+        }
+        .back-btn:hover { background:#555; }
+    </style>
+</head>
+<body>
+
+<h2>{{ date.strftime("%A %-d %B %Y") }}</h2>
+
+<div class="box">
+    <div class="row"><strong>Start:</strong> {{ row.sign_in.strftime("%-I:%M %p") if row and row.sign_in else "—" }}</div>
+    <div class="row"><strong>Break Start:</strong> {{ row.break_start.strftime("%-I:%M %p") if row and row.break_start else "—" }}</div>
+    <div class="row"><strong>Break End:</strong> {{ row.break_end.strftime("%-I:%M %p") if row and row.break_end else "—" }}</div>
+    <div class="row"><strong>Finish:</strong> {{ row.sign_out.strftime("%-I:%M %p") if row and row.sign_out else "—" }}</div>
+</div>
+
+<button class="btn" onclick="openModal('start')">Start Work</button>
+<button class="btn" onclick="openModal('break_start')">Break Start</button>
+<button class="btn" onclick="openModal('break_end')">Break End</button>
+<button class="btn" onclick="openModal('finish')">Finish Work</button>
+
+<button class="back-btn" onclick="window.location.href='/employeehours/week'">Back to Week</button>
+
+<!-- Modal -->
+<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+     background:rgba(0,0,0,0.6); padding-top:80px;">
+    <div style="background:white; margin:auto; padding:25px; width:90%; max-width:400px;
+         border-radius:12px; text-align:center;">
+        <h3 id="modal-title"></h3>
+
+        <form id="modal-form" method="POST">
+            <input type="time" name="time" required style="padding:12px; font-size:18px; width:100%; margin-bottom:15px;">
+            <textarea name="notes" placeholder="Notes (optional)" style="width:100%; height:80px; padding:10px; font-size:16px;"></textarea>
+
+            <button class="btn" type="submit">Save</button>
+        </form>
+
+        <button class="back-btn" onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+function openModal(action) {
+    document.getElementById("modal-title").innerText = action.replace("_", " ").toUpperCase();
+    document.getElementById("modal-form").action = "/employeehours/action/" + action + "/{{ date }}";
+    document.getElementById("modal").style.display = "block";
+}
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+}
+</script>
+
+</body>
+</html>

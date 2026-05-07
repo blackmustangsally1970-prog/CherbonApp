@@ -7252,34 +7252,6 @@ Cherbon Waters Admin
 
         return {"status": "error", "message": "Invalid PIN"}, 400
 
-    @app.route("/employeehours/dashboard")
-    def employee_dashboard():
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return redirect("/employeehours")
-
-        emp = Employee.query.get(emp_id)
-
-        # ⭐ STEP 10A — Auto‑Prompt Missing Days
-        today = date.today()
-
-        incomplete_days = EmployeeHours.query.filter(
-            EmployeeHours.employee_id == emp.id,
-            EmployeeHours.date < today,
-            ((EmployeeHours.sign_in == None) | (EmployeeHours.sign_out == None)),
-            EmployeeHours.auto_prompted == False
-        ).all()
-
-        if incomplete_days:
-            for d in incomplete_days:
-                d.auto_prompted = True
-            db.session.commit()
-            return redirect("/employeehours/fix")
-
-        # Normal dashboard row for today
-        row = EmployeeHours.query.filter_by(employee_id=emp.id, date=today).first()
-
-        return render_template("employee_dashboard.html", emp=emp, row=row)
 
 
     @app.route("/admin/employee/<int:emp_id>/hours")
@@ -7497,160 +7469,85 @@ Cherbon Waters Admin
 
         return redirect(f"/admin/employee/{row.employee_id}/hours")
 
+    @app.route("/employeehours/action/<action>/<date>", methods=["POST"])
+    def employee_action(action, date):
+        if "emp_id" not in session:
+            return redirect("/employeehours")
 
-    @app.route("/employeehours/signin", methods=["POST"])
-    def employee_signin_stage1():
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return jsonify({"error": "Not logged in"}), 401
+        emp_id = session["emp_id"]
+        d = datetime.strptime(date, "%Y-%m-%d").date()
 
-        selected = request.form.get("time")
-        if not selected:
-            return jsonify({"error": "Missing time"}), 400
+        row = Hours.query.filter_by(employee_id=emp_id, date=d).first()
+        if not row:
+            row = Hours(employee_id=emp_id, date=d)
+            db.session.add(row)
 
-        selected_dt = parse_dt(selected)
-        today = date.today()
+        time_str = request.form.get("time")
+        notes = request.form.get("notes", "")
 
-        # Get today's row (or create)
-        entry = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=today
-        ).first()
+        t = datetime.strptime(time_str, "%H:%M").time()
+        dt = datetime.combine(d, t)
 
-        if entry and entry.sign_in:
-            return jsonify({"error": "Sign-in already recorded"}), 400
+        field_map = {
+            "start": "sign_in",
+            "break_start": "break_start",
+            "break_end": "break_end",
+            "finish": "sign_out"
+        }
 
-        # VALIDATION: Sign-in CAN be in the future (today only)
-        start_of_day = datetime.combine(today, time(0, 0))
-        end_of_day = datetime.combine(today, time(23, 59, 59))
+        field = field_map.get(action)
+        if field:
+            setattr(row, field, dt)
 
-        if not (start_of_day <= selected_dt <= end_of_day):
-            return jsonify({"error": "Sign-in must be today only"}), 400
+        if notes:
+            row.notes = notes
 
-        # Create row if missing
-        if not entry:
-            entry = EmployeeHours(
-                employee_id=emp_id,
-                date=today
-            )
-            db.session.add(entry)
-
-        # LOCK SIGN-IN
-        entry.sign_in = selected_dt
         db.session.commit()
-
-        return jsonify({"status": "ok", "next": "breaks"})
-
-
-    @app.route("/employeehours/breaks", methods=["POST"])
-    def employee_breaks_stage2():
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return jsonify({"error": "Not logged in"}), 401
-
-        start_raw = request.form.get("break_start")
-        end_raw = request.form.get("break_end")
-
-        if not start_raw or not end_raw:
-            return jsonify({"error": "Missing break times"}), 400
-
-        try:
-            start_dt = parse_dt(start_raw)
-            end_dt = parse_dt(end_raw)
-        except:
-            return jsonify({"error": "Invalid time format"}), 400
-
-        today = date.today()
-
-        entry = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=today
-        ).first()
-
-        if not entry or not entry.sign_in:
-            return jsonify({"error": "Sign-in required first"}), 400
-
-        # Already done → go to Stage 3
-        if entry.break_start and entry.break_end:
-            return jsonify({"error": "Breaks already recorded"}), 400
-
-        # VALIDATION: must be today
-        start_of_day = datetime.combine(today, time(0, 0))
-        end_of_day = datetime.combine(today, time(23, 59, 59))
-
-        if not (start_of_day <= start_dt <= end_of_day):
-            return jsonify({"error": "Break start must be today"}), 400
-
-        if not (start_of_day <= end_dt <= end_of_day):
-            return jsonify({"error": "Break end must be today"}), 400
-
-        # Break end must be after break start
-        if end_dt <= start_dt:
-            return jsonify({"error": "Break end must be after break start"}), 400
-
-        # LOCK BREAKS
-        entry.break_start = start_dt
-        entry.break_end = end_dt
-        db.session.commit()
-
-        return jsonify({"status": "ok", "next": "signout"})
+        return redirect("/employeehours/week")
 
 
-    @app.route("/employeehours/signout", methods=["POST"])
-    def employee_signout_stage3():
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return jsonify({"error": "Not logged in"}), 401
 
-        selected = request.form.get("time")
-        if not selected:
-            return jsonify({"error": "Missing time"}), 400
+    @app.route("/employeehours/day/<date>", methods=["GET", "POST"])
+    def employee_day_view(date):
+        if "emp_id" not in session:
+            return redirect("/employeehours")
 
-        try:
-            selected_dt = parse_dt(selected)
-        except:
-            return jsonify({"error": "Invalid time format"}), 400
+        emp_id = session["emp_id"]
+        d = datetime.strptime(date, "%Y-%m-%d").date()
 
-        today = date.today()
-        now = datetime.now()
+        row = Hours.query.filter_by(employee_id=emp_id, date=d).first()
 
-        # Get today's entry
-        entry = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=today
-        ).first()
+        if request.method == "POST":
+            action = request.path.split("/")[-1]
+            time_str = request.form.get("time")
+            notes = request.form.get("notes", "")
 
-        if not entry or not entry.sign_in:
-            return jsonify({"error": "Sign-in required first"}), 400
+            t = datetime.strptime(time_str, "%H:%M").time()
+            dt = datetime.combine(d, t)
 
-        # Already signed out → locked
-        if entry.sign_out:
-            return jsonify({"error": "Sign-out already recorded"}), 400
+            if not row:
+                row = Hours(employee_id=emp_id, date=d)
+                db.session.add(row)
 
-        # VALIDATION: Sign-out MUST be today
-        start_of_day = datetime.combine(today, time(0, 0))
-        end_of_day = datetime.combine(today, time(23, 59, 59))
+            field_map = {
+                "start": "sign_in",
+                "break_start": "break_start",
+                "break_end": "break_end",
+                "finish": "sign_out"
+            }
 
-        if not (start_of_day <= selected_dt <= end_of_day):
-            return jsonify({"error": "Sign-out must be today"}), 400
+            field = field_map.get(action)
+            if field:
+                setattr(row, field, dt)
 
-        # VALIDATION: Sign-out CANNOT be in the future
-        if selected_dt > now:
-            return jsonify({"error": "Cannot sign out in advance"}), 400
+            if notes:
+                row.notes = notes
 
-        # VALIDATION: Must be after sign-in
-        if selected_dt <= entry.sign_in:
-            return jsonify({"error": "Sign-out must be after sign-in"}), 400
+            db.session.commit()
+            return redirect("/employeehours/week")
 
-        # VALIDATION: Must be after break_end (if break exists)
-        if entry.break_end and selected_dt <= entry.break_end:
-            return jsonify({"error": "Sign-out must be after break end"}), 400
+        return render_template("employee_day_view.html", date=d, row=row)
 
-        # LOCK SIGN-OUT
-        entry.sign_out = selected_dt
-        db.session.commit()
-
-        return jsonify({"status": "ok", "next": "done"})
 
 
     @app.route("/admin/employeehours")
@@ -7671,9 +7568,249 @@ Cherbon Waters Admin
             db.session.commit()
         return {"status": "ok"}
 
+
+
+
     @app.route("/employee/setup")
     def employee_setup_page():
         return render_template("employee_setup.html")
+
+    @app.route("/employeehours/week")
+    def employee_week_view():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+        days = []
+
+        for i in range(7):
+            d = start_of_week + timedelta(days=i)
+            row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
+
+            if d > today:
+                status = "future"
+            elif row and row.sign_in and row.sign_out:
+                status = "complete"
+            elif row and row.sign_in and not row.sign_out:
+                status = "incomplete"
+            elif d == today:
+                status = "today"
+            else:
+                status = "incomplete"
+
+            days.append({
+                "date": d,
+                "status": status
+            })
+
+        return render_template("employee_week_view.html", days=days, today=today)
+
+
+
+    @app.route("/employeehours/day/<string:day>")
+    def employee_day_view(day):
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        try:
+            selected_date = datetime.strptime(day, "%Y-%m-%d").date()
+        except:
+            return "Invalid date", 400
+
+        row = EmployeeHours.query.filter_by(
+            employee_id=emp_id,
+            date=selected_date
+        ).first()
+
+        return render_template(
+            "employee_day_view.html",
+            date=selected_date,
+            row=row
+        )
+
+
+
+    @app.route("/employeehours/action/start", methods=["POST"])
+    def action_start_work():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        date_raw = request.form.get("date")
+        time_raw = request.form.get("time")
+
+        selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+        selected_dt = parse_dt(time_raw)
+
+        if selected_dt.date() != selected_date:
+            return jsonify({"error": "Start Work must be on the same day"}), 400
+
+        if selected_dt > datetime.now():
+            return jsonify({"error": "Cannot start work in the future"}), 400
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        if not row:
+            row = EmployeeHours(employee_id=emp_id, date=selected_date)
+            db.session.add(row)
+
+        if row.sign_in:
+            return jsonify({"error": "Start Work already recorded"}), 400
+
+        row.sign_in = selected_dt
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+
+
+    @app.route("/employeehours/action/break_start", methods=["POST"])
+    def action_break_start():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        date_raw = request.form.get("date")
+        time_raw = request.form.get("time")
+
+        selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+        selected_dt = parse_dt(time_raw)
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        if not row or not row.sign_in:
+            return jsonify({"error": "Start Work required first"}), 400
+
+        if row.break_start:
+            return jsonify({"error": "Break Start already recorded"}), 400
+
+        if selected_dt <= row.sign_in:
+            return jsonify({"error": "Break Start must be after Start Work"}), 400
+
+        if selected_dt > datetime.now():
+            return jsonify({"error": "Cannot start break in the future"}), 400
+
+        row.break_start = selected_dt
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+
+
+    @app.route("/employeehours/action/break_end", methods=["POST"])
+    def action_break_end():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        date_raw = request.form.get("date")
+        time_raw = request.form.get("time")
+
+        selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+        selected_dt = parse_dt(time_raw)
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        if not row or not row.break_start:
+            return jsonify({"error": "Break Start required first"}), 400
+
+        if row.break_end:
+            return jsonify({"error": "Break End already recorded"}), 400
+
+        if selected_dt <= row.break_start:
+            return jsonify({"error": "Break End must be after Break Start"}), 400
+
+        if selected_dt > datetime.now():
+            return jsonify({"error": "Cannot end break in the future"}), 400
+
+        row.break_end = selected_dt
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+
+
+    @app.route("/employeehours/action/finish", methods=["POST"])
+    def action_finish_work():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        date_raw = request.form.get("date")
+        time_raw = request.form.get("time")
+
+        selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+        selected_dt = parse_dt(time_raw)
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        if not row or not row.sign_in:
+            return jsonify({"error": "Start Work required first"}), 400
+
+        if row.sign_out:
+            return jsonify({"error": "Finish Work already recorded"}), 400
+
+        if selected_dt <= row.sign_in:
+            return jsonify({"error": "Finish Work must be after Start Work"}), 400
+
+        if row.break_end and selected_dt <= row.break_end:
+            return jsonify({"error": "Finish Work must be after Break End"}), 400
+
+        if selected_dt > datetime.now():
+            return jsonify({"error": "Cannot finish work in the future"}), 400
+
+        row.sign_out = selected_dt
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+
+
+    @app.route("/admin/employeehours/day/<string:day>/<int:emp_id>")
+    def admin_override_day(day, emp_id):
+        try:
+            selected_date = datetime.strptime(day, "%Y-%m-%d").date()
+        except:
+            return "Invalid date", 400
+
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+
+        return render_template(
+            "admin_override_day.html",
+            date=selected_date,
+            emp_id=emp_id,
+            row=row
+        )
+
+
+
+    @app.route("/admin/employeehours/save_day", methods=["POST"])
+    def admin_save_day():
+        emp_id = int(request.form["emp_id"])
+        date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
+
+        row = Hours.query.filter_by(employee_id=emp_id, date=date).first()
+        if not row:
+            row = Hours(employee_id=emp_id, date=date)
+            db.session.add(row)
+
+        def parse(field):
+            v = request.form.get(field)
+            if not v:
+                return None
+            return datetime.combine(date, datetime.strptime(v, "%H:%M").time())
+
+        row.sign_in = parse("sign_in")
+        row.break_start = parse("break_start")
+        row.break_end = parse("break_end")
+        row.sign_out = parse("sign_out")
+
+        row.corrected_by = "Admin"
+        row.corrected_at = datetime.now()
+
+        db.session.commit()
+        return redirect(f"/admin/employee/{emp_id}/hours")
+
+
 
     @app.route("/employee/setup", methods=["POST"])
     def employee_setup():
@@ -7704,107 +7841,6 @@ Cherbon Waters Admin
     def employeehours_login_page():
         return render_template("employee_pin_login.html")
 
-    @app.route("/employeehours/fix")
-    def employee_fix_list():
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return redirect("/employeehours")
-
-        today = date.today()
-
-        incomplete_days = EmployeeHours.query.filter(
-            EmployeeHours.employee_id == emp_id,
-            EmployeeHours.date < today,
-            ((EmployeeHours.sign_in == None) | (EmployeeHours.sign_out == None))
-        ).order_by(EmployeeHours.date.desc()).all()
-
-        return render_template("employee_fix_list.html", incomplete_days=incomplete_days)
-
-    @app.route("/employeehours/fix/<int:row_id>")
-    def employee_fix_day(row_id):
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return redirect("/employeehours")
-
-        row = EmployeeHours.query.get(row_id)
-        if not row or row.employee_id != emp_id:
-            return "Not allowed", 403
-
-        return render_template("employee_fix_day.html", row=row)
-
-    @app.route("/employeehours/fix/<int:row_id>", methods=["POST"])
-    def employee_fix_day_save(row_id):
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return redirect("/employeehours")
-
-        row = EmployeeHours.query.get(row_id)
-        if not row or row.employee_id != emp_id:
-            return "Not allowed", 403
-
-        from datetime import datetime, date
-
-        def parse_or_none(val):
-            return datetime.fromisoformat(val) if val else None
-
-        sign_in = parse_or_none(request.form.get("sign_in"))
-        break_start = parse_or_none(request.form.get("break_start"))
-        break_end = parse_or_none(request.form.get("break_end"))
-        sign_out = parse_or_none(request.form.get("sign_out"))
-
-        # RULE 1: No future timestamps
-        now = datetime.now()
-        for t in [sign_in, break_start, break_end, sign_out]:
-            if t and t > now:
-                return "Times cannot be in the future", 400
-
-        # RULE 2: All timestamps must match the row's date
-        row_date = row.date
-        for t in [sign_in, break_start, break_end, sign_out]:
-            if t and t.date() != row_date:
-                return "All times must be on the same date", 400
-
-        # RULE 3: sign_in must exist
-        if not sign_in:
-            return "Start Work time is required", 400
-
-        # RULE 4: sign_out must exist
-        if not sign_out:
-            return "Finish Work time is required", 400
-
-        # RULE 5: sign_in < sign_out
-        if sign_in >= sign_out:
-            return "Start Work must be before Finish Work", 400
-
-        # RULE 6: If break_start exists, it must be after sign_in
-        if break_start and break_start <= sign_in:
-            return "Break Start must be after Start Work", 400
-
-        # RULE 7: If break_end exists, it must be after break_start
-        if break_start and break_end and break_end <= break_start:
-            return "Break End must be after Break Start", 400
-
-        # RULE 8: Break must be inside the work period
-        if break_start and break_start >= sign_out:
-            return "Break Start must be before Finish Work", 400
-
-        if break_end and break_end >= sign_out:
-            return "Break End must be before Finish Work", 400
-
-        # ⭐ All good — save
-        row.sign_in = sign_in
-        row.break_start = break_start
-        row.break_end = break_end
-        row.sign_out = sign_out
-
-        # ⭐ STEP 8B — Mark as corrected
-        row.corrected = True
-        row.corrected_at = datetime.now()
-        row.corrected_by = None
-
-        db.session.commit()
-
-        return redirect("/employeehours/fix")
 
     @app.route("/admin/corrections")
     def admin_corrections():

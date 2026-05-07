@@ -1,149 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Employees</title>
+    <title>Employees — Admin</title>
     <style>
-        body { font-family: Arial; background:#f5f5f5; padding:40px; }
-        h2 { text-align:center; }
-        table { width:100%; border-collapse:collapse; margin-top:20px; background:white; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:left; }
-        th { background:#eee; }
-        .btn { padding:8px 14px; border:none; border-radius:4px; cursor:pointer; }
-        .add { background:#2a7ae2; color:white; }
-        .add:hover { background:#1f5fb4; }
-        .deact { background:#e74c3c; color:white; }
-        .deact:hover { background:#c0392b; }
-        .code { font-family: monospace; }
-        .form-box { background:white; padding:20px; border-radius:6px; max-width:400px; margin:20px auto; }
-        input { width:100%; padding:10px; margin:8px 0; font-size:16px; }
+        body {
+            font-family: Arial, sans-serif;
+            background:#f5f5f5;
+            padding:40px;
+            text-align:center;
+        }
 
-.menu-btn-small {
-    display: inline-block;
-    background: #eee;
-    border: 1px solid #aaa;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #0645AD;
-    text-decoration: none;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-    margin-right: 12px;
-}
+        h2 {
+            font-size:36px;
+            margin-bottom:35px;
+        }
 
-.menu-btn-small:hover {
-    background: #ddd;
-    text-decoration: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
+        .list {
+            max-width:600px;
+            margin:0 auto;
+            display:flex;
+            flex-direction:column;
+            gap:20px;
+        }
 
+        .entry {
+            background:white;
+            padding:20px;
+            border-radius:12px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.15);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
 
+        .name {
+            font-size:22px;
+            font-weight:bold;
+        }
+
+        .btn {
+            padding:14px 22px;
+            background:#2a7ae2;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:18px;
+            cursor:pointer;
+        }
+
+        .btn:hover {
+            background:#1f5fb4;
+        }
+
+        .add-btn {
+            margin-top:40px;
+            padding:18px;
+            background:#4caf50;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            width:260px;
+            cursor:pointer;
+        }
+
+        .add-btn:hover {
+            background:#3e8e41;
+        }
+
+        .back-btn {
+            margin-top:20px;
+            padding:18px;
+            background:#777;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:22px;
+            width:260px;
+            cursor:pointer;
+        }
+
+        .back-btn:hover {
+            background:#555;
+        }
     </style>
 </head>
 <body>
 
-<div class="top-controls">
-<a href="{{ url_for('employees_home') }}" class="menu-btn-small">← Employees Menu</a>
-</div>
+<h2>Employees</h2>
 
-<h2>Employee Management</h2>
+<div class="list">
 
-<div class="form-box">
-    <h3>Add Employee</h3>
-    <input id="full_name" placeholder="Full Name">
-    <button class="btn add" onclick="addEmployee()">Create Employee</button>
-    <div id="msg"></div>
-</div>
+    {% for emp in employees %}
+        <div class="entry">
+            <div class="name">{{ emp.full_name }}</div>
 
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Setup Code</th>
-        <th>Active</th>
-        <th>Actions</th>
-    </tr>
-
-    {% for e in employees %}
-    <tr>
-        <td>{{ e.full_name }}</td>
-        <td class="code">
-            {% if e.setup_code %}
-                {{ e.setup_code }}
-            {% else %}
-                —
-            {% endif %}
-        </td>
-        <td>{{ "Yes" if e.active else "No" }}</td>
-        <td>
-            {% if e.active %}
-                <button class="reset-pin-btn" data-id="{{ e.id }}">Reset PIN</button>
-                <button class="btn deact" onclick="deactivate({{ e.id }})">Deactivate</button>
-            {% else %}
-                —
-            {% endif %}
-        </td>
-    </tr>
+            <button class="btn"
+                    onclick="window.location.href='/admin/employee/{{ emp.id }}/hours'">
+                View Hours
+            </button>
+        </div>
     {% endfor %}
-</table>
 
-<script>
-function addEmployee() {
-    fetch("/admin/employees/new", {
-        method: "POST",
-        body: new URLSearchParams({
-            full_name: document.getElementById("full_name").value
-        })
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.status === "ok") {
-            document.getElementById("msg").innerHTML = 
-                "<div style='color:green'>Employee created. Setup code: " + d.setup_code + "</div>";
-            setTimeout(() => location.reload(), 1200);
-        } else {
-            document.getElementById("msg").innerHTML = 
-                "<div style='color:red'>Error: " + d + "</div>";
-        }
-    });
-}
+</div>
 
-function deactivate(id) {
-    fetch("/admin/employees/deactivate/" + id, { method:"POST" })
-        .then(() => location.reload());
-}
-</script>
+<button class="add-btn" onclick="window.location.href='/admin/employees/add'">
+    Add New Employee
+</button>
 
-<script>
-    document.querySelectorAll(".reset-pin-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const id = btn.dataset.id;
-
-            if (!confirm("Reset this employee's PIN? They will receive a new setup link.")) {
-                return;
-            }
-
-            fetch(`/admin/reset_pin/${id}`, {
-                method: "POST"
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    alert("Error: " + data.error);
-                    return;
-                }
-
-                alert(
-                    "PIN Reset for: " + data.employee + "\n\n" +
-                    "Send them this link:\n" + data.reset_link
-                );
-            })
-            .catch(err => {
-                alert("Unexpected error resetting PIN.");
-            });
-        });
-    });
-</script>
-
-
+<button class="back-btn" onclick="window.location.href='/admin'">
+    Back to Admin
+</button>
 
 </body>
 </html>
