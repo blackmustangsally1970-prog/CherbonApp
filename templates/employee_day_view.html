@@ -168,5 +168,72 @@ function closeModal() {
 }
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const form = document.getElementById("modal-form");
+
+    if (!form) return;
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const data = new FormData(form);
+
+        // Send to backend for validation
+        const response = await fetch("", {
+            method: "POST",
+            body: data
+        });
+
+        const text = await response.text();
+
+        // ============================================================
+        //  AUTO-CORRECT SUGGESTION
+        // ============================================================
+        if (text.startsWith("Did you mean")) {
+            alert(text);
+            return;
+        }
+
+        // ============================================================
+        //  SHIFT CONFIRMATION
+        // ============================================================
+        if (text.startsWith("CONFIRM_SHIFT::")) {
+            const parts = text.split("::");
+            const finish_time = parts[1];
+            const hours = parts[2];
+
+            const ok = confirm(
+                "You are signing out at " + finish_time +
+                "\nThis shift = " + hours +
+                "\n\nConfirm?"
+            );
+
+            if (ok) {
+                // Add hidden field to bypass confirmation
+                const hidden = document.createElement("input");
+                hidden.type = "hidden";
+                hidden.name = "confirmed";
+                hidden.value = "1";
+                form.appendChild(hidden);
+
+                form.submit();
+            }
+
+            return;
+        }
+
+        // ============================================================
+        //  NORMAL SUCCESS (redirect)
+        // ============================================================
+        window.location.reload();
+    });
+
+});
+</script>
+
+
+
 </body>
 </html>

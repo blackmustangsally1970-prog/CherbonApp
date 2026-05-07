@@ -7314,6 +7314,35 @@ Cherbon Waters Admin
             if not editable:
                 return "This day is complete and cannot be edited", 403
 
+            # If user already confirmed, skip checks and save
+            if request.form.get("confirmed") == "1":
+                action = request.form.get("action")
+                time_str = request.form.get("time")
+                notes = request.form.get("notes", "")
+                t = datetime.strptime(time_str, "%H:%M").time()
+                dt = datetime.combine(d, t)
+
+                if not row:
+                    row = EmployeeHours(employee_id=emp_id, date=d)
+                    db.session.add(row)
+
+                field_map = {
+                    "start": "sign_in",
+                    "break_start": "break_start",
+                    "break_end": "break_end",
+                    "finish": "sign_out"
+                }
+
+                field = field_map.get(action)
+                if field:
+                    setattr(row, field, dt)
+
+                if notes:
+                    row.notes = notes
+
+                db.session.commit()
+                return redirect(f"/employeehours/day?date={date_str}")
+
             action = request.form.get("action")
             time_str = request.form.get("time")
             notes = request.form.get("notes", "")
@@ -7326,6 +7355,76 @@ Cherbon Waters Admin
             if not row:
                 row = EmployeeHours(employee_id=emp_id, date=d)
                 db.session.add(row)
+
+            # ============================================================
+            #  ACE'S FULL COMBINED VALIDATION LOGIC
+            # ============================================================
+
+            now = datetime.now(ZoneInfo("Australia/Brisbane"))
+
+            # 1) SUSPICIOUS AM/PM CHECK (SIGN-IN ONLY)
+            if action == "start":
+                # If selected time is more than 6 hours in the future → AM/PM mistake
+                if dt > now + timedelta(hours=6):
+                    return f"Suspicious time: {t.strftime('%I:%M %p')}. Check AM/PM.", 400
+
+                # WRONG-DAY CHECK (signing in for a past day)
+                if d < now.date():
+                    # If they pick a time after 6 PM for a past day → almost always wrong
+                    if dt.time() > time(18, 0):
+                        return f"You're signing in for {d.strftime('%A')}. {t.strftime('%I:%M %p')} looks incorrect.", 400
+
+                # AUTO-CORRECT SUGGESTION
+                if t.hour >= 18:  # 6 PM or later
+                    alt_hour = (t.hour - 12) if t.hour > 12 else t.hour
+                    alt_time = time(alt_hour, t.minute)
+                    alt_str = alt_time.strftime("%I:%M %p")
+                    return f"Did you mean {alt_str} instead of {t.strftime('%I:%M %p')}?", 400
+
+            # 2) BREAK START VALIDATION
+            if action == "break_start":
+                if not row or not row.sign_in:
+                    return "You must start work before starting a break.", 400
+                if dt <= row.sign_in:
+                    return "Break start must be after your start time.", 400
+
+            # 3) BREAK END VALIDATION
+            if action == "break_end":
+                if not row or not row.break_start:
+                    return "You must start your break before ending it.", 400
+                if dt <= row.break_start:
+                    return "Break end must be after break start.", 400
+
+            # 4) FINISH VALIDATION (WITH OVERNIGHT SHIFT SUPPORT)
+            if action == "finish":
+                if not row or not row.sign_in:
+                    return "You must start work before finishing.", 400
+
+                # SAME-DAY FINISH (normal)
+                if dt >= row.sign_in:
+                    end_dt = dt
+
+                else:
+                    # POSSIBLE OVERNIGHT SHIFT
+                    overnight_dt = dt + timedelta(days=1)
+
+                    # Allow if finish is within 16 hours of start (long shifts allowed)
+                    if overnight_dt <= row.sign_in + timedelta(hours=16):
+                        end_dt = overnight_dt  # corrected next-day timestamp
+                    else:
+                        return "Finish time cannot be before start time.", 400
+
+                # SHIFT HOURS CALCULATION
+                duration = end_dt - row.sign_in
+                hours = duration.total_seconds() / 3600
+                hours_str = f"{int(hours)}h {int((hours % 1) * 60)}m"
+
+                # Send confirmation request to frontend
+                return f"CONFIRM_SHIFT::{t.strftime('%I:%M %p')}::{hours_str}", 200
+
+            # ============================================================
+            #  END VALIDATION
+            # ============================================================
 
             # Map actions to fields
             field_map = {
@@ -7356,7 +7455,6 @@ Cherbon Waters Admin
             is_incomplete=is_incomplete,
             is_future=is_future
         )
-
 
     @app.route("/employeehours/login", methods=["POST"])
     def employeehours_login():
