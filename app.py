@@ -7278,7 +7278,8 @@ Cherbon Waters Admin
 
         return redirect(url_for("admin_employees"))
 
-    @app.route("/employeehours/day")
+
+    @app.route("/employeehours/day", methods=["GET", "POST"])
     def employeehours_day_view():
         emp_id = session.get("employee_id")
         if not emp_id:
@@ -7293,7 +7294,42 @@ Cherbon Waters Admin
         except:
             return "Invalid date", 400
 
+        # Load existing row if any
         row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
+
+        if request.method == "POST":
+            action = request.form.get("action")
+            time_str = request.form.get("time")
+            notes = request.form.get("notes", "")
+
+            # Convert time string to datetime
+            t = datetime.strptime(time_str, "%H:%M").time()
+            dt = datetime.combine(d, t)
+
+            # Create row if missing
+            if not row:
+                row = EmployeeHours(employee_id=emp_id, date=d)
+                db.session.add(row)
+
+            # Map actions to fields
+            field_map = {
+                "start": "sign_in",
+                "break_start": "break_start",
+                "break_end": "break_end",
+                "finish": "sign_out"
+            }
+
+            field = field_map.get(action)
+            if field:
+                setattr(row, field, dt)
+
+            if notes:
+                row.notes = notes
+
+            db.session.commit()
+
+            # Reload the same day
+            return redirect(f"/employeehours/day?date={date_str}")
 
         return render_template("employee_day_view.html", date=d, row=row)
 
@@ -7577,46 +7613,6 @@ Cherbon Waters Admin
 
 
 
-    @app.route("/employeehours/day/<date>", methods=["GET", "POST"])
-    def employee_day_view(date):
-        if "emp_id" not in session:
-            return redirect("/employeehours")
-
-        emp_id = session["emp_id"]
-        d = datetime.strptime(date, "%Y-%m-%d").date()
-
-        row = Hours.query.filter_by(employee_id=emp_id, date=d).first()
-
-        if request.method == "POST":
-            action = request.path.split("/")[-1]
-            time_str = request.form.get("time")
-            notes = request.form.get("notes", "")
-
-            t = datetime.strptime(time_str, "%H:%M").time()
-            dt = datetime.combine(d, t)
-
-            if not row:
-                row = Hours(employee_id=emp_id, date=d)
-                db.session.add(row)
-
-            field_map = {
-                "start": "sign_in",
-                "break_start": "break_start",
-                "break_end": "break_end",
-                "finish": "sign_out"
-            }
-
-            field = field_map.get(action)
-            if field:
-                setattr(row, field, dt)
-
-            if notes:
-                row.notes = notes
-
-            db.session.commit()
-            return redirect("/employeehours/week")
-
-        return render_template("employee_day_view.html", date=d, row=row)
 
 
 
