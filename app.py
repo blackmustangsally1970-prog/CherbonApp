@@ -7321,6 +7321,7 @@ Cherbon Waters Admin
                 notes = request.form.get("notes", "")
                 t = datetime.strptime(time_str, "%H:%M").time()
                 dt = datetime.combine(d, t)
+                dt = dt.replace(tzinfo=ZoneInfo("Australia/Brisbane"))
 
                 if not row:
                     row = EmployeeHours(employee_id=emp_id, date=d)
