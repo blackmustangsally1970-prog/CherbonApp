@@ -1,116 +1,71 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Employees — Admin</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background:#f5f5f5;
-            padding:40px;
-            text-align:center;
-        }
-
-        h2 {
-            font-size:36px;
-            margin-bottom:35px;
-        }
-
-        .list {
-            max-width:600px;
-            margin:0 auto;
-            display:flex;
-            flex-direction:column;
-            gap:20px;
-        }
-
-        .entry {
-            background:white;
-            padding:20px;
-            border-radius:12px;
-            box-shadow:0 3px 10px rgba(0,0,0,0.15);
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-        }
-
-        .name {
-            font-size:22px;
-            font-weight:bold;
-        }
-
-        .btn {
-            padding:14px 22px;
-            background:#2a7ae2;
-            color:white;
-            border:none;
-            border-radius:8px;
-            font-size:18px;
-            cursor:pointer;
-        }
-
-        .btn:hover {
-            background:#1f5fb4;
-        }
-
-        .add-btn {
-            margin-top:40px;
-            padding:18px;
-            background:#4caf50;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-size:22px;
-            width:260px;
-            cursor:pointer;
-        }
-
-        .add-btn:hover {
-            background:#3e8e41;
-        }
-
-        .back-btn {
-            margin-top:20px;
-            padding:18px;
-            background:#777;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-size:22px;
-            width:260px;
-            cursor:pointer;
-        }
-
-        .back-btn:hover {
-            background:#555;
-        }
-    </style>
+    <meta charset="utf-8">
+    <title>Employees</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light">
+<div class="container py-4">
 
-<h2>Employees</h2>
+    <h2 class="mb-4">Employees</h2>
 
-<div class="list">
+    <a href="{{ url_for('admin_add_employee') }}" class="btn btn-primary mb-3">
+        + Add Employee
+    </a>
 
-    {% for emp in employees %}
-        <div class="entry">
-            <div class="name">{{ emp.full_name }}</div>
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th style="width: 260px;">Actions</th>
+            </tr>
+        </thead>
 
-            <button class="btn"
-                    onclick="window.location.href='/admin/employee/{{ emp.id }}/hours'">
-                View Hours
-            </button>
-        </div>
-    {% endfor %}
+        <tbody>
+            {% for emp in employees %}
+            <tr>
+                <td>{{ emp.full_name }}</td>
+                <td>{{ emp.phone or "-" }}</td>
+                <td>{{ emp.role or "-" }}</td>
+
+                <td>
+                    {% if emp.active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    <a href="{{ url_for('admin_edit_employee', emp_id=emp.id) }}"
+                       class="btn btn-sm btn-outline-primary">
+                        Edit
+                    </a>
+
+                    <form action="{{ url_for('admin_reset_pin', emp_id=emp.id) }}"
+                          method="POST" style="display:inline;">
+                        <button class="btn btn-sm btn-warning">
+                            Reset PIN
+                        </button>
+                    </form>
+
+                    <form action="{{ url_for('admin_delete_employee', emp_id=emp.id) }}"
+                          method="POST" style="display:inline;"
+                          onsubmit="return confirm('Deactivate this employee?');">
+                        <button class="btn btn-sm btn-danger">
+                            Deactivate
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
 </div>
-
-<button class="add-btn" onclick="window.location.href='/admin/employees/add'">
-    Add New Employee
-</button>
-
-<button class="back-btn" onclick="window.location.href='/admin'">
-    Back to Admin
-</button>
-
 </body>
 </html>

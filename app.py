@@ -7238,22 +7238,6 @@ Cherbon Waters Admin
         return {"status": "ok", "setup_code": setup_code}
 
 
-    @app.route("/employeehours/login", methods=["POST"])
-    def employee_pin_login():
-        pin = request.form.get("pin")
-
-        from werkzeug.security import check_password_hash
-
-        employees = Employee.query.filter(Employee.pin_hash.isnot(None)).all()
-        for emp in employees:
-            if check_password_hash(emp.pin_hash, pin):
-                session["employee_id"] = emp.id
-                return {"status": "ok"}
-
-        return {"status": "error", "message": "Invalid PIN"}, 400
-
-
-
     @app.route("/admin/employee/<int:emp_id>/hours")
     def admin_employee_hours_list(emp_id):
         emp = Employee.query.get(emp_id)
@@ -7276,30 +7260,96 @@ Cherbon Waters Admin
 
         return render_template("admin_edit_hours.html", emp=emp, row=row)
 
-    @app.route("/admin/reset_pin/<int:emp_id>", methods=["POST"])
+    @app.route("/admin/employees/<int:emp_id>/reset_pin", methods=["POST"])
     def admin_reset_pin(emp_id):
-        # Must be admin
-        if not session.get("is_admin"):
-            return jsonify({"error": "Unauthorized"}), 403
+        emp = Employee.query.get_or_404(emp_id)
 
-        emp = Employee.query.get(emp_id)
-        if not emp:
-            return jsonify({"error": "Employee not found"}), 404
-
-        # Generate new setup code
+        # Generate setup code: CW-XXXXXX (hex)
         import secrets
-        new_code = secrets.token_hex(4)
+        hex_code = secrets.token_hex(3).upper()  # 6 hex chars
+        setup_code = f"CW-{hex_code}"
 
-        emp.setup_code = new_code
+        emp.setup_code = setup_code
+        emp.pin_hash = None
+        emp.pin_failures = 0
+        emp.locked_until = None
+
         db.session.commit()
 
-        reset_link = f"https://cherbonwaters.com/employee/setup?code={new_code}"
+        return {"status": "ok", "setup_code": setup_code}
 
-        return jsonify({
-            "status": "ok",
-            "employee": emp.full_name,
-            "reset_link": reset_link
-        })
+    @app.route("/employeehours/login", methods=["POST"])
+    def employeehours_login():
+        pin = request.form.get("pin", "").strip()
+
+        if not pin or not pin.isdigit() or len(pin) != 6:
+            return {"error": "Invalid PIN format"}, 400
+
+        from werkzeug.security import check_password_hash
+
+        # Find employee by PIN hash
+        emp = None
+        for e in Employee.query.all():
+            if e.pin_hash and check_password_hash(e.pin_hash, pin):
+                emp = e
+                break
+
+        # If no employee matches this PIN → failure
+        if not emp:
+            # No idea who attempted → cannot increment per-employee failures
+            return {"error": "Incorrect PIN"}, 400
+
+        # Check lockout
+        now = datetime.now()
+        if emp.locked_until and emp.locked_until > now:
+            remaining = int((emp.locked_until - now).total_seconds() // 60)
+            return {"error": f"Account locked. Try again in {remaining} minutes."}, 403
+
+        # If PIN matches, reset failures
+        emp.pin_failures = 0
+        emp.locked_until = None
+        db.session.commit()
+
+        # Start session
+        session["employee_id"] = emp.id
+
+        return {"status": "ok"}
+
+    @app.route("/admin/employees/<int:emp_id>/unlock", methods=["POST"])
+    def admin_unlock_employee(emp_id):
+        emp = Employee.query.get_or_404(emp_id)
+
+        emp.pin_failures = 0
+        emp.locked_until = None
+
+        db.session.commit()
+
+        return {"status": "ok"}
+
+    @app.route("/admin/employees/<int:emp_id>/force_logout", methods=["POST"])
+    def admin_force_logout(emp_id):
+        # If the employee is currently logged in, remove their session
+        if session.get("employee_id") == emp_id:
+            session.pop("employee_id", None)
+
+        return {"status": "ok"}
+
+    @app.route("/admin/lockouts/clear", methods=["POST"])
+    def admin_clear_all_lockouts():
+        employees = Employee.query.all()
+        for emp in employees:
+            emp.pin_failures = 0
+            emp.locked_until = None
+
+        db.session.commit()
+        return {"status": "ok"}
+
+
+    @app.route("/admin/lockouts")
+    def admin_lockouts():
+        locked = Employee.query.filter(Employee.locked_until != None).all()
+        return render_template("admin_lockouts.html", locked=locked)
+
 
 
     @app.route("/admin/weekly_summary")
@@ -7555,10 +7605,6 @@ Cherbon Waters Admin
         rows = EmployeeHours.query.order_by(EmployeeHours.date.desc()).all()
         return render_template("admin_employee_hours.html", rows=rows)
 
-    @app.route("/admin/employees")
-    def admin_employees():
-        employees = Employee.query.order_by(Employee.full_name.asc()).all()
-        return render_template("admin_employees.html", employees=employees)
 
     @app.route("/admin/employees/deactivate/<int:emp_id>", methods=["POST"])
     def admin_deactivate_employee(emp_id):
@@ -7569,6 +7615,74 @@ Cherbon Waters Admin
         return {"status": "ok"}
 
 
+    # -------------------------------
+    # ADMIN: EMPLOYEE MANAGEMENT
+    # -------------------------------
+
+    @app.route("/admin/employees")
+    def admin_employees():
+        employees = Employee.query.order_by(Employee.full_name).all()
+        return render_template("admin_employees.html", employees=employees)
+
+
+    @app.route("/admin/employees/add", methods=["GET", "POST"])
+    def admin_add_employee():
+        if request.method == "POST":
+            full_name = request.form["full_name"].strip()
+            phone = request.form["phone"].strip()
+            role = request.form["role"].strip()
+            active = True if request.form.get("active") == "on" else False
+
+            emp = Employee(
+                full_name=full_name,
+                phone=phone,
+                role=role,
+                active=active,
+                setup_code=None,
+                pin_hash=None,
+                pin_failures=0,
+                locked_until=None
+            )
+
+            db.session.add(emp)
+            db.session.commit()
+
+            flash("Employee added.", "success")
+            return redirect(url_for("admin_employees"))
+
+        return render_template("admin_employee_add.html")
+
+
+    @app.route("/admin/employees/<int:emp_id>/edit", methods=["GET", "POST"])
+    def admin_edit_employee(emp_id):
+        emp = Employee.query.get_or_404(emp_id)
+
+        if request.method == "POST":
+            emp.full_name = request.form["full_name"].strip()
+            emp.phone = request.form["phone"].strip()
+            emp.role = request.form["role"].strip()
+            emp.active = True if request.form.get("active") == "on" else False
+
+            db.session.commit()
+            flash("Employee updated.", "success")
+            return redirect(url_for("admin_employees"))
+
+        return render_template("admin_employee_edit.html", emp=emp)
+
+
+    @app.route("/admin/employees/<int:emp_id>/delete", methods=["POST"])
+    def admin_delete_employee(emp_id):
+        emp = Employee.query.get_or_404(emp_id)
+
+        # Soft delete — keep hours history
+        emp.active = False
+        emp.setup_code = None
+        emp.pin_hash = None
+
+        db.session.commit()
+
+        flash("Employee deactivated.", "info")
+        return redirect(url_for("admin_employees"))
 
 
     @app.route("/employee/setup")
@@ -7760,61 +7874,73 @@ Cherbon Waters Admin
             row=row
         )
 
+    @app.route("/admin/employees/<int:emp_id>/setup_qr")
+    def admin_employee_setup_qr(emp_id):
+        emp = Employee.query.get_or_404(emp_id)
 
+        if not emp.setup_code:
+            return "No setup code. Reset PIN first.", 400
 
-    @app.route("/admin/employeehours/save_day", methods=["POST"])
-    def admin_save_day():
-        emp_id = int(request.form["emp_id"])
-        date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
+        setup_url = f"https://cherbonapp.click/employeehours/setup?code={emp.setup_code}"
 
-        row = Hours.query.filter_by(employee_id=emp_id, date=date).first()
-        if not row:
-            row = Hours(employee_id=emp_id, date=date)
-            db.session.add(row)
+        import qrcode
+        import base64
+        from io import BytesIO
 
-        def parse(field):
-            v = request.form.get(field)
-            if not v:
-                return None
-            return datetime.combine(date, datetime.strptime(v, "%H:%M").time())
+        img = qrcode.make(setup_url)
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        qr_b64 = base64.b64encode(buf.getvalue()).decode()
 
-        row.sign_in = parse("sign_in")
-        row.break_start = parse("break_start")
-        row.break_end = parse("break_end")
-        row.sign_out = parse("sign_out")
-
-        row.corrected_by = "Admin"
-        row.corrected_at = datetime.now()
-
-        db.session.commit()
-        return redirect(f"/admin/employee/{emp_id}/hours")
-
-
-
-    @app.route("/employee/setup", methods=["POST"])
-    def employee_setup():
-        code = request.form.get("setup_code")
-        pin = request.form.get("pin")
+        return render_template(
+            "admin_employee_setup_qr.html",
+            emp=emp,
+            setup_url=setup_url,
+            qr_b64=qr_b64
+        )
+    @app.route("/employeehours/setup", methods=["GET", "POST"])
+    def employeehours_setup():
+        code = request.args.get("code") if request.method == "GET" else request.form.get("code")
+        if not code:
+            return "Missing setup code", 400
 
         emp = Employee.query.filter_by(setup_code=code).first()
         if not emp:
-            return "Invalid setup code", 400
+            return "Invalid or expired setup code", 400
 
-        if not pin or len(pin) < 4 or len(pin) > 6:
-            return "Invalid PIN", 400
+        if request.method == "POST":
+            pin = request.form.get("pin", "")
+            confirm = request.form.get("confirm", "")
 
-        # enforce unique PIN
-        from werkzeug.security import generate_password_hash, check_password_hash
-        existing = Employee.query.all()
-        for e in existing:
-            if e.pin_hash and check_password_hash(e.pin_hash, pin):
-                return "PIN already taken", 400
+            # PIN rules
+            if len(pin) != 6 or not pin.isdigit():
+                return "PIN must be exactly 6 digits", 400
 
-        emp.pin_hash = generate_password_hash(pin)
-        emp.setup_code = None  # one-time use only
-        db.session.commit()
+            if pin != confirm:
+                return "PINs do not match", 400
 
-        return {"status": "ok"}
+            # No sequences
+            if pin in ("012345", "123456", "234567", "345678", "456789"):
+                return "PIN cannot be a sequence", 400
+
+            # No repeats
+            if len(set(pin)) == 1:
+                return "PIN cannot be repeating digits", 400
+
+            # Hash + save
+            from werkzeug.security import generate_password_hash
+            emp.pin_hash = generate_password_hash(pin)
+            emp.setup_code = None  # one-time use
+            emp.pin_failures = 0
+            emp.locked_until = None
+
+            db.session.commit()
+
+            return redirect("/employeehours")
+
+        return render_template("employee_setup.html", emp=emp, code=code)
+
+
 
     @app.route("/employeehours")
     def employeehours_login_page():
@@ -7833,6 +7959,8 @@ Cherbon Waters Admin
     @app.route("/employees")
     def employees_home():
         return render_template("employees_home.html")
+
+
 
 
     @app.route("/other_tools")
