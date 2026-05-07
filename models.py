@@ -8,9 +8,13 @@ class Employee(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(120), nullable=False)
-    setup_code = db.Column(db.String(20), unique=True)   # one-time onboarding code
-    pin_hash = db.Column(db.String(200))                 # hashed PIN
+    setup_code = db.Column(db.String(20), unique=True)
+    pin_hash = db.Column(db.String(200))
     active = db.Column(db.Boolean, default=True)
+
+    # Lockout system
+    pin_failures = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
 
 
 class EmployeeHours(db.Model):
