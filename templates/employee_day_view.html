@@ -69,7 +69,11 @@
 
 {% else %}
     <div class="locked">
-        This day is complete and cannot be edited.
+        {% if is_future %}
+            This day cannot be edited in advance.
+        {% else %}
+            This day is complete and cannot be edited.
+        {% endif %}
     </div>
 {% endif %}
 

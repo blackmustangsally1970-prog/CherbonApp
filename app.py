@@ -7353,7 +7353,8 @@ Cherbon Waters Admin
             row=row,
             editable=editable,
             is_today=is_today,
-            is_incomplete=is_incomplete
+            is_incomplete=is_incomplete,
+            is_future=is_future
         )
 
 
