@@ -7609,27 +7609,6 @@ Cherbon Waters Admin
 
 
 
-    @app.route("/employeehours/day/<string:day>")
-    def employee_day_view(day):
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return redirect("/employeehours")
-
-        try:
-            selected_date = datetime.strptime(day, "%Y-%m-%d").date()
-        except:
-            return "Invalid date", 400
-
-        row = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=selected_date
-        ).first()
-
-        return render_template(
-            "employee_day_view.html",
-            date=selected_date,
-            row=row
-        )
 
 
 
