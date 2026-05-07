@@ -7281,6 +7281,14 @@ Cherbon Waters Admin
 
     @app.route("/employeehours/day", methods=["GET", "POST"])
     def employeehours_day_view():
+
+        def make_aware(x):
+            if x is None:
+                return None
+            if x.tzinfo is None:
+                return x.replace(tzinfo=ZoneInfo("Australia/Brisbane"))
+            return x
+
         emp_id = session.get("employee_id")
         if not emp_id:
             return redirect("/employeehours")
@@ -7296,6 +7304,13 @@ Cherbon Waters Admin
 
         # Load existing row if any
         row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
+
+        # Make stored datetimes timezone-aware
+        if row:
+            row.sign_in = make_aware(row.sign_in)
+            row.break_start = make_aware(row.break_start)
+            row.break_end = make_aware(row.break_end)
+            row.sign_out = make_aware(row.sign_out)
 
         # Determine editability rules
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
@@ -7319,6 +7334,7 @@ Cherbon Waters Admin
                 action = request.form.get("action")
                 time_str = request.form.get("time")
                 notes = request.form.get("notes", "")
+
                 t = datetime.strptime(time_str, "%H:%M").time()
                 dt = datetime.combine(d, t)
                 dt = dt.replace(tzinfo=ZoneInfo("Australia/Brisbane"))
@@ -7344,6 +7360,7 @@ Cherbon Waters Admin
                 db.session.commit()
                 return redirect(f"/employeehours/day?date={date_str}")
 
+            # Normal POST (validation required)
             action = request.form.get("action")
             time_str = request.form.get("time")
             notes = request.form.get("notes", "")
@@ -7351,27 +7368,28 @@ Cherbon Waters Admin
             # Convert time string to datetime
             t = datetime.strptime(time_str, "%H:%M").time()
             dt = datetime.combine(d, t)
+            dt = dt.replace(tzinfo=ZoneInfo("Australia/Brisbane"))
 
             # Create row if missing
             if not row:
                 row = EmployeeHours(employee_id=emp_id, date=d)
                 db.session.add(row)
 
+            now = datetime.now(ZoneInfo("Australia/Brisbane"))
+
             # ============================================================
             #  ACE'S FULL COMBINED VALIDATION LOGIC
             # ============================================================
 
-            now = datetime.now(ZoneInfo("Australia/Brisbane"))
-
             # 1) SUSPICIOUS AM/PM CHECK (SIGN-IN ONLY)
             if action == "start":
+
                 # If selected time is more than 6 hours in the future → AM/PM mistake
                 if dt > now + timedelta(hours=6):
                     return f"Suspicious time: {t.strftime('%I:%M %p')}. Check AM/PM.", 400
 
                 # WRONG-DAY CHECK (signing in for a past day)
                 if d < now.date():
-                    # If they pick a time after 6 PM for a past day → almost always wrong
                     if dt.time() > time(18, 0):
                         return f"You're signing in for {d.strftime('%A')}. {t.strftime('%I:%M %p')} looks incorrect.", 400
 
@@ -7384,24 +7402,24 @@ Cherbon Waters Admin
 
             # 2) BREAK START VALIDATION
             if action == "break_start":
-                if not row or not row.sign_in:
+                if not row.sign_in:
                     return "You must start work before starting a break.", 400
                 if dt <= row.sign_in:
                     return "Break start must be after your start time.", 400
 
             # 3) BREAK END VALIDATION
             if action == "break_end":
-                if not row or not row.break_start:
+                if not row.break_start:
                     return "You must start your break before ending it.", 400
                 if dt <= row.break_start:
                     return "Break end must be after break start.", 400
 
             # 4) FINISH VALIDATION (WITH OVERNIGHT SHIFT SUPPORT)
             if action == "finish":
-                if not row or not row.sign_in:
+                if not row.sign_in:
                     return "You must start work before finishing.", 400
 
-                # SAME-DAY FINISH (normal)
+                # SAME-DAY FINISH
                 if dt >= row.sign_in:
                     end_dt = dt
 
@@ -7409,9 +7427,8 @@ Cherbon Waters Admin
                     # POSSIBLE OVERNIGHT SHIFT
                     overnight_dt = dt + timedelta(days=1)
 
-                    # Allow if finish is within 16 hours of start (long shifts allowed)
                     if overnight_dt <= row.sign_in + timedelta(hours=16):
-                        end_dt = overnight_dt  # corrected next-day timestamp
+                        end_dt = overnight_dt
                     else:
                         return "Finish time cannot be before start time.", 400
 
@@ -7420,7 +7437,6 @@ Cherbon Waters Admin
                 hours = duration.total_seconds() / 3600
                 hours_str = f"{int(hours)}h {int((hours % 1) * 60)}m"
 
-                # Send confirmation request to frontend
                 return f"CONFIRM_SHIFT::{t.strftime('%I:%M %p')}::{hours_str}", 200
 
             # ============================================================
@@ -7443,8 +7459,6 @@ Cherbon Waters Admin
                 row.notes = notes
 
             db.session.commit()
-
-            # Reload the same day
             return redirect(f"/employeehours/day?date={date_str}")
 
         return render_template(
