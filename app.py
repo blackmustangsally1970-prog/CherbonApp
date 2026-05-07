@@ -7286,7 +7286,12 @@ Cherbon Waters Admin
             if x is None:
                 return None
             if x.tzinfo is None:
-                return x.replace(tzinfo=ZoneInfo("Australia/Brisbane"))
+                # Attach timezone WITHOUT shifting the time
+                return datetime(
+                    x.year, x.month, x.day,
+                    x.hour, x.minute, x.second,
+                    tzinfo=ZoneInfo("Australia/Brisbane")
+                )
             return x
 
         emp_id = session.get("employee_id")
