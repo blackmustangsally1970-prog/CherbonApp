@@ -7733,7 +7733,7 @@ Cherbon Waters Admin
         if not emp_id:
             return redirect("/employeehours")
 
-        today = date.today()
+        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
         start_of_week = today - timedelta(days=today.weekday())
         days = []
 
