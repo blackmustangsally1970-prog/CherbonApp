@@ -7366,8 +7366,7 @@ Cherbon Waters Admin
 
             # Convert time string to datetime
             t = datetime.strptime(time_str, "%H:%M").time()
-            dt = datetime.combine(d, t)
-            dt = dt.replace(tzinfo=ZoneInfo("Australia/Brisbane"))
+            dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
 
             # Create row if missing
             if not row:
