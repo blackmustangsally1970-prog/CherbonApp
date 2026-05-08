@@ -7807,10 +7807,15 @@ Cherbon Waters Admin
         emp = Employee.query.get_or_404(emp_id)
 
         if request.method == "POST":
-            emp.full_name = request.form["full_name"].strip()
-            emp.phone = request.form["phone"].strip()
-            emp.role = request.form["role"].strip()
-            emp.active = True if request.form.get("active") == "on" else False
+            full_name = request.form.get("full_name", "").strip()
+            phone = request.form.get("phone", "").strip()
+            role = request.form.get("role", "").strip()
+            active = True if request.form.get("active") == "on" else False
+
+            emp.full_name = full_name
+            emp.phone = phone
+            emp.role = role
+            emp.active = active
 
             db.session.commit()
             flash("Employee updated.", "success")
