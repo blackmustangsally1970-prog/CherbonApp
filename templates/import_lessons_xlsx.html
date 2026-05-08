@@ -1,0 +1,6 @@
+<h3>Import Lessons (XLSX)</h3>
+
+<form action="{{ url_for('import_lessons_xlsx') }}" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" required>
+    <button type="submit">Upload</button>
+</form>

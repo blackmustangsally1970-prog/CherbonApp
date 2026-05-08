@@ -6806,8 +6806,14 @@ Cherbon Waters Admin
         return render_template("phone_lookup.html", client=client, number=number)
 
 
-    @app.route('/import_lessons_xlsx', methods=['POST'])
+    @app.route('/import_lessons_xlsx', methods=['GET', 'POST'])
     def import_lessons_xlsx():
+
+        # ⭐ HANDLE GET FIRST — SHOW THE UPLOAD PAGE
+        if request.method == 'GET':
+            return render_template('import_lessons_xlsx.html')
+
+        # ⭐ POST BELOW — PROCESS THE FILE
         file = request.files.get('file')
         if not file:
             return jsonify({"status": "error", "message": "No file uploaded"}), 400
