@@ -7429,19 +7429,26 @@ Cherbon Waters Admin
                 # SAME-DAY FINISH
                 if dt >= row.sign_in:
                     end_dt = dt
-
                 else:
                     # POSSIBLE OVERNIGHT SHIFT
                     overnight_dt = dt + timedelta(days=1)
-
                     if overnight_dt <= row.sign_in + timedelta(hours=16):
                         end_dt = overnight_dt
                     else:
                         return "Finish time cannot be before start time.", 400
 
-                # SHIFT HOURS CALCULATION
-                duration = end_dt - row.sign_in
-                hours = duration.total_seconds() / 3600
+                # ---------------------------------------------------
+                #   BREAK‑DEDUCTED SHIFT HOURS (THE REAL FIX)
+                # ---------------------------------------------------
+                shift_seconds = (end_dt - row.sign_in).total_seconds()
+
+                break_seconds = 0
+                if row.break_start and row.break_end:
+                    break_seconds = (row.break_end - row.break_start).total_seconds()
+
+                paid_seconds = shift_seconds - break_seconds
+
+                hours = paid_seconds / 3600
                 hours_str = f"{int(hours)}h {int((hours % 1) * 60)}m"
 
                 return f"CONFIRM_SHIFT::{t.strftime('%I:%M %p')}::{hours_str}", 200
