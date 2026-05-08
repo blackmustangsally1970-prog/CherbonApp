@@ -7807,22 +7807,16 @@ Cherbon Waters Admin
         emp = Employee.query.get_or_404(emp_id)
 
         if request.method == "POST":
-            full_name = request.form.get("full_name", "").strip()
-            phone = request.form.get("phone", "").strip()
-            role = request.form.get("role", "").strip()
-            active = True if request.form.get("active") == "on" else False
-
-            emp.full_name = full_name
-            emp.phone = phone
-            emp.role = role
-            emp.active = active
+            emp.full_name = request.form.get("full_name", "").strip()
+            emp.phone = request.form.get("phone", "").strip()
+            emp.role = request.form.get("role", "").strip()
+            emp.active = True if request.form.get("active") == "on" else False
 
             db.session.commit()
             flash("Employee updated.", "success")
             return redirect(url_for("admin_employees"))
 
         return render_template("admin_employee_edit.html", emp=emp)
-
 
     @app.route("/admin/employees/<int:emp_id>/delete", methods=["POST"])
     def admin_delete_employee(emp_id):
