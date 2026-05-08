@@ -1177,7 +1177,7 @@ def create_app():
     app.config.from_object(Config())
     app.config['JOTFORM_API_KEY'] = os.getenv("JOTFORM_API_KEY", "")
 
-    # Load ClickSend credentials from Azure App Settings or environment
+    # Load ClickSend credentials
     app.config['CLICKSEND_USERNAME'] = (
         os.environ.get('CLICKSEND_USERNAME')
         or os.environ.get('APPSETTING_CLICKSEND_USERNAME')
@@ -7264,18 +7264,25 @@ Cherbon Waters Admin
     def admin_reset_pin(emp_id):
         emp = Employee.query.get_or_404(emp_id)
 
-        # Generate setup code: CW-XXXXXX (hex)
         import secrets
-        hex_code = secrets.token_hex(3).upper()  # 6 hex chars
+        hex_code = secrets.token_hex(3).upper()
         setup_code = f"CW-{hex_code}"
 
         emp.setup_code = setup_code
         emp.pin_hash = None
         emp.pin_failures = 0
         emp.locked_until = None
-
         db.session.commit()
 
+        # --- SEND SMS USING YOUR EXISTING HELPER ---
+        send_sms_clicksend(
+            emp.phone,
+            f"Hi {emp.full_name}, your Cherbon Waters login reset code is {setup_code}. "
+            f"Tap here to create your new PIN: https://cherbonapp.click/employee/setup",
+            app.config["EQUESTRIAN_SENDER"]
+        )
+
+        flash(f"SMS sent to {emp.phone}", "success")
         return redirect(url_for("admin_employees"))
 
 

@@ -56,12 +56,13 @@
                         Edit
                     </a>
 
-                    <form action="{{ url_for('admin_reset_pin', emp_id=emp.id) }}"
-                          method="POST" style="display:inline;">
-                        <button class="btn btn-sm btn-warning">
-                            Reset PIN
-                        </button>
-                    </form>
+<form action="{{ url_for('admin_reset_pin', emp_id=emp.id) }}"
+      method="POST" style="display:inline;"
+      onsubmit="return confirm('Send new login code to {{ emp.phone }}?');">
+    <button class="btn btn-sm btn-warning">
+        Reset PIN
+    </button>
+</form>
 
                     <form action="{{ url_for('admin_delete_employee', emp_id=emp.id) }}"
                           method="POST" style="display:inline;"
