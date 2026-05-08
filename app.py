@@ -7238,7 +7238,7 @@ Cherbon Waters Admin
         return {"status": "ok", "setup_code": setup_code}
 
 
-    @app.route("/admin/employee/<int:emp_id>/hours")
+    @app.route("/admin/employees/<int:emp_id>/hours")
     def admin_employee_hours_list(emp_id):
         emp = Employee.query.get(emp_id)
         if not emp:
@@ -7250,7 +7250,7 @@ Cherbon Waters Admin
 
         return render_template("admin_employee_hours_list.html", emp=emp, rows=rows)
 
-    @app.route("/admin/employee/hours/<int:row_id>/edit")
+    @app.route("/admin/employees/hours/<int:row_id>/edit")
     def admin_edit_hours(row_id):
         row = EmployeeHours.query.get(row_id)
         if not row:
