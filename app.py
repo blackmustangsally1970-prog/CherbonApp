@@ -7714,7 +7714,7 @@ Cherbon Waters Admin
 
         db.session.commit()
 
-        return redirect(f"/admin/employee/{row.employee_id}/hours")
+        return redirect(f"/admin/employees/{row.employee_id}/hours")
 
     @app.route("/employeehours/action/<action>/<date>", methods=["POST"])
     def employee_action(action, date):
