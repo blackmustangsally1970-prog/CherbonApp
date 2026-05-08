@@ -7271,9 +7271,12 @@ Cherbon Waters Admin
         emp.setup_code = setup_code
         db.session.commit()
 
+        reset_link = f"https://cherbonapp.click/employeehours?code={setup_code}"
+
         send_sms_clicksend(
             emp.phone,
-            f"Your Cherbon Waters login reset code is {setup_code}",
+            f"Your Cherbon Waters login reset code is {setup_code}\n"
+            f"Tap to set your PIN:\n{reset_link}",
             app.config["EQUESTRIAN_SENDER"]
         )
 
