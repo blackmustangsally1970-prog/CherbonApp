@@ -8021,10 +8021,22 @@ Cherbon Waters Admin
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot finish work in the future"}), 400
 
-        row.sign_out = selected_dt
-        db.session.commit()
+        # ---------------------------------------------------------
+        #   CALCULATE PAID HOURS (BREAK DEDUCTED)
+        # ---------------------------------------------------------
+        shift_seconds = (selected_dt - row.sign_in).total_seconds()
 
-        return jsonify({"status": "ok"})
+        break_seconds = 0
+        if row.break_start and row.break_end:
+            break_seconds = (row.break_end - row.break_start).total_seconds()
+
+        paid_seconds = shift_seconds - break_seconds
+        hours = round(paid_seconds / 3600, 2)
+
+        # ---------------------------------------------------------
+        #   SEND CONFIRMATION BACK TO FRONTEND
+        # ---------------------------------------------------------
+        return f"CONFIRM_SHIFT::{selected_dt.strftime('%-I:%M %p')}::{hours}"
 
 
 
