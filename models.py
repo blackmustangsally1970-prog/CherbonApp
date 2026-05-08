@@ -9,6 +9,7 @@ class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(120), nullable=False)
     setup_code = db.Column(db.String(20), unique=True)
+    phone = db.Column(db.String(30))  # <-- NEW FIELD
     pin_hash = db.Column(db.String(200))
     active = db.Column(db.Boolean, default=True)
 

@@ -7269,22 +7269,16 @@ Cherbon Waters Admin
         setup_code = f"CW-{hex_code}"
 
         emp.setup_code = setup_code
-        emp.pin_hash = None
-        emp.pin_failures = 0
-        emp.locked_until = None
         db.session.commit()
 
-        # --- SEND SMS USING YOUR EXISTING HELPER ---
         send_sms_clicksend(
             emp.phone,
-            f"Hi {emp.full_name}, your Cherbon Waters login reset code is {setup_code}. "
-            f"Tap here to create your new PIN: https://cherbonapp.click/employee/setup",
+            f"Your Cherbon Waters login reset code is {setup_code}",
             app.config["EQUESTRIAN_SENDER"]
         )
 
         flash(f"SMS sent to {emp.phone}", "success")
         return redirect(url_for("admin_employees"))
-
 
     @app.route("/employeehours/day", methods=["GET", "POST"])
     def employeehours_day_view():
@@ -7793,23 +7787,15 @@ Cherbon Waters Admin
         if request.method == "POST":
             full_name = request.form["full_name"].strip()
             phone = request.form["phone"].strip()
-            role = request.form["role"].strip()
-            active = True if request.form.get("active") == "on" else False
 
             emp = Employee(
                 full_name=full_name,
                 phone=phone,
-                role=role,
-                active=active,
-                setup_code=None,
-                pin_hash=None,
-                pin_failures=0,
-                locked_until=None
+                active=True
             )
 
             db.session.add(emp)
             db.session.commit()
-
             flash("Employee added.", "success")
             return redirect(url_for("admin_employees"))
 
