@@ -7691,7 +7691,7 @@ Cherbon Waters Admin
         )
 
 
-    @app.route("/admin/employee/hours/<int:row_id>/edit", methods=["POST"])
+    @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
     def admin_edit_hours_save(row_id):
         row = EmployeeHours.query.get(row_id)
         if not row:
