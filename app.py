@@ -3547,7 +3547,7 @@ def create_app():
 
         rows = (
             db.session.query(IncomingSubmission)
-            .filter_by(processed=False)
+            .filter_by(processed=False, ignored=False)
             .order_by(IncomingSubmission.received_at.desc())
             .offset((page - 1) * per_page)
             .limit(per_page)
