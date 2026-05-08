@@ -9,7 +9,7 @@
             background:white; padding:25px; border-radius:12px;
             box-shadow:0 3px 10px rgba(0,0,0,0.15); margin-bottom:20px;
         }
-        .row { margin-bottom:12px; font-size:20px; }
+        .row { margin-bottom:12px; font-size:20px; display:flex; justify-content:space-between; }
 
         .btn {
             width:100%;
@@ -47,6 +47,21 @@
             text-align:center;
             margin-top:20px;
         }
+
+        /* ⭐ COLOUR CODING */
+        .status-green {
+            background:#d4edda;
+            padding:6px 12px;
+            border-radius:8px;
+            font-weight:bold;
+        }
+
+        .status-yellow {
+            background:#fff3cd;
+            padding:6px 12px;
+            border-radius:8px;
+            font-weight:bold;
+        }
     </style>
 </head>
 <body>
@@ -54,10 +69,35 @@
 <h2>{{ date.strftime("%A %-d %B %Y") }}</h2>
 
 <div class="box">
-    <div class="row"><strong>Start:</strong> {{ row.sign_in.strftime("%-I:%M %p") if row and row.sign_in else "—" }}</div>
-    <div class="row"><strong>Break Start:</strong> {{ row.break_start.strftime("%-I:%M %p") if row and row.break_start else "—" }}</div>
-    <div class="row"><strong>Break End:</strong> {{ row.break_end.strftime("%-I:%M %p") if row and row.break_end else "—" }}</div>
-    <div class="row"><strong>Finish:</strong> {{ row.sign_out.strftime("%-I:%M %p") if row and row.sign_out else "—" }}</div>
+
+    <div class="row">
+        <strong>Start:</strong>
+        <span class="{{ 'status-green' if row and row.sign_in else 'status-yellow' }}">
+            {{ row.sign_in.strftime("%-I:%M %p") if row and row.sign_in else "—" }}
+        </span>
+    </div>
+
+    <div class="row">
+        <strong>Break Start:</strong>
+        <span class="{{ 'status-green' if row and row.break_start else 'status-yellow' }}">
+            {{ row.break_start.strftime("%-I:%M %p") if row and row.break_start else "—" }}
+        </span>
+    </div>
+
+    <div class="row">
+        <strong>Break End:</strong>
+        <span class="{{ 'status-green' if row and row.break_end else 'status-yellow' }}">
+            {{ row.break_end.strftime("%-I:%M %p") if row and row.break_end else "—" }}
+        </span>
+    </div>
+
+    <div class="row">
+        <strong>Finish:</strong>
+        <span class="{{ 'status-green' if row and row.sign_out else 'status-yellow' }}">
+            {{ row.sign_out.strftime("%-I:%M %p") if row and row.sign_out else "—" }}
+        </span>
+    </div>
+
 </div>
 
 {% if is_future %}
@@ -68,12 +108,10 @@
 
 {% else %}
     <!-- ⭐ ALWAYS SHOW ALL FOUR BUTTONS UNTIL FINISH WORK EXISTS ⭐ -->
-
     <button class="btn" onclick="openModal('start')">Start Work</button>
     <button class="btn" onclick="openModal('break_start')">Break Start</button>
     <button class="btn" onclick="openModal('break_end')">Break End</button>
     <button class="btn" onclick="openModal('finish')">Finish Work</button>
-
 {% endif %}
 
 <button class="back-btn" onclick="window.location.href='/employeehours/week'">Back to Week</button>
