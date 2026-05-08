@@ -7895,13 +7895,18 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+
+        # 🔒 BLOCK IF DAY COMPLETE
+        if row and row.sign_out:
+            return jsonify({"error": "Day is complete and cannot be edited"}), 403
+
         if selected_dt.date() != selected_date:
             return jsonify({"error": "Start Work must be on the same day"}), 400
 
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot start work in the future"}), 400
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
         if not row:
             row = EmployeeHours(employee_id=emp_id, date=selected_date)
             db.session.add(row)
@@ -7913,7 +7918,6 @@ Cherbon Waters Admin
         db.session.commit()
 
         return jsonify({"status": "ok"})
-
 
 
     @app.route("/employeehours/action/break_start", methods=["POST"])
@@ -7929,6 +7933,11 @@ Cherbon Waters Admin
         selected_dt = parse_dt(time_raw)
 
         row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+
+        # 🔒 BLOCK IF DAY COMPLETE
+        if row and row.sign_out:
+            return jsonify({"error": "Day is complete and cannot be edited"}), 403
+
         if not row or not row.sign_in:
             return jsonify({"error": "Start Work required first"}), 400
 
@@ -7947,7 +7956,6 @@ Cherbon Waters Admin
         return jsonify({"status": "ok"})
 
 
-
     @app.route("/employeehours/action/break_end", methods=["POST"])
     def action_break_end():
         emp_id = session.get("employee_id")
@@ -7961,6 +7969,11 @@ Cherbon Waters Admin
         selected_dt = parse_dt(time_raw)
 
         row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+
+        # 🔒 BLOCK IF DAY COMPLETE
+        if row and row.sign_out:
+            return jsonify({"error": "Day is complete and cannot be edited"}), 403
+
         if not row or not row.break_start:
             return jsonify({"error": "Break Start required first"}), 400
 
@@ -7979,7 +7992,6 @@ Cherbon Waters Admin
         return jsonify({"status": "ok"})
 
 
-
     @app.route("/employeehours/action/finish", methods=["POST"])
     def action_finish_work():
         emp_id = session.get("employee_id")
@@ -7993,6 +8005,7 @@ Cherbon Waters Admin
         selected_dt = parse_dt(time_raw)
 
         row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+
         if not row or not row.sign_in:
             return jsonify({"error": "Start Work required first"}), 400
 

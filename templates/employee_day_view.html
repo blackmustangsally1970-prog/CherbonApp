@@ -10,35 +10,43 @@
             box-shadow:0 3px 10px rgba(0,0,0,0.15); margin-bottom:20px;
         }
         .row { margin-bottom:12px; font-size:20px; }
-.btn {
-    width:100%;
-    padding:48px;   /* was 16px — now 3× bigger */
-    margin-top:25px;
-    background:#2a7ae2;
-    color:white;
-    border:none;
-    border-radius:14px;
-    font-size:32px; /* bigger text */
-    cursor:pointer;
-    font-weight:bold;
-}
 
-.btn:hover { background:#1f5fb4; }
+        .btn {
+            width:100%;
+            padding:48px;
+            margin-top:25px;
+            background:#2a7ae2;
+            color:white;
+            border:none;
+            border-radius:14px;
+            font-size:32px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+        .btn:hover { background:#1f5fb4; }
 
-.back-btn {
-    margin-top:40px;
-    width:100%;
-    padding:48px;   /* was 16px */
-    background:#777;
-    color:white;
-    border:none;
-    border-radius:14px;
-    font-size:32px;
-    cursor:pointer;
-    font-weight:bold;
-}
+        .back-btn {
+            margin-top:40px;
+            width:100%;
+            padding:48px;
+            background:#777;
+            color:white;
+            border:none;
+            border-radius:14px;
+            font-size:32px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+        .back-btn:hover { background:#555; }
 
-.back-btn:hover { background:#555; }
+        .locked {
+            background:#ffe0e0;
+            padding:25px;
+            border-radius:12px;
+            font-size:24px;
+            text-align:center;
+            margin-top:20px;
+        }
     </style>
 </head>
 <body>
@@ -52,29 +60,33 @@
     <div class="row"><strong>Finish:</strong> {{ row.sign_out.strftime("%-I:%M %p") if row and row.sign_out else "—" }}</div>
 </div>
 
-{% if editable %}
+{% if is_future %}
+    <div class="locked">This day cannot be edited in advance.</div>
+
+{% elif row and row.sign_out %}
+    <div class="locked">This day is complete and cannot be edited.</div>
+
+{% else %}
+    {# ===========================
+       DAY IS EDITABLE
+       =========================== #}
 
     {% if not row or not row.sign_in %}
         <button class="btn" onclick="openModal('start')">Start Work</button>
     {% endif %}
 
-{% if editable %}
-    <button class="btn" onclick="openModal('break_start')">Break Start</button>
-    <button class="btn" onclick="openModal('break_end')">Break End</button>
-{% endif %}
+    {% if row and row.sign_in and not row.break_start %}
+        <button class="btn" onclick="openModal('break_start')">Break Start</button>
+    {% endif %}
 
-    {% if not row or not row.sign_out %}
+    {% if row and row.break_start and not row.break_end %}
+        <button class="btn" onclick="openModal('break_end')">Break End</button>
+    {% endif %}
+
+    {% if row and row.break_end and not row.sign_out %}
         <button class="btn" onclick="openModal('finish')">Finish Work</button>
     {% endif %}
 
-{% else %}
-    <div class="locked">
-        {% if is_future %}
-            This day cannot be edited in advance.
-        {% else %}
-            This day is complete and cannot be edited.
-        {% endif %}
-    </div>
 {% endif %}
 
 <button class="back-btn" onclick="window.location.href='/employeehours/week'">Back to Week</button>
@@ -87,7 +99,6 @@
     width:100%; height:100%;
     background:rgba(0,0,0,0.6);
 ">
-
     <div style="
         background:white;
         margin:0;
@@ -99,24 +110,22 @@
         overflow-y:auto;
         box-sizing:border-box;
     ">
-
         <h3 id="modal-title" style="font-size:36px; margin-bottom:25px;"></h3>
 
         <form id="modal-form" method="POST" action="/employeehours/day?date={{ date }}">
-
             <input type="hidden" name="action" id="modal-action">
 
-<input type="time" name="time" required
-       style="
-           padding:22px;
-           font-size:28px;
-           width:100%;
-           max-width:380px;     /* ⭐ keeps it from going too wide */
-           margin:0 auto 25px auto;
-           display:block;
-           border-radius:12px;
-           box-sizing:border-box;
-       ">
+            <input type="time" name="time" required
+                   style="
+                       padding:22px;
+                       font-size:28px;
+                       width:100%;
+                       max-width:380px;
+                       margin:0 auto 25px auto;
+                       display:block;
+                       border-radius:12px;
+                       box-sizing:border-box;
+                   ">
 
             <textarea name="notes" placeholder="Notes (optional)"
                       style="
@@ -152,10 +161,8 @@
                 ">
             Cancel
         </button>
-
     </div>
 </div>
-
 
 <script>
 function openModal(action) {
@@ -170,35 +177,21 @@ function closeModal() {
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
     const form = document.getElementById("modal-form");
-
     if (!form) return;
 
     form.addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const data = new FormData(form);
-
-        // Send to backend for validation
-        const response = await fetch("", {
-            method: "POST",
-            body: data
-        });
-
+        const response = await fetch("", { method: "POST", body: data });
         const text = await response.text();
 
-        // ============================================================
-        //  AUTO-CORRECT SUGGESTION
-        // ============================================================
         if (text.startsWith("Did you mean")) {
             alert(text);
             return;
         }
 
-        // ============================================================
-        //  SHIFT CONFIRMATION
-        // ============================================================
         if (text.startsWith("CONFIRM_SHIFT::")) {
             const parts = text.split("::");
             const finish_time = parts[1];
@@ -211,29 +204,20 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
             if (ok) {
-                // Add hidden field to bypass confirmation
                 const hidden = document.createElement("input");
                 hidden.type = "hidden";
                 hidden.name = "confirmed";
                 hidden.value = "1";
                 form.appendChild(hidden);
-
                 form.submit();
             }
-
             return;
         }
 
-        // ============================================================
-        //  NORMAL SUCCESS (redirect)
-        // ============================================================
         window.location.reload();
     });
-
 });
 </script>
-
-
 
 </body>
 </html>
