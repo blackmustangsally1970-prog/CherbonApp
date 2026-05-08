@@ -67,25 +67,12 @@
     <div class="locked">This day is complete and cannot be edited.</div>
 
 {% else %}
-    {# ===========================
-       DAY IS EDITABLE
-       =========================== #}
+    <!-- ⭐ ALWAYS SHOW ALL FOUR BUTTONS UNTIL FINISH WORK EXISTS ⭐ -->
 
-    {% if not row or not row.sign_in %}
-        <button class="btn" onclick="openModal('start')">Start Work</button>
-    {% endif %}
-
-    {% if row and row.sign_in and not row.break_start %}
-        <button class="btn" onclick="openModal('break_start')">Break Start</button>
-    {% endif %}
-
-    {% if row and row.break_start and not row.break_end %}
-        <button class="btn" onclick="openModal('break_end')">Break End</button>
-    {% endif %}
-
-    {% if row and row.break_end and not row.sign_out %}
-        <button class="btn" onclick="openModal('finish')">Finish Work</button>
-    {% endif %}
+    <button class="btn" onclick="openModal('start')">Start Work</button>
+    <button class="btn" onclick="openModal('break_start')">Break Start</button>
+    <button class="btn" onclick="openModal('break_end')">Break End</button>
+    <button class="btn" onclick="openModal('finish')">Finish Work</button>
 
 {% endif %}
 
