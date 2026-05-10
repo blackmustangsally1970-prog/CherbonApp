@@ -20,26 +20,30 @@
             color:#444;
         }
 
-        .entry {
+        table {
+            width:100%;
+            border-collapse:collapse;
+            margin-bottom:40px;
             background:white;
-            padding:20px;
-            margin-bottom:15px;
-            border-radius:10px;
             box-shadow:0 3px 10px rgba(0,0,0,0.15);
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
         }
 
-        .name {
-            font-size:22px;
+        th, td {
+            padding:10px;
+            border:1px solid #ddd;
+            text-align:center;
+        }
+
+        th {
+            background:#eee;
             font-weight:bold;
         }
 
-        .hours {
-            font-size:20px;
-            color:#2a7ae2;
+        .emp-name {
+            font-size:24px;
             font-weight:bold;
+            margin-top:40px;
+            margin-bottom:10px;
         }
 
         .back-btn {
@@ -63,21 +67,74 @@
 
 <h2>Weekly Summary</h2>
 
+<!-- FY + WEEK SELECTOR -->
+<form method="get" style="margin-bottom:25px;">
+    <label>Financial Year:</label>
+    <select name="fy">
+        {% for y in range(2020, 2035) %}
+            <option value="{{ y }}" {% if y == fy %}selected{% endif %}>
+                {{ y }}–{{ y+1 }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <label style="margin-left:20px;">Week:</label>
+    <select name="week">
+        {% for w in weeks %}
+            <option value="{{ w.week_number }}" {% if w.week_number == selected_week %}selected{% endif %}>
+                WK{{ w.week_number }} ({{ w.start.strftime("%d/%m/%y") }} – {{ w.end.strftime("%d/%m/%y") }})
+            </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Go</button>
+</form>
+
+<!-- WEEK RANGE DISPLAY -->
 <div class="week-range">
     {{ start_of_week.strftime('%A %d %B %Y') }} → {{ end_of_week.strftime('%A %d %B %Y') }}
-
 </div>
 
+<!-- EMPLOYEE TABLES -->
 {% for item in summary %}
-    <div class="entry">
-        <div class="name">
-            {{ item.emp.full_name }}
-        </div>
 
-        <div class="hours">
-            {{ "%.2f"|format(item.week_total.total_seconds() / 3600) }} hrs
-        </div>
-    </div>
+    <div class="emp-name">{{ item.emp.full_name }}</div>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Start</th>
+            <th>Break Start</th>
+            <th>Break End</th>
+            <th>Finish</th>
+            <th>Day Total</th>
+            <th>Running Total</th>
+        </tr>
+
+        {% for d in item.week_rows %}
+            <tr>
+                <td>{{ d.date.strftime("%a %d/%m") }}</td>
+
+                <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
+                <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
+                <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
+                <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
+
+                <td>
+                    {% if d.net %}
+                        {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if d.running_total %}
+                        {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
 {% endfor %}
 
 <button class="back-btn" onclick="window.location.href='/admin'">
