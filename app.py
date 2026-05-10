@@ -7273,33 +7273,38 @@ Cherbon Waters Admin
         start_of_week = today - timedelta(days=today.weekday() + 7)
         end_of_week = start_of_week + timedelta(days=6)
 
-        rows = EmployeeHours.query.filter(
-            EmployeeHours.employee_id == emp.id,
-            EmployeeHours.date >= start_of_week,
-            EmployeeHours.date <= end_of_week
-        ).order_by(EmployeeHours.date.asc()).all()
+        days = []
 
-        total_work = timedelta()
-        total_break = timedelta()
+        for i in range(7):
+            day = start_of_week + timedelta(days=i)
 
-        for r in rows:
-            if r.sign_in and r.sign_out:
-                total_work += (r.sign_out - r.sign_in)
+            row = EmployeeHours.query.filter_by(
+                employee_id=emp.id,
+                date=day
+            ).first()
 
-            if r.break_start and r.break_end:
-                total_break += (r.break_end - r.break_start)
+            # Determine status
+            if row and row.sign_in and row.sign_out:
+                status = "complete"
+            elif day == today:
+                status = "today"
+            elif day > today:
+                status = "future"
+            else:
+                status = "incomplete"
 
-        net_hours = total_work - total_break
+            days.append({
+                "date": day,
+                "row": row,
+                "status": status
+            })
 
         return render_template(
-            "employee_week_view.html",   # ✅ FIXED
+            "employee_week_view.html",
             emp=emp,
-            rows=rows,
+            days=days,
             start_of_week=start_of_week,
-            end_of_week=end_of_week,
-            total_work=total_work,
-            total_break=total_break,
-            net_hours=net_hours
+            end_of_week=end_of_week
         )
 
 
