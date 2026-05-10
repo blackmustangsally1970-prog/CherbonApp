@@ -64,7 +64,8 @@
 <h2>Weekly Summary</h2>
 
 <div class="week-range">
-    {{ start_date.strftime('%A %d %B %Y') }} → {{ end_date.strftime('%A %d %B %Y') }}
+    {{ start_of_week.strftime('%A %d %B %Y') }} → {{ end_of_week.strftime('%A %d %B %Y') }}
+
 </div>
 
 {% for emp, total in summary %}
