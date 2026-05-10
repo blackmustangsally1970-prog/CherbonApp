@@ -7267,47 +7267,48 @@ Cherbon Waters Admin
 
         emp = Employee.query.get(emp_id)
 
-        today = date.today()
+        # ⭐ Use the SAME timezone as main week route
+        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
 
-        # This week's Monday
+        # ⭐ This week's Monday
         this_monday = today - timedelta(days=today.weekday())
 
-        # Last week's Monday
+        # ⭐ Last week's Monday
         start_of_week = this_monday - timedelta(days=7)
         end_of_week = start_of_week + timedelta(days=6)
 
         days = []
 
         for i in range(7):
-            day = start_of_week + timedelta(days=i)
+            d = start_of_week + timedelta(days=i)
 
             row = EmployeeHours.query.filter_by(
-                employee_id=emp.id,
-                date=day
+                employee_id=emp_id,
+                date=d
             ).first()
 
-            # Determine status
-            if row and row.sign_in and row.sign_out:
-                status = "complete"
-            elif day == today:
-                status = "today"
-            elif day > today:
+            # ⭐ IDENTICAL STATUS LOGIC
+            if d > today:
                 status = "future"
+            elif row and row.sign_in and row.sign_out:
+                status = "complete"
+            elif row and row.sign_in and not row.sign_out:
+                status = "incomplete"
+            elif d == today:
+                status = "today"
             else:
                 status = "incomplete"
 
             days.append({
-                "date": day,
-                "row": row,
+                "date": d,
                 "status": status
             })
 
         return render_template(
             "employee_week_view.html",
-            emp=emp,
             days=days,
-            start_of_week=start_of_week,
-            end_of_week=end_of_week
+            today=today,
+            emp=emp
         )
 
 
