@@ -7259,6 +7259,50 @@ Cherbon Waters Admin
         return redirect(url_for('upgrade_items_list'))
 
 
+    @app.route("/employeehours/lastweek")
+    def employee_last_week():
+        emp_id = session.get("employee_id")
+        if not emp_id:
+            return redirect("/employeehours")
+
+        emp = Employee.query.get(emp_id)
+
+        today = date.today()
+
+        # Last week's Monday
+        start_of_week = today - timedelta(days=today.weekday() + 7)
+        end_of_week = start_of_week + timedelta(days=6)
+
+        rows = EmployeeHours.query.filter(
+            EmployeeHours.employee_id == emp.id,
+            EmployeeHours.date >= start_of_week,
+            EmployeeHours.date <= end_of_week
+        ).order_by(EmployeeHours.date.asc()).all()
+
+        total_work = timedelta()
+        total_break = timedelta()
+
+        for r in rows:
+            if r.sign_in and r.sign_out:
+                total_work += (r.sign_out - r.sign_in)
+
+            if r.break_start and r.break_end:
+                total_break += (r.break_end - r.break_start)
+
+        net_hours = total_work - total_break
+
+        return render_template(
+            "employee_weekly_summary.html",
+            emp=emp,
+            rows=rows,
+            start_of_week=start_of_week,
+            end_of_week=end_of_week,
+            total_work=total_work,
+            total_break=total_break,
+            net_hours=net_hours
+        )
+
+
     @app.route("/admin/employees/new", methods=["POST"])
     def create_employee():
         name = request.form.get("full_name")
