@@ -499,6 +499,7 @@
                 <option value="assign-empty">Assign Horse If Empty</option>
                 <option value="change-price">Change Price From Cutoff</option>
                 <option value="change-time">Change Time for this Day only</option>
+                <option value="change-horse-specific">Change Horse X → Y From Cutoff</option>
             </optgroup>
         </select>
     </div>
@@ -583,6 +584,40 @@
             </button>
         </div>
     </form>
+
+<!-- CHANGE SPECIFIC HORSE (X → Y) -->
+<form id="form-change-horse-specific" class="action-form"
+      action="{{ url_for('change_client_horse', client_id=client_obj.client_id) }}"
+      method="post">
+
+    <input type="hidden" name="mode" value="change_horse_specific">
+    <input type="hidden" name="cutoff_date">
+    <input type="hidden" name="group_priv">
+
+    <label>From Horse:</label>
+    <select name="old_horse" style="width:180px;">
+        <option value=""></option>
+        {% for horse in horses %}
+            <option value="{{ horse.horse }}">{{ horse.horse }}</option>
+        {% endfor %}
+    </select>
+
+    <label>To Horse:</label>
+    <select name="new_horse" style="width:180px;">
+        <option value=""></option>
+        {% for horse in horses %}
+            <option value="{{ horse.horse }}">{{ horse.horse }}</option>
+        {% endfor %}
+    </select>
+
+    <div class="action-buttons">
+        <button type="button" class="btn btn-warning btn-sm open-confirm"
+                data-target="form-change-horse-specific">
+            Change Horse X → Y From Cutoff
+        </button>
+    </div>
+</form>
+
 
     <!-- ASSIGN IF EMPTY -->
     <form id="form-assign-empty" class="action-form"

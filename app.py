@@ -6749,9 +6749,12 @@ Cherbon Waters Admin
         client_name = client_obj.full_name
 
         # Get horse name (lessons.horse stores the name)
-        horse_obj = Horse.query.get(new_horse_id)
-        horse_name = horse_obj.horse
+        horse_obj = Horse.query.get(new_horse_id) if new_horse_id else None
+        horse_name = horse_obj.horse if horse_obj else None
 
+        # ---------------------------------------------------------
+        # CHANGE ALL FUTURE LESSONS TO A NEW HORSE
+        # ---------------------------------------------------------
         if mode == "change_horse":
             db.session.execute(
                 text("""
@@ -6769,6 +6772,9 @@ Cherbon Waters Admin
                 }
             )
 
+        # ---------------------------------------------------------
+        # ASSIGN HORSE ONLY IF EMPTY
+        # ---------------------------------------------------------
         elif mode == "assign_if_empty":
             db.session.execute(
                 text("""
@@ -6787,8 +6793,33 @@ Cherbon Waters Admin
                 }
             )
 
+        # ---------------------------------------------------------
+        # NEW MODE: CHANGE HORSE X → Y FROM CUTOFF
+        # ---------------------------------------------------------
+        elif mode == "change_horse_specific":
+            old_horse = request.form.get("old_horse")
+
+            db.session.execute(
+                text("""
+                    UPDATE lessons
+                    SET horse = :new_horse
+                    WHERE client = :client_name
+                      AND group_priv = :group_priv
+                      AND lesson_date >= :cutoff_date
+                      AND horse = :old_horse
+                """),
+                {
+                    "new_horse": horse_name,
+                    "client_name": client_name,
+                    "group_priv": group_priv,
+                    "cutoff_date": cutoff_date,
+                    "old_horse": old_horse
+                }
+            )
+
         db.session.commit()
         return redirect(url_for("client_view", client_id=client_id))
+
 
     @app.route("/phone_lookup", methods=["GET", "POST"])
     def phone_lookup():
