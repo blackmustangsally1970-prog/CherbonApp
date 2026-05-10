@@ -7292,7 +7292,7 @@ Cherbon Waters Admin
         net_hours = total_work - total_break
 
         return render_template(
-            "employee_weekly_summary.html",
+            "employee_week_view.html",   # ✅ FIXED
             emp=emp,
             rows=rows,
             start_of_week=start_of_week,
