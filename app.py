@@ -7684,11 +7684,19 @@ Cherbon Waters Admin
                 "week_total": running_total
             })
 
+        # -----------------------------
+        # DYNAMIC FY LIST (2025 → current FY)
+        # -----------------------------
+        start_fy = 2025
+        current_fy = today.year if today.month >= 7 else today.year - 1
+        fy_years = list(range(start_fy, current_fy + 1))
+
         return render_template(
             "admin_weekly_summary.html",
             summary=summary,
             weeks=weeks,
             fy=fy,
+            fy_years=fy_years,
             selected_week=week_num,
             start_of_week=start_of_week,
             end_of_week=end_of_week

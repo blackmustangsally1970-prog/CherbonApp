@@ -91,7 +91,7 @@
 <form method="get" style="margin-bottom:25px;">
     <label>Financial Year:</label>
     <select name="fy">
-        {% for y in range(2020, 2035) %}
+        {% for y in fy_years %}
             <option value="{{ y }}" {% if y == fy %}selected{% endif %}>
                 {{ y }}–{{ y+1 }}
             </option>
