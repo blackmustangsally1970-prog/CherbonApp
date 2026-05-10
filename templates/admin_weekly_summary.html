@@ -139,3 +139,32 @@
 
                 <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
                 <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
+                <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
+                <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
+
+                <td>
+                    {% if d.net %}
+                        {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if d.running_total %}
+                        {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endfor %}
+
+<script>
+function toggleTable(id) {
+    const tbl = document.getElementById(id);
+    tbl.style.display = (tbl.style.display === "none" || tbl.style.display === "") ? "block" : "none";
+}
+</script>
+
+</body>
+</html>
