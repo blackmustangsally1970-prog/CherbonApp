@@ -68,14 +68,14 @@
 
 </div>
 
-{% for emp, total in summary %}
+{% for item in summary %}
     <div class="entry">
         <div class="name">
-            {{ emp.full_name }}
+            {{ item.emp.full_name }}
         </div>
 
         <div class="hours">
-            {{ "%.2f"|format(total) }} hrs
+            {{ "%.2f"|format(item.week_total.total_seconds() / 3600) }} hrs
         </div>
     </div>
 {% endfor %}
