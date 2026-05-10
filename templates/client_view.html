@@ -594,21 +594,21 @@
     <input type="hidden" name="cutoff_date">
     <input type="hidden" name="group_priv">
 
-    <label>From Horse:</label>
-    <select name="old_horse" style="width:180px;">
-        <option value=""></option>
-        {% for horse in horses %}
-            <option value="{{ horse.horse }}">{{ horse.horse }}</option>
-        {% endfor %}
-    </select>
+<label>From Horse:</label>
+<select name="old_horse" style="width:180px;">
+    <option value=""></option>
+    {% for horse in horses %}
+        <option value="{{ horse.horse }}">{{ horse.horse }}</option>
+    {% endfor %}
+</select>
 
-    <label>To Horse:</label>
-    <select name="new_horse" style="width:180px;">
-        <option value=""></option>
-        {% for horse in horses %}
-            <option value="{{ horse.horse }}">{{ horse.horse }}</option>
-        {% endfor %}
-    </select>
+<label>To Horse:</label>
+<select name="new_horse" style="width:180px;">
+    <option value=""></option>
+    {% for horse in horses %}
+        <option value="{{ horse.horse_id }}">{{ horse.horse }}</option>
+    {% endfor %}
+</select>
 
     <div class="action-buttons">
         <button type="button" class="btn btn-warning btn-sm open-confirm"
