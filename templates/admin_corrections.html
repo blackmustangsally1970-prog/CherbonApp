@@ -79,6 +79,11 @@
 </head>
 <body>
 
+<button class="back-btn" onclick="window.location.href='/employees'">
+    Employee Menu
+</button>
+
+
 <h2>Corrected Entries</h2>
 
 {% if rows|length == 0 %}
@@ -119,9 +124,6 @@
     </div>
 {% endfor %}
 
-<button class="back-btn" onclick="window.location.href='/admin'">
-    Back to Admin
-</button>
 
 </body>
 </html>
