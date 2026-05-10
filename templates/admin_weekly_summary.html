@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+<button class="back-btn" onclick="window.location.href='/admin'">
+    Back to Admin
+</button>
+
+
     <title>Weekly Summary — Admin</title>
     <style>
         body {
@@ -61,7 +66,32 @@
         .back-btn:hover {
             background:#555;
         }
-    </style>
+
+    .emp-table {
+        display:none;
+        margin-bottom:40px;
+    }
+    .emp-name {
+        font-size:24px;
+        font-weight:bold;
+        margin-top:40px;
+        margin-bottom:10px;
+        cursor:pointer;
+        padding:10px;
+        background:#fff;
+        border-radius:8px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+    }
+    .emp-name:hover {
+        background:#f0f0f0;
+    }
+</style>
+
+
+
+
+
+
 </head>
 <body>
 
@@ -111,35 +141,42 @@
             <th>Running Total</th>
         </tr>
 
-        {% for d in item.week_rows %}
-            <tr>
-                <td>{{ d.date.strftime("%a %d/%m") }}</td>
+{% for d in item.week_rows %}
+    <tr {% if d.date.weekday() == 6 %} style="background:#d4f8d4;" {% endif %}>
+        <td>{{ d.date.strftime("%a %d/%m") }}</td>
 
-                <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
-                <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
-                <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
-                <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
+        <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
+        <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
+        <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
+        <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
 
-                <td>
-                    {% if d.net %}
-                        {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
-                    {% endif %}
-                </td>
+        <td>
+            {% if d.net %}
+                {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
+            {% endif %}
+        </td>
 
-                <td>
-                    {% if d.running_total %}
-                        {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
-                    {% endif %}
-                </td>
-            </tr>
+        <td>
+            {% if d.running_total %}
+                {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
+            {% endif %}
+        </td>
+    </tr>
+{% endfor %}
         {% endfor %}
     </table>
 
 {% endfor %}
 
-<button class="back-btn" onclick="window.location.href='/admin'">
-    Back to Admin
-</button>
+
+<script>
+function toggleTable(id) {
+    const tbl = document.getElementById(id);
+    tbl.style.display = (tbl.style.display === "none" || tbl.style.display === "") ? "block" : "none";
+}
+</script>
+
+
 
 </body>
 </html>
