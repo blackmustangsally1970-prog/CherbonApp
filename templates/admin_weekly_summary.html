@@ -118,8 +118,11 @@
 <!-- EMPLOYEE TABLES -->
 {% for item in summary %}
 
+    {% set weekly_total = item.week_rows[-1].running_total.total_seconds() / 3600
+        if item.week_rows and item.week_rows[-1].running_total else 0 %}
+
     <div class="emp-name" onclick="toggleTable('tbl{{ item.emp.id }}')">
-        {{ item.emp.full_name }}
+        {{ item.emp.full_name }} — {{ "%.2f"|format(weekly_total) }} hrs
     </div>
 
     <table id="tbl{{ item.emp.id }}" class="emp-table">
