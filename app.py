@@ -7269,8 +7269,11 @@ Cherbon Waters Admin
 
         today = date.today()
 
+        # This week's Monday
+        this_monday = today - timedelta(days=today.weekday())
+
         # Last week's Monday
-        start_of_week = today - timedelta(days=today.weekday() + 7)
+        start_of_week = this_monday - timedelta(days=7)
         end_of_week = start_of_week + timedelta(days=6)
 
         days = []
