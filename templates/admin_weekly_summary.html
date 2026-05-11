@@ -134,6 +134,7 @@
             <th>Finish</th>
             <th>Day Total</th>
             <th>Running Total</th>
+            <th>Finish Submitted</th> <!-- ⭐ NEW COLUMN -->
         </tr>
 
         {% for d in item.week_rows %}
@@ -156,6 +157,27 @@
                         {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
                     {% endif %}
                 </td>
+
+                <!-- ⭐ NEW: FINISH SUBMITTED WITH LATE HIGHLIGHT -->
+                {% set submitted = d.row.updated_at if d.row else None %}
+                {% set finish = d.row.sign_out if d.row else None %}
+
+                {% if submitted and finish %}
+                    {% set delay = (submitted - finish).total_seconds() %}
+                {% else %}
+                    {% set delay = 0 %}
+                {% endif %}
+
+                <td
+                    {% if delay > 14400 %}
+                        style="background:#ffe5e5;"  <!-- light red -->
+                    {% endif %}
+                >
+                    {% if submitted %}
+                        {{ submitted.strftime("%a %d/%m %I:%M %p") }}
+                    {% endif %}
+                </td>
+
             </tr>
         {% endfor %}
     </table>
