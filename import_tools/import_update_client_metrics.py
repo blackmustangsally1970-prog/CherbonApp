@@ -25,7 +25,7 @@ def run_import():
     with app.app_context():
         print("Client height/weight updater started…")
 
-        with open("clients_update.csv", newline='', encoding="utf-8") as f:
+        with open("clients_update.csv", newline='', encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
 
             print("HEADERS:", reader.fieldnames)
