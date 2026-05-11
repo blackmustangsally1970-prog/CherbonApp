@@ -7308,7 +7308,8 @@ Cherbon Waters Admin
             "employee_week_view.html",
             days=days,
             today=today,
-            emp=emp
+            emp=emp,
+            is_last_week=True
         )
 
 
@@ -7981,7 +7982,8 @@ Cherbon Waters Admin
             "employee_week_view.html",
             days=days,
             today=today,
-            emp=emp
+            emp=emp,
+            is_last_week=False
         )
 
 

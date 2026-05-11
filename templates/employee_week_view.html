@@ -41,10 +41,19 @@
 
     <h3 class="mb-4 text-center">Welcome, {{ emp.full_name }}</h3>
 
-<a href="/employeehours/lastweek" class="day-tile day-orange">
-    ← Last Week<br>
-    Fix Unfinished Days
-</a>
+{% if is_last_week %}
+    <!-- ⭐ You are on LAST WEEK → go forward to THIS WEEK -->
+    <a href="/employeehours/week" class="day-tile day-blue">
+        ← This Week<br>
+        Return to Current Week
+    </a>
+{% else %}
+    <!-- ⭐ You are on THIS WEEK → go back to LAST WEEK -->
+    <a href="/employeehours/lastweek" class="day-tile day-orange">
+        ← Last Week<br>
+        Fix Unfinished Days
+    </a>
+{% endif %}
 
 
     {% for d in days %}
