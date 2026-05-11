@@ -281,10 +281,16 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.reload();
     });
 
-    document.getElementById("keep-time-btn").onclick = function () {
-        closeSuggestModal();
-        form.submit();
-    };
+document.getElementById("keep-time-btn").onclick = function () {
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.name = "confirmed";
+    hidden.value = "1";
+    form.appendChild(hidden);
+
+    closeSuggestModal();
+    form.submit();
+};
 
     document.getElementById("change-time-btn").onclick = function () {
         const hidden = document.createElement("input");
