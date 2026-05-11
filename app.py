@@ -7431,7 +7431,7 @@ Cherbon Waters Admin
             # If user already confirmed, skip checks and save
             if request.form.get("confirmed") == "1":
                 action = request.form.get("action")
-                time_str = request.form.get("time")
+                time_str = request.form.get("corrected_time") or request.form.get("time")
                 notes = request.form.get("notes", "")
 
                 t = datetime.strptime(time_str, "%H:%M").time()
