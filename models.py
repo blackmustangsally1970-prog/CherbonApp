@@ -28,6 +28,7 @@ class EmployeeHours(db.Model):
     sign_out = db.Column(db.DateTime)
     auto_prompted = db.Column(db.Boolean, default=False)
     employee = db.relationship("Employee", backref="hours")
+    submitted_at = db.Column(db.DateTime)
 
     corrected = db.Column(db.Boolean, default=False)
     corrected_at = db.Column(db.DateTime)

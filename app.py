@@ -7381,7 +7381,6 @@ Cherbon Waters Admin
             if x is None:
                 return None
             if x.tzinfo is None:
-                # Attach timezone WITHOUT shifting the time
                 return datetime(
                     x.year, x.month, x.day,
                     x.hour, x.minute, x.second,
@@ -7452,6 +7451,10 @@ Cherbon Waters Admin
                 field = field_map.get(action)
                 if field:
                     setattr(row, field, dt)
+
+                # ⭐ RECORD SUBMISSION TIME
+                if action == "finish":
+                    row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
 
                 if notes:
                     row.notes = notes
@@ -7559,6 +7562,10 @@ Cherbon Waters Admin
             field = field_map.get(action)
             if field:
                 setattr(row, field, dt)
+
+            # ⭐ RECORD SUBMISSION TIME
+            if action == "finish":
+                row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
 
             if notes:
                 row.notes = notes
