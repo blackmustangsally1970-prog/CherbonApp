@@ -134,7 +134,7 @@
             <th>Finish</th>
             <th>Day Total</th>
             <th>Running Total</th>
-            <th>Finish Submitted</th> <!-- ⭐ NEW COLUMN -->
+            <th>Finish Submitted</th>
         </tr>
 
         {% for d in item.week_rows %}
@@ -158,19 +158,21 @@
                     {% endif %}
                 </td>
 
-                <!-- ⭐ NEW: FINISH SUBMITTED WITH LATE HIGHLIGHT -->
+                <!-- ⭐ FIXED: FINISH SUBMITTED WITH SAFE TIMEZONE HANDLING -->
                 {% set submitted = d.row.submitted_at if d.row else None %}
                 {% set finish = d.row.sign_out if d.row else None %}
 
                 {% if submitted and finish %}
-                    {% set delay = (submitted - finish).total_seconds() %}
+                    {% set submitted_naive = submitted.replace(tzinfo=None) %}
+                    {% set finish_naive = finish.replace(tzinfo=None) %}
+                    {% set delay = (submitted_naive - finish_naive).total_seconds() %}
                 {% else %}
                     {% set delay = 0 %}
                 {% endif %}
 
                 <td
                     {% if delay > 14400 %}
-                        style="background:#ffe5e5;"  <!-- light red -->
+                        style="background:#ffe5e5;"
                     {% endif %}
                 >
                     {% if submitted %}
