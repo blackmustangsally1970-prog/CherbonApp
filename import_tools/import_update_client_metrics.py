@@ -64,12 +64,15 @@ def run_import():
                     changed = True
 
                 if changed:
-                    print(f"✔ Updated: {full_name}  (W:{new_weight}, H:{new_height})")
-                    updated += 1
-                else:
-                    print(f"➡ No changes for: {full_name}")
+                    try:
+                        db.session.commit()
+                        print(f"✔ Updated: {full_name}  (W:{new_weight}, H:{new_height})")
+                        updated += 1
+                    except Exception as e:
+                        print(f"❌ Commit failed for {full_name}: {e}")
+                        db.session.rollback()
+                        skipped += 1
 
-            db.session.commit()
 
             print("\n=== IMPORT COMPLETE ===")
             print(f"Updated: {updated}")
