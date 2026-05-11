@@ -73,3 +73,8 @@ def run_import():
             print("\n=== IMPORT COMPLETE ===")
             print(f"Updated: {updated}")
             print(f"Skipped: {skipped}")
+
+
+# ⭐ THIS WAS MISSING — NOW THE SCRIPT ACTUALLY RUNS
+if __name__ == "__main__":
+    run_import()
