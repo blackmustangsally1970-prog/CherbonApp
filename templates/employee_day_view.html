@@ -48,7 +48,6 @@
             margin-top:20px;
         }
 
-        /* ⭐ COLOUR CODING */
         .status-green {
             background:#d4edda;
             padding:6px 12px;
@@ -107,7 +106,6 @@
     <div class="locked">This day is complete and cannot be edited.</div>
 
 {% else %}
-    <!-- ⭐ ALWAYS SHOW ALL FOUR BUTTONS UNTIL FINISH WORK EXISTS ⭐ -->
     <button class="btn" onclick="openModal('start')">Start Work</button>
     <button class="btn" onclick="openModal('break_start')">Break Start</button>
     <button class="btn" onclick="openModal('break_end')">Break End</button>
@@ -116,7 +114,7 @@
 
 <button class="back-btn" onclick="window.location.href='/employeehours/week'">Back to Week</button>
 
-<!-- Modal -->
+<!-- MAIN ENTRY MODAL -->
 <div id="modal" style="
     display:none;
     position:fixed;
@@ -189,6 +187,33 @@
     </div>
 </div>
 
+<!-- TIME SUGGESTION MODAL -->
+<div id="time-suggest-modal" style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.6);
+">
+    <div style="
+        background:white;
+        margin:0;
+        padding:30px;
+        width:100%;
+        height:100%;
+        border-radius:0;
+        text-align:center;
+        overflow-y:auto;
+        box-sizing:border-box;
+    ">
+        <h3 id="suggest-title" style="font-size:36px; margin-bottom:25px;"></h3>
+
+        <button class="btn" id="keep-time-btn">Keep Entered Time</button>
+        <button class="btn" id="change-time-btn" style="background:#28a745;">Use Suggested Time</button>
+        <button class="back-btn" onclick="closeSuggestModal()">Cancel</button>
+    </div>
+</div>
+
 <script>
 function openModal(action) {
     document.getElementById("modal-title").innerText = action.replace("_", " ").toUpperCase();
@@ -197,6 +222,17 @@ function openModal(action) {
 }
 function closeModal() {
     document.getElementById("modal").style.display = "none";
+}
+
+let suggestedTime = null;
+
+function openSuggestModal(message, suggested) {
+    suggestedTime = suggested;
+    document.getElementById("suggest-title").innerText = message;
+    document.getElementById("time-suggest-modal").style.display = "block";
+}
+function closeSuggestModal() {
+    document.getElementById("time-suggest-modal").style.display = "none";
 }
 </script>
 
@@ -213,7 +249,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const text = await response.text();
 
         if (text.startsWith("Did you mean")) {
-            alert(text);
+            const parts = text.split("::");
+            const message = parts[0];
+            const corrected = parts[1];
+            openSuggestModal(message, corrected);
             return;
         }
 
@@ -241,6 +280,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
         window.location.reload();
     });
+
+    document.getElementById("keep-time-btn").onclick = function () {
+        closeSuggestModal();
+        form.submit();
+    };
+
+    document.getElementById("change-time-btn").onclick = function () {
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "corrected_time";
+        hidden.value = suggestedTime;
+        form.appendChild(hidden);
+
+        closeSuggestModal();
+        form.submit();
+    };
 });
 </script>
 

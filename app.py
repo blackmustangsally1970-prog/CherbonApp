@@ -7494,12 +7494,15 @@ Cherbon Waters Admin
                     if dt.time() > time(18, 0):
                         return f"You're signing in for {d.strftime('%A')}. {t.strftime('%I:%M %p')} looks incorrect.", 400
 
-                # AUTO-CORRECT SUGGESTION
+                # AUTO-CORRECT SUGGESTION (NEW FRONTEND FORMAT)
                 if t.hour >= 18:  # 6 PM or later
                     alt_hour = (t.hour - 12) if t.hour > 12 else t.hour
                     alt_time = time(alt_hour, t.minute)
                     alt_str = alt_time.strftime("%I:%M %p")
-                    return f"Did you mean {alt_str} instead of {t.strftime('%I:%M %p')}?", 400
+                    alt_24 = alt_time.strftime("%H:%M")  # for hidden corrected_time field
+
+                    message = f"Did you mean {alt_str} instead of {t.strftime('%I:%M %p')}?"
+                    return f"{message}::{alt_24}", 200
 
             # 2) BREAK START VALIDATION
             if action == "break_start":
