@@ -159,7 +159,7 @@
                 </td>
 
                 <!-- ⭐ NEW: FINISH SUBMITTED WITH LATE HIGHLIGHT -->
-                {% set submitted = d.row.updated_at if d.row else None %}
+                {% set submitted = d.row.submitted_at if d.row else None %}
                 {% set finish = d.row.sign_out if d.row else None %}
 
                 {% if submitted and finish %}
