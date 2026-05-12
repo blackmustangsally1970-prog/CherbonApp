@@ -182,13 +182,9 @@ def parse_gift_voucher_payload(sub):
     # Amount payable
     amount_payable = answers.get("20", {}).get("answer", "").strip()
 
-    # Notes (checkbox or text)
-    notes = _safe_answer(answers, "7") or _safe_answer(answers, "10")
-
     return {
         "purchaser_name": purchaser_name,
         "recipient_name": recipient_name,
         "voucher_number": voucher_number,
         "amount_payable": amount_payable,
-        "notes": notes,
     }
