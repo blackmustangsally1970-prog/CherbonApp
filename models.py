@@ -34,6 +34,36 @@ class EmployeeHours(db.Model):
     corrected_at = db.Column(db.DateTime)
     corrected_by = db.Column(db.Integer)  # admin user ID
 
+
+class GiftVoucherSubmission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    submission_id = db.Column(db.String(64), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+
+    purchaser_name = db.Column(db.String(120))
+    purchaser_email = db.Column(db.String(120))
+    purchaser_mobile = db.Column(db.String(40))
+
+    recipient_name = db.Column(db.String(120))
+    ridden_before = db.Column(db.String(20))
+
+    voucher_choice = db.Column(db.String(120))
+    quantity = db.Column(db.String(10))
+    ride_type = db.Column(db.String(200))
+    credit_amount = db.Column(db.String(20))
+
+    voucher_number = db.Column(db.String(32))
+    amount_payable = db.Column(db.String(20))
+
+    message_to_recipient = db.Column(db.Text)
+
+    ignored = db.Column(db.Boolean, default=False)
+    processed = db.Column(db.Boolean, default=False)
+    processed_at = db.Column(db.DateTime)
+
+
+
 class Client(db.Model):
     __tablename__ = 'clients'
 
@@ -369,6 +399,8 @@ class Lesson(db.Model):
     blockends = db.Column(db.Date)
     lesson_no = db.Column(db.Text)
     freq = db.Column(db.String(2))
+    voucher_number = db.Column(db.String(32))
+
 
 class TeacherHorse(db.Model):
     __tablename__ = 'teacher_horse'

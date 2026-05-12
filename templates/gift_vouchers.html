@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Gift Voucher Submissions</h2>
+
+<hr>
+
+<h3>Unprocessed</h3>
+{% if unprocessed %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Purchaser</th>
+                <th>Recipient</th>
+                <th>Voucher No.</th>
+                <th>Amount</th>
+                <th>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for v in unprocessed %}
+            <tr>
+                <td>{{ v.purchaser_name }}</td>
+                <td>{{ v.recipient_name }}</td>
+                <td>{{ v.voucher_number }}</td>
+                <td>{{ v.amount_payable }}</td>
+                <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                <td>
+                    <a href="{{ url_for('gift_voucher_view', id=v.id) }}" class="btn btn-primary btn-sm">View</a>
+                    <a href="{{ url_for('gift_voucher_process', id=v.id) }}" class="btn btn-success btn-sm">Process</a>
+                    <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}" class="btn btn-warning btn-sm">Ignore</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No unprocessed vouchers.</p>
+{% endif %}
+
+<hr>
+
+<h3>Processed</h3>
+{% if processed %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Purchaser</th>
+                <th>Recipient</th>
+                <th>Voucher No.</th>
+                <th>Amount</th>
+                <th>Processed At</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for v in processed %}
+            <tr>
+                <td>{{ v.purchaser_name }}</td>
+                <td>{{ v.recipient_name }}</td>
+                <td>{{ v.voucher_number }}</td>
+                <td>{{ v.amount_payable }}</td>
+                <td>{{ v.processed_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                <td>
+                    <a href="{{ url_for('gift_voucher_view', id=v.id) }}" class="btn btn-primary btn-sm">View</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No processed vouchers.</p>
+{% endif %}
+
+<hr>
+
+<h3>Ignored</h3>
+{% if ignored %}
+    <table class="table table-striped">
+        <thead>

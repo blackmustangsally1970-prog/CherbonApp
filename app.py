@@ -364,6 +364,61 @@ def get_sundays_for_financial_year(fy_string):
 
     return sundays
 
+
+def parse_gift_voucher_payload(sub):
+    """Extracts relevant fields from a JotForm gift voucher submission."""
+
+    answers = sub.get("answers", {})
+
+    def get(qname):
+        for a in answers.values():
+            if a.get("name") == qname:
+                return a.get("answer")
+        return None
+
+    # Purchaser details
+    purchaser_name = get("nameOf")
+    purchaser_email = get("emailTo")
+    purchaser_mobile = get("phoneNumber")
+
+    # Recipient details
+    recipient_name = get("nameOf4")
+    ridden_before = get("hasThe")
+
+    # Voucher options
+    voucher_choice = get("voucherChoice")
+    quantity = get("quantityPer")
+    ride_type = get("name7")
+    credit_amount = get("chooseRiding14")
+
+    # Voucher metadata
+    voucher_number = get("voucherNo")
+    amount_payable = get("amountPayable")
+
+    # Message
+    message_to_recipient = get("yourMessage")
+
+    return {
+        "purchaser_name": purchaser_name,
+        "purchaser_email": purchaser_email,
+        "purchaser_mobile": purchaser_mobile,
+
+        "recipient_name": recipient_name,
+        "ridden_before": ridden_before,
+
+        "voucher_choice": voucher_choice,
+        "quantity": quantity,
+        "ride_type": ride_type,
+        "credit_amount": credit_amount,
+
+        "voucher_number": voucher_number,
+        "amount_payable": amount_payable,
+
+        "message_to_recipient": message_to_recipient,
+    }
+
+
+
 def get_week_window(sunday_date):
     from datetime import timedelta
     start = sunday_date
@@ -3465,6 +3520,169 @@ def create_app():
             return handle_new_client(data)
 
         return jsonify(success=False, error="Invalid booking type")
+
+
+
+    @app.route("/fetch_gift_vouchers")
+    def fetch_gift_vouchers():
+        import requests
+        from datetime import datetime
+        from models import GiftVoucherSubmission
+        from helpers_jf import GIFT_VOUCHER_FORM_ID, parse_gift_voucher_payload
+
+        api_key = current_app.config.get("JOTFORM_API_KEY")
+        if not api_key:
+            flash("Missing JotForm API key", "danger")
+            return redirect(url_for("gift_vouchers"))
+
+        url = f"https://api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
+        response = requests.get(url)
+        data = response.json()
+
+        if data.get("responseCode") != 200:
+            flash("Failed to fetch from JotForm", "danger")
+            return redirect(url_for("gift_vouchers"))
+
+        submissions = data.get("content", [])
+        new_count = 0
+
+        for sub in submissions:
+            submission_id = sub.get("id")
+            created_at = sub.get("created_at")
+
+            # Skip duplicates
+            existing = GiftVoucherSubmission.query.filter_by(submission_id=submission_id).first()
+            if existing:
+                continue
+
+            parsed = parse_gift_voucher_payload(sub)
+
+            entry = GiftVoucherSubmission(
+                submission_id=submission_id,
+                created_at=datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S"),
+
+                purchaser_name=parsed["purchaser_name"],
+                purchaser_email=parsed["purchaser_email"],
+                purchaser_mobile=parsed["purchaser_mobile"],
+
+                recipient_name=parsed["recipient_name"],
+                ridden_before=parsed["ridden_before"],
+
+                voucher_choice=parsed["voucher_choice"],
+                quantity=parsed["quantity"],
+                ride_type=parsed["ride_type"],
+                credit_amount=parsed["credit_amount"],
+
+                voucher_number=parsed["voucher_number"],
+                amount_payable=parsed["amount_payable"],
+
+                message_to_recipient=parsed["message_to_recipient"],
+
+                ignored=False,
+                processed=False
+            )
+
+            db.session.add(entry)
+            new_count += 1
+
+        db.session.commit()
+
+        flash(f"Imported {new_count} new gift vouchers.", "success")
+        return redirect(url_for("gift_vouchers"))
+
+
+    @app.route("/gift_vouchers")
+    def gift_vouchers():
+        from models import GiftVoucherSubmission
+
+        unprocessed = GiftVoucherSubmission.query.filter_by(ignored=False, processed=False).order_by(GiftVoucherSubmission.created_at.desc()).all()
+        processed = GiftVoucherSubmission.query.filter_by(processed=True).order_by(GiftVoucherSubmission.processed_at.desc()).all()
+        ignored = GiftVoucherSubmission.query.filter_by(ignored=True).order_by(GiftVoucherSubmission.created_at.desc()).all()
+
+        return render_template(
+            "gift_vouchers.html",
+            unprocessed=unprocessed,
+            processed=processed,
+            ignored=ignored
+        )
+
+
+
+    @app.route("/gift_voucher_ignore/<int:id>")
+    def gift_voucher_ignore(id):
+        from models import GiftVoucherSubmission
+
+        v = GiftVoucherSubmission.query.get_or_404(id)
+        v.ignored = True
+        db.session.commit()
+
+        flash("Voucher marked as ignored.", "warning")
+        return redirect(url_for("gift_vouchers"))
+
+
+    @app.route("/gift_voucher_unignore/<int:id>")
+    def gift_voucher_unignore(id):
+        from models import GiftVoucherSubmission
+
+        v = GiftVoucherSubmission.query.get_or_404(id)
+        v.ignored = False
+        db.session.commit()
+
+        flash("Voucher unignored.", "success")
+        return redirect(url_for("gift_vouchers"))
+
+    @app.route("/gift_voucher_process/<int:id>")
+    def gift_voucher_process(id):
+        from datetime import datetime, date
+        from models import GiftVoucherSubmission, Clients, Lesson
+
+        v = GiftVoucherSubmission.query.get_or_404(id)
+
+        # Already processed?
+        if v.processed:
+            flash("This voucher has already been processed.", "info")
+            return redirect(url_for("gift_vouchers"))
+
+        # 1. Find or create client (recipient)
+        client = Clients.query.filter_by(client=v.recipient_name).first()
+        if not client:
+            client = Clients(client=v.recipient_name)
+            db.session.add(client)
+            db.session.commit()
+
+        # 2. Create the lesson
+        lesson = Lesson(
+            lesson_date=date.today(),
+            time_frame="",
+            client=v.recipient_name,
+            horse="",
+            payment=0,
+            price_pl=v.amount_payable,
+            attendance="",
+            balance=0,
+            lesson_type="VoucherCR",
+            group_priv="P",
+            block_key="",   # not used for vouchers
+            voucher_number=v.voucher_number
+        )
+
+        db.session.add(lesson)
+
+        # 3. Mark submission processed
+        v.processed = True
+        v.processed_at = datetime.now()
+
+        db.session.commit()
+
+        flash("Gift voucher processed and lesson created.", "success")
+        return redirect(url_for("gift_vouchers"))
+
+    @app.route("/gift_voucher_view/<int:id>")
+    def gift_voucher_view(id):
+        from models import GiftVoucherSubmission
+
+        v = GiftVoucherSubmission.query.get_or_404(id)
+        return render_template("gift_voucher_view.html", v=v)
 
 
 
