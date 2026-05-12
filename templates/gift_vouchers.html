@@ -63,8 +63,10 @@
     </a>
 </div>
 
+<!-- UNPROCESSED -->
 <div class="section-box">
     <h3>Unprocessed</h3>
+
     {% if unprocessed %}
         <table class="excel-grid">
             <thead>
@@ -99,8 +101,10 @@
     {% endif %}
 </div>
 
+<!-- PROCESSED -->
 <div class="section-box">
     <h3>Processed</h3>
+
     {% if processed %}
         <table class="excel-grid">
             <thead>
@@ -133,8 +137,10 @@
     {% endif %}
 </div>
 
+<!-- IGNORED -->
 <div class="section-box">
     <h3>Ignored</h3>
+
     {% if ignored %}
         <table class="excel-grid">
             <thead>
@@ -157,3 +163,16 @@
                     <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
                     <td>
                         <a href="{{ url_for('gift_voucher_view', id=v.id) }}" class="btn btn-primary btn-sm">View</a>
+                        <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}" class="btn btn-secondary btn-sm">Unignore</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No ignored vouchers.</p>
+    {% endif %}
+</div>
+
+</body>
+</html>
