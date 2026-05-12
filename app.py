@@ -3583,7 +3583,7 @@ def create_app():
     @app.route("/gift_voucher_process/<int:id>")
     def gift_voucher_process(id):
         from datetime import datetime, date
-        from models import GiftVoucherSubmission, Clients, Lesson
+        from models import GiftVoucherSubmission, Client, Lesson
 
         v = GiftVoucherSubmission.query.get_or_404(id)
 
@@ -3593,25 +3593,34 @@ def create_app():
             return redirect(url_for("gift_vouchers"))
 
         # 1. Find or create client (recipient)
-        client = Clients.query.filter_by(client=v.recipient_name).first()
+        client = Client.query.filter_by(full_name=v.recipient_name).first()
         if not client:
-            client = Clients(client=v.recipient_name)
+            client = Client(full_name=v.recipient_name)
             db.session.add(client)
             db.session.commit()
 
-        # 2. Create the lesson
+        # Convert "$170" → 170.0
+        amount = float(v.amount_payable.replace("$", "").strip())
+
+        # 2. Create the Voucher CR lesson entry
         lesson = Lesson(
             lesson_date=date.today(),
             time_frame="",
+            block_key="",
             client=v.recipient_name,
             horse="",
-            payment=0,
-            price_pl=v.amount_payable,
+            adjust=0,
+            carry_fwd=0,
+            payment=amount,      # voucher credit
+            price_pl=0,          # NOT a lesson price
             attendance="",
             balance=0,
-            lesson_type="VoucherCR",
-            group_priv="P",
-            block_key="",   # not used for vouchers
+            lesson_notes="",
+            lesson_type="Voucher CR",
+            group_priv="",
+            blockends=None,
+            lesson_no=None,
+            freq="S",
             voucher_number=v.voucher_number
         )
 
@@ -3623,8 +3632,9 @@ def create_app():
 
         db.session.commit()
 
-        flash("Gift voucher processed and lesson created.", "success")
+        flash("Gift voucher processed and credit added.", "success")
         return redirect(url_for("gift_vouchers"))
+
 
     @app.route("/gift_voucher_view/<int:id>")
     def gift_voucher_view(id):
