@@ -1201,6 +1201,71 @@ def create_app():
 
     # print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())  # <-- remove or wrap
 
+    @app.route("/fetch_gift_vouchers")
+    def fetch_gift_vouchers():
+        print("FETCH GV ROUTE HIT — BEFORE API KEY CHECK")
+        import requests
+        from datetime import datetime
+        from models import GiftVoucherSubmission
+        from helpers_jf import GIFT_VOUCHER_FORM_ID, parse_gift_voucher_payload
+
+        api_key = current_app.config.get("JOTFORM_API_KEY")
+        if not api_key:
+            flash("Missing JotForm API key", "danger")
+            return redirect(url_for("gift_vouchers"))
+
+        # BUILD URL FIRST
+        url = f"https://us-api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
+
+        # DEBUG PRINT
+        print("DEBUG FETCH URL:", url)
+
+        response = requests.get(url)
+        data = response.json()
+
+        if data.get("responseCode") != 200:
+            flash("Failed to fetch from JotForm", "danger")
+            return redirect(url_for("gift_vouchers"))
+
+        submissions = data.get("content", [])
+        new_count = 0
+
+        for sub in submissions:
+            submission_id = sub.get("id")
+            created_at = sub.get("created_at")
+
+            # Skip duplicates
+            existing = GiftVoucherSubmission.query.filter_by(submission_id=submission_id).first()
+            if existing:
+                continue
+
+            parsed = parse_gift_voucher_payload(sub)
+
+            entry = GiftVoucherSubmission(
+                submission_id=submission_id,
+                created_at=datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S"),
+
+                purchaser_name=parsed["purchaser_name"],
+                recipient_name=parsed["recipient_name"],
+                voucher_number=parsed["voucher_number"],
+                amount_payable=parsed["amount_payable"],
+                notes=parsed["notes"],
+
+                ignored=False,
+                processed=False
+            )
+
+            db.session.add(entry)
+            new_count += 1
+
+        db.session.commit()
+
+        flash(f"Imported {new_count} new gift vouchers.", "success")
+        return redirect(url_for("gift_vouchers"))
+
+
+
+
 
     @app.route("/health")
     def health():
@@ -3472,67 +3537,6 @@ def create_app():
 
 
 
-    @app.route("/fetch_gift_vouchers")
-    def fetch_gift_vouchers():
-        print("FETCH GV ROUTE HIT — BEFORE API KEY CHECK")
-        import requests
-        from datetime import datetime
-        from models import GiftVoucherSubmission
-        from helpers_jf import GIFT_VOUCHER_FORM_ID, parse_gift_voucher_payload
-
-        api_key = current_app.config.get("JOTFORM_API_KEY")
-        if not api_key:
-            flash("Missing JotForm API key", "danger")
-            return redirect(url_for("gift_vouchers"))
-
-        # BUILD URL FIRST
-        url = f"https://us-api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
-
-        # DEBUG PRINT
-        print("DEBUG FETCH URL:", url)
-
-        response = requests.get(url)
-        data = response.json()
-
-        if data.get("responseCode") != 200:
-            flash("Failed to fetch from JotForm", "danger")
-            return redirect(url_for("gift_vouchers"))
-
-        submissions = data.get("content", [])
-        new_count = 0
-
-        for sub in submissions:
-            submission_id = sub.get("id")
-            created_at = sub.get("created_at")
-
-            # Skip duplicates
-            existing = GiftVoucherSubmission.query.filter_by(submission_id=submission_id).first()
-            if existing:
-                continue
-
-            parsed = parse_gift_voucher_payload(sub)
-
-            entry = GiftVoucherSubmission(
-                submission_id=submission_id,
-                created_at=datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S"),
-
-                purchaser_name=parsed["purchaser_name"],
-                recipient_name=parsed["recipient_name"],
-                voucher_number=parsed["voucher_number"],
-                amount_payable=parsed["amount_payable"],
-                notes=parsed["notes"],
-
-                ignored=False,
-                processed=False
-            )
-
-            db.session.add(entry)
-            new_count += 1
-
-        db.session.commit()
-
-        flash(f"Imported {new_count} new gift vouchers.", "success")
-        return redirect(url_for("gift_vouchers"))
 
 
     @app.route("/gift_vouchers")
