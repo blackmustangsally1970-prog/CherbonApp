@@ -143,32 +143,47 @@ def parse_general_enquiry_payload(raw_payload):
 # Gift Voucher JotForm
 GIFT_VOUCHER_FORM_ID = "213350261240036"
 
+def _safe_answer(answers, key):
+    """
+    Safely extracts an answer from a JotForm field.
+    Handles strings, lists (checkboxes), None, and missing fields.
+    """
+    raw = answers.get(key, {}).get("answer", "")
+
+    # Checkbox answers come back as lists
+    if isinstance(raw, list):
+        raw = ", ".join(str(x) for x in raw)
+
+    if raw is None:
+        raw = ""
+
+    return str(raw).strip()
+
+
 def parse_gift_voucher_payload(sub):
     """
     Extracts Gift Voucher fields from a JotForm submission payload.
     """
     answers = sub.get("answers", {})
 
-    # Purchaser name (split fields)
+    # Purchaser name
     purchaser_first = answers.get("3", {}).get("answer", {}).get("first", "").strip()
     purchaser_last  = answers.get("3", {}).get("answer", {}).get("last", "").strip()
     purchaser_name  = f"{purchaser_first} {purchaser_last}".strip()
 
-    # Recipient name (split fields)
+    # Recipient name
     recipient_first = answers.get("4", {}).get("answer", {}).get("first", "").strip()
     recipient_last  = answers.get("4", {}).get("answer", {}).get("last", "").strip()
     recipient_name  = f"{recipient_first} {recipient_last}".strip()
 
-    # Voucher number (hidden field)
+    # Voucher number
     voucher_number = answers.get("15", {}).get("answer", "").strip()
 
-    # Amount payable (#input_20)
+    # Amount payable
     amount_payable = answers.get("20", {}).get("answer", "").strip()
 
-    # Notes (optional)
-    notes = answers.get("7", {}).get("answer", "").strip() \
-            or answers.get("10", {}).get("answer", "").strip() \
-            or ""
+    # Notes (checkbox or text)
+    notes = _safe_answer(answers, "7") or _safe_answer(answers, "10")
 
     return {
         "purchaser_name": purchaser_name,
@@ -177,4 +192,3 @@ def parse_gift_voucher_payload(sub):
         "amount_payable": amount_payable,
         "notes": notes,
     }
-
