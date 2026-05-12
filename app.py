@@ -1251,7 +1251,6 @@ def create_app():
                 recipient_name=parsed["recipient_name"],
                 voucher_number=parsed["voucher_number"],
                 amount_payable=parsed["amount_payable"],
-                notes=parsed["notes"],
 
                 ignored=False,
                 processed=False
