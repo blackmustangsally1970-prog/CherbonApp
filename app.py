@@ -3474,6 +3474,7 @@ def create_app():
 
     @app.route("/fetch_gift_vouchers")
     def fetch_gift_vouchers():
+        print("FETCH GV ROUTE HIT")
         import requests
         from datetime import datetime
         from models import GiftVoucherSubmission
