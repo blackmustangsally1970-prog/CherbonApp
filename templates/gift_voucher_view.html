@@ -1,50 +1,30 @@
-{% extends "base.html" %}
-{% block content %}
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Gift Voucher Details</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
 
-<h2>Gift Voucher Submission</h2>
+<body style="padding:20px;">
 
-<hr>
+<h2>Gift Voucher Details</h2>
 
-<table class="table table-bordered">
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('gift_vouchers') }}" class="btn btn-secondary btn-lg">
+        Back to List
+    </a>
+</div>
+
+<table class="table table-bordered" style="max-width:600px;">
     <tr>
-        <th>Purchaser Name</th>
+        <th>Purchaser</th>
         <td>{{ v.purchaser_name }}</td>
     </tr>
     <tr>
-        <th>Purchaser Email</th>
-        <td>{{ v.purchaser_email }}</td>
-    </tr>
-    <tr>
-        <th>Purchaser Mobile</th>
-        <td>{{ v.purchaser_mobile }}</td>
-    </tr>
-
-    <tr>
-        <th>Recipient Name</th>
+        <th>Recipient</th>
         <td>{{ v.recipient_name }}</td>
     </tr>
-    <tr>
-        <th>Ridden Before</th>
-        <td>{{ v.ridden_before }}</td>
-    </tr>
-
-    <tr>
-        <th>Voucher Choice</th>
-        <td>{{ v.voucher_choice }}</td>
-    </tr>
-    <tr>
-        <th>Quantity</th>
-        <td>{{ v.quantity }}</td>
-    </tr>
-    <tr>
-        <th>Ride Type</th>
-        <td>{{ v.ride_type }}</td>
-    </tr>
-    <tr>
-        <th>Credit Amount</th>
-        <td>{{ v.credit_amount }}</td>
-    </tr>
-
     <tr>
         <th>Voucher Number</th>
         <td>{{ v.voucher_number }}</td>
@@ -53,41 +33,23 @@
         <th>Amount Payable</th>
         <td>{{ v.amount_payable }}</td>
     </tr>
-
     <tr>
-        <th>Message to Recipient</th>
-        <td>{{ v.message_to_recipient }}</td>
-    </tr>
-
-    <tr>
-        <th>Submitted At</th>
+        <th>Submitted</th>
         <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
     </tr>
-
-    {% if v.processed %}
-    <tr>
-        <th>Processed At</th>
-        <td>{{ v.processed_at.strftime("%d/%m/%Y %H:%M") }}</td>
-    </tr>
-    {% endif %}
 </table>
 
-<hr>
-
-<div class="btn-group">
-
+<div style="margin-top:20px;">
     {% if not v.processed %}
-        <a href="{{ url_for('gift_voucher_process', id=v.id) }}" class="btn btn-success">Process</a>
+        <a href="{{ url_for('gift_voucher_process', id=v.id) }}" class="btn btn-success btn-lg">Process</a>
     {% endif %}
 
     {% if not v.ignored %}
-        <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}" class="btn btn-warning">Ignore</a>
+        <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}" class="btn btn-warning btn-lg">Ignore</a>
     {% else %}
-        <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}" class="btn btn-secondary">Unignore</a>
+        <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}" class="btn btn-secondary btn-lg">Unignore</a>
     {% endif %}
-
-    <a href="{{ url_for('gift_vouchers') }}" class="btn btn-primary">Back</a>
-
 </div>
 
-{% endblock %}
+</body>
+</html>
