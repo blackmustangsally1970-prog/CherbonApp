@@ -231,6 +231,27 @@ def recalc_client_cascade(client_name: str):
     db.session.commit()
 
 
+
+# -------------------------
+#   Helper Functions
+# -------------------------
+
+def clean_name(name: str) -> str:
+    if not name:
+        return ""
+
+    # Trim and collapse multiple spaces
+    name = " ".join(name.split())
+
+    # Insert spaces before capital letters (CamelCase fix)
+    name = re.sub(r"(?<!^)(?=[A-Z])", " ", name)
+
+    # Proper case
+    name = name.title()
+
+    return name
+
+
 def strip_old_spans(text):
     if not text:
         return ""
@@ -1567,6 +1588,37 @@ def create_app():
         db.session.commit()
 
         return f"User '{username}' created with role '{role}'"
+
+
+    @app.route("/gift_voucher_edit/<int:id>", methods=["GET", "POST"])
+    def gift_voucher_edit(id):
+        from models import GiftVoucherSubmission
+        from datetime import datetime
+
+        v = GiftVoucherSubmission.query.get_or_404(id)
+
+        if request.method == "POST":
+            # Clean purchaser + recipient names
+            purchaser = clean_name(request.form.get("purchaser_name", v.purchaser_name))
+            recipient = clean_name(request.form.get("recipient_name", v.recipient_name))
+
+            # Clean voucher number (trim only)
+            voucher_no = request.form.get("voucher_number", v.voucher_number).strip()
+
+            # Clean amount (trim only)
+            amount = request.form.get("amount_payable", v.amount_payable).strip()
+
+            # Save cleaned values
+            v.purchaser_name = purchaser
+            v.recipient_name = recipient
+            v.voucher_number = voucher_no
+            v.amount_payable = amount
+
+            db.session.commit()
+            flash("Voucher updated successfully.", "success")
+            return redirect(url_for("gift_vouchers"))
+
+        return render_template("gift_voucher_edit.html", v=v)
 
 
     @app.route("/admin_delete_user/<username>")

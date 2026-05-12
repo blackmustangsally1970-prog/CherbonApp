@@ -44,6 +44,8 @@
         <a href="{{ url_for('gift_voucher_process', id=v.id) }}" class="btn btn-success btn-lg">Process</a>
     {% endif %}
 
+    <a href="{{ url_for('gift_voucher_edit', id=v.id) }}" class="btn btn-info btn-lg">Edit</a>
+
     {% if not v.ignored %}
         <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}" class="btn btn-warning btn-lg">Ignore</a>
     {% else %}

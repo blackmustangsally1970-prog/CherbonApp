@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Edit Gift Voucher</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body style="padding:20px;">
+
+<h2>Edit Gift Voucher</h2>
+
+<form method="POST">
+
+    <div class="mb-3">
+        <label>Purchaser Name</label>
+        <input type="text" name="purchaser_name" class="form-control" value="{{ v.purchaser_name }}">
+    </div>
+
+    <div class="mb-3">
+        <label>Recipient Name</label>
+        <input type="text" name="recipient_name" class="form-control" value="{{ v.recipient_name }}">
+    </div>
+
+    <div class="mb-3">
+        <label>Voucher Number</label>
+        <input type="text" name="voucher_number" class="form-control" value="{{ v.voucher_number }}">
+    </div>
+
+    <div class="mb-3">
+        <label>Amount Payable</label>
+        <input type="text" name="amount_payable" class="form-control" value="{{ v.amount_payable }}">
+    </div>
+
+    <button class="btn btn-primary">Save Changes</button>
+    <a href="{{ url_for('gift_vouchers') }}" class="btn btn-secondary">Cancel</a>
+
+</form>
+
+</body>
+</html>
