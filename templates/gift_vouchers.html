@@ -79,3 +79,33 @@
 {% if ignored %}
     <table class="table table-striped">
         <thead>
+            <tr>
+                <th>Purchaser</th>
+                <th>Recipient</th>
+                <th>Voucher No.</th>
+                <th>Amount</th>
+                <th>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for v in ignored %}
+            <tr>
+                <td>{{ v.purchaser_name }}</td>
+                <td>{{ v.recipient_name }}</td>
+                <td>{{ v.voucher_number }}</td>
+                <td>{{ v.amount_payable }}</td>
+                <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                <td>
+                    <a href="{{ url_for('gift_voucher_view', id=v.id) }}" class="btn btn-primary btn-sm">View</a>
+                    <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}" class="btn btn-secondary btn-sm">Unignore</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No ignored vouchers.</p>
+{% endif %}
+
+{% endblock %}
