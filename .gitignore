@@ -29,11 +29,15 @@ instance/
 *.sqlite
 *.sqlite3
 
-# Logs
-*.log
-
 # Bytecode cache
 *.cache/
 
 # Azure artifacts
 .azure/
+
+# Logs
+logs/
+lesson_logs/
+sms_logs/
+*.log
+*.txt
