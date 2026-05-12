@@ -73,6 +73,14 @@
     <a href="{{ url_for('view_admin_logs') }}">View Admin Logs</a>
   </nav>
 
+<nav>
+    <a href="#" id="reindex-link">Reindex Tables</a>
+    <a href="{{ url_for('view_admin_logs') }}">View Admin Logs</a>
+    <a href="{{ url_for('view_disclaimer_logs') }}">View Disclaimer Logs</a>
+</nav>
+
+
+
   <!-- Hidden POST form for Reindex Tables -->
   <form id="reindex-form" class="hidden-form" method="POST" action="{{ url_for('reindex_tables') }}"></form>
 
