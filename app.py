@@ -5592,6 +5592,25 @@ def create_app():
             logs.append(("Error", f"Failed to read logs: {e}"))
         return render_template("admin_logs.html", logs=logs)
 
+    @app.route('/admin/disclaimer_logs')
+    @login_required
+    def view_disclaimer_logs():
+        log_dir = "/var/log/cherbonapp"
+        logs = []
+
+        try:
+            for fname in sorted(os.listdir(log_dir), reverse=True):
+                if fname.startswith("disclaimers_") and fname.endswith(".log"):
+                    path = os.path.join(log_dir, fname)
+                    with open(path, "r", encoding="utf-8") as f:
+                        logs.append((fname, f.read()))
+        except Exception as e:
+            logs.append(("Error", f"Failed to read disclaimer logs: {e}"))
+
+        return render_template("admin_logs.html", logs=logs)
+
+
+
 
     @app.route('/admin/reindex', methods=['POST'])
     def reindex_tables():
