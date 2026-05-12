@@ -3484,10 +3484,12 @@ def create_app():
             flash("Missing JotForm API key", "danger")
             return redirect(url_for("gift_vouchers"))
 
-
-
+        # BUILD URL FIRST
         url = f"https://us-api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
+
+        # DEBUG PRINT
         print("DEBUG FETCH URL:", url)
+
         response = requests.get(url)
         data = response.json()
 
