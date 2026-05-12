@@ -1220,7 +1220,9 @@ def create_app():
         # DEBUG PRINT
         print("DEBUG FETCH URL:", url)
 
+
         response = requests.get(url)
+        print("RAW RESPONSE:", response.text)
         data = response.json()
 
         if data.get("responseCode") != 200:
