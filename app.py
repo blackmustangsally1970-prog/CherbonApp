@@ -3511,21 +3511,10 @@ def create_app():
                 created_at=datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S"),
 
                 purchaser_name=parsed["purchaser_name"],
-                purchaser_email=parsed["purchaser_email"],
-                purchaser_mobile=parsed["purchaser_mobile"],
-
                 recipient_name=parsed["recipient_name"],
-                ridden_before=parsed["ridden_before"],
-
-                voucher_choice=parsed["voucher_choice"],
-                quantity=parsed["quantity"],
-                ride_type=parsed["ride_type"],
-                credit_amount=parsed["credit_amount"],
-
                 voucher_number=parsed["voucher_number"],
                 amount_payable=parsed["amount_payable"],
-
-                message_to_recipient=parsed["message_to_recipient"],
+                notes=parsed["notes"],
 
                 ignored=False,
                 processed=False
