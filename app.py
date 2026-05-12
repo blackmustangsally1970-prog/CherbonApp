@@ -588,19 +588,33 @@ def log_lesson_changes(changes, user="system"):
         print(f"Log write failed: {e}")
 
 def log_disclaimer_processed(names):
-    from datetime import datetime
-    log_date = datetime.now().strftime("%Y-%m-%d")
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    log_path = os.path.join(LOG_ROOT, f"disclaimers_{log_date}.txt")
-
-
+    """
+    Logs processed disclaimers to the main CherbonApp log folder
+    using Brisbane time and a clean, consistent format.
+    """
 
     try:
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{ts}] {', '.join(names)}\n")
+        # Brisbane timezone
+        brisbane_tz = pytz.timezone("Australia/Brisbane")
+        now_brisbane = datetime.now(brisbane_tz)
+        timestamp = now_brisbane.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Correct log folder (the one your viewer actually reads)
+        log_dir = "/var/log/cherbonapp"
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Daily rotating file
+        log_file = os.path.join(log_dir, f"disclaimers_{now_brisbane.strftime('%Y-%m-%d')}.log")
+
+        # Write entries
+        with open(log_file, "a", encoding="utf-8") as f:
+            for name in names:
+                f.write(f"{timestamp} — Processed disclaimer for: {name}\n")
+
+        print(f"[DisclaimerLog] Logged {len(names)} disclaimers to {log_file}")
+
     except Exception as e:
-        print("Failed to write disclaimer log:", e)
+        print(f"[DisclaimerLog][ERROR] {e}")
 
 def parse_start(tframe):
     """
