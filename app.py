@@ -3484,7 +3484,7 @@ def create_app():
             flash("Missing JotForm API key", "danger")
             return redirect(url_for("gift_vouchers"))
 
-        url = f"https://api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
+        url = f"https://us-api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
         response = requests.get(url)
         data = response.json()
 
