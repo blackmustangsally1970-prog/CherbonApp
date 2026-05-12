@@ -139,3 +139,42 @@ def parse_general_enquiry_payload(raw_payload):
     }
 
 
+
+# Gift Voucher JotForm
+GIFT_VOUCHER_FORM_ID = "YOUR_FORM_ID_HERE"   # replace with your real form ID
+
+def parse_gift_voucher_payload(sub):
+    """
+    Extracts Gift Voucher fields from a JotForm submission payload.
+    """
+    answers = sub.get("answers", {})
+
+    # Purchaser name (split fields)
+    purchaser_first = answers.get("3", {}).get("answer", {}).get("first", "").strip()
+    purchaser_last  = answers.get("3", {}).get("answer", {}).get("last", "").strip()
+    purchaser_name  = f"{purchaser_first} {purchaser_last}".strip()
+
+    # Recipient name (split fields)
+    recipient_first = answers.get("4", {}).get("answer", {}).get("first", "").strip()
+    recipient_last  = answers.get("4", {}).get("answer", {}).get("last", "").strip()
+    recipient_name  = f"{recipient_first} {recipient_last}".strip()
+
+    # Voucher number (hidden field)
+    voucher_number = answers.get("15", {}).get("answer", "").strip()
+
+    # Amount payable (#input_20)
+    amount_payable = answers.get("20", {}).get("answer", "").strip()
+
+    # Notes (optional)
+    notes = answers.get("7", {}).get("answer", "").strip() \
+            or answers.get("10", {}).get("answer", "").strip() \
+            or ""
+
+    return {
+        "purchaser_name": purchaser_name,
+        "recipient_name": recipient_name,
+        "voucher_number": voucher_number,
+        "amount_payable": amount_payable,
+        "notes": notes,
+    }
+

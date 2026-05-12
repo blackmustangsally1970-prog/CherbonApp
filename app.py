@@ -365,57 +365,6 @@ def get_sundays_for_financial_year(fy_string):
     return sundays
 
 
-def parse_gift_voucher_payload(sub):
-    """Extracts relevant fields from a JotForm gift voucher submission."""
-
-    answers = sub.get("answers", {})
-
-    def get(qname):
-        for a in answers.values():
-            if a.get("name") == qname:
-                return a.get("answer")
-        return None
-
-    # Purchaser details
-    purchaser_name = get("nameOf")
-    purchaser_email = get("emailTo")
-    purchaser_mobile = get("phoneNumber")
-
-    # Recipient details
-    recipient_name = get("nameOf4")
-    ridden_before = get("hasThe")
-
-    # Voucher options
-    voucher_choice = get("voucherChoice")
-    quantity = get("quantityPer")
-    ride_type = get("name7")
-    credit_amount = get("chooseRiding14")
-
-    # Voucher metadata
-    voucher_number = get("voucherNo")
-    amount_payable = get("amountPayable")
-
-    # Message
-    message_to_recipient = get("yourMessage")
-
-    return {
-        "purchaser_name": purchaser_name,
-        "purchaser_email": purchaser_email,
-        "purchaser_mobile": purchaser_mobile,
-
-        "recipient_name": recipient_name,
-        "ridden_before": ridden_before,
-
-        "voucher_choice": voucher_choice,
-        "quantity": quantity,
-        "ride_type": ride_type,
-        "credit_amount": credit_amount,
-
-        "voucher_number": voucher_number,
-        "amount_payable": amount_payable,
-
-        "message_to_recipient": message_to_recipient,
-    }
 
 
 
