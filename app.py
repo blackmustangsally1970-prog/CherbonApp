@@ -1215,7 +1215,7 @@ def create_app():
             return redirect(url_for("gift_vouchers"))
 
         # BUILD URL FIRST
-        url = f"https://us-api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
+        url = f"https://api.jotform.com/form/{GIFT_VOUCHER_FORM_ID}/submissions?apiKey={api_key}"
 
         # DEBUG PRINT
         print("DEBUG FETCH URL:", url)
