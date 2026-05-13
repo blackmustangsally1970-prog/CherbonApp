@@ -4104,13 +4104,15 @@ def create_app():
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-        # Ignore option
+        # ---------------------------------------------------------
+        # IGNORE OPTION — HARD STOP (NO FALLTHROUGH)
+        # ---------------------------------------------------------
         if choice == "ignore":
-            row.processed = True
-            row.ignored = True
-            row.processed_at = datetime.utcnow()
-            db.session.commit()
-            return redirect(url_for('process_all_pending'))
+                row.processed = True
+                row.ignored = True
+                row.processed_at = datetime.utcnow()
+                db.session.commit()
+                return redirect(url_for('process_all_pending'))
 
         # Preload clients
         all_clients = db.session.query(Client).all()
