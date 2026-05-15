@@ -145,6 +145,59 @@ def get_incomplete_days(employee_id):
     cur.close()
     return rows
 
+
+def smart_proper_name(name):
+    if not name:
+        return ""
+
+    name = name.strip()
+    parts = name.split()
+
+    # Dutch particles that stay lowercase
+    lowercase_particles = {
+        "van", "der", "den", "de", "het", "ten", "ter", "op", "aan", "bij", "uit", "te"
+    }
+
+    fixed_parts = []
+    for part in parts:
+        p = part.lower()
+
+        # Handle O' prefix
+        if p.startswith("o'") and len(p) > 2:
+            fixed_parts.append("O'" + p[2:].capitalize())
+            continue
+
+        # Handle D' prefix
+        if p.startswith("d'") and len(p) > 2:
+            fixed_parts.append("D'" + p[2:].capitalize())
+            continue
+
+        # Handle Mc prefix
+        if p.startswith("mc") and len(p) > 2:
+            fixed_parts.append("Mc" + p[2:].capitalize())
+            continue
+
+        # Handle Mac prefix
+        if p.startswith("mac") and len(p) > 3:
+            fixed_parts.append("Mac" + p[3:].capitalize())
+            continue
+
+        # Handle hyphens (Mary-Anne)
+        if "-" in p:
+            fixed_parts.append("-".join(s.capitalize() for s in p.split("-")))
+            continue
+
+        # Handle Dutch particles (always lowercase)
+        if p in lowercase_particles:
+            fixed_parts.append(p)
+            continue
+
+        # Default
+        fixed_parts.append(p.capitalize())
+
+    return " ".join(fixed_parts)
+
+
 def fy_week1_monday(year):
     fy_start = date(year, 7, 1)
     return fy_start - timedelta(days=fy_start.weekday())
@@ -5834,6 +5887,7 @@ def create_app():
                 continue
 
             rider_name = r.get("name") or ""
+            rider_name = smart_proper_name(r.get("name") or "")
             rider_mobile = phone
             rider_email = email
             rider_age = r.get("age")
@@ -6138,7 +6192,7 @@ def create_app():
             return redirect(url_for('general_enquiries'))
 
         # CLEANED RIDER DETAILS
-        rider_name = clean_name(enquiry.rider_name)
+        rider_name = smart_proper_name(enquiry.rider_name)
         rider_mobile = enquiry.mobile_phone.strip() if enquiry.mobile_phone else ""
         rider_email = enquiry.email_address.strip() if enquiry.email_address else ""
 
