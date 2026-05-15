@@ -1666,8 +1666,8 @@ def create_app():
 
         if request.method == "POST":
             # Clean purchaser + recipient names
-            purchaser = clean_name(request.form.get("purchaser_name", v.purchaser_name))
-            recipient = clean_name(request.form.get("recipient_name", v.recipient_name))
+            purchaser = smart_proper_name(request.form.get("purchaser_name", v.purchaser_name))
+            recipient = smart_proper_name(request.form.get("recipient_name", v.recipient_name))
 
             # Clean voucher number (trim only)
             voucher_no = request.form.get("voucher_number", v.voucher_number).strip()
@@ -4537,7 +4537,7 @@ def create_app():
         # PHASE 3: No conflicts → fast create
         # -----------------------------------------
         for rider in valid_riders:
-            name = normalise_full_name(rider["name"])
+            name = smart_proper_name(rider["name"])
             age = int(rider["age"]) if rider["age"] else None
             guardian = rider["guardian"]
             mobile = clean_mobile(rider["mobile"])
