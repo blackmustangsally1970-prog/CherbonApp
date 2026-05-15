@@ -5836,6 +5836,10 @@ def create_app():
             rider_name = r.get("name") or ""
             rider_mobile = phone
             rider_email = email
+            rider_age = r.get("age")
+            rider_height = r.get("height_cm")
+            rider_weight = r.get("weight_kg")
+
 
             # -----------------------------------------------------
             # ENSURE CLIENT EXISTS
@@ -5848,7 +5852,10 @@ def create_app():
                 client = Client(
                     full_name=rider_name,
                     mobile=rider_mobile,
-                    email_primary=rider_email
+                    email_primary=rider_email,
+                    age=rider_age,
+                    height_cm=rider_height,
+                    weight_kg=rider_weight
                 )
                 db.session.add(client)
                 db.session.flush()
