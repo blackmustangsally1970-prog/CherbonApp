@@ -8828,6 +8828,10 @@ Cherbon Waters Admin
         return redirect(url_for("client_view", client=client_name))
 
 
+    @app.route('/enquiries')
+    def enquiries_home():
+        return render_template('enquiries_home.html')
+
 
     @app.route('/client_view')
     def client_view():

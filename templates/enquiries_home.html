@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>📨 Enquiries</h2>
+<p>Select the enquiry type below:</p>
+
+<div class="enquiry-grid">
+
+    <a href="{{ url_for('trailride_enquiries') }}" class="enquiry-card">
+        🐎 Trail Ride Enquiries
+    </a>
+
+    <a href="{{ url_for('general_enquiries') }}" class="enquiry-card">
+        📋 General Enquiries
+    </a>
+
+    <!-- Future additions -->
+    <a href="#" class="enquiry-card disabled">
+        🎓 Course Enquiries (coming soon)
+    </a>
+
+    <a href="#" class="enquiry-card disabled">
+        🎁 Gift Voucher Enquiries (coming soon)
+    </a>
+
+</div>
+
+{% endblock %}

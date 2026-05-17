@@ -122,17 +122,9 @@
   <a href="{{ url_for('add_client_page') }}" class="menu-btn">➕ Add New Client</a>
 </li>
 
-    <li class="submenu">
-        <a href="#" class="menu-btn">📨 Enquiries</a>
-        <ul class="submenu-items">
-            <li>
-                <a href="{{ url_for('trailride_enquiries') }}" class="menu-btn">🐎 Trail Ride Enquiries</a>
-            </li>
-            <li>
-                <a href="{{ url_for('general_enquiries') }}" class="menu-btn">General Enquiries</a>
-            </li>
-        </ul>
-    </li>
+<li>
+    <a href="{{ url_for('enquiries_home') }}" class="menu-btn">📨 Enquiries</a>
+</li>
 
   <li>
     <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
@@ -180,7 +172,7 @@
 
   <li>
 
-<a href="{{ url_for('course_form_results') }}" class="menu-btn">Course Form Results</a>
+<a href="{{ url_for('course_form_results') }}" class="menu-btn">Courses</a>
 
   </li>
 
