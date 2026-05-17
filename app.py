@@ -4906,6 +4906,7 @@ def create_app():
         if not course:
             return jsonify(success=False, error="Course not found")
 
+        # Allowed editable fields
         allowed = {
             "course_code",
             "display_label",
@@ -4913,7 +4914,22 @@ def create_app():
             "timerange",
             "lesson_type",
             "group_priv",
-            "active"
+            "active",
+
+            # Base prices
+            "weekly_price",
+            "fortnightly_price",
+            "full_price",
+
+            # Two‑course prices
+            "two_course_weekly",
+            "two_course_fortnightly",
+            "two_course_full",
+
+            # Sibling prices
+            "sibling_weekly",
+            "sibling_fortnightly",
+            "sibling_full"
         }
 
         if field not in allowed:
@@ -4925,17 +4941,26 @@ def create_app():
             if existing and existing.id != course.id:
                 return jsonify(success=False, error="Course code already exists")
 
+        # Numeric fields
+        numeric_fields = [
+            "weekly_price", "fortnightly_price", "full_price",
+            "two_course_weekly", "two_course_fortnightly", "two_course_full",
+            "sibling_weekly", "sibling_fortnightly", "sibling_full"
+        ]
+
         try:
-            # Apply the new value FIRST
             if field == "active":
                 setattr(course, field, bool(int(value)))
+
+            elif field in numeric_fields:
+                setattr(course, field, float(value))
+
             else:
                 setattr(course, field, value)
 
-            # ⭐ Critical flush so compute_sort_order sees updated values
+            # Ensure sort order recalculates correctly
             db.session.flush()
 
-            # Recompute sort order using updated values
             course.sort_order = compute_sort_order(
                 course.day_of_week,
                 course.timerange

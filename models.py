@@ -234,12 +234,19 @@ class CourseReference(db.Model):
     sort_order = db.Column(db.Integer, default=0)
     active = db.Column(db.Boolean, default=True)
 
-    # Pricing
-    price_weekly = db.Column(db.Float, default=0)
-    price_upfront = db.Column(db.Float, default=0)
-    discount_available = db.Column(db.Boolean, default=False)
-    discount_weekly = db.Column(db.Float, default=0)
-    discount_upfront = db.Column(db.Float, default=0)
+    weekly_price = db.Column(db.Numeric(10,2), default=0.00)
+    fortnightly_price = db.Column(db.Numeric(10,2), default=0.00)
+    full_price = db.Column(db.Numeric(10,2), default=0.00)
+
+    two_course_weekly = db.Column(db.Numeric(10,2), default=0.00)
+    two_course_fortnightly = db.Column(db.Numeric(10,2), default=0.00)
+    two_course_full = db.Column(db.Numeric(10,2), default=0.00)
+
+    sibling_weekly = db.Column(db.Numeric(10,2), default=0.00)
+    sibling_fortnightly = db.Column(db.Numeric(10,2), default=0.00)
+    sibling_full = db.Column(db.Numeric(10,2), default=0.00)
+
+
 
 
 class Wedding(db.Model):
