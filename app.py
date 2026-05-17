@@ -1707,15 +1707,21 @@ def create_app():
         for sub in r["content"]:
             answers = sub.get("answers", {})
 
-            rider_first = answers.get("riderName", {}).get("first", "")
-            rider_last  = answers.get("riderName", {}).get("last", "")
-            courseno    = answers.get("courseno", {}).get("answer", "")
-            ftor        = answers.get("ftOr", {}).get("answer", "")
-            horse_1     = answers.get("horse_1", {}).get("answer", "")
-            horse_2     = answers.get("horse_2", {}).get("answer", "")
-            horse_3     = answers.get("horse_3", {}).get("answer", "")
-
+            # Rider name (QID 58)
+            rider_first = answers.get("58", {}).get("answer", {}).get("first", "")
+            rider_last  = answers.get("58", {}).get("answer", {}).get("last", "")
             rider_full = f"{rider_first} {rider_last}".strip()
+
+            # Course No (QID 132)
+            courseno = answers.get("132", {}).get("answer", "")
+
+            # FT or W (QID 134)
+            ftor = answers.get("134", {}).get("answer", "")
+
+            # Horse preferences (QIDs 150, 151, 152)
+            horse_1 = answers.get("150", {}).get("answer", "")
+            horse_2 = answers.get("151", {}).get("answer", "")
+            horse_3 = answers.get("152", {}).get("answer", "")
 
             entry = CourseFormSubmission(
                 rider_name=rider_full,
@@ -1734,7 +1740,6 @@ def create_app():
 
         rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
         return render_template('course_form_results.html', rows=rows)
-
 
     @app.route('/course_form_results')
     def course_form_results():
