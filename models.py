@@ -7,7 +7,7 @@ class CourseFormSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rider_name = db.Column(db.String(120))
     courseno = db.Column(db.String(50))
-    ftOr = db.Column(db.String(50))
+    ftor = db.Column(db.String(50))
     horse_1 = db.Column(db.String(120))
     horse_2 = db.Column(db.String(120))
     horse_3 = db.Column(db.String(120))

@@ -1710,7 +1710,7 @@ def create_app():
             rider_first = answers.get("riderName", {}).get("first", "")
             rider_last  = answers.get("riderName", {}).get("last", "")
             courseno    = answers.get("courseno", {}).get("answer", "")
-            ftOr        = answers.get("ftOr", {}).get("answer", "")
+            ftor        = answers.get("ftor", {}).get("answer", "")
             horse_1     = answers.get("horse_1", {}).get("answer", "")
             horse_2     = answers.get("horse_2", {}).get("answer", "")
             horse_3     = answers.get("horse_3", {}).get("answer", "")
@@ -1723,7 +1723,7 @@ def create_app():
                 entry = CourseFormSubmission(
                     rider_name=rider_full,
                     courseno=courseno,
-                    ftOr=ftOr,
+                    ftor=ftor,
                     horse_1=horse_1,
                     horse_2=horse_2,
                     horse_3=horse_3,
@@ -1732,7 +1732,7 @@ def create_app():
                 db.session.add(entry)
             else:
                 existing.rider_name = rider_full
-                existing.ftOr = ftOr
+                existing.ftor = ftor
                 existing.horse_1 = horse_1
                 existing.horse_2 = horse_2
                 existing.horse_3 = horse_3
