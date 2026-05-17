@@ -1693,7 +1693,7 @@ def create_app():
         import requests
         import datetime
 
-        API_KEY = app.config['JOTFORM_API_KEY']   # ← FIXED
+        API_KEY = app.config['JOTFORM_API_KEY']
         FORM_ID = "212936006493860"
 
         url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
@@ -1710,44 +1710,36 @@ def create_app():
             rider_first = answers.get("riderName", {}).get("first", "")
             rider_last  = answers.get("riderName", {}).get("last", "")
             courseno    = answers.get("courseno", {}).get("answer", "")
-            ftor        = answers.get("ftor", {}).get("answer", "")
+            ftor        = answers.get("ftOr", {}).get("answer", "")
             horse_1     = answers.get("horse_1", {}).get("answer", "")
             horse_2     = answers.get("horse_2", {}).get("answer", "")
             horse_3     = answers.get("horse_3", {}).get("answer", "")
 
             rider_full = f"{rider_first} {rider_last}".strip()
 
-            existing = CourseFormSubmission.query.filter_by(courseno=courseno).first()
+            entry = CourseFormSubmission(
+                rider_name=rider_full,
+                courseno=courseno,
+                ftor=ftor,
+                horse_1=horse_1,
+                horse_2=horse_2,
+                horse_3=horse_3,
+                submitted_at=datetime.datetime.utcnow()
+            )
 
-            if not existing:
-                entry = CourseFormSubmission(
-                    rider_name=rider_full,
-                    courseno=courseno,
-                    ftor=ftor,
-                    horse_1=horse_1,
-                    horse_2=horse_2,
-                    horse_3=horse_3,
-                    submitted_at=datetime.datetime.utcnow()
-                )
-                db.session.add(entry)
-            else:
-                existing.rider_name = rider_full
-                existing.ftor = ftor
-                existing.horse_1 = horse_1
-                existing.horse_2 = horse_2
-                existing.horse_3 = horse_3
-                existing.submitted_at = datetime.datetime.utcnow()
-
+            db.session.add(entry)
             pulled += 1
 
         db.session.commit()
-        return f"Pulled {pulled} course submissions."
+
+        rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
+        return render_template('course_form_results.html', rows=rows)
+
 
     @app.route('/course_form_results')
     def course_form_results():
         rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
         return render_template('course_form_results.html', rows=rows)
-
 
 
     @app.route("/admin_delete_user/<username>")
