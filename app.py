@@ -1693,7 +1693,7 @@ def create_app():
         import requests
         import datetime
 
-        API_KEY = JOTFORM_API_KEY   # your key in config
+        API_KEY = app.config['JOTFORM_API_KEY']   # ← FIXED
         FORM_ID = "212936006493860"
 
         url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
