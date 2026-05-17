@@ -1,30 +1,36 @@
-{% extends "index.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Enquiries</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
 
-<a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
+<body>
 
-<h2>📨 Enquiries</h2>
-<p>Select the enquiry type below:</p>
-
-<div class="enquiry-grid">
-
-    <a href="{{ url_for('trailride_enquiries') }}" class="enquiry-card">
-        🐎 Trail Ride Enquiries
-    </a>
-
-    <a href="{{ url_for('general_enquiries') }}" class="enquiry-card">
-        📋 General Enquiries
-    </a>
-
-    <!-- Future additions -->
-    <a href="#" class="enquiry-card disabled">
-        🎓 Course Enquiries (coming soon)
-    </a>
-
-    <a href="#" class="enquiry-card disabled">
-        🎁 Gift Voucher Enquiries (coming soon)
-    </a>
-
+<div style="margin-bottom:12px;" class="no-print" id="top-controls">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
 </div>
 
-{% endblock %}
+
+    {% include 'menu.html' %}
+
+    <div class="container">
+        <h2>📨 Enquiries</h2>
+        <p>Select the enquiry type below:</p>
+
+        <div class="enquiry-grid">
+
+            <a href="{{ url_for('trailride_enquiries') }}" class="enquiry-card">
+                🐎 Trail Ride Enquiries
+            </a>
+
+            <a href="{{ url_for('general_enquiries') }}" class="enquiry-card">
+                📋 General Enquiries
+            </a>
+
+        </div>
+    </div>
+
+</body>
+</html>
