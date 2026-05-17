@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Course Form Submissions</title>
+
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        .menu-btn {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+
+        .menu-btn:hover {
+            background: #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Course Form Submissions</h2>
+
+<a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+<a href="{{ url_for('pull_courses_from_jotform') }}" class="menu-btn">↻ Refresh From JotForm</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Rider Name</th>
+            <th>Course No</th>
+            <th>FT/W</th>
+            <th>Horse 1</th>
+            <th>Horse 2</th>
+            <th>Horse 3</th>
+            <th>Submitted</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for r in rows %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.rider_name }}</td>
+            <td>{{ r.courseno }}</td>
+            <td>{{ r.ftOr }}</td>
+            <td>{{ r.horse_1 }}</td>
+            <td>{{ r.horse_2 }}</td>
+            <td>{{ r.horse_3 }}</td>
+            <td>{{ r.submitted_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

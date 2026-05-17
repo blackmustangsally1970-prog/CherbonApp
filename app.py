@@ -1687,6 +1687,67 @@ def create_app():
 
         return render_template("gift_voucher_edit.html", v=v)
 
+    @app.route('/pull_courses_from_jotform')
+    def pull_courses_from_jotform():
+        import requests
+        import datetime
+
+        API_KEY = JOTFORM_API_KEY   # your key in config
+        FORM_ID = "212936006493860"
+
+        url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
+        r = requests.get(url).json()
+
+        if "content" not in r:
+            return "JotForm API error: no content"
+
+        pulled = 0
+
+        for sub in r["content"]:
+            answers = sub.get("answers", {})
+
+            rider_first = answers.get("riderName", {}).get("first", "")
+            rider_last  = answers.get("riderName", {}).get("last", "")
+            courseno    = answers.get("courseno", {}).get("answer", "")
+            ftOr        = answers.get("ftOr", {}).get("answer", "")
+            horse_1     = answers.get("horse_1", {}).get("answer", "")
+            horse_2     = answers.get("horse_2", {}).get("answer", "")
+            horse_3     = answers.get("horse_3", {}).get("answer", "")
+
+            rider_full = f"{rider_first} {rider_last}".strip()
+
+            existing = CourseFormSubmission.query.filter_by(courseno=courseno).first()
+
+            if not existing:
+                entry = CourseFormSubmission(
+                    rider_name=rider_full,
+                    courseno=courseno,
+                    ftOr=ftOr,
+                    horse_1=horse_1,
+                    horse_2=horse_2,
+                    horse_3=horse_3,
+                    submitted_at=datetime.datetime.utcnow()
+                )
+                db.session.add(entry)
+            else:
+                existing.rider_name = rider_full
+                existing.ftOr = ftOr
+                existing.horse_1 = horse_1
+                existing.horse_2 = horse_2
+                existing.horse_3 = horse_3
+                existing.submitted_at = datetime.datetime.utcnow()
+
+            pulled += 1
+
+        db.session.commit()
+        return f"Pulled {pulled} course submissions."
+
+    @app.route('/course_form_results')
+    def course_form_results():
+        rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
+        return render_template('course_form_results.html', rows=rows)
+
+
 
     @app.route("/admin_delete_user/<username>")
     @login_required
