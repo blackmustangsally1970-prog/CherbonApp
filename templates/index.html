@@ -60,6 +60,17 @@
       }
     }
 
+.submenu .submenu-items {
+    display: none;
+    margin-left: 20px;
+}
+
+.submenu:hover .submenu-items {
+    display: block;
+}
+
+
+
   </style>
 </head>
 
@@ -111,13 +122,17 @@
   <a href="{{ url_for('add_client_page') }}" class="menu-btn">➕ Add New Client</a>
 </li>
 
-  <li>
-    <a href="{{ url_for('trailride_enquiries') }}" class="menu-btn">🐎 Trail Ride Enquiries</a>
-  </li>
-
-  <li>
-    <a href="{{ url_for('general_enquiries') }}" class="menu-btn">General Enquiries</a>
-  </li>
+    <li class="submenu">
+        <a href="#" class="menu-btn">📨 Enquiries</a>
+        <ul class="submenu-items">
+            <li>
+                <a href="{{ url_for('trailride_enquiries') }}" class="menu-btn">🐎 Trail Ride Enquiries</a>
+            </li>
+            <li>
+                <a href="{{ url_for('general_enquiries') }}" class="menu-btn">General Enquiries</a>
+            </li>
+        </ul>
+    </li>
 
   <li>
     <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
