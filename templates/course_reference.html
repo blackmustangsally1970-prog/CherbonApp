@@ -24,7 +24,6 @@
         th.group-header {
             background: #e8e8e8;
             font-weight: bold;
-            text-align: center;
         }
 
         th {
@@ -40,7 +39,6 @@
             font-size: 14px;
             color: #0645AD;
             text-decoration: none;
-            transition: background 0.2s ease, box-shadow 0.2s ease;
             margin-right: 12px;
         }
 
@@ -67,7 +65,6 @@
 
 <table>
 
-    <!-- GROUPED HEADER ROW -->
     <thead>
         <tr>
             <th rowspan="2">Course Code</th>
@@ -87,17 +84,14 @@
         </tr>
 
         <tr>
-            <!-- Base -->
             <th>Wk</th>
             <th>Fn</th>
             <th>Full</th>
 
-            <!-- Two Course -->
             <th>Wk</th>
             <th>Fn</th>
             <th>Full</th>
 
-            <!-- Sibling -->
             <th>Wk</th>
             <th>Fn</th>
             <th>Full</th>
@@ -108,7 +102,6 @@
         {% for row in courses %}
         <tr>
 
-            <!-- COURSE CODE -->
             <td>
                 <input type="text" class="course-edit"
                        data-id="{{ row.id }}"
@@ -117,7 +110,6 @@
                        style="width: 100px; border: 2px solid #d9534f; border-radius: 4px;">
             </td>
 
-            <!-- DISPLAY LABEL -->
             <td>
                 <input type="text" class="course-edit"
                        data-id="{{ row.id }}"
@@ -126,7 +118,6 @@
                        style="width: 140px;">
             </td>
 
-            <!-- DAY -->
             <td>
                 <select class="course-edit" data-id="{{ row.id }}" data-field="day_of_week">
                     {% for d in ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] %}
@@ -135,7 +126,6 @@
                 </select>
             </td>
 
-            <!-- TIME RANGE -->
             <td>
                 <select class="course-edit" data-id="{{ row.id }}" data-field="timerange">
                     {% for t in times %}
@@ -146,7 +136,6 @@
                 </select>
             </td>
 
-            <!-- LESSON TYPE -->
             <td>
                 <input type="text" class="course-edit"
                        data-id="{{ row.id }}"
@@ -155,7 +144,6 @@
                        readonly>
             </td>
 
-            <!-- GROUP PRIV -->
             <td>
                 <select class="course-edit" data-id="{{ row.id }}" data-field="group_priv">
                     {% for g in ['CC','CT','D','GY','IC','J'] %}
@@ -203,10 +191,8 @@
                        data-id="{{ row.id }}" data-field="sibling_full"
                        value="{{ row.sibling_full }}"></td>
 
-            <!-- SORT -->
             <td>{{ row.sort_order }}</td>
 
-            <!-- ACTIVE -->
             <td>
                 <input type="checkbox" class="course-edit"
                        data-id="{{ row.id }}"
@@ -214,7 +200,6 @@
                        {% if row.active %}checked{% endif %}>
             </td>
 
-            <!-- DELETE -->
             <td>
                 <button class="delete-btn" data-id="{{ row.id }}"
                         style="background:#c00; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">
@@ -226,3 +211,47 @@
         {% endfor %}
     </tbody>
 </table>
+
+<!-- RESTORED JAVASCRIPT HANDLERS -->
+<script>
+$(document).on('click', '#fix-sort-btn', function () {
+    fetch('/fix_sort_orders', { method: 'POST' })
+        .then(() => location.reload());
+});
+
+$(document).on('change', '.course-edit', function () {
+    const id = $(this).data('id');
+    const field = $(this).data('field');
+    let value = (this.type === 'checkbox') ? (this.checked ? 1 : 0) : $(this).val();
+
+    fetch('/update_course_field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, field, value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) alert("Update failed: " + data.error);
+        else setTimeout(() => location.reload(), 150);
+    });
+});
+
+$(document).on('click', '.delete-btn', function () {
+    const id = $(this).data('id');
+    if (!confirm("Delete this course?")) return;
+
+    fetch('/delete_course_reference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert("Delete failed: " + data.error);
+    });
+});
+</script>
+
+</body>
+</html>
