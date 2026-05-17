@@ -3,6 +3,17 @@ from datetime import datetime
 from app import db
 
 
+class CourseFormSubmission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rider_name = db.Column(db.String(120))
+    courseno = db.Column(db.String(50))
+    ftOr = db.Column(db.String(50))
+    horse_1 = db.Column(db.String(120))
+    horse_2 = db.Column(db.String(120))
+    horse_3 = db.Column(db.String(120))
+    submitted_at = db.Column(db.DateTime)
+
+
 class Employee(db.Model):
     __tablename__ = "employees"
 

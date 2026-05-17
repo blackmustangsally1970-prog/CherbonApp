@@ -15,6 +15,7 @@ from models import (
     BlockoutRange,
     Client,
     CourseReference,
+    CourseFormSubmission,
     DisclaimerState,
     GeneralEnquirySubmission,
     Horse,
