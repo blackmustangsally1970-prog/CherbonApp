@@ -4422,7 +4422,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateTimeVisibility(selectEl) {
         const type = selectEl.value;
-        const row = selectEl.closest(".popup-row") || document; // adjust if needed
+
+        // Your rows are <tr> elements in the booking grid
+        const row = selectEl.closest("tr");
+        if (!row) return;
 
         const timeLabel = row.querySelector(".popup-end-label");
         const timeSelect = row.querySelector(".popup-end-select");
@@ -4447,7 +4450,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
-
 
 
 </body>
