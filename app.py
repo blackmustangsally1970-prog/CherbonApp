@@ -777,36 +777,57 @@ def find_matching_clients(name):
 # HELPERS (NO INDENT)
 # ---------------------------------------------------------
 
+def build_lesson_from_payload(l, client_id, client_name=""):
+    lesson_type_raw = (l.get("type") or "").strip()
+    lesson_type_norm = lesson_type_raw.lower()
+
+    # Base fields from payload
+    time_val   = l.get("time")
+    date_val   = l.get("date")
+    group_priv = l.get("grouppriv")
+    price_val  = l.get("price")
+
+    # --- NORMALISE CAMP + VOUCHER CR TO BEHAVE THE SAME ---
+    if lesson_type_norm in ("camp", "voucher cr", "voucher_cr", "vouchercr"):
+        # No time required – give a safe label if empty
+        if not time_val:
+            time_val = lesson_type_raw or "Camp"
+
+        # Attendance + horse + payment are allowed to be “empty style”
+        attendance = "Pending"
+        horse      = ""
+        payment    = None
+    else:
+        # Normal lessons – use whatever the UI sends
+        attendance = "Pending"
+        horse      = ""
+        payment    = None
+
+    return Lesson(
+        lesson_date = date_val,
+        time_frame  = time_val,
+        lesson_type = lesson_type_raw,
+        group_priv  = group_priv,
+        price_pl    = price_val,
+        client_id   = client_id,
+        client      = client_name,
+        horse       = horse,
+        attendance  = attendance,
+        payment     = payment,
+    )
+
+
+
 def handle_existing_client(data):
     client_id = data.get("existing_client_id")
-    lessons = data.get("lessons", [])
+    lessons   = data.get("lessons", [])
 
     if not client_id:
         return jsonify(success=False, error="No client selected")
 
     try:
         for l in lessons:
-            # Normalise lesson type
-            lesson_type = (l.get("type") or "").strip().lower()
-
-            # Fix: Camp has no time → assign safe placeholder
-            time_val = l.get("time")
-            if not time_val and lesson_type == "camp":
-                time_val = "Camp"
-
-            lesson = Lesson(
-                lesson_date = l.get("date"),
-                time_frame  = time_val,
-                lesson_type = l.get("type"),
-                group_priv  = l.get("grouppriv"),
-                price_pl    = l.get("price"),
-                client_id   = client_id,
-                client      = "",
-                horse       = "",
-                attendance  = "Pending",
-                payment     = None
-            )
-
+            lesson = build_lesson_from_payload(l, client_id, client_name="")
             db.session.add(lesson)
 
         db.session.commit()
@@ -829,38 +850,17 @@ def handle_new_client(data):
         client = Client(
             full_name = name,
             mobile    = mobile,
-            notes     = "Created via booking panel"
+            notes     = "Created via booking panel",
         )
         db.session.add(client)
         db.session.flush()   # get client.client_id
 
         for l in lessons:
-            # Normalise lesson type
-            lesson_type = (l.get("type") or "").strip().lower()
-
-            # Fix: Camp has no time → assign safe placeholder
-            time_val = l.get("time")
-            if not time_val and lesson_type == "camp":
-                time_val = "Camp"
-
-            lesson = Lesson(
-                lesson_date = l.get("date"),
-                time_frame  = time_val,
-                lesson_type = l.get("type"),
-                group_priv  = l.get("grouppriv"),
-                price_pl    = l.get("price"),
-                client_id   = client.client_id,
-                client      = name,
-                horse       = "",
-                attendance  = "Pending",
-                payment     = None
-            )
-
+            lesson = build_lesson_from_payload(l, client.client_id, client_name=name)
             db.session.add(lesson)
 
         db.session.commit()
 
-        # Recalc balances
         try:
             recalc_client_cascade(name)
         except Exception as e:
@@ -871,6 +871,8 @@ def handle_new_client(data):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, error=str(e))
+
+
 
 
 def generate_unique_client_name(base_name):
