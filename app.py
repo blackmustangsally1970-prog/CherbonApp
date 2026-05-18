@@ -5537,11 +5537,15 @@ def create_app():
                     except ValueError:
                         pass
 
-                if price_raw not in ("", None, "None"):
+                # PRICE PER LESSON (FIXED ZERO BUG)
+                if price_raw is not None and price_raw.strip() != "":
                     try:
                         lesson.price_pl = float(price_raw)
                     except ValueError:
                         pass
+                else:
+                    # Explicitly allow zero price
+                    lesson.price_pl = 0.0
 
                 # ---------------------------
                 # NORMAL FIELDS
