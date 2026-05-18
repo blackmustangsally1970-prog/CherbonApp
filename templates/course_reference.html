@@ -167,6 +167,23 @@
 <td>{{ pricing[row.group_priv].sibling_fortnightly }}</td>
 <td>{{ pricing[row.group_priv].sibling_full }}</td>
 
+<td>{{ row.sort_order }}</td>
+
+<td>
+    <input type="checkbox" class="course-edit"
+           data-id="{{ row.id }}"
+           data-field="active"
+           {% if row.active %}checked{% endif %}>
+</td>
+
+<td>
+    <button class="delete-btn" data-id="{{ row.id }}"
+            style="background:#c00; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">
+        Delete
+    </button>
+</td>
+
+
         </tr>
         {% endfor %}
     </tbody>

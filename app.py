@@ -5013,7 +5013,16 @@ def create_app():
     def course_reference():
         courses = CourseReference.query.order_by(CourseReference.sort_order).all()
         times = Time.query.order_by(Time.timerange).all()
-        return render_template('course_reference.html', courses=courses, times=times)
+
+        pricing_rows = GroupPricing.query.all()
+        pricing = {p.group_priv: p for p in pricing_rows}
+
+        return render_template(
+            'course_reference.html',
+            courses=courses,
+            times=times,
+            pricing=pricing
+        )
 
 
     @app.route('/update_course_field', methods=['POST'])
