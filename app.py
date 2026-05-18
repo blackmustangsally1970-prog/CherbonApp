@@ -786,9 +786,17 @@ def handle_existing_client(data):
 
     try:
         for l in lessons:
+
+            # -----------------------------
+            # FIX: Camp has no time → give it a safe placeholder
+            # -----------------------------
+            time_val = l.get("time")
+            if not time_val and l.get("type") == "Camp":
+                time_val = "Camp"
+
             lesson = Lesson(
                 lesson_date = l.get("date"),
-                time_frame  = l.get("time"),
+                time_frame  = time_val,
                 lesson_type = l.get("type"),
                 group_priv  = l.get("grouppriv"),
                 price_pl    = l.get("price"),
@@ -826,9 +834,17 @@ def handle_new_client(data):
         db.session.flush()   # get client.client_id
 
         for l in lessons:
+
+            # -----------------------------
+            # FIX: Camp has no time → give it a safe placeholder
+            # -----------------------------
+            time_val = l.get("time")
+            if not time_val and l.get("type") == "Camp":
+                time_val = "Camp"
+
             lesson = Lesson(
                 lesson_date = l.get("date"),
-                time_frame  = l.get("time"),
+                time_frame  = time_val,
                 lesson_type = l.get("type"),
                 group_priv  = l.get("grouppriv"),
                 price_pl    = l.get("price"),
@@ -836,13 +852,13 @@ def handle_new_client(data):
                 client      = name,
                 horse       = "",
                 attendance  = "Pending",
-                payment     = None,   # OK — recalc will fix this
+                payment     = None,
             )
             db.session.add(lesson)
 
         db.session.commit()
 
-        # ⭐ NEW: Immediately recalc this client's balances
+        # Recalc balances
         try:
             recalc_client_cascade(name)
         except Exception as e:
