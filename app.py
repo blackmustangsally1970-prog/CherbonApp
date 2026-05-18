@@ -18,6 +18,7 @@ from models import (
     CourseFormSubmission,
     DisclaimerState,
     GeneralEnquirySubmission,
+    GroupPricing
     Horse,
     UpgradeItem,
     IncomingSubmission,
