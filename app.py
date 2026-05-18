@@ -789,16 +789,15 @@ def build_lesson_from_payload(l, client_id, client_name=""):
 
     # --- NORMALISE CAMP + VOUCHER CR TO BEHAVE THE SAME ---
     if lesson_type_norm in ("camp", "voucher cr", "voucher_cr", "vouchercr"):
-        # No time required – give a safe label if empty
+        # No time required – give a safe placeholder if empty
         if not time_val:
-            time_val = lesson_type_raw or "Camp"
+            time_val = "Camp"   # <--- FIXED, CONSISTENT, SAFE
 
-        # Attendance + horse + payment are allowed to be “empty style”
         attendance = "Pending"
         horse      = ""
         payment    = None
+
     else:
-        # Normal lessons – use whatever the UI sends
         attendance = "Pending"
         horse      = ""
         payment    = None
@@ -827,6 +826,7 @@ def handle_existing_client(data):
 
     try:
         for l in lessons:
+            # Camp + Voucher CR normalisation happens inside build_lesson_from_payload
             lesson = build_lesson_from_payload(l, client_id, client_name="")
             db.session.add(lesson)
 
@@ -836,7 +836,6 @@ def handle_existing_client(data):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, error=str(e))
-
 
 def handle_new_client(data):
     name    = data.get("new_client_name")
@@ -856,11 +855,13 @@ def handle_new_client(data):
         db.session.flush()   # get client.client_id
 
         for l in lessons:
+            # Camp + Voucher CR normalisation happens inside build_lesson_from_payload
             lesson = build_lesson_from_payload(l, client.client_id, client_name=name)
             db.session.add(lesson)
 
         db.session.commit()
 
+        # Recalc after commit
         try:
             recalc_client_cascade(name)
         except Exception as e:
@@ -871,8 +872,6 @@ def handle_new_client(data):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, error=str(e))
-
-
 
 
 def generate_unique_client_name(base_name):
