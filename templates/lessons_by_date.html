@@ -1140,9 +1140,10 @@ body {
       <option>Trail Ride</option>
       <option>Go Gallop</option>
       <option>Party</option>
-      <option>Payment</option>
       <option>Comp</option>
       <option>Voucher CR</option>
+      <option>Camp</option>
+      <option>Payment</option>
     </select>
 
     <label>Group Priv</label>
@@ -3207,7 +3208,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         <option>Party</option>
                         <option>Comp</option>
                         <option>Voucher CR</option>
+                                                                       <option>Camp</option>
                         <option>Payment</option>
+
                     </select>
                 </td>
 
@@ -4411,6 +4414,37 @@ document.getElementById("recalc-all-btn").addEventListener("click", async () => 
         btn.disabled = false;
         btn.textContent = "Recalculate All";
     }
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    function updateTimeVisibility(selectEl) {
+        const type = selectEl.value;
+        const row = selectEl.closest(".popup-row") || document; // adjust if needed
+
+        const timeLabel = row.querySelector(".popup-end-label");
+        const timeSelect = row.querySelector(".popup-end-select");
+
+        if (!timeLabel || !timeSelect) return;
+
+        if (type === "Payment" || type === "Voucher CR" || type === "Camp") {
+            timeLabel.style.display = "none";
+            timeSelect.style.display = "none";
+            timeSelect.value = "";  // clear any accidental time
+        } else {
+            timeLabel.style.display = "inline-block";
+            timeSelect.style.display = "inline-block";
+        }
+    }
+
+    // Attach to all lesson_type dropdowns
+    document.querySelectorAll("select[name='lesson_type']").forEach(sel => {
+        sel.addEventListener("change", () => updateTimeVisibility(sel));
+        updateTimeVisibility(sel); // run once on load
+    });
+
 });
 </script>
 

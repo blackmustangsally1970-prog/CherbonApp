@@ -5588,16 +5588,17 @@ def create_app():
                 # ---------------------------
                 lt_val = item.get("lesson_type")
 
-                if lt_val in ["Payment", "Voucher CR"]:
+                # ---------------------------
+                # TIME REQUIREMENTS (Payment / Voucher CR / Camp EXEMPT)
+                # ---------------------------
+                lt_val = item.get("lesson_type")
+
+                if lt_val in ["Payment", "Voucher CR", "Camp"]:
                     lesson.start = ""
                     lesson.end = ""
                 else:
                     lesson.start = item.get("start")
                     lesson.end   = item.get("end")
-
-                # Always update times
-                lesson.start = item.get("start")
-                lesson.end   = item.get("end")
 
                 # ---------------------------
                 # CARRY-FORWARD ENGINE
