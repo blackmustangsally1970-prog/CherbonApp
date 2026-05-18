@@ -787,12 +787,10 @@ def build_lesson_from_payload(l, client_id, client_name=""):
     group_priv = l.get("grouppriv")
     price_val  = l.get("price")
 
-    # --- NORMALISE CAMP + VOUCHER CR TO BEHAVE THE SAME ---
+    # --- CAMP mimics VOUCHER CR EXACTLY ---
     if lesson_type_norm in ("camp", "voucher cr", "voucher_cr", "vouchercr"):
-        # No time required – give a safe placeholder if empty
-        if not time_val:
-            time_val = "Camp"   # <--- FIXED, CONSISTENT, SAFE
-
+        time_val   = ""          # Voucher CR uses empty time
+        group_priv = "P"         # Voucher CR uses P
         attendance = "Pending"
         horse      = ""
         payment    = None
@@ -1283,6 +1281,10 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         riders.append(rider)
 
     return riders
+
+
+
+
 
 
 
