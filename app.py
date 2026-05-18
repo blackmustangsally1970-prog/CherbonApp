@@ -1716,58 +1716,78 @@ def create_app():
 
         return render_template("gift_voucher_edit.html", v=v)
 
-    @app.route('/pull_courses_from_jotform')
-    def pull_courses_from_jotform():
-        import requests
-        import datetime
+@app.route('/pull_courses_from_jotform')
+def pull_courses_from_jotform():
+    import requests
+    import datetime
 
-        API_KEY = app.config['JOTFORM_API_KEY']
-        FORM_ID = "212936006493860"
+    API_KEY = app.config['JOTFORM_API_KEY']
+    FORM_ID = "212936006493860"
 
-        url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
-        r = requests.get(url).json()
+    url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
+    r = requests.get(url).json()
 
-        if "content" not in r:
-            return "JotForm API error: no content"
+    if "content" not in r:
+        return "JotForm API error: no content"
 
-        pulled = 0
+    pulled = 0
 
-        for sub in r["content"]:
-            answers = sub.get("answers", {})
+    for sub in r["content"]:
+        answers = sub.get("answers", {})
 
-            # Rider name (unique name: riderName)
-            rider_first = answers.get("riderName", {}).get("answer", {}).get("first", "")
-            rider_last  = answers.get("riderName", {}).get("answer", {}).get("last", "")
-            rider_full = f"{rider_first} {rider_last}".strip()
+        # ---------------------------------------------------------
+        # STEP 1: Convert answers into a dict keyed by UNIQUE NAME
+        # ---------------------------------------------------------
+        mapped = {}
+        for qid, data in answers.items():
+            uname = data.get("name")
+            if uname:
+                mapped[uname] = data.get("answer")
 
-            # Course No (unique name: courseno)
-            courseno = answers.get("courseno", {}).get("answer", "")
+        # Debug (optional):
+        # print("MAPPED:", mapped)
 
-            # FT or W (unique name: ftOr)
-            ftor = answers.get("ftOr", {}).get("answer", "")
+        # ---------------------------------------------------------
+        # STEP 2: Extract fields safely from mapped[]
+        # ---------------------------------------------------------
 
-            # Horse preferences (unique names: horse_1, horse_2, horse_3)
-            horse_1 = answers.get("horse_1", {}).get("answer", "")
-            horse_2 = answers.get("horse_2", {}).get("answer", "")
-            horse_3 = answers.get("horse_3", {}).get("answer", "")
+        # Rider name (unique name: riderName)
+        rider_first = mapped.get("riderName", {}).get("first", "")
+        rider_last  = mapped.get("riderName", {}).get("last", "")
+        rider_full = f"{rider_first} {rider_last}".strip()
 
-            entry = CourseFormSubmission(
-                rider_name=rider_full,
-                courseno=courseno,
-                ftor=ftor,
-                horse_1=horse_1,
-                horse_2=horse_2,
-                horse_3=horse_3,
-                submitted_at=datetime.datetime.utcnow()
-            )
+        # Course No (unique name: courseno)
+        courseno = mapped.get("courseno", "")
 
-            db.session.add(entry)
-            pulled += 1
+        # FT or W (unique name: ftOr)
+        ftor = mapped.get("ftOr", "")
 
-        db.session.commit()
+        # Horse preferences (unique names: horse_1, horse_2, horse_3)
+        horse_1 = mapped.get("horse_1", "")
+        horse_2 = mapped.get("horse_2", "")
+        horse_3 = mapped.get("horse_3", "")
 
-        rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
-        return render_template('course_form_results.html', rows=rows)
+        # Skip empty submissions (prevents blank rows)
+        if not rider_full and not courseno:
+            continue
+
+        entry = CourseFormSubmission(
+            rider_name=rider_full,
+            courseno=courseno,
+            ftor=ftor,
+            horse_1=horse_1,
+            horse_2=horse_2,
+            horse_3=horse_3,
+            submitted_at=datetime.datetime.utcnow()
+        )
+
+        db.session.add(entry)
+        pulled += 1
+
+    db.session.commit()
+
+    rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
+    return render_template('course_form_results.html', rows=rows)
 
     @app.route('/course_form_results')
     def course_form_results():
