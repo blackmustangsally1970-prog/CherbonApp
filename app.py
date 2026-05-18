@@ -692,12 +692,18 @@ def group_blocks(rows):
     blocks = defaultdict(list)
 
     for r in rows:
-        key = (r["time_frame"], r["lesson_type"], r["group_priv"])
+        # Give Camp a stable time key
+        time_key = r["time_frame"] or ("Camp" if r["lesson_type"] == "Camp" else "")
+        key = (time_key, r["lesson_type"], r["group_priv"])
         blocks[key].append(r)
 
-    # Convert dict → sorted list of block dicts
     grouped = []
-    for (time, ltype, gp), riders in sorted(blocks.items(), key=lambda k: parse_start(k[0][0])):
+    for (time, ltype, gp), riders in sorted(
+        blocks.items(),
+        key=lambda k: (
+            -1 if k[0][0] in ["Camp", "", None] else parse_start(k[0][0])
+        )
+    ):
         grouped.append({
             "time": time,
             "lesson_type": ltype,
@@ -1889,23 +1895,23 @@ def create_app():
         # GROUP BLOCKS SAFELY
         # -----------------------------
         def group_blocks(rows):
-            blocks = defaultdict(list)
-            for r in rows:
-                key = (r["time_frame"], r["lesson_type"], r["group_priv"], r["priv_index"])
-                blocks[key].append(r)
+                blocks = defaultdict(list)
+                for r in rows:
+                        key = (r["time_frame"], r["lesson_type"], r["group_priv"], r["priv_index"])
+                        blocks[key].append(r)
 
-            grouped = []
-            for (time, ltype, gp, priv_i), riders in sorted(
-                blocks.items(),
-                key=lambda k: parse_start(k[0][0])
-            ):
-                grouped.append({
-                    "time": time,
-                    "lesson_type": ltype,
-                    "group_priv": gp,
-                    "riders": sorted(riders, key=lambda x: x["client_name"].lower())
-                })
-            return grouped
+                grouped = []
+                for (time, ltype, gp, priv_i), riders in sorted(
+                        blocks.items(),
+                        key=lambda k: parse_start(k[0][0])
+                ):
+                        grouped.append({
+                                "time": time,
+                                "lesson_type": ltype,
+                                "group_priv": gp,
+                                "riders": sorted(riders, key=lambda x: x["client_name"].lower())
+                        })
+                return grouped
 
         arena_blocks = group_blocks(arena)
         other_blocks = group_blocks(others)
