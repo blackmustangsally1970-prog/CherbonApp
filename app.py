@@ -1773,6 +1773,9 @@ def create_app():
         rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
         return render_template('course_form_results.html', rows=rows)
 
+    @app.route('/courses_menu')
+    def courses_menu():
+        return render_template('courses_menu.html')
 
     @app.route("/admin_delete_user/<username>")
     @login_required
@@ -4428,6 +4431,33 @@ def create_app():
         db.session.commit()
         return redirect(url_for('process_all_pending'))
 
+    @app.route("/pricing_setup")
+    def pricing_setup():
+        pricing_rows = GroupPricing.query.order_by(GroupPricing.group_priv).all()
+        return render_template("pricing_setup.html", pricing=pricing_rows)
+
+    @app.route("/update_pricing_field", methods=["POST"])
+    def update_pricing_field():
+        data = request.get_json()
+        pid = data.get("id")
+        field = data.get("field")
+        value = data.get("value")
+
+        try:
+            row = GroupPricing.query.get(pid)
+            if not row:
+                return {"success": False, "error": "Pricing row not found"}
+
+            if hasattr(row, field):
+                setattr(row, field, float(value))
+            else:
+                return {"success": False, "error": "Invalid field"}
+
+            db.session.commit()
+            return {"success": True}
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 
     @app.route('/notifications/<int:webhook_id>', methods=['POST'])
@@ -4998,7 +5028,6 @@ def create_app():
         if not course:
             return jsonify(success=False, error="Course not found")
 
-        # Allowed editable fields
         allowed = {
             "course_code",
             "display_label",
@@ -5006,51 +5035,23 @@ def create_app():
             "timerange",
             "lesson_type",
             "group_priv",
-            "active",
-
-            # Base prices
-            "weekly_price",
-            "fortnightly_price",
-            "full_price",
-
-            # Two‑course prices
-            "two_course_weekly",
-            "two_course_fortnightly",
-            "two_course_full",
-
-            # Sibling prices
-            "sibling_weekly",
-            "sibling_fortnightly",
-            "sibling_full"
+            "active"
         }
 
         if field not in allowed:
             return jsonify(success=False, error="Invalid field")
 
-        # Unique course_code check
         if field == "course_code":
             existing = CourseReference.query.filter_by(course_code=value).first()
             if existing and existing.id != course.id:
                 return jsonify(success=False, error="Course code already exists")
 
-        # Numeric fields
-        numeric_fields = [
-            "weekly_price", "fortnightly_price", "full_price",
-            "two_course_weekly", "two_course_fortnightly", "two_course_full",
-            "sibling_weekly", "sibling_fortnightly", "sibling_full"
-        ]
-
         try:
             if field == "active":
                 setattr(course, field, bool(int(value)))
-
-            elif field in numeric_fields:
-                setattr(course, field, float(value))
-
             else:
                 setattr(course, field, value)
 
-            # Ensure sort order recalculates correctly
             db.session.flush()
 
             course.sort_order = compute_sort_order(

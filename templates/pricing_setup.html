@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pricing Setup</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        input[type=number] {
+            width: 80px;
+        }
+
+        .menu-btn {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Pricing Setup</h2>
+
+<a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+<a href="{{ url_for('course_reference') }}" class="menu-btn">Course Reference</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Group Priv</th>
+
+            <th colspan="3">Base Prices</th>
+            <th colspan="3">Two‑Course</th>
+            <th colspan="3">Sibling</th>
+        </tr>
+
+        <tr>
+            <th></th>
+
+            <th>Wk</th>
+            <th>Fn</th>
+            <th>Full</th>
+
+            <th>Wk</th>
+            <th>Fn</th>
+            <th>Full</th>
+
+            <th>Wk</th>
+            <th>Fn</th>
+            <th>Full</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for p in pricing %}
+        <tr>
+            <td><strong>{{ p.group_priv }}</strong></td>
+
+            <!-- BASE -->
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="weekly_price"
+                       value="{{ p.weekly_price }}"></td>
+
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="fortnightly_price"
+                       value="{{ p.fortnightly_price }}"></td>
+
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="full_price"
+                       value="{{ p.full_price }}"></td>
+
+            <!-- TWO COURSE -->
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="two_course_weekly"
+                       value="{{ p.two_course_weekly }}"></td>
+
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="two_course_fortnightly"
+                       value="{{ p.two_course_fortnightly }}"></td>
+
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="two_course_full"
+                       value="{{ p.two_course_full }}"></td>
+
+            <!-- SIBLING -->
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="sibling_weekly"
+                       value="{{ p.sibling_weekly }}"></td>
+
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="sibling_fortnightly"
+                       value="{{ p.sibling_fortnightly }}"></td>
+
+            <td><input type="number" step="0.01" class="price-edit"
+                       data-id="{{ p.id }}" data-field="sibling_full"
+                       value="{{ p.sibling_full }}"></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+$(document).on('change', '.price-edit', function () {
+    const id = $(this).data('id');
+    const field = $(this).data('field');
+    const value = $(this).val();
+
+    fetch('/update_pricing_field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, field, value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) alert("Update failed: " + data.error);
+    });
+});
+</script>
+
+</body>
+</html>

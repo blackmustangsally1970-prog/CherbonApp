@@ -3,6 +3,26 @@ from datetime import datetime
 from app import db
 
 
+
+class GroupPricing(db.Model):
+    __tablename__ = "group_pricing"
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_priv = db.Column(db.String(10), unique=True, nullable=False)
+
+    weekly_price = db.Column(db.Float, default=0)
+    fortnightly_price = db.Column(db.Float, default=0)
+    full_price = db.Column(db.Float, default=0)
+
+    two_course_weekly = db.Column(db.Float, default=0)
+    two_course_fortnightly = db.Column(db.Float, default=0)
+    two_course_full = db.Column(db.Float, default=0)
+
+    sibling_weekly = db.Column(db.Float, default=0)
+    sibling_fortnightly = db.Column(db.Float, default=0)
+    sibling_full = db.Column(db.Float, default=0)
+
+
 class CourseFormSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rider_name = db.Column(db.String(120))

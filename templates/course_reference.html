@@ -152,60 +152,20 @@
                 </select>
             </td>
 
-            <!-- BASE PRICES -->
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="weekly_price"
-                       value="{{ row.weekly_price }}"></td>
+<!-- BASE PRICES -->
+<td>{{ pricing[row.group_priv].weekly_price }}</td>
+<td>{{ pricing[row.group_priv].fortnightly_price }}</td>
+<td>{{ pricing[row.group_priv].full_price }}</td>
 
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="fortnightly_price"
-                       value="{{ row.fortnightly_price }}"></td>
+<!-- TWO COURSE -->
+<td>{{ pricing[row.group_priv].two_course_weekly }}</td>
+<td>{{ pricing[row.group_priv].two_course_fortnightly }}</td>
+<td>{{ pricing[row.group_priv].two_course_full }}</td>
 
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="full_price"
-                       value="{{ row.full_price }}"></td>
-
-            <!-- TWO COURSE -->
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="two_course_weekly"
-                       value="{{ row.two_course_weekly }}"></td>
-
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="two_course_fortnightly"
-                       value="{{ row.two_course_fortnightly }}"></td>
-
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="two_course_full"
-                       value="{{ row.two_course_full }}"></td>
-
-            <!-- SIBLING -->
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="sibling_weekly"
-                       value="{{ row.sibling_weekly }}"></td>
-
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="sibling_fortnightly"
-                       value="{{ row.sibling_fortnightly }}"></td>
-
-            <td><input type="number" step="0.01" class="course-edit"
-                       data-id="{{ row.id }}" data-field="sibling_full"
-                       value="{{ row.sibling_full }}"></td>
-
-            <td>{{ row.sort_order }}</td>
-
-            <td>
-                <input type="checkbox" class="course-edit"
-                       data-id="{{ row.id }}"
-                       data-field="active"
-                       {% if row.active %}checked{% endif %}>
-            </td>
-
-            <td>
-                <button class="delete-btn" data-id="{{ row.id }}"
-                        style="background:#c00; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">
-                    Delete
-                </button>
-            </td>
+<!-- SIBLING -->
+<td>{{ pricing[row.group_priv].sibling_weekly }}</td>
+<td>{{ pricing[row.group_priv].sibling_fortnightly }}</td>
+<td>{{ pricing[row.group_priv].sibling_full }}</td>
 
         </tr>
         {% endfor %}
