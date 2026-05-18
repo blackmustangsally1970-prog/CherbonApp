@@ -2895,28 +2895,41 @@ if (toggle) {
 
 <script>
 // -----------------------------------------------------------
-// REQUIRE VALID LESSON TIME + FORCE CORRECT FORM ACTION
+// REQUIRE VALID LESSON TIME *ONLY* FOR LESSONS THAT NEED IT
 // -----------------------------------------------------------
 document.addEventListener("click", function (e) {
 
     const isSave = e.target.classList.contains("save-lesson-btn");
     const isFinalInvite = e.target.classList.contains("submit-invite-btn");
 
+    // Only run this logic for Save or Final Invite buttons
     if (!isSave && !isFinalInvite) return;
 
     const form = e.target.closest("form");
     const popup = e.target.closest(".lesson-popup");
     if (!form || !popup) return;
 
+    // Force correct backend route
     if (isSave) {
         form.action = "/new_lesson";
     }
 
+    // Determine lesson type
+    const lt = popup.querySelector("select[name='lesson_type']")?.value?.trim();
+
+    // Extract time fields
     const start = popup.querySelector("input[name='start']")?.value?.trim();
     const end =
         popup.querySelector("select[name='end']")?.value?.trim() ||
         popup.querySelector(".popup-end-select")?.value?.trim();
 
+    // ⭐ EXEMPT TYPES: Payment, Voucher CR, Camp
+    if (["Payment", "Voucher CR", "Camp"].includes(lt)) {
+        // These lesson types DO NOT require time
+        return true;
+    }
+
+    // ⭐ All other lesson types REQUIRE time
     if (!start || !end) {
         e.preventDefault();
         alert("Please select a valid lesson time before continuing.");
@@ -2924,7 +2937,6 @@ document.addEventListener("click", function (e) {
     }
 });
 </script>
-
 
 
 
@@ -4414,40 +4426,6 @@ document.getElementById("recalc-all-btn").addEventListener("click", async () => 
         btn.disabled = false;
         btn.textContent = "Recalculate All";
     }
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    function updateTimeVisibility(selectEl) {
-        const type = selectEl.value;
-
-        // Your rows are <tr> elements in the booking grid
-        const row = selectEl.closest("tr");
-        if (!row) return;
-
-        const timeLabel = row.querySelector(".popup-end-label");
-        const timeSelect = row.querySelector(".popup-end-select");
-
-        if (!timeLabel || !timeSelect) return;
-
-        if (type === "Payment" || type === "Voucher CR" || type === "Camp") {
-            timeLabel.style.display = "none";
-            timeSelect.style.display = "none";
-            timeSelect.value = "";  // clear any accidental time
-        } else {
-            timeLabel.style.display = "inline-block";
-            timeSelect.style.display = "inline-block";
-        }
-    }
-
-    // Attach to all lesson_type dropdowns
-    document.querySelectorAll("select[name='lesson_type']").forEach(sel => {
-        sel.addEventListener("change", () => updateTimeVisibility(sel));
-        updateTimeVisibility(sel); // run once on load
-    });
-
 });
 </script>
 
