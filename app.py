@@ -5531,20 +5531,22 @@ def create_app():
                 payment_raw = re.sub(r"[^\d.\-]", "", item.get("payment") or "")
                 price_raw   = re.sub(r"[^\d.\-]", "", item.get("price_pl") or "")
 
-                if payment_raw not in ("", None, "None"):
+                # PAYMENT (FIX ZERO BUG)
+                if payment_raw is not None and payment_raw.strip() != "":
                     try:
                         lesson.payment = float(payment_raw)
                     except ValueError:
                         pass
+                else:
+                    lesson.payment = 0.0
 
-                # PRICE PER LESSON (FIXED ZERO BUG)
+                # PRICE PER LESSON (FIX ZERO BUG)
                 if price_raw is not None and price_raw.strip() != "":
                     try:
                         lesson.price_pl = float(price_raw)
                     except ValueError:
                         pass
                 else:
-                    # Explicitly allow zero price
                     lesson.price_pl = 0.0
 
                 # ---------------------------
@@ -5671,6 +5673,7 @@ def create_app():
             db.session.rollback()
             print("🔥 ERROR:", e)
             return {"status": "error", "message": str(e)}, 500
+
 
 
 
