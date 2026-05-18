@@ -1888,8 +1888,14 @@ def create_app():
         arena = [d for d in data if d["lesson_type"].lower().startswith("arena")]
         others = [d for d in data if not d["lesson_type"].lower().startswith("arena")]
 
-        arena.sort(key=lambda x: parse_start(x["time_frame"]))
-        others.sort(key=lambda x: parse_start(x["time_frame"]))
+        def safe_sort_key(tf):
+                if not tf:  # no time (e.g. Camp)
+                        return 999999  # push to bottom, or -1 if you want top
+                return parse_start(tf)
+
+
+        arena.sort(key=lambda x: safe_sort_key(x["time_frame"]))
+        others.sort(key=lambda x: safe_sort_key(x["time_frame"]))
 
         # -----------------------------
         # GROUP BLOCKS SAFELY
