@@ -962,7 +962,7 @@ def handle_new_client(data):
         client = Client(
             full_name = name,
             mobile    = mobile,
-            notes     = "Created via booking panel",
+            notes     = "",
         )
         db.session.add(client)
         db.session.flush()   # get client.client_id
@@ -3239,7 +3239,7 @@ def create_app():
                             weight_kg=rider.get("weight_kg"),
                             guardian_name="",
                             mobile="",
-                            notes="Created via SMS invite"
+                            notes=""
                         )
                         db.session.add(real_client)
                         db.session.flush()
@@ -3288,7 +3288,7 @@ def create_app():
                             weight_kg=rider.get("weight_kg"),
                             guardian_name="",
                             mobile="",
-                            notes="Created via SMS invite"
+                            notes=""
                         )
                         db.session.add(real_client)
                         db.session.flush()
@@ -3572,7 +3572,7 @@ def create_app():
                 weight_kg=rider.get("weight_kg"),
                 guardian_name="",
                 mobile="",
-                notes="Created via SMS invite"
+                notes=""
             )
             db.session.add(client)
             db.session.flush()
@@ -3593,7 +3593,7 @@ def create_app():
                 weight_kg=rider.get("weight_kg"),
                 guardian_name="",
                 mobile="",
-                notes="Created via SMS invite"
+                notes=""
             )
             db.session.add(client)
             db.session.flush()
@@ -5561,7 +5561,7 @@ def create_app():
                         mobile    = client_phone,
                         weight_kg = weight_kg or None,
                         height_cm = height_cm or None,
-                        notes     = notes or "Created via booking panel"
+                        notes     = notes or ""
                     )
                     db.session.add(new_client)
                     db.session.flush()
@@ -5634,7 +5634,7 @@ def create_app():
                     mobile    = client_phone,
                     weight_kg = weight_kg or None,
                     height_cm = height_cm or None,
-                    notes     = notes or "Created via booking panel"
+                    notes     = notes or ""
                 )
                 db.session.add(new_client)
                 db.session.flush()

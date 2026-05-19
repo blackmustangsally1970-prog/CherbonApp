@@ -6,6 +6,18 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 
     <style>
+
+.menu-btn {
+    display:inline-block;
+    padding:10px 15px;
+    background:#007bff;
+    color:white;
+    border-radius:6px;
+    text-decoration:none;
+    margin-right:10px;
+}
+
+
 .summaries-table {
     width: 100%;
     border-collapse: collapse;
@@ -55,12 +67,29 @@
     box-shadow: 0 2px 2px rgba(0,0,0,0.15);
 }
 
+.menu-btn {
+    display:inline-block;
+    padding:10px 15px;
+    background:#007bff;
+    color:white;
+    border-radius:6px;
+    text-decoration:none;
+    margin-right:10px;
+}
+
+
 
     </style>
 </head>
 <body>
 
+<div style="margin-bottom:12px;" class="no-print" id="top-controls">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+    <a href="#" id="jump-to-today" class="menu-btn">Jump to Today</a>
+</div>
 <div class="container mt-3">
+
+
 
     <!-- FY DROPDOWN -->
     <form method="get" action="{{ url_for('daily_summary') }}" class="mb-3">
@@ -87,7 +116,6 @@
         <!-- TOP BUTTONS -->
         <div class="mt-3 mb-2">
             <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">← Main Menu</a>
         </div>
 
         <table class="summaries-table">
@@ -171,6 +199,46 @@
 
     </form>
 </div>
+
+
+<script>
+document.getElementById("jump-to-today").addEventListener("click", function (e) {
+    e.preventDefault();
+
+    // Find today's row by matching the date text
+    const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+    const rows = document.querySelectorAll(".summaries-table tbody tr");
+
+    for (const row of rows) {
+        const cell = row.querySelector("td:first-child");
+        if (!cell) continue;
+
+        // Convert "20 May 2026" → "2026-05-20"
+        const parts = cell.innerText.split(" ");
+        if (parts.length === 3) {
+            const day = parts[0];
+            const month = {
+                Jan: "01", Feb: "02", Mar: "03", Apr: "04",
+                May: "05", Jun: "06", Jul: "07", Aug: "08",
+                Sep: "09", Oct: "10", Nov: "11", Dec: "12"
+            }[parts[1]];
+            const year = parts[2];
+
+            const rowDate = `${year}-${month}-${day.padStart(2, "0")}`;
+
+            if (rowDate === today) {
+                row.scrollIntoView({ behavior: "smooth", block: "center" });
+                row.style.backgroundColor = "#fff3cd"; // highlight flash
+                setTimeout(() => row.style.backgroundColor = "", 2000);
+                break;
+            }
+        }
+    }
+});
+</script>
+
+
+
 
 </body>
 </html>
