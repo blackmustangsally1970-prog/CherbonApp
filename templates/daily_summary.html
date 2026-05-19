@@ -110,21 +110,22 @@
 <td>
     {{ row.y }}
     {% if row.weekly_y %}
-        ({{ row.weekly_y }})
+        <span class="weekly-total">({{ row.weekly_y }})</span>
     {% endif %}
 </td>
 <td>
     {{ row.c }}
     {% if row.weekly_c %}
-        ({{ row.weekly_c }})
+        <span class="weekly-total">({{ row.weekly_c }})</span>
     {% endif %}
 </td>
 <td>
     {{ row.n }}
     {% if row.weekly_n %}
-        ({{ row.weekly_n }})
+        <span class="weekly-total">({{ row.weekly_n }})</span>
     {% endif %}
 </td>
+
 
 
                     <td class="fw-bold">
