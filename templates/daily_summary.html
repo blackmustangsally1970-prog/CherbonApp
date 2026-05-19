@@ -95,11 +95,11 @@
                 <tr>
                     <th>Date</th>
                     <th>Payment</th>
+                    <th>Weekly Total (Sat)</th>
+                    <th>YTD (Sat)</th>
                     <th>Y</th>
                     <th>C</th>
                     <th>N</th>
-                    <th>Weekly Total (Sat)</th>
-                    <th>YTD (Sat)</th>
                     <th>(1)</th>
                     <th>(2)</th>
                 </tr>
@@ -110,6 +110,21 @@
                 <tr class="{% if row.is_saturday %}saturday-row{% endif %}">
                     <td>{{ row.date.strftime('%d %b %Y') }}</td>
                     <td>${{ '%.2f'|format(row.payment) }}</td>
+
+
+
+                    <td class="fw-bold">
+                        {% if row.running_total_display %}
+                            ${{ '%.2f'|format(row.running_total_display) }}
+                        {% endif %}
+                    </td>
+
+                    <td class="fw-bold">
+                        {% if row.ytd_display %}
+                            ${{ '%.2f'|format(row.ytd_display) }}
+                        {% endif %}
+                    </td>
+
 <td>
     {{ row.y }}
     {% if row.weekly_y %}
@@ -131,17 +146,6 @@
 
 
 
-                    <td class="fw-bold">
-                        {% if row.running_total_display %}
-                            ${{ '%.2f'|format(row.running_total_display) }}
-                        {% endif %}
-                    </td>
-
-                    <td class="fw-bold">
-                        {% if row.ytd_display %}
-                            ${{ '%.2f'|format(row.ytd_display) }}
-                        {% endif %}
-                    </td>
 
                     <td>
                         <input
