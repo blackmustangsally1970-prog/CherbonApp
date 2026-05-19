@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<div class="mt-3">
+    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">← Main Menu</a>
+</div>
+
     <meta charset="UTF-8">
     <title>Daily Summary</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
@@ -123,10 +129,9 @@
             </tbody>
         </table>
 
-        <div class="mt-3">
-            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
-            <a href="{{ url_for('weekly_summary') }}" class="btn btn-secondary btn-sm">Back to Weekly Summary</a>
-        </div>
+<div class="mt-3">
+    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+</div>
     </form>
 </div>
 
