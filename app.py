@@ -17,7 +17,7 @@ from models import (
     CourseReference,
     CourseFormSubmission,
     DisclaimerState,
-    DailySummary,
+    DailyEvent,
     GeneralEnquirySubmission,
     GroupPricing,
     Horse,
