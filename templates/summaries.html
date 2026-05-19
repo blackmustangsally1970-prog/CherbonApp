@@ -105,6 +105,7 @@
     <thead class="table-light">
         <tr>
             <th>Week Start (Sun)</th>
+            <th>Week Ending (Sat)</th>   <!-- ⭐ NEW -->
             <th>Sun</th>
             <th>Mon</th>
             <th>Tue</th>
@@ -117,9 +118,6 @@
             <th>Y</th>
             <th>N</th>
             <th>C</th>
-            <th>Event 1</th>
-            <th>Event 2</th>
-            <th>Notes</th>
         </tr>
     </thead>
 
@@ -130,6 +128,7 @@
             {% if row.is_min_attendance %} min-attendance{% endif %}
         ">
             <td>{{ row.week_start.strftime('%d %b %Y') }}</td>
+            <td>{{ row.week_ending.strftime('%d %b %Y') }}</td>  <!-- ⭐ NEW -->
 
             <td>${{ '%.2f'|format(row.sun) }}</td>
             <td>${{ '%.2f'|format(row.mon) }}</td>
@@ -145,10 +144,6 @@
             <td>{{ row.y }}</td>
             <td>{{ row.n }}</td>
             <td>{{ row.c }}</td>
-
-            <td>{{ row.event1 or '' }}</td>
-            <td>{{ row.event2 or '' }}</td>
-            <td>{{ row.notes or '' }}</td>
         </tr>
         {% endfor %}
     </tbody>

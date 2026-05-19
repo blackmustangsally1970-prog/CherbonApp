@@ -483,16 +483,9 @@ def build_weekly_summary(sundays, selected_fy):
         if week_end > fy_end:
             week_end = fy_end
 
-        # Load saved weekly events
-        saved = (
-            WeeklyEvent.query
-            .filter_by(week_start=week_start, fy=selected_fy)
-            .first()
-        )
+        # ⭐ NEW: Calculate week ending (Saturday)
+        week_ending = week_start + timedelta(days=6)
 
-        event1_name = saved.event1 if saved and saved.event1 else None
-        event2_name = saved.event2 if saved and saved.event2 else None
-        notes_val   = saved.notes if saved and saved.notes else None
 
         # Attendance counts
         y_count = (
@@ -542,6 +535,7 @@ def build_weekly_summary(sundays, selected_fy):
 
         weekly_data.append({
             "week_start": week_start,
+            "week_ending": week_ending,   # ⭐ NEW FIELD
 
             # Daily totals
             "sun": day_totals["sun"],
@@ -561,13 +555,9 @@ def build_weekly_summary(sundays, selected_fy):
             "n": n_count,
             "c": c_count,
 
-            # Events
-            "event1": event1_name,
-            "event2": event2_name,
-            "notes": notes_val
         })
 
-    # ⭐ Mark highest and lowest attendance weeks (correct indentation)
+    # ⭐ Mark highest and lowest attendance weeks
     if weekly_data:
         max_att = max(w["y"] for w in weekly_data)
         min_att = min(w["y"] for w in weekly_data)
@@ -577,8 +567,6 @@ def build_weekly_summary(sundays, selected_fy):
             w["is_min_attendance"] = (w["y"] == min_att)
 
     return weekly_data
-
-
 
 
 def log_lesson_changes(changes, user="system"):

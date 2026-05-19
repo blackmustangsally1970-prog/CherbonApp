@@ -198,10 +198,6 @@ class WeeklyEvent(db.Model):
     week_start = db.Column(db.Date, nullable=False)
     fy = db.Column(db.String, nullable=False)
 
-    event1 = db.Column(db.String)
-    event2 = db.Column(db.String)
-    notes = db.Column(db.String)
-
 class TrailRideSubmission(db.Model):
     __tablename__ = 'trail_ride_submissions'
 
