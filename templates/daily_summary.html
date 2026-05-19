@@ -6,45 +6,47 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 
     <style>
-        .summaries-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
+.summaries-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem; /* tighter font */
+}
 
-        .summaries-table th,
-        .summaries-table td {
-            padding: 6px 8px;
-            border: 1px solid #ddd;
-            text-align: right;
-        }
+.summaries-table th,
+.summaries-table td {
+    padding: 3px 5px; /* reduced row height */
+    border: 1px solid #ddd;
+    text-align: right;
+}
 
-        .summaries-table th:first-child,
-        .summaries-table td:first-child {
-            text-align: left;
-        }
+.summaries-table th:first-child,
+.summaries-table td:first-child {
+    text-align: left;
+}
 
-        .saturday-row {
-            background-color: #d4f8d4 !important;
-        }
+.saturday-row {
+    background-color: #d4f8d4 !important;
+}
 
-        .fw-bold {
-            font-weight: 600;
-        }
+.fw-bold {
+    font-weight: 600;
+}
 
-        .page-header {
-            margin: 15px 0;
-        }
+.page-header {
+    margin: 10px 0; /* slightly tighter */
+}
 
+/* Weekly totals: black text, yellow pill */
 .weekly-total {
     background-color: #ffeb3b; /* bright yellow */
     color: #000;               /* black text */
     font-weight: 700;          /* bold */
-    padding: 1px 4px;          /* small pill padding */
-    border-radius: 4px;        /* rounded corners */
+    padding: 0px 3px;          /* compact pill */
+    border-radius: 3px;        /* rounded */
+    font-size: 0.7rem;         /* slightly smaller */
 }
 
-
+/* Sticky header */
 .summaries-table thead th {
     position: sticky;
     top: 0;
@@ -52,8 +54,6 @@
     z-index: 10;
     box-shadow: 0 2px 2px rgba(0,0,0,0.15);
 }
-
-
 
 
     </style>
