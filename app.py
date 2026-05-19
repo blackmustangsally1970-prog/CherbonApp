@@ -302,7 +302,7 @@ def build_daily_summary(selected_fy):
         field2_val = saved.field2 if saved else None
 
         # Only show weekly total on Saturday
-        if current.weekday() == 5:  # Saturday
+        if current.weekday() == 5 or current == end_date:
             running_total_display = weekly_running
             ytd_total += weekly_running
             ytd_display = ytd_total
