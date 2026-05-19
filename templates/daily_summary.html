@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-<div class="mt-3">
-    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">← Main Menu</a>
-</div>
-
     <meta charset="UTF-8">
     <title>Daily Summary</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
@@ -65,8 +59,15 @@
         <p>1 July to 30 June – Payments, Attendance, Weekly Totals (Sat Only), YTD (Sat Only)</p>
     </div>
 
+    <!-- MAIN FORM -->
     <form method="post" action="{{ url_for('daily_summary') }}">
         <input type="hidden" name="fy" value="{{ selected_fy }}">
+
+        <!-- TOP BUTTONS -->
+        <div class="mt-3 mb-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">← Main Menu</a>
+        </div>
 
         <table class="summaries-table">
             <thead class="table-light">
@@ -92,21 +93,18 @@
                     <td>{{ row.c }}</td>
                     <td>{{ row.n }}</td>
 
-                    <!-- Weekly Total (Saturday only) -->
                     <td class="fw-bold">
                         {% if row.running_total_display %}
                             ${{ '%.2f'|format(row.running_total_display) }}
                         {% endif %}
                     </td>
 
-                    <!-- YTD (Saturday only) -->
                     <td class="fw-bold">
                         {% if row.ytd_display %}
                             ${{ '%.2f'|format(row.ytd_display) }}
                         {% endif %}
                     </td>
 
-                    <!-- Editable fields -->
                     <td>
                         <input
                             type="text"
@@ -129,9 +127,6 @@
             </tbody>
         </table>
 
-<div class="mt-3">
-    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
-</div>
     </form>
 </div>
 
