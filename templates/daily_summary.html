@@ -36,6 +36,12 @@
             margin: 15px 0;
         }
 
+.weekly-total {
+    color: #d4a017; /* warm yellow-gold */
+    font-weight: 600;
+}
+
+
 .summaries-table thead th {
     position: sticky;
     top: 0;
@@ -101,9 +107,25 @@
                 <tr class="{% if row.is_saturday %}saturday-row{% endif %}">
                     <td>{{ row.date.strftime('%d %b %Y') }}</td>
                     <td>${{ '%.2f'|format(row.payment) }}</td>
-                    <td>{{ row.y }}</td>
-                    <td>{{ row.c }}</td>
-                    <td>{{ row.n }}</td>
+<td>
+    {{ row.y }}
+    {% if row.weekly_y %}
+        ({{ row.weekly_y }})
+    {% endif %}
+</td>
+<td>
+    {{ row.c }}
+    {% if row.weekly_c %}
+        ({{ row.weekly_c }})
+    {% endif %}
+</td>
+<td>
+    {{ row.n }}
+    {% if row.weekly_n %}
+        ({{ row.weekly_n }})
+    {% endif %}
+</td>
+
 
                     <td class="fw-bold">
                         {% if row.running_total_display %}
