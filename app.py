@@ -246,15 +246,23 @@ def build_daily_summary(selected_fy):
     weekly_running = 0
     ytd_total = 0
 
+    # NEW weekly attendance counters
+    weekly_y = 0
+    weekly_c = 0
+    weekly_n = 0
+
     daily_data = []
 
     # Loop through every day in FY
     current = start_date
     while current <= end_date:
 
-        # Reset weekly running total on Sunday
+        # Reset weekly totals on Sunday
         if current.weekday() == 6:  # Sunday
             weekly_running = 0
+            weekly_y = 0
+            weekly_c = 0
+            weekly_n = 0
 
         # Sum payments for the day
         payment_sum = (
@@ -296,19 +304,33 @@ def build_daily_summary(selected_fy):
             .scalar()
         ) or 0
 
+        # Add to weekly attendance totals
+        weekly_y += y_count
+        weekly_c += c_count
+        weekly_n += n_count
+
         # Load saved daily fields (1) and (2)
         saved = DailyEvent.query.filter_by(date=current, fy=selected_fy).first()
         field1_val = saved.field1 if saved else None
         field2_val = saved.field2 if saved else None
 
-        # Only show weekly total on Saturday
+        # Weekly + YTD totals only on Saturday or 30 June
         if current.weekday() == 5 or current == end_date:
             running_total_display = weekly_running
             ytd_total += weekly_running
             ytd_display = ytd_total
+
+            # NEW: expose weekly attendance totals
+            weekly_y_display = weekly_y
+            weekly_c_display = weekly_c
+            weekly_n_display = weekly_n
         else:
             running_total_display = None
             ytd_display = None
+
+            weekly_y_display = None
+            weekly_c_display = None
+            weekly_n_display = None
 
         # Append row
         daily_data.append({
@@ -317,6 +339,11 @@ def build_daily_summary(selected_fy):
             "y": y_count,
             "c": c_count,
             "n": n_count,
+
+            # NEW weekly attendance totals
+            "weekly_y": weekly_y_display,
+            "weekly_c": weekly_c_display,
+            "weekly_n": weekly_n_display,
 
             "running_total_display": running_total_display,
             "ytd_display": ytd_display,
@@ -331,8 +358,6 @@ def build_daily_summary(selected_fy):
         current += timedelta(days=1)
 
     return daily_data
-
-
 
 def recalc_all_lessons():
     from sqlalchemy import distinct
