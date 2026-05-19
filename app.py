@@ -17,6 +17,7 @@ from models import (
     CourseReference,
     CourseFormSubmission,
     DisclaimerState,
+    DailySummary,
     GeneralEnquirySubmission,
     GroupPricing,
     Horse,
@@ -230,6 +231,106 @@ def build_fy_weeks(year):
         current += timedelta(days=7)
 
     return weeks
+
+def build_daily_summary(selected_fy):
+    from collections import defaultdict
+
+    # Parse FY
+    fy_start_year = int(selected_fy.split("-")[0])
+    fy_end_year   = int(selected_fy.split("-")[1])
+
+    start_date = datetime(fy_start_year, 7, 1).date()
+    end_date   = datetime(fy_end_year, 6, 30).date()
+
+    # Running totals
+    weekly_running = 0
+    ytd_total = 0
+
+    daily_data = []
+
+    # Loop through every day in FY
+    current = start_date
+    while current <= end_date:
+
+        # Reset weekly running total on Sunday
+        if current.weekday() == 6:  # Sunday
+            weekly_running = 0
+
+        # Sum payments for the day
+        payment_sum = (
+            db.session.query(func.sum(Lesson.payment))
+            .filter(
+                Lesson.lesson_date == current,
+                Lesson.payment.isnot(None)
+            )
+            .scalar()
+        ) or 0
+
+        weekly_running += payment_sum
+
+        # Attendance counts
+        y_count = (
+            db.session.query(func.count(Lesson.lesson_id))
+            .filter(
+                Lesson.lesson_date == current,
+                Lesson.attendance == "Y"
+            )
+            .scalar()
+        ) or 0
+
+        c_count = (
+            db.session.query(func.count(Lesson.lesson_id))
+            .filter(
+                Lesson.lesson_date == current,
+                Lesson.attendance == "C"
+            )
+            .scalar()
+        ) or 0
+
+        n_count = (
+            db.session.query(func.count(Lesson.lesson_id))
+            .filter(
+                Lesson.lesson_date == current,
+                Lesson.attendance == "N"
+            )
+            .scalar()
+        ) or 0
+
+        # Load saved daily fields (1) and (2)
+        saved = DailyEvent.query.filter_by(date=current, fy=selected_fy).first()
+        field1_val = saved.field1 if saved else None
+        field2_val = saved.field2 if saved else None
+
+        # Only show weekly total on Saturday
+        if current.weekday() == 5:  # Saturday
+            running_total_display = weekly_running
+            ytd_total += weekly_running
+            ytd_display = ytd_total
+        else:
+            running_total_display = None
+            ytd_display = None
+
+        # Append row
+        daily_data.append({
+            "date": current,
+            "payment": payment_sum,
+            "y": y_count,
+            "c": c_count,
+            "n": n_count,
+
+            "running_total_display": running_total_display,
+            "ytd_display": ytd_display,
+
+            "field1": field1_val,
+            "field2": field2_val,
+
+            "is_saturday": (current.weekday() == 5)
+        })
+
+        # Next day
+        current += timedelta(days=1)
+
+    return daily_data
 
 
 
@@ -1773,6 +1874,62 @@ def create_app():
 
         rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
         return render_template('course_form_results.html', rows=rows)
+
+
+    @app.route("/daily-summary", methods=["GET", "POST"])
+    def daily_summary():
+        # Determine selected FY
+        selected_fy = request.values.get("fy")
+
+        # Default FY if none selected
+        if not selected_fy:
+            today = date.today()
+            if today.month >= 7:
+                selected_fy = f"{today.year}-{today.year+1}"
+            else:
+                selected_fy = f"{today.year-1}-{today.year}"
+
+        # Build FY list starting from 2022
+        fy_years = list(range(2022, date.today().year + 2))
+
+        # Handle SAVE (POST)
+        if request.method == "POST":
+            for key, value in request.form.items():
+                if key.startswith("field1_"):
+                    date_str = key.replace("field1_", "")
+                    d = date.fromisoformat(date_str)
+
+                    row = DailyEvent.query.filter_by(date=d, fy=selected_fy).first()
+                    if not row:
+                        row = DailyEvent(date=d, fy=selected_fy)
+                        db.session.add(row)
+
+                    row.field1 = value or None
+
+                if key.startswith("field2_"):
+                    date_str = key.replace("field2_", "")
+                    d = date.fromisoformat(date_str)
+
+                    row = DailyEvent.query.filter_by(date=d, fy=selected_fy).first()
+                    if not row:
+                        row = DailyEvent(date=d, fy=selected_fy)
+                        db.session.add(row)
+
+                    row.field2 = value or None
+
+            db.session.commit()
+            return redirect(url_for("daily_summary", fy=selected_fy))
+
+        # GET → Build daily summary data
+        daily_data = build_daily_summary(selected_fy)
+
+        return render_template(
+            "daily_summary.html",
+            selected_fy=selected_fy,
+            fy_years=fy_years,
+            daily_data=daily_data
+        )
+
 
     @app.route('/course_form_results')
     def course_form_results():

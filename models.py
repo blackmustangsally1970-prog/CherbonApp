@@ -4,6 +4,19 @@ from app import db
 
 
 
+class DailyEvent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    fy = db.Column(db.String(9), nullable=False)  # "2024-2025"
+    field1 = db.Column(db.String(255))
+    field2 = db.Column(db.String(255))
+
+    __table_args__ = (
+        db.UniqueConstraint('date', 'fy', name='uq_daily_date_fy'),
+    )
+
+
+
 class GroupPricing(db.Model):
     __tablename__ = "group_pricing"
 

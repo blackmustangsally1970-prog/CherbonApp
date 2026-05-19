@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Summary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+
+    <style>
+        .summaries-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .summaries-table th,
+        .summaries-table td {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+
+        .summaries-table th:first-child,
+        .summaries-table td:first-child {
+            text-align: left;
+        }
+
+        .saturday-row {
+            background-color: #d4f8d4 !important; /* light green */
+        }
+
+        .fw-bold {
+            font-weight: 600;
+        }
+
+        .page-header {
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-3">
+
+    <!-- FY DROPDOWN -->
+    <form method="get" action="{{ url_for('daily_summary') }}" class="mb-3">
+        <label for="fy" class="form-label fw-bold">Financial Year:</label>
+        <select name="fy" id="fy" class="form-select form-select-sm" style="width: 200px; display: inline-block;">
+            {% for y in fy_years %}
+                <option value="{{ y }}-{{ y+1 }}" {% if selected_fy == y ~ '-' ~ (y+1) %}selected{% endif %}>
+                    {{ y }}–{{ y+1 }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Load</button>
+    </form>
+
+    <div class="page-header">
+        <h3>Daily Summary – {{ selected_fy }}</h3>
+        <p>1 July to 30 June – Payments, Attendance, Weekly Totals (Sat Only), YTD (Sat Only)</p>
+    </div>
+
+    <form method="post" action="{{ url_for('daily_summary') }}">
+        <input type="hidden" name="fy" value="{{ selected_fy }}">
+
+        <table class="summaries-table">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Payment</th>
+                    <th>Y</th>
+                    <th>C</th>
+                    <th>N</th>
+                    <th>Weekly Total (Sat)</th>
+                    <th>YTD (Sat)</th>
+                    <th>(1)</th>
+                    <th>(2)</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in daily_data %}
+                <tr class="{% if row.is_saturday %}saturday-row{% endif %}">
+                    <td>{{ row.date.strftime('%d %b %Y') }}</td>
+                    <td>${{ '%.2f'|format(row.payment) }}</td>
+                    <td>{{ row.y }}</td>
+                    <td>{{ row.c }}</td>
+                    <td>{{ row.n }}</td>
+
+                    <!-- Weekly Total (Saturday only) -->
+                    <td class="fw-bold">
+                        {% if row.running_total_display %}
+                            ${{ '%.2f'|format(row.running_total_display) }}
+                        {% endif %}
+                    </td>
+
+                    <!-- YTD (Saturday only) -->
+                    <td class="fw-bold">
+                        {% if row.ytd_display %}
+                            ${{ '%.2f'|format(row.ytd_display) }}
+                        {% endif %}
+                    </td>
+
+                    <!-- Editable fields -->
+                    <td>
+                        <input
+                            type="text"
+                            name="field1_{{ row.date.isoformat() }}"
+                            value="{{ row.field1 or '' }}"
+                            class="form-control form-control-sm"
+                        >
