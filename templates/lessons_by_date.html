@@ -2084,9 +2084,10 @@ window.addEventListener("load", function () {
 
   (function clientHistoryHover() {
 
+    let lastRequestId = 0;   // ⭐ Prevent stale fetches from re-showing tooltip
+
     const tip = document.getElementById('client-history-tip');
     const table = document.querySelector('#lesson-table tbody');
-
 
     if (!tip || !table) {
       console.warn("Tooltip or table wrapper missing");
@@ -2094,7 +2095,7 @@ window.addEventListener("load", function () {
     }
 
     // -----------------------------------------------------------
-    // MAIN HOVER HANDLER — correct order
+    // MAIN HOVER HANDLER
     // -----------------------------------------------------------
     table.addEventListener('mouseover', function (e) {
 
@@ -2102,13 +2103,13 @@ window.addEventListener("load", function () {
         const cell = e.target.closest(".client-cell, .client-link");
         if (!cell) return;
 
-        // 2. NOW check the toggle
-const toggle = document.getElementById('toggle-horse-history');
-if (!toggle || !toggle.checked) {
-    tip.style.visibility = "hidden";
-    tip.style.opacity = "0";
-    return;
-}
+        // 2. Check toggle — hide client tooltip if OFF
+        const toggle = document.getElementById('toggle-horse-history');
+        if (!toggle || !toggle.checked) {
+            tip.style.visibility = "hidden";
+            tip.style.opacity = "0";
+            return;
+        }
 
         // 3. Continue as normal
         const td = cell.closest(".client-cell");
@@ -2117,9 +2118,18 @@ if (!toggle || !toggle.checked) {
         const client = td.dataset.client;
         if (!client) return;
 
+        // ⭐ Create a unique request ID for this hover
+        const requestId = ++lastRequestId;
+
         fetch("/client_history/" + encodeURIComponent(client))
             .then(r => r.json())
             .then(list => {
+
+                // ⭐ Ignore stale fetch results
+                if (requestId !== lastRequestId) return;
+
+                // ⭐ Ignore if toggle turned OFF mid-fetch
+                if (!toggle.checked) return;
 
                 const clean = list.filter(x => x && x.trim());
                 tip.innerHTML = clean.length ? clean.join(", ") : "No recent horses";
