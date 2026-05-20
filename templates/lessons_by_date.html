@@ -2085,7 +2085,8 @@ window.addEventListener("load", function () {
   (function clientHistoryHover() {
 
     const tip = document.getElementById('client-history-tip');
-    const table = document.getElementById('lesson-table');
+    const table = document.querySelector('#lesson-table tbody');
+
 
     if (!tip || !table) {
       console.warn("Tooltip or table wrapper missing");
