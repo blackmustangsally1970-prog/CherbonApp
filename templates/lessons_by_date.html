@@ -2256,36 +2256,6 @@ function openLessonPopup(blockKey) {
 </script>
 
 
-
-<script>
-  // Print helper: close open Select2, remove focus, then call print
-  document.getElementById('print-page').addEventListener('click', function () {
-    try {
-      // close any open Select2 dropdowns
-      $('.select2-container--open').each(function () {
-        try { $(this).prev('select').select2('close'); } catch(e) {}
-      });
-    } catch (e) {}
-
-    // remove focus so input outlines don't appear in print
-    try { document.activeElement && document.activeElement.blur(); } catch(e) {}
-
-    // short timeout to let UI settle, then print
-    setTimeout(function () {
-      window.print();
-    }, 120);
-  });
-</script>
-
-
-
-
-
-
-
-
-
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   function parseMoney(val) {
