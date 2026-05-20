@@ -2074,15 +2074,27 @@ window.addEventListener("load", function () {
 
   (function clientHistoryHover() {
 
-    let lastRequestId = 0;   // ⭐ Prevent stale fetches from re-showing tooltip
+    let lastRequestId = 0;   // Prevent stale fetches from re-showing tooltip
 
     const tip = document.getElementById('client-history-tip');
     const table = document.querySelector('#lesson-table tbody');
+    const toggle = document.getElementById('toggle-horse-history');
 
-    if (!tip || !table) {
-      console.warn("Tooltip or table wrapper missing");
+    if (!tip || !table || !toggle) {
+      console.warn("Tooltip, table, or toggle missing");
       return;
     }
+
+    // -----------------------------------------------------------
+    // ⭐ TOGGLE LISTENER — hides tooltip immediately when turned OFF
+    // -----------------------------------------------------------
+    toggle.addEventListener('change', () => {
+        if (!toggle.checked) {
+            tip.style.visibility = "hidden";
+            tip.style.opacity = "0";
+            tip.innerHTML = "";
+        }
+    });
 
     // -----------------------------------------------------------
     // MAIN HOVER HANDLER
@@ -2094,8 +2106,7 @@ window.addEventListener("load", function () {
         if (!cell) return;
 
         // 2. Check toggle — hide client tooltip if OFF
-        const toggle = document.getElementById('toggle-horse-history');
-        if (!toggle || !toggle.checked) {
+        if (!toggle.checked) {
             tip.style.visibility = "hidden";
             tip.style.opacity = "0";
             return;
@@ -2108,17 +2119,17 @@ window.addEventListener("load", function () {
         const client = td.dataset.client;
         if (!client) return;
 
-        // ⭐ Create a unique request ID for this hover
+        // Create a unique request ID for this hover
         const requestId = ++lastRequestId;
 
         fetch("/client_history/" + encodeURIComponent(client))
             .then(r => r.json())
             .then(list => {
 
-                // ⭐ Ignore stale fetch results
+                // Ignore stale fetch results
                 if (requestId !== lastRequestId) return;
 
-                // ⭐ Ignore if toggle turned OFF mid-fetch
+                // Ignore if toggle turned OFF mid-fetch
                 if (!toggle.checked) return;
 
                 const clean = list.filter(x => x && x.trim());
@@ -2132,7 +2143,6 @@ window.addEventListener("load", function () {
                 tip.style.opacity = "1";
             });
     });
-
 
     // -----------------------------------------------------------
     // HIDE TOOLTIP — mouseout boundary logic
@@ -2150,7 +2160,6 @@ window.addEventListener("load", function () {
         tip.innerHTML = "";
 
     }, true);
-
 
     // -----------------------------------------------------------
     // EXTRA SAFETY — leaving the entire table hides tooltip
