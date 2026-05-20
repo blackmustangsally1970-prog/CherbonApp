@@ -5561,7 +5561,8 @@ def create_app():
                         mobile    = client_phone,
                         weight_kg = weight_kg or None,
                         height_cm = height_cm or None,
-                        notes     = notes or ""
+                        notes     = notes or "",
+                        age = request.form.get("age")
                     )
                     db.session.add(new_client)
                     db.session.flush()
@@ -5634,7 +5635,8 @@ def create_app():
                     mobile    = client_phone,
                     weight_kg = weight_kg or None,
                     height_cm = height_cm or None,
-                    notes     = notes or ""
+                    notes     = notes or "",
+                    age = request.form.get("age")
                 )
                 db.session.add(new_client)
                 db.session.flush()

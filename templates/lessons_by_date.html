@@ -1427,6 +1427,13 @@ body {
                placeholder="Height (cm)"
                style="margin-top:6px;">
 
+<input type="number"
+       id="new_age"
+       class="form-control"
+       placeholder="Age"
+       style="margin-top:6px;">
+
+
         <textarea id="new_notes"
                   class="form-control"
                   placeholder="Notes"
@@ -3414,6 +3421,10 @@ document.addEventListener("DOMContentLoaded", function () {
             height_cm: (type === "new")
                 ? document.getElementById("new_height_cm")?.value.trim() || ""
                 : "",
+
+            age: (type === "new")
+                                               ? document.getElementById("new_age")?.value.trim() || ""
+                                                : "",
 
             notes: (type === "new")
                 ? document.getElementById("new_notes")?.value.trim() || ""
