@@ -3688,27 +3688,25 @@ for (const row of lessons) {
         return blocks;
     }
 
- <!-- 
-    document.getElementById('reset-grid-btn').onclick = function() {
-        if (!confirm("Are you sure you want to reset all overrides for this day?")) {
-            return;
+/*
+document.getElementById('reset-grid-btn').onclick = function() {
+    if (!confirm("Are you sure you want to reset all overrides for this day?")) {
+        return;
+    }
+
+    fetch('/reset_grid_overrides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: document.getElementById("date-picker").value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            location.reload();
         }
-
-        fetch('/reset_grid_overrides', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: document.getElementById("date-picker").value })
-
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                location.reload();
-            }
-        });
-    };
-
--->
+    });
+};
+*/
 
 });  // ✅ NOW we finally close the single DOMContentLoaded
 </script>
