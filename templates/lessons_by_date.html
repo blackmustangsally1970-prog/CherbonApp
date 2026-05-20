@@ -2102,9 +2102,12 @@ window.addEventListener("load", function () {
         if (!cell) return;
 
         // 2. NOW check the toggle
-        if (!document.getElementById('toggle-horse-history')?.checked) {
-                        return;
-                        }
+const toggle = document.getElementById('toggle-horse-history');
+if (!toggle || !toggle.checked) {
+    tip.style.visibility = "hidden";
+    tip.style.opacity = "0";
+    return;
+}
 
         // 3. Continue as normal
         const td = cell.closest(".client-cell");
