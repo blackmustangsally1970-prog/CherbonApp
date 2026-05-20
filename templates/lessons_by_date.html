@@ -2279,13 +2279,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script>
-  document.getElementById('print-page').addEventListener('click', function () {
-    window.print();
-  });
-</script>
-
-
 
 <script>
 (function(){
@@ -3695,6 +3688,7 @@ for (const row of lessons) {
         return blocks;
     }
 
+ <!-- 
     document.getElementById('reset-grid-btn').onclick = function() {
         if (!confirm("Are you sure you want to reset all overrides for this day?")) {
             return;
@@ -3713,6 +3707,8 @@ for (const row of lessons) {
             }
         });
     };
+
+-->
 
 });  // ✅ NOW we finally close the single DOMContentLoaded
 </script>
