@@ -2104,8 +2104,9 @@ window.addEventListener("load", function () {
         if (!cell) return;
 
         // 2. NOW check the toggle
-        const toggle = document.getElementById('toggle-horse-history');
-        if (!toggle || !toggle.checked) return;
+        if (!document.getElementById('toggle-horse-history')?.checked) {
+                        return;
+                        }
 
         // 3. Continue as normal
         const td = cell.closest(".client-cell");
