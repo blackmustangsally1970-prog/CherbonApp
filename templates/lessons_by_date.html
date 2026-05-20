@@ -3539,6 +3539,7 @@ for (const row of lessons) {
                 form.append("weight_kg", info.weight_kg);
                 form.append("height_cm", info.height_cm);
                 form.append("notes", info.notes);
+                form.append("age", info.age);
                 form.append("respect_blockouts", document.getElementById("respect_blockouts").value);
 
                 await fetch("/new_lesson", {
