@@ -734,8 +734,13 @@ def log_lesson_changes(changes, user="system"):
                 parts = []
                 if "payment" in fields:
                     old, new = fields["payment"]
-                    if old != new:
-                        parts.append(f"payment: '{old}' -> '{new}'")
+
+                    # Normalize formatting
+                    old_clean = (old or "").strip().replace("$", "")
+                    new_clean = (new or "").strip().replace("$", "")
+
+                    # Always log payment saves
+                    parts.append(f"payment saved: '{new_clean}' (old was '{old_clean}')")
                 if "attendance" in fields:
                     old, new = fields["attendance"]
                     if old != new:
