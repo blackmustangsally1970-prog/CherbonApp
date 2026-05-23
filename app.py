@@ -7495,11 +7495,11 @@ Cherbon Waters Admin
     @app.route('/import_lessons_xlsx', methods=['GET', 'POST'])
     def import_lessons_xlsx():
 
-        # ⭐ HANDLE GET FIRST — SHOW THE UPLOAD PAGE
+        # ⭐ GET → show upload page
         if request.method == 'GET':
             return render_template('import_lessons_xlsx.html')
 
-        # ⭐ POST BELOW — PROCESS THE FILE
+        # ⭐ POST → process file
         file = request.files.get('file')
         if not file:
             return jsonify({"status": "error", "message": "No file uploaded"}), 400
@@ -7507,28 +7507,26 @@ Cherbon Waters Admin
         wb = openpyxl.load_workbook(file)
         ws = wb.active
 
-        # Extract header row
-        headers = []
-        for cell in ws[1]:
-            headers.append(cell.value.strip() if cell.value else None)
+        # --- Extract header row ---
+        headers = [(cell.value.strip() if cell.value else None) for cell in ws[1]]
 
-        # Valid DB fields
-        valid_fields = [col.name for col in Lesson.__table__.columns]
+        # --- Valid Lesson fields ---
+        lesson_fields = [col.name for col in Lesson.__table__.columns]
 
-        # Map XLSX column index -> DB field name
+        # --- Map XLSX column index -> Lesson field name ---
         field_map = {}
         for idx, header in enumerate(headers):
-            if header in valid_fields:
+            if header in lesson_fields:
                 field_map[idx] = header
 
         inserted = 0
         skipped = 0
 
-        # Process each row
+        # --- Process each row ---
         for row in ws.iter_rows(min_row=2, values_only=True):
             row_data = {}
 
-            # Map known fields + normalize blanks
+            # Map known Lesson fields + normalise blanks
             for idx, value in enumerate(row):
                 if idx in field_map:
                     if isinstance(value, str) and value.strip() == "":
@@ -7553,15 +7551,37 @@ Cherbon Waters Admin
                 skipped += 1
                 continue
 
-            # --- AUTO-CREATE CLIENT IF MISSING ---
+            # --- FETCH OR CREATE CLIENT ---
             client_name = row_data["client"]
             client = Client.query.filter_by(full_name=client_name).first()
+
             if client is None:
                 client = Client(full_name=client_name)
                 db.session.add(client)
-                db.session.commit()
+                db.session.flush()  # get client_id without committing
 
-            # --- DATE NORMALIZATION ---
+            # --- UPDATE CLIENT AGE/WEIGHT/HEIGHT ---
+            client_fields = ["age", "weight_kg", "height_cm"]
+
+            for f in client_fields:
+                if f in headers:
+                    col_index = headers.index(f)
+                    raw_val = row[col_index]
+
+                    # Normalise blanks
+                    if isinstance(raw_val, str):
+                        raw_val = raw_val.strip()
+                        if raw_val == "":
+                            raw_val = None
+
+                    # Convert to int if possible
+                    if raw_val not in [None, ""]:
+                        try:
+                            setattr(client, f, int(raw_val))
+                        except:
+                            print(f"BAD CLIENT VALUE — {f}={raw_val} for {client_name}")
+
+            # --- DATE NORMALISATION ---
             if "lesson_date" in row_data and row_data["lesson_date"]:
                 val = row_data["lesson_date"]
 
@@ -7593,7 +7613,7 @@ Cherbon Waters Admin
                         print(f"BAD NUMERIC VALUE — {key}={val} | forcing to None")
                         row_data[key] = None
 
-            # Create lesson safely
+            # --- CREATE LESSON ---
             try:
                 lesson = Lesson(**row_data)
                 db.session.add(lesson)
@@ -7603,10 +7623,10 @@ Cherbon Waters Admin
                 skipped += 1
                 continue
 
-        # Commit all valid rows
+        # --- COMMIT ALL CHANGES ---
         db.session.commit()
 
-        # Recalc
+        # --- RECALC ---
         try:
             recalc_all_lessons()
         except Exception as e:
