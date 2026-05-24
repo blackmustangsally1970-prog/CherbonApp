@@ -44,7 +44,9 @@ class CourseFormSubmission(db.Model):
     horse_1 = db.Column(db.String(120))
     horse_2 = db.Column(db.String(120))
     horse_3 = db.Column(db.String(120))
+    notes = db.Column(db.String(500))   # ← ADD THIS
     submitted_at = db.Column(db.DateTime)
+
 
 
 class Employee(db.Model):
