@@ -1871,7 +1871,8 @@ def create_app():
             # Rider name (fullname control)
             rider_first = mapped.get("riderName", {}).get("first", "")
             rider_last  = mapped.get("riderName", {}).get("last", "")
-            rider_full = f"{rider_first} {rider_last}".strip()
+            raw_name = f"{rider_first} {rider_last}"
+            rider_full = clean_name(raw_name)
 
             # Course number
             courseno = mapped.get("courseNo", "")
