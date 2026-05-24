@@ -1877,7 +1877,7 @@ def create_app():
             courseno = mapped.get("courseNo", "")
 
             # FT or W
-            ftor = mapped.get("ftOr", "")
+            ftor = mapped.get("ft", "")
 
             # Horse preferences
             horse_1 = mapped.get("horse_1", "")
