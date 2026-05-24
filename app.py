@@ -1839,6 +1839,7 @@ def create_app():
     def pull_courses_from_jotform():
         import requests
         import datetime
+        import json
 
         API_KEY = app.config['JOTFORM_API_KEY']
         FORM_ID = "212936006493860"
@@ -1864,26 +1865,29 @@ def create_app():
                     mapped[uname] = data.get("answer")
 
             # ---------------------------------------------------------
-            # STEP 2: Extract fields safely from mapped[]
+            # STEP 2: Extract fields using REAL JotForm unique names
             # ---------------------------------------------------------
 
-            # Rider name (unique name: riderName)
+            # Rider name (fullname control)
             rider_first = mapped.get("riderName", {}).get("first", "")
             rider_last  = mapped.get("riderName", {}).get("last", "")
             rider_full = f"{rider_first} {rider_last}".strip()
 
-            # Course No (unique name: courseno)
-            courseno = mapped.get("courseno", "")
+            # Course number
+            courseno = mapped.get("courseNo", "")
 
-            # FT or W (unique name: ftOr)
+            # FT or W
             ftor = mapped.get("ftOr", "")
 
-            # Horse preferences (unique names: horse_1, horse_2, horse_3)
+            # Horse preferences
             horse_1 = mapped.get("horse_1", "")
             horse_2 = mapped.get("horse_2", "")
             horse_3 = mapped.get("horse_3", "")
 
-            # Skip empty submissions (prevents blank rows)
+            # Notes
+            notes = mapped.get("anythingWe", "")
+
+            # Skip empty submissions
             if not rider_full and not courseno:
                 continue
 
@@ -1894,6 +1898,7 @@ def create_app():
                 horse_1=horse_1,
                 horse_2=horse_2,
                 horse_3=horse_3,
+                notes=notes,
                 submitted_at=datetime.datetime.utcnow()
             )
 
