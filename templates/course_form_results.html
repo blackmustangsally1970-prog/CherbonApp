@@ -58,7 +58,7 @@
             <th>Horse 1</th>
             <th>Horse 2</th>
             <th>Horse 3</th>
-            <th>Submitted</th>
+            <th>Notes</th>          <!-- ⭐ ADDED -->
         </tr>
     </thead>
 
@@ -72,7 +72,7 @@
             <td>{{ r.horse_1 }}</td>
             <td>{{ r.horse_2 }}</td>
             <td>{{ r.horse_3 }}</td>
-            <td>{{ r.submitted_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ r.notes }}</td>   <!-- ⭐ ADDED -->
         </tr>
         {% endfor %}
     </tbody>
