@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Term Setup</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 6px; font-size: 14px; }
+        th { background: #f2f2f2; }
+        .btn { padding: 6px 10px; border: 1px solid #888; border-radius: 4px; text-decoration: none; }
+        .active { color: green; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+
+<h2>Term Setup (4 Terms Per Year)</h2>
+
+<form method="POST" action="{{ url_for('add_term') }}">
+    <h3>Add Term</h3>
+    Year: <input type="number" name="year" required>
+    Term #: <select name="term_number">
+        <option value="1">Term 1</option>
+        <option value="2">Term 2</option>
+        <option value="3">Term 3</option>
+        <option value="4">Term 4</option>
+    </select>
+    Start: <input type="date" name="start_date" required>
+    End: <input type="date" name="end_date" required>
+    Pattern:
+    <select name="week_pattern">
+        <option value="Sun-Sat">Sun → Sat</option>
+        <option value="Mon-Sun">Mon → Sun</option>
+    </select>
+
+    <button type="submit" class="btn">Add Term</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Year</th>
+            <th>Term</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Pattern</th>
+            <th>Weeks</th>
+            <th>Active</th>
+            <th>Activate</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for t in terms %}
+        <tr>
+            <td>{{ t.year }}</td>
+            <td>{{ t.term_number }}</td>
+            <td>{{ t.start_date }}</td>
+            <td>{{ t.end_date }}</td>
+            <td>{{ t.week_pattern }}</td>
+            <td>{{ t.weeks }}</td>
+            <td>{% if t.active %}<span class="active">✔ Active</span>{% endif %}</td>
+            <td><a class="btn" href="{{ url_for('activate_term', id=t.id) }}">Activate</a></td>
+            <td><a class="btn" href="{{ url_for('delete_term', id=t.id) }}">Delete</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

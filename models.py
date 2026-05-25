@@ -16,6 +16,21 @@ class DailyEvent(db.Model):
     )
 
 
+class Term(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    year = db.Column(db.Integer, nullable=False)
+    term_number = db.Column(db.Integer, nullable=False)  # 1–4
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    week_pattern = db.Column(db.String(20), default="Sun-Sat")  # or "Mon-Sun"
+    weeks = db.Column(db.Integer, default=10)
+    active = db.Column(db.Boolean, default=False)
+
+    @property
+    def label(self):
+        return f"Term {self.term_number} {self.year}"
+
+
 
 class GroupPricing(db.Model):
     __tablename__ = "group_pricing"
@@ -156,17 +171,6 @@ class JotformFetchState(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     last_fetched_submission_id = db.Column(db.String, default="0")
     last_fetched_timestamp = db.Column(db.DateTime)
-
-
-
-class Term(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    year = db.Column(db.Integer, nullable=False)
-    term_number = db.Column(db.Integer, nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
-    label = db.Column(db.String(50), nullable=False)
-    active = db.Column(db.Boolean, default=False)
 
 
 

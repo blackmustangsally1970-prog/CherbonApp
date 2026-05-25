@@ -33,6 +33,7 @@ from models import (
     TeacherHorse,
     TeacherSlot,
     TeacherTime,
+    Term,
     Time,
     TrailRideSubmission,
     Users,
@@ -1062,6 +1063,20 @@ def renumber_all_courses():
         c.sort_order = counter
         counter += 1
     db.session.commit()
+
+def get_active_term_weeks():
+    term = Term.query.filter_by(active=True).first()
+    if not term:
+        return None
+
+    weeks = []
+    start = term.start_date
+    for i in range(term.weeks):
+        week_start = start + timedelta(days=i*7)
+        week_end = week_start + timedelta(days=6)
+        weeks.append((week_start, week_end))
+
+    return weeks
 
 
 def normalise_full_name(name: str) -> str:
@@ -2254,6 +2269,49 @@ def create_app():
             return jsonify(success=True, message="All lesson balances recalculated.")
         except Exception as e:
             return jsonify(success=False, error=str(e))
+
+
+    @app.route('/terms')
+    def terms():
+        all_terms = Term.query.order_by(Term.year, Term.term_number).all()
+        return render_template('terms.html', terms=all_terms)
+
+    @app.route('/terms/add', methods=['POST'])
+    def add_term():
+        year = request.form['year']
+        term_number = request.form['term_number']
+        start_date = request.form['start_date']
+        end_date = request.form['end_date']
+        week_pattern = request.form['week_pattern']
+
+        t = Term(
+            year=year,
+            term_number=term_number,
+            start_date=start_date,
+            end_date=end_date,
+            week_pattern=week_pattern,
+            weeks=10
+        )
+        db.session.add(t)
+        db.session.commit()
+
+        return redirect(url_for('terms'))
+
+    @app.route('/terms/activate/<int:id>')
+    def activate_term(id):
+        Term.query.update({Term.active: False})
+        t = Term.query.get(id)
+        t.active = True
+        db.session.commit()
+        return redirect(url_for('terms'))
+
+    @app.route('/terms/delete/<int:id>')
+    def delete_term(id):
+        t = Term.query.get(id)
+        db.session.delete(t)
+        db.session.commit()
+        return redirect(url_for('terms'))
+
 
 
 
