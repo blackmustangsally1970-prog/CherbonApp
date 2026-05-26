@@ -5624,22 +5624,22 @@ def create_app():
                 db.session.commit()
 
             if client_mode == "new":
-                if client_name:
+                # Only requirement: a name
+                if client_name.strip():
                     new_client = Client(
-                        full_name = client_name,
-                        mobile    = client_phone,
+                        full_name = client_name.strip(),
+                        mobile    = (client_phone or "").strip() or None,
                         weight_kg = weight_kg or None,
                         height_cm = height_cm or None,
                         notes     = notes or "",
-                        age = request.form.get("age")
+                        age       = request.form.get("age") or None
                     )
                     db.session.add(new_client)
                     db.session.flush()
                     client_id = new_client.client_id
                 else:
-                    client_id = lesson.client_id
-            else:
-                client_id = int(client_id_raw) if client_id_raw and str(client_id_raw).isdigit() else None
+                    # No name = cannot create client
+                    client_id = None
 
             lesson.lesson_date = datetime.strptime(lesson_date_str, "%Y-%m-%d").date() if lesson_date_str else lesson.lesson_date
             lesson.time_frame  = time_frame
@@ -5698,14 +5698,15 @@ def create_app():
             db.session.commit()
 
         if client_mode == "new":
-            if client_name:
+            # Only requirement: a name
+            if client_name.strip():
                 new_client = Client(
-                    full_name = client_name,
-                    mobile    = client_phone,
+                    full_name = client_name.strip(),
+                    mobile    = (client_phone or "").strip() or None,
                     weight_kg = weight_kg or None,
                     height_cm = height_cm or None,
                     notes     = notes or "",
-                    age = request.form.get("age")
+                    age       = request.form.get("age") or None
                 )
                 db.session.add(new_client)
                 db.session.flush()
