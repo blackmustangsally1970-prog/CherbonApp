@@ -128,8 +128,6 @@
                     <th>Y</th>
                     <th>C</th>
                     <th>N</th>
-                    <th>(1)</th>
-                    <th>(2)</th>
                 </tr>
             </thead>
 
@@ -173,26 +171,7 @@
 </td>
 
 
-
-
-                    <td>
-                        <input
-                            type="text"
-                            name="field1_{{ row.date.isoformat() }}"
-                            value="{{ row.field1 or '' }}"
-                            class="form-control form-control-sm"
-                        >
-                    </td>
-
-                    <td>
-                        <input
-                            type="text"
-                            name="field2_{{ row.date.isoformat() }}"
-                            value="{{ row.field2 or '' }}"
-                            class="form-control form-control-sm"
-                        >
-                    </td>
-                </tr>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

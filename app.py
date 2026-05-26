@@ -247,7 +247,7 @@ def build_daily_summary(selected_fy):
     weekly_running = 0
     ytd_total = 0
 
-    # NEW weekly attendance counters
+    # Weekly attendance counters
     weekly_y = 0
     weekly_c = 0
     weekly_n = 0
@@ -310,18 +310,12 @@ def build_daily_summary(selected_fy):
         weekly_c += c_count
         weekly_n += n_count
 
-        # Load saved daily fields (1) and (2)
-        saved = DailyEvent.query.filter_by(date=current, fy=selected_fy).first()
-        field1_val = saved.field1 if saved else None
-        field2_val = saved.field2 if saved else None
-
         # Weekly + YTD totals only on Saturday or 30 June
         if current.weekday() == 5 or current == end_date:
             running_total_display = weekly_running
             ytd_total += weekly_running
             ytd_display = ytd_total
 
-            # NEW: expose weekly attendance totals
             weekly_y_display = weekly_y
             weekly_c_display = weekly_c
             weekly_n_display = weekly_n
@@ -341,16 +335,12 @@ def build_daily_summary(selected_fy):
             "c": c_count,
             "n": n_count,
 
-            # NEW weekly attendance totals
             "weekly_y": weekly_y_display,
             "weekly_c": weekly_c_display,
             "weekly_n": weekly_n_display,
 
             "running_total_display": running_total_display,
             "ytd_display": ytd_display,
-
-            "field1": field1_val,
-            "field2": field2_val,
 
             "is_saturday": (current.weekday() == 5)
         })
