@@ -383,7 +383,6 @@
     {% set tc_id = 'tc_' ~ loop.index %}
 
     <div class="client-line">
-
         <div class="client-name">
             {{ row.client }}
         </div>
@@ -418,6 +417,17 @@
         <span id="sent_{{ btn_id }}" class="sent"></span>
 
     </div>
+
+{% if row.last_sms %}
+<div style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
+    <strong>Last SMS Sent:</strong>
+    <div style="margin-top:4px; white-space:pre-wrap;">
+        <em>{{ row.last_sms_time.strftime("%d %b %Y %I:%M %p") }}</em><br>
+        "{{ row.last_sms }}"
+    </div>
+</div>
+{% endif %}
+
 
     <table>
         <tr>

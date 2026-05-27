@@ -15,6 +15,16 @@ class DailyEvent(db.Model):
         db.UniqueConstraint('date', 'fy', name='uq_daily_date_fy'),
     )
 
+class SmsLog(db.Model):
+    __tablename__ = "sms_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, nullable=False)
+    guardian = db.Column(db.String(255))
+    mobile = db.Column(db.String(50))
+    message_body = db.Column(db.Text, nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class Term(db.Model):
     id = db.Column(db.Integer, primary_key=True)

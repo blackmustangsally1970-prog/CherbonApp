@@ -27,6 +27,7 @@ from models import (
     LessonBlockTag,
     LessonInvite,
     LessonTeacherTag,
+    Sms_log,
     Teacher,
     TeacherBlock,
     TeacherGridOverride,
@@ -5092,6 +5093,7 @@ def create_app():
     @app.route("/send_negative_balance_sms", methods=["POST"])
     def send_negative_balance_sms():
         client_name = request.form.get("client_name")
+        guardian = request.form.get("guardian") or ""
         mobile = request.form.get("mobile")
         balance = request.form.get("balance")
         tc_balance = request.form.get("tc_balance") or ""
@@ -5106,10 +5108,11 @@ def create_app():
         else:
             message_template = msg_standard
 
-        # Replace placeholders
+        # Build final SMS body
         message = (
             message_template
             .replace("{client}", client_name)
+            .replace("{guardian}", guardian)
             .replace("{balance}", balance)
             .replace("{tc_balance}", tc_balance)
         )
@@ -5120,9 +5123,7 @@ def create_app():
         else:
             to_number = mobile
 
-        # Use your configured sender ID
         sender_id = "+61417704671"
-
 
         payload = {
             "messages": [
@@ -5135,7 +5136,6 @@ def create_app():
             ]
         }
 
-        # Use your configured ClickSend credentials
         username = current_app.config.get("CLICKSEND_USERNAME", "")
         api_key = current_app.config.get("CLICKSEND_API_KEY", "")
 
@@ -5164,7 +5164,19 @@ def create_app():
         with open("logs/sms_log.txt", "a", encoding="utf-8") as f:
             f.write(log_line)
 
+        # ⭐ NEW: Save SMS to database if sent OK
         if ok:
+            client = Client.query.filter_by(full_name=client_name).first()
+            if client:
+                entry = SmsLog(
+                    client_id=client.client_id,
+                    guardian=guardian,
+                    mobile=mobile,
+                    message_body=message
+                )
+                db.session.add(entry)
+                db.session.commit()
+
             return jsonify({"status": "ok"})
         else:
             return jsonify({"status": "error", "detail": response_text}), 500
@@ -5203,12 +5215,24 @@ def create_app():
                 if h.balance == 0:
                     break
 
+            # ⭐ NEW: Load last SMS sent to this client
+            last_sms = (
+                db.session.query(SmsLog)
+                .filter_by(client_id=c.client_id)
+                .order_by(SmsLog.sent_at.desc())
+                .first()
+            )
+
             final_output.append({
                 "client": c.full_name,
                 "guardian": c.guardian_name or "",
                 "mobile": c.mobile,
                 "current_balance": latest.balance,
-                "lessons": trimmed
+                "lessons": trimmed,
+
+                # ⭐ NEW FIELDS
+                "last_sms": last_sms.message_body if last_sms else None,
+                "last_sms_time": last_sms.sent_at if last_sms else None
             })
         
         return render_template("minus_balances.html", rows=final_output, date=date)
