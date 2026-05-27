@@ -5140,7 +5140,7 @@ def create_app():
 
         # Log to file
         log_line = (
-            f"{datetime.now().isoformat()} | "
+            f"{datetime.now(ZoneInfo('Australia/Brisbane')).isoformat()} | "
             f"{'TEST MODE' if test_mode else 'LIVE'} | "
             f"{client_name} | {mobile} | balance={balance} | tc_balance={tc_balance} | "
             f"status={'OK' if ok else 'ERROR'} | {response_text}\n"
@@ -5157,7 +5157,8 @@ def create_app():
                     client_id=client.client_id,
                     guardian=guardian,
                     mobile=mobile,
-                    message_body=message
+                    message_body=message,
+                    sent_at=datetime.now(ZoneInfo("Australia/Brisbane"))
                 )
                 db.session.add(entry)
                 db.session.commit()
