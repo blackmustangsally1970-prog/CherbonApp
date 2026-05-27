@@ -27,7 +27,7 @@ from models import (
     LessonBlockTag,
     LessonInvite,
     LessonTeacherTag,
-    Sms_log,
+    SmsLog,
     Teacher,
     TeacherBlock,
     TeacherGridOverride,
