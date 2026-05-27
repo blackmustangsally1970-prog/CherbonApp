@@ -5097,25 +5097,10 @@ def create_app():
         mobile = request.form.get("mobile")
         balance = request.form.get("balance")
         tc_balance = request.form.get("tc_balance") or ""
-        template_choice = request.form.get("template_choice")
-        msg_standard = request.form.get("msg_standard")
-        msg_term = request.form.get("msg_term")
         test_mode = request.form.get("test_mode") == "true"
 
-        # Choose template
-        if template_choice == "term":
-            message_template = msg_term
-        else:
-            message_template = msg_standard
-
-        # Build final SMS body
-        message = (
-            message_template
-            .replace("{client}", client_name)
-            .replace("{guardian}", guardian)
-            .replace("{balance}", balance)
-            .replace("{tc_balance}", tc_balance)
-        )
+        # ⭐ NEW — get the EXACT preview text the user saw
+        message = request.form.get("final_message")
 
         # Test mode: redirect to admin number
         if test_mode:
@@ -5158,13 +5143,13 @@ def create_app():
             f"{datetime.now().isoformat()} | "
             f"{'TEST MODE' if test_mode else 'LIVE'} | "
             f"{client_name} | {mobile} | balance={balance} | tc_balance={tc_balance} | "
-            f"template={template_choice} | status={'OK' if ok else 'ERROR'} | {response_text}\n"
+            f"status={'OK' if ok else 'ERROR'} | {response_text}\n"
         )
         os.makedirs("logs", exist_ok=True)
         with open("logs/sms_log.txt", "a", encoding="utf-8") as f:
             f.write(log_line)
 
-        # ⭐ NEW: Save SMS to database if sent OK
+        # Save SMS to database if sent OK
         if ok:
             client = Client.query.filter_by(full_name=client_name).first()
             if client:

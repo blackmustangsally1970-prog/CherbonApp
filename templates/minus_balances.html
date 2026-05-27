@@ -246,60 +246,67 @@
         }
 
 
-        function sendSMSConfirmed() {
-            const templateChoice = getSelectedTemplateChoice();
-            const msgStandard = document.getElementById("msg_standard").value;
-            const msgTerm = document.getElementById("msg_term").value;
-            const tcBalance = document.getElementById(currentTcBalanceInputId).value || "";
-            const testMode = document.getElementById("test_mode").checked;
+function sendSMSConfirmed() {
+    const templateChoice = getSelectedTemplateChoice();
+    const msgStandard = document.getElementById("msg_standard").value;
+    const msgTerm = document.getElementById("msg_term").value;
+    const tcBalance = document.getElementById(currentTcBalanceInputId).value || "";
+    const testMode = document.getElementById("test_mode").checked;
 
-            const formData = new FormData();
-            formData.append("client_name", currentClient);
-            formData.append("guardian", currentGuardian);
-            formData.append("mobile", currentMobile);
-            formData.append("balance", currentBalance);
-            formData.append("tc_balance", tcBalance);
-            formData.append("template_choice", templateChoice);
-            formData.append("msg_standard", msgStandard);
-            formData.append("msg_term", msgTerm);
-            formData.append("test_mode", testMode ? "true" : "false");
+    // ⭐ NEW — this is the ACTUAL message the user saw in the preview
+    const finalMessage = document.getElementById("preview_body").textContent;
 
-            const btn = document.getElementById(currentButtonId);
-            btn.disabled = true;
-            let remaining = 5;
-            const originalText = btn.textContent;
-            btn.textContent = "Sending...";
+    const formData = new FormData();
+    formData.append("client_name", currentClient);
+    formData.append("guardian", currentGuardian);
+    formData.append("mobile", currentMobile);
+    formData.append("balance", currentBalance);
+    formData.append("tc_balance", tcBalance);
+    formData.append("template_choice", templateChoice);
+    formData.append("msg_standard", msgStandard);
+    formData.append("msg_term", msgTerm);
+    formData.append("test_mode", testMode ? "true" : "false");
 
-            fetch("/send_negative_balance_sms", {
-                method: "POST",
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === "ok") {
-                    const sentSpan = document.getElementById("sent_" + currentButtonId);
-                    sentSpan.innerHTML = "SMS Sent ✔";
-                } else {
-                    alert("SMS failed: " + data.detail);
-                }
-            })
-            .catch(err => {
-                alert("SMS error: " + err);
-            })
-            .finally(() => {
-                closePreview();
-                const interval = setInterval(() => {
-                    remaining -= 1;
-                    if (remaining > 0) {
-                        btn.textContent = "Wait " + remaining + "s";
-                    } else {
-                        clearInterval(interval);
-                        btn.disabled = false;
-                        btn.textContent = originalText;
-                    }
-                }, 1000);
-            });
+    // ⭐ NEW — send the preview text to backend
+    formData.append("final_message", finalMessage);
+
+    const btn = document.getElementById(currentButtonId);
+    btn.disabled = true;
+    let remaining = 5;
+    const originalText = btn.textContent;
+    btn.textContent = "Sending...";
+
+    fetch("/send_negative_balance_sms", {
+        method: "POST",
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "ok") {
+            const sentSpan = document.getElementById("sent_" + currentButtonId);
+            sentSpan.innerHTML = "SMS Sent ✔";
+        } else {
+            alert("SMS failed: " + data.detail);
         }
+    })
+    .catch(err => {
+        alert("SMS error: " + err);
+    })
+    .finally(() => {
+        closePreview();
+        const interval = setInterval(() => {
+            remaining -= 1;
+            if (remaining > 0) {
+                btn.textContent = "Wait " + remaining + "s";
+            } else {
+                clearInterval(interval);
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }, 1000);
+    });
+}
+
 
         /* ============================
            COLLAPSE / EXPAND LOGIC
