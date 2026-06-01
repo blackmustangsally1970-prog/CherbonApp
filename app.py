@@ -1395,14 +1395,36 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
             exact_lookup = {norm: c for c, norm, _ in client_cache}
 
-            # Exact match only
-            matched_client = exact_lookup.get(name_norm)
+            # ---------------------------------------------------------
+            # NEW MATCHING LOGIC — NAME → MOBILE → EMAIL
+            # ---------------------------------------------------------
+            matched_client = None
+
+            # 1. Exact name match
+            if name_norm in exact_lookup:
+                matched_client = exact_lookup[name_norm]
+
+            # 2. Mobile match (normalized)
+            if not matched_client and mobile:
+                mobile_norm = re.sub(r"\D", "", mobile)
+                for c, norm, _ in client_cache:
+                    c_mobile = re.sub(r"\D", "", (c.mobile or ""))
+                    if c_mobile and c_mobile == mobile_norm:
+                        matched_client = c
+                        break
+
+            # 3. Email match (lowercase)
+            if not matched_client and email:
+                email_norm = email.strip().lower()
+                for c, norm, _ in client_cache:
+                    if (c.email_primary or "").strip().lower() == email_norm:
+                        matched_client = c
+                        break
+
+            # Store match
             if matched_client:
-                guardian_norm = normalize_name(guardian)
-                if guardian_norm and normalize_name(matched_client.full_name) == guardian_norm:
-                    pass
-                elif matched_client.jotform_submission_id != submission_id:
-                    rider["matches"].append(matched_client)
+                rider["matches"].append(matched_client)
+
 
         riders.append(rider)
 
@@ -4532,7 +4554,7 @@ def create_app():
             v = str(v).strip()
             return v if v not in ("", "N/A") else None
 
-        name = normalise_full_name(rider.get("name"))
+        name = normalize_name(rider.get("name"))
         age = safe_int(rider.get("age"))
         guardian = safe_text(rider.get("guardian"))
         mobile = clean_mobile(rider.get("mobile"))
