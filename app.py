@@ -1156,6 +1156,23 @@ INVITE_NOTES_FIELDS    = []   # none in this form
 
 
 
+def normalize_name(s: str) -> str:
+    """
+    Normalize a name for matching:
+    - strip accents
+    - lowercase
+    - collapse spaces
+    - remove weird unicode spaces
+    """
+    if not s:
+        return ""
+    import unicodedata
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.replace("\xa0", " ")
+    return " ".join(s.strip().lower().split())
+
+
 def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None, mode="full"):
     """
     mode:
@@ -1264,14 +1281,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     disclaimer = answers.get("63", {}).get("answer", None)
     if email_fallback and not email:
         email = email_fallback
-
-    def normalize_name(s):
-        if not s:
-            return ""
-        s = unicodedata.normalize("NFKD", s)
-        s = "".join(c for c in s if not unicodedata.combining(c))
-        s = s.replace("\xa0", " ")
-        return " ".join(s.strip().lower().split())
 
     # Detect rider fullname fields
     if is_invite_form:
