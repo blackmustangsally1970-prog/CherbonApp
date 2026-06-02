@@ -1940,6 +1940,22 @@ def create_app():
         rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
         return render_template('course_form_results.html', rows=rows)
 
+    @app.route('/update_course_submission/<int:id>', methods=['POST'])
+    def update_course_submission(id):
+        sub = CourseFormSubmission.query.get(id)
+        if not sub:
+            return "Submission not found"
+
+        new_course = request.form.get('courseno')
+        sub.courseno = new_course
+
+        db.session.commit()
+
+        return redirect(url_for('course_form_results', 
+                                year=sub.term_year, 
+                                term=sub.term_number))
+
+
     @app.route('/edit_course_submission/<int:id>')
     def edit_course_submission(id):
         sub = CourseFormSubmission.query.get(id)
