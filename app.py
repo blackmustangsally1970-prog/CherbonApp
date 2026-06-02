@@ -3805,7 +3805,12 @@ def create_app():
             return value if value not in ("", "N/A") else None
 
         age = safe_int(rider.get("age"))
-        disclaimer = safe_int(rider.get("disclaimer"))
+        disclaimer = safe_int(
+            rider.get("disclaimer") or
+            rider.get("id") or
+            rider.get("disclaimer_number") or
+            rider.get("disc_no")
+        )
         height_cm = safe_int(rider.get("height_cm"))
         weight_kg = safe_int(rider.get("weight_kg"))
         notes = safe_text(rider.get("notes"))
@@ -4744,8 +4749,12 @@ def create_app():
         guardian = safe_text(rider.get("guardian"))
         mobile = clean_mobile(rider.get("mobile"))
         email = safe_text(rider.get("email"))
-        disclaimer = safe_int(rider.get("disclaimer"))
-
+        disclaimer = safe_int(
+            rider.get("disclaimer") or
+            rider.get("id") or
+            rider.get("disclaimer_number") or
+            rider.get("disc_no")
+        )
         height_cm = safe_int(rider.get("height_cm"))
         weight_kg = safe_int(rider.get("weight_kg"))
         notes = safe_text(rider.get("notes"))
