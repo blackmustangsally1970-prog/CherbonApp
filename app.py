@@ -1954,6 +1954,16 @@ def create_app():
             courses=courses
         )
 
+    @app.route('/delete_course_submission/<int:id>')
+    def delete_course_submission(id):
+        sub = CourseFormSubmission.query.get(id)
+        if not sub:
+            return "Submission not found"
+
+        db.session.delete(sub)
+        db.session.commit()
+
+        return redirect(url_for('course_form_results'))
 
 
     @app.route('/course_form_results')
