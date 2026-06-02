@@ -14,6 +14,7 @@ from models import (
     BlockoutDate,
     BlockoutRange,
     Client,
+    CourseEnrolment,
     CourseReference,
     CourseFormSubmission,
     DisclaimerState,
@@ -1892,44 +1893,29 @@ def create_app():
         for sub in r["content"]:
             answers = sub.get("answers", {})
 
-            # ---------------------------------------------------------
-            # STEP 1: Convert answers into a dict keyed by UNIQUE NAME
-            # ---------------------------------------------------------
             mapped = {}
             for qid, data in answers.items():
                 uname = data.get("name")
                 if uname:
                     mapped[uname] = data.get("answer")
 
-            # ---------------------------------------------------------
-            # STEP 2: Extract fields using REAL JotForm unique names
-            # ---------------------------------------------------------
-
-            # Rider name (fullname control)
             rider_first = mapped.get("riderName", {}).get("first", "")
             rider_last  = mapped.get("riderName", {}).get("last", "")
             raw_name = f"{rider_first} {rider_last}"
             rider_full = clean_name(raw_name)
 
-            # Course number
             courseno = mapped.get("courseNo", "")
-
-            # FT or W
             ftor = mapped.get("ft", "")
 
-            # Horse preferences
             horse_1 = mapped.get("horse_1", "")
             horse_2 = mapped.get("horse_2", "")
             horse_3 = mapped.get("horse_3", "")
 
-            # Notes
             notes = mapped.get("anythingWe", "")
 
-            # NEW: Term + Year
             term_year = mapped.get("year", None)
             term_number = mapped.get("term", None)
 
-            # Skip empty submissions
             if not rider_full and not courseno:
                 continue
 
@@ -1953,6 +1939,61 @@ def create_app():
 
         rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
         return render_template('course_form_results.html', rows=rows)
+
+    @app.route('/course_form_results')
+    def course_form_results():
+        import datetime
+
+        # -----------------------------
+        # 1. Determine available years
+        # -----------------------------
+        years = db.session.query(CourseFormSubmission.term_year)\
+                          .distinct()\
+                          .order_by(CourseFormSubmission.term_year.desc())\
+                          .all()
+        years = [y[0] for y in years if y[0] is not None]
+
+        # If no data yet, default to current year
+        current_year = datetime.datetime.now().year
+        if not years:
+            years = [current_year]
+
+        # -----------------------------
+        # 2. Read filters from GET
+        # -----------------------------
+        selected_year = request.args.get('year', type=int)
+        selected_term = request.args.get('term', type=int)
+
+        # Default year
+        if not selected_year:
+            selected_year = years[0]
+
+        # Default term (1–4)
+        if not selected_term:
+            month = datetime.datetime.now().month
+            selected_term = ((month - 1) // 3) + 1  # simple quarter logic
+
+        # -----------------------------
+        # 3. Query filtered submissions
+        # -----------------------------
+        rows = CourseFormSubmission.query\
+            .filter(CourseFormSubmission.term_year == selected_year)\
+            .filter(CourseFormSubmission.term_number == selected_term)\
+            .order_by(CourseFormSubmission.id.desc())\
+            .all()
+
+        # -----------------------------
+        # 4. Render template
+        # -----------------------------
+        return render_template(
+            'course_form_results.html',
+            rows=rows,
+            years=years,
+            selected_year=selected_year,
+            selected_term=selected_term
+        )
+
+
 
 
     @app.route("/daily-summary", methods=["GET", "POST"])
@@ -2010,10 +2051,32 @@ def create_app():
         )
 
 
-    @app.route('/course_form_results')
-    def course_form_results():
-        rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
-        return render_template('course_form_results.html', rows=rows)
+    @app.route('/approve_course_submission/<int:id>')
+    def approve_course_submission(id):
+        import datetime
+
+        sub = CourseFormSubmission.query.get(id)
+        if not sub:
+            return "Submission not found"
+
+        # 1. Update status
+        sub.status = "approved"
+
+        # 2. Insert into real enrolment table
+        enrol = CourseEnrolment(
+            rider_name=sub.rider_name,
+            course_code=sub.courseno,
+            term_year=sub.term_year,
+            term_number=sub.term_number,
+            created_at=datetime.datetime.utcnow()
+        )
+
+        db.session.add(enrol)
+        db.session.commit()
+
+        return redirect(url_for('course_form_results'))
+
+
 
     @app.route('/courses_menu')
     def courses_menu():

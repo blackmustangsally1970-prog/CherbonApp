@@ -38,6 +38,30 @@
         .menu-btn:hover {
             background: #ddd;
         }
+
+        .filter-box {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f7f7f7;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        select {
+            padding: 6px;
+            font-size: 14px;
+        }
+
+        .action-link {
+            margin-right: 8px;
+        }
+
+        .delete-link {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -47,6 +71,23 @@
 
 <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
 <a href="{{ url_for('pull_courses_from_jotform') }}" class="menu-btn">↻ Refresh From JotForm</a>
+
+<!-- ⭐ FILTER BAR -->
+<form method="get" class="filter-box">
+    <label>Year:</label>
+    <select name="year" onchange="this.form.submit()">
+        {% for y in years %}
+            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+    </select>
+
+    <label style="margin-left: 20px;">Term:</label>
+    <select name="term" onchange="this.form.submit()">
+        {% for t in [1,2,3,4] %}
+            <option value="{{ t }}" {% if t == selected_term %}selected{% endif %}>Term {{ t }}</option>
+        {% endfor %}
+    </select>
+</form>
 
 <table>
     <thead>
@@ -58,7 +99,9 @@
             <th>Horse 1</th>
             <th>Horse 2</th>
             <th>Horse 3</th>
-            <th>Notes</th>          <!-- ⭐ ADDED -->
+            <th>Notes</th>
+            <th>Status</th>
+            <th>Actions</th>
         </tr>
     </thead>
 
@@ -72,7 +115,13 @@
             <td>{{ r.horse_1 }}</td>
             <td>{{ r.horse_2 }}</td>
             <td>{{ r.horse_3 }}</td>
-            <td>{{ r.notes }}</td>   <!-- ⭐ ADDED -->
+            <td>{{ r.notes }}</td>
+            <td>{{ r.status }}</td>
+            <td>
+                <a class="action-link" href="{{ url_for('approve_course_submission', id=r.id) }}">Approve</a>
+                <a class="action-link" href="{{ url_for('edit_course_submission', id=r.id) }}">Change</a>
+                <a class="delete-link" href="{{ url_for('delete_course_submission', id=r.id) }}">Delete</a>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

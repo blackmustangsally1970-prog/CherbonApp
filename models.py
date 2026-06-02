@@ -69,10 +69,23 @@ class CourseFormSubmission(db.Model):
     horse_1 = db.Column(db.String(120))
     horse_2 = db.Column(db.String(120))
     horse_3 = db.Column(db.String(120))
-    notes = db.Column(db.String(500))   # ← ADD THIS
+    notes = db.Column(db.String(500))
     term_year = db.Column(db.Integer)
     term_number = db.Column(db.Integer)
     submitted_at = db.Column(db.DateTime)
+    status = db.Column(db.String(20), default="unprocessed")
+
+
+class CourseEnrolment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    rider_name = db.Column(db.String(120))
+    course_code = db.Column(db.String(50))
+
+    term_year = db.Column(db.Integer)
+    term_number = db.Column(db.Integer)
+
+    created_at = db.Column(db.DateTime)
 
 
 
