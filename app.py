@@ -44,8 +44,8 @@ from models import (
     WeddingStaff,
     WeddingStaffUnavailability,
     WeeklyEvent,
-    Employee,                 # ⭐ NEW
-    EmployeeHours             # ⭐ NEW
+    Employee,
+    EmployeeHours
 )
 
 # Core libs
@@ -1892,7 +1892,8 @@ def create_app():
         pulled = 0
 
         for sub in r["content"]:
-            sub_id = sub.get("id")   # ⭐ JotForm submission ID
+            # ⭐ ALWAYS normalise JotForm ID to string
+            sub_id = str(sub.get("id")).strip()
 
             # ---------------------------------------------------------
             # DEDUPE CHECK — skip if already in DB
@@ -1975,6 +1976,7 @@ def create_app():
             selected_year=int(selected_year),
             selected_term=int(selected_term)
         )
+
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
     def update_course_submission(id):
@@ -3858,7 +3860,7 @@ def create_app():
                 counter += 1
 
             client = Client(
-                full_name=candidate,
+                full_name=clean_name(candidate),
                 height_cm=rider.get("height_cm"),
                 weight_kg=rider.get("weight_kg"),
                 guardian_name="",
@@ -4744,7 +4746,8 @@ def create_app():
             v = str(v).strip()
             return v if v not in ("", "N/A") else None
 
-        name = normalize_name(rider.get("name"))
+        raw_name = rider.get("name")
+        name = clean_name(raw_name)
         age = safe_int(rider.get("age"))
         guardian = safe_text(rider.get("guardian"))
         mobile = clean_mobile(rider.get("mobile"))
@@ -4805,7 +4808,7 @@ def create_app():
         # ---------------------------------------------------------
         if choice == "overwrite" and existing:
 
-            existing.full_name = name
+            existing.full_name = clean_name(name)
             existing.age = age
             existing.guardian_name = guardian
             existing.mobile = mobile
@@ -4831,7 +4834,7 @@ def create_app():
         # ---------------------------------------------------------
         if choice == "new":
             new_client = Client(
-                full_name=name,
+                full_name=clean_name(name),
                 age=age,
                 guardian_name=guardian,
                 mobile=mobile,
@@ -4857,7 +4860,7 @@ def create_app():
         # CREATE NEW CLIENT (SAME NAME)
         # ---------------------------------------------------------
         if choice == "new_same_name":
-            base = name
+            base = clean_name(name)
             counter = 2
 
             while True:
@@ -4868,7 +4871,7 @@ def create_app():
                 counter += 1
 
             new_client = Client(
-                full_name=candidate,
+                full_name=clean_name(candidate),
                 age=age,
                 guardian_name=guardian,
                 mobile=mobile,
