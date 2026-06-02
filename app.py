@@ -1878,6 +1878,7 @@ def create_app():
         import requests
         import datetime
         import json
+        from flask import request
 
         API_KEY = app.config['JOTFORM_API_KEY']
         FORM_ID = "212936006493860"
@@ -1891,35 +1892,52 @@ def create_app():
         pulled = 0
 
         for sub in r["content"]:
+            sub_id = sub.get("id")   # ⭐ JotForm submission ID
+
+            # ---------------------------------------------------------
+            # DEDUPE CHECK — skip if already in DB
+            # ---------------------------------------------------------
+            existing = CourseFormSubmission.query.filter_by(jotform_id=sub_id).first()
+            if existing:
+                continue
+
             answers = sub.get("answers", {})
 
+            # Map unique names → answers
             mapped = {}
             for qid, data in answers.items():
                 uname = data.get("name")
                 if uname:
                     mapped[uname] = data.get("answer")
 
+            # Rider name
             rider_first = mapped.get("riderName", {}).get("first", "")
             rider_last  = mapped.get("riderName", {}).get("last", "")
             raw_name = f"{rider_first} {rider_last}"
             rider_full = clean_name(raw_name)
 
+            # Course + FT/W
             courseno = mapped.get("courseNo", "")
             ftor = mapped.get("ft", "")
 
+            # Horses
             horse_1 = mapped.get("horse_1", "")
             horse_2 = mapped.get("horse_2", "")
             horse_3 = mapped.get("horse_3", "")
 
+            # Notes
             notes = mapped.get("anythingWe", "")
 
+            # Term info
             term_year = mapped.get("year", None)
             term_number = mapped.get("term", None)
 
+            # Skip empty junk submissions
             if not rider_full and not courseno:
                 continue
 
             entry = CourseFormSubmission(
+                jotform_id=sub_id,   # ⭐ critical for dedupe
                 rider_name=rider_full,
                 courseno=courseno,
                 ftor=ftor,
@@ -1937,8 +1955,26 @@ def create_app():
 
         db.session.commit()
 
-        rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
-        return render_template('course_form_results.html', rows=rows)
+        # ---------------------------------------------------------
+        # PRESERVE FILTER (year + term) AFTER PULL
+        # ---------------------------------------------------------
+        selected_year = request.args.get("year", datetime.datetime.now().year)
+        selected_term = request.args.get("term", 1)
+
+        rows = CourseFormSubmission.query.filter_by(
+            term_year=int(selected_year),
+            term_number=int(selected_term)
+        ).order_by(CourseFormSubmission.id.desc()).all()
+
+        years = sorted({r.term_year for r in CourseFormSubmission.query.all() if r.term_year})
+
+        return render_template(
+            'course_form_results.html',
+            rows=rows,
+            years=years,
+            selected_year=int(selected_year),
+            selected_term=int(selected_term)
+        )
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
     def update_course_submission(id):

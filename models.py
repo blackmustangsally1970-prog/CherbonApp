@@ -63,6 +63,7 @@ class GroupPricing(db.Model):
 
 class CourseFormSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    jotform_id = db.Column(db.String(50), unique=True)
     rider_name = db.Column(db.String(120))
     courseno = db.Column(db.String(50))
     ftor = db.Column(db.String(50))
