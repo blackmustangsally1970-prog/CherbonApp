@@ -3784,6 +3784,7 @@ def create_app():
         )
         rider = riders[rider_index - 1]
 
+
         rider_name = rider.get("full_name") or rider.get("name") or ""
 
         # ---------------------------------------------------------
@@ -4642,6 +4643,8 @@ def create_app():
 
         # rider_index is 1‑based
         rider = riders[rider_index - 1]
+        print("RIDER DEBUG:", rider)
+        print("RIDER KEYS:", rider.keys())
 
         # Raw matches from parse_jotform_payload (SQLAlchemy tuples)
         raw_matches = rider.get("matches", [])
