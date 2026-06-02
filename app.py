@@ -1940,6 +1940,22 @@ def create_app():
         rows = CourseFormSubmission.query.order_by(CourseFormSubmission.id.desc()).all()
         return render_template('course_form_results.html', rows=rows)
 
+    @app.route('/edit_course_submission/<int:id>')
+    def edit_course_submission(id):
+        sub = CourseFormSubmission.query.get(id)
+        if not sub:
+            return "Submission not found"
+
+        courses = CourseReference.query.order_by(CourseReference.course_code).all()
+
+        return render_template(
+            'edit_course_submission.html',
+            sub=sub,
+            courses=courses
+        )
+
+
+
     @app.route('/course_form_results')
     def course_form_results():
         import datetime
