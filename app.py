@@ -4706,6 +4706,7 @@ def create_app():
             forced_submission_id=row.id
         )
         rider = riders[rider_index - 1]
+        print("🔥 RIDER RAW:", rider)   # <‑‑ ADD THIS
 
         # Skip incomplete riders
         if rider.get("incomplete"):
