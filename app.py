@@ -1946,7 +1946,33 @@ def create_app():
         if not sub:
             return "Submission not found"
 
-        courses = CourseReference.query.order_by(CourseReference.course_code).all()
+        # Day ordering for correct sorting
+        day_order = {
+            "Sunday": 1,
+            "Monday": 2,
+            "Tuesday": 3,
+            "Wednesday": 4,
+            "Thursday": 5,
+            "Friday": 6,
+            "Saturday": 7
+        }
+
+        # Fetch all courses
+        courses = CourseReference.query.all()
+
+        # Sort manually in Python
+        def sort_key(c):
+            # Extract start time from timerange "HH:MM - HH:MM"
+            try:
+                start = c.timerange.split(" - ")[0]
+                h, m = map(int, start.split(":"))
+                minutes = h * 60 + m
+            except:
+                minutes = 9999
+
+            return (day_order.get(c.day_of_week, 99), minutes)
+
+        courses = sorted(courses, key=sort_key)
 
         return render_template(
             'edit_course_submission.html',
