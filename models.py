@@ -70,6 +70,8 @@ class CourseFormSubmission(db.Model):
     horse_2 = db.Column(db.String(120))
     horse_3 = db.Column(db.String(120))
     notes = db.Column(db.String(500))   # ← ADD THIS
+    term_year = db.Column(db.Integer)
+    term_number = db.Column(db.Integer)
     submitted_at = db.Column(db.DateTime)
 
 

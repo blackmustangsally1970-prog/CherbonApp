@@ -1925,6 +1925,10 @@ def create_app():
             # Notes
             notes = mapped.get("anythingWe", "")
 
+            # NEW: Term + Year
+            term_year = mapped.get("year", None)
+            term_number = mapped.get("term", None)
+
             # Skip empty submissions
             if not rider_full and not courseno:
                 continue
@@ -1937,6 +1941,8 @@ def create_app():
                 horse_2=horse_2,
                 horse_3=horse_3,
                 notes=notes,
+                term_year=term_year,
+                term_number=term_number,
                 submitted_at=datetime.datetime.utcnow()
             )
 
