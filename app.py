@@ -2098,11 +2098,14 @@ def create_app():
         # -----------------------------
         # 3. Query filtered submissions
         # -----------------------------
+
         rows = CourseFormSubmission.query\
             .filter(CourseFormSubmission.term_year == selected_year)\
             .filter(CourseFormSubmission.term_number == selected_term)\
+            .filter(CourseFormSubmission.ignore_jotform == False)\
             .order_by(CourseFormSubmission.id.desc())\
             .all()
+
 
         # -----------------------------
         # 4. Render template
