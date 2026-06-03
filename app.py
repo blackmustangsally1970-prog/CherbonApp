@@ -1892,55 +1892,66 @@ def create_app():
         pulled = 0
 
         for sub in r["content"]:
-            # ⭐ ALWAYS normalise JotForm ID to string
             sub_id = str(sub.get("id")).strip()
-
-            # ---------------------------------------------------------
-            # DEDUPE CHECK — skip if already in DB
-            # ---------------------------------------------------------
-            existing = CourseFormSubmission.query.filter_by(jotform_id=sub_id).first()
-            if existing:
-                continue
-
             answers = sub.get("answers", {})
 
-            # Map unique names → answers
             mapped = {}
             for qid, data in answers.items():
                 uname = data.get("name")
                 if uname:
                     mapped[uname] = data.get("answer")
 
-            # Rider name
             rider_first = mapped.get("riderName", {}).get("first", "")
             rider_last  = mapped.get("riderName", {}).get("last", "")
-            raw_name = f"{rider_first} {rider_last}"
-            rider_full = clean_name(raw_name)
+            rider_full = clean_name(f"{rider_first} {rider_last}")
 
-            # Course + FT/W
             courseno = mapped.get("courseNo", "")
             ftor = mapped.get("ft", "")
-
-            # Horses
             horse_1 = mapped.get("horse_1", "")
             horse_2 = mapped.get("horse_2", "")
             horse_3 = mapped.get("horse_3", "")
-
-            # Notes
             notes = mapped.get("anythingWe", "")
-
-            # Term info
             term_year = mapped.get("year", None)
             term_number = mapped.get("term", None)
 
-            # Skip empty junk submissions
             if not rider_full and not courseno:
                 continue
 
+            # ---------------------------------------------------------
+            # FIND EXISTING RIDER FOR THIS TERM/YEAR
+            # ---------------------------------------------------------
+            existing = CourseFormSubmission.query.filter_by(
+                rider_name=rider_full,
+                term_year=term_year,
+                term_number=term_number
+            ).first()
+
+            # ---------------------------------------------------------
+            # IF DELETED → IGNORE FOREVER
+            # ---------------------------------------------------------
+            if existing and existing.ignore_jotform:
+                continue
+
+            # ---------------------------------------------------------
+            # IF EXISTS → UPDATE ORIGINAL ONLY
+            # ---------------------------------------------------------
+            if existing:
+                if courseno != existing.original_course:
+                    existing.original_course = courseno
+                    existing.notes = notes or existing.notes
+                    existing.jotform_id = sub_id
+                # DO NOT TOUCH current_course
+                continue
+
+            # ---------------------------------------------------------
+            # NEW RIDER → CREATE ENTRY
+            # ---------------------------------------------------------
             entry = CourseFormSubmission(
-                jotform_id=sub_id,   # ⭐ critical for dedupe
+                jotform_id=sub_id,
                 rider_name=rider_full,
                 courseno=courseno,
+                original_course=courseno,
+                current_course=courseno,
                 ftor=ftor,
                 horse_1=horse_1,
                 horse_2=horse_2,
@@ -1956,9 +1967,6 @@ def create_app():
 
         db.session.commit()
 
-        # ---------------------------------------------------------
-        # PRESERVE FILTER (year + term) AFTER PULL
-        # ---------------------------------------------------------
         selected_year = request.args.get("year", datetime.datetime.now().year)
         selected_term = request.args.get("term", 1)
 
@@ -1985,12 +1993,19 @@ def create_app():
             return "Submission not found"
 
         new_course = request.form.get('courseno')
-        sub.courseno = new_course
+
+        # ---------------------------------------------------------
+        # TEACHER CHANGE LOGIC
+        # ---------------------------------------------------------
+        sub.current_course = new_course
+        sub.teacher_changed = True
+        sub.courseno = new_course  # legacy UI compatibility
+        sub.status = "approved"
 
         db.session.commit()
 
-        return redirect(url_for('course_form_results', 
-                                year=sub.term_year, 
+        return redirect(url_for('course_form_results',
+                                year=sub.term_year,
                                 term=sub.term_number))
 
 
@@ -2000,7 +2015,6 @@ def create_app():
         if not sub:
             return "Submission not found"
 
-        # Day ordering for correct sorting
         day_order = {
             "Sunday": 1,
             "Monday": 2,
@@ -2011,12 +2025,9 @@ def create_app():
             "Saturday": 7
         }
 
-        # Fetch all courses
         courses = CourseReference.query.all()
 
-        # Sort manually in Python
         def sort_key(c):
-            # Extract start time from timerange "HH:MM - HH:MM"
             try:
                 start = c.timerange.split(" - ")[0]
                 h, m = map(int, start.split(":"))
@@ -2034,13 +2045,19 @@ def create_app():
             courses=courses
         )
 
+
     @app.route('/delete_course_submission/<int:id>')
     def delete_course_submission(id):
         sub = CourseFormSubmission.query.get(id)
         if not sub:
             return "Submission not found"
 
-        db.session.delete(sub)
+        # ---------------------------------------------------------
+        # SOFT DELETE — PREVENT RESURRECTION
+        # ---------------------------------------------------------
+        sub.ignore_jotform = True
+        sub.status = "deleted"
+
         db.session.commit()
 
         return redirect(url_for('course_form_results'))

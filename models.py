@@ -61,20 +61,46 @@ class GroupPricing(db.Model):
     sibling_full = db.Column(db.Float, default=0)
 
 
+
+
 class CourseFormSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
+    # JotForm submission ID (dedupe key)
     jotform_id = db.Column(db.String(50), unique=True)
+
+    # Rider details
     rider_name = db.Column(db.String(120))
+
+    # LEGACY FIELD — keep for UI compatibility
     courseno = db.Column(db.String(50))
+
+    # FT / W
     ftor = db.Column(db.String(50))
+
+    # Horse preferences
     horse_1 = db.Column(db.String(120))
     horse_2 = db.Column(db.String(120))
     horse_3 = db.Column(db.String(120))
+
+    # Notes
     notes = db.Column(db.String(500))
+
+    # Term info
     term_year = db.Column(db.Integer)
     term_number = db.Column(db.Integer)
+
+    # Submission timestamp
     submitted_at = db.Column(db.DateTime)
+
+    # Processing status
     status = db.Column(db.String(20), default="unprocessed")
+
+    # ⭐ NEW FIELDS ⭐
+    original_course = db.Column(db.String(50))   # What parent submitted
+    current_course  = db.Column(db.String(50))   # What teacher allocated
+    teacher_changed = db.Column(db.Boolean, default=False)
+
 
 
 class CourseEnrolment(db.Model):
