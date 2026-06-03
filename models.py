@@ -100,6 +100,7 @@ class CourseFormSubmission(db.Model):
     original_course = db.Column(db.String(50))   # What parent submitted
     current_course  = db.Column(db.String(50))   # What teacher allocated
     teacher_changed = db.Column(db.Boolean, default=False)
+    ignore_jotform = db.Column(db.Boolean, default=False)
 
 
 
