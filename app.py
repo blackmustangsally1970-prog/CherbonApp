@@ -1939,7 +1939,6 @@ def create_app():
                 if courseno != existing.original_course:
                     existing.original_course = courseno
                     existing.notes = notes or existing.notes
-                    existing.jotform_id = sub_id
                 # DO NOT TOUCH current_course
                 continue
 
