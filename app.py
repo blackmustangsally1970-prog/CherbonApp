@@ -1969,9 +1969,10 @@ def create_app():
         selected_year = request.args.get("year", datetime.datetime.now().year)
         selected_term = request.args.get("term", 1)
 
-        rows = CourseFormSubmission.query.filter_by(
-            term_year=int(selected_year),
-            term_number=int(selected_term)
+        rows = CourseFormSubmission.query.filter(
+            CourseFormSubmission.term_year == int(selected_year),
+            CourseFormSubmission.term_number == int(selected_term),
+            CourseFormSubmission.ignore_jotform == False
         ).order_by(CourseFormSubmission.id.desc()).all()
 
         years = sorted({r.term_year for r in CourseFormSubmission.query.all() if r.term_year})
