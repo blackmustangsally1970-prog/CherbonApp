@@ -2051,15 +2051,14 @@ def create_app():
         if not sub:
             return "Submission not found"
 
-        # ---------------------------------------------------------
-        # SOFT DELETE — PREVENT RESURRECTION
-        # ---------------------------------------------------------
         sub.ignore_jotform = True
         sub.status = "deleted"
 
         db.session.commit()
 
-        return redirect(url_for('course_form_results'))
+        return redirect(url_for('course_form_results',
+                                year=sub.term_year,
+                                term=sub.term_number))
 
 
     @app.route('/course_form_results')
