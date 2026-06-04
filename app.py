@@ -1208,7 +1208,8 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         )
 
     answers = payload.get("answers", {}) or {}
-    disclaimer_id = str(payload.get("id") or "")
+    disclaimer_id = str(answers.get("63", {}).get("answer") or "")
+
 
     # ---- Email autodetect ----
     email = ""
