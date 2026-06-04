@@ -1208,6 +1208,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         )
 
     answers = payload.get("answers", {}) or {}
+    disclaimer_id = str(payload.get("id") or "")
 
     # ---- Email autodetect ----
     email = ""
@@ -1278,8 +1279,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     # Global fields
     guardian = answers.get("86", {}).get("answer", "") or ""
     mobile = answers.get("87", {}).get("answer", {}).get("full", "") or ""
-    email_fallback = answers.get("47", {}).get("answer", "") or ""
-    disclaimer = answers.get("63", {}).get("answer", None)
+    email_fallback = answers.get("47", {}).get("answer", "") or ""    
     if email_fallback and not email:
         email = email_fallback
 
@@ -1341,7 +1341,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             "guardian": guardian,
             "mobile": mobile,
             "email": email,
-            "disclaimer": disclaimer,
+            "disclaimer": disclaimer_id,
             "matches": [],
             "jotform_submission_id": submission_id,
             "invite_token": invite_token
