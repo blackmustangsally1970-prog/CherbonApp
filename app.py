@@ -4773,12 +4773,7 @@ def create_app():
         guardian = safe_text(rider.get("guardian"))
         mobile = clean_mobile(rider.get("mobile"))
         email = safe_text(rider.get("email"))
-        disclaimer = safe_int(
-            rider.get("disclaimer") or
-            rider.get("id") or
-            rider.get("disclaimer_number") or
-            rider.get("disc_no")
-        )
+        disclaimer = safe_int(rider.get("disclaimer"))
         height_cm = safe_int(rider.get("height_cm"))
         weight_kg = safe_int(rider.get("weight_kg"))
         notes = safe_text(rider.get("notes"))
