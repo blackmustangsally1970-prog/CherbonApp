@@ -4720,13 +4720,14 @@ def create_app():
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-        # Parse riders once
-        riders = parse_jotform_payload(
+        # Parse riders once (use VALID riders to keep indexes aligned)
+        all_riders = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id
         )
-        rider = riders[rider_index - 1]
-        print("🔥 RIDER RAW:", rider)   # <‑‑ ADD THIS
+        valid_riders = [r for r in all_riders if not r.get("incomplete")]
+        rider = valid_riders[rider_index - 1]
+
 
         # Skip incomplete riders
         if rider.get("incomplete"):
