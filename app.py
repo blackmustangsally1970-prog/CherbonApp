@@ -4988,7 +4988,8 @@ def create_app():
 
             email = request.form.get(f"email_{i}") or rider.get("email")
 
-            raw_disclaimer = request.form.get(f"disclaimer_{i}") or rider.get("disclaimer")
+            submission_disclaimer = valid_riders[0].get("disclaimer")
+            raw_disclaimer = submission_disclaimer
             try:
                 disclaimer = int(raw_disclaimer) if raw_disclaimer else None
             except ValueError:
