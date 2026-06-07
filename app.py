@@ -152,6 +152,15 @@ def get_incomplete_days(employee_id):
     return rows
 
 
+def get_pricing_lookup():
+    lookup = {}
+    rows = GroupPricing.query.all()
+    for p in rows:
+        lookup[p.group_priv] = p
+    return lookup
+
+
+
 def smart_proper_name(name):
     if not name:
         return ""
