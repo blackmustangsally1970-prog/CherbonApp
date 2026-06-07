@@ -2176,21 +2176,6 @@ def create_app():
                                 year=sub.term_year,
                                 term=sub.term_number))
 
-    @app.route('/unapprove_course_submission/<int:id>')
-    def unapprove_course_submission(id):
-        sub = CourseFormSubmission.query.get(id)
-        if not sub:
-            return "Submission not found"
-
-        sub.status = "unprocessed"
-
-        db.session.commit()
-
-        return redirect(url_for('course_form_submissions',
-                                year=sub.term_year,
-                                term=sub.term_number))
-
-
 
     @app.route("/daily-summary", methods=["GET", "POST"])
     def daily_summary():
@@ -2249,29 +2234,17 @@ def create_app():
 
     @app.route('/approve_course_submission/<int:id>')
     def approve_course_submission(id):
-        import datetime
-
         sub = CourseFormSubmission.query.get(id)
         if not sub:
             return "Submission not found"
 
-        # 1. Update status
         sub.status = "approved"
 
-        # 2. Insert into real enrolment table
-        enrol = CourseEnrolment(
-            rider_name=sub.rider_name,
-            course_code=sub.courseno,
-            term_year=sub.term_year,
-            term_number=sub.term_number,
-            created_at=datetime.datetime.utcnow()
-        )
-
-        db.session.add(enrol)
         db.session.commit()
 
-        return redirect(url_for('course_form_results'))
-
+        return redirect(url_for('course_form_submissions',
+                                year=sub.term_year,
+                                term=sub.term_number))
 
 
     @app.route('/courses_menu')
