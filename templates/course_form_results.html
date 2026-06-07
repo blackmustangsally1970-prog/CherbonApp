@@ -106,7 +106,7 @@
     </thead>
 
     <tbody>
-        {% for r in rows %}
+        {% for r in course_submissions %}
         <tr>
             <td>{{ r.id }}</td>
             <td>{{ r.rider_name }}</td>
@@ -174,14 +174,13 @@
             </thead>
 
             <tbody>
-                {% set riders = course_submissions
-                    | selectattr("current_course", "equalto", c.course_code)
-                    | selectattr("status", "ne", "unprocessed")
-                    | selectattr("status", "ne", "deleted")
-                    | selectattr("year", "equalto", selected_year)
-                    | selectattr("term", "equalto", selected_term)
-                    | list
-                %}
+{% set riders = course_submissions
+    | selectattr("current_course", "equalto", c.course_code)
+    | selectattr("status", "equalto", "approved")
+    | selectattr("year", "equalto", selected_year)
+    | selectattr("term", "equalto", selected_term)
+    | list
+%}
 
                 {% if riders|length == 0 %}
                     <tr>
