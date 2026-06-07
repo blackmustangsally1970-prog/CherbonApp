@@ -127,5 +127,83 @@
     </tbody>
 </table>
 
+<!-- ========================================================= -->
+<!--  COURSE GRIDS (APPROVED RIDERS BY CURRENT COURSE)         -->
+<!-- ========================================================= -->
+
+<h2 style="margin-top:40px;">Approved Riders by Course</h2>
+
+{% set day_order = {
+    'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4,
+    'Thursday': 5, 'Friday': 6, 'Saturday': 7
+} %}
+
+{% set sorted_courses = courses | sort(attribute='timerange') 
+                                | sort(attribute='day_of_week', key=lambda d: day_order[d.day_of_week]) %}
+
+{% for c in sorted_courses %}
+    {% if c.active %}
+
+        <h3 style="margin-top:30px;">
+            {{ c.course_code }} – {{ c.display_label }} –
+            {{ c.day_of_week }} {{ c.timerange }} –
+            {{ c.group_priv }} –
+            ${{ pricing[c.group_priv].weekly_price }}/wk
+        </h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Rider</th>
+                    <th>FT/W</th>
+                    <th>Horse 1</th>
+                    <th>Horse 2</th>
+                    <th>Horse 3</th>
+                    <th>Notes</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% set riders = course_submissions | selectattr("current_course", "equalto", c.course_code)
+                                                  | selectattr("status", "ne", "unprocessed")
+                                                  | selectattr("status", "ne", "deleted")
+                                                  | selectattr("year", "equalto", selected_year)
+                                                  | selectattr("term", "equalto", selected_term)
+                                                  | list %}
+
+                {% if riders|length == 0 %}
+                    <tr>
+                        <td colspan="8" style="text-align:center; color:#777;">
+                            No riders assigned to this course yet.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for r in riders %}
+                        <tr>
+                            <td>{{ r.rider_name }}</td>
+                            <td>{{ r.ftor }}</td>
+                            <td>{{ r.horse_1 }}</td>
+                            <td>{{ r.horse_2 }}</td>
+                            <td>{{ r.horse_3 }}</td>
+                            <td>{{ r.notes }}</td>
+                            <td>{{ r.status }}</td>
+                            <td>
+                                <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
+                                <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
+                                <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+
+    {% endif %}
+{% endfor %}
+
+
+
 </body>
 </html>
