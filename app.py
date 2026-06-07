@@ -2230,13 +2230,34 @@ def create_app():
         if not sub:
             return "Submission not found"
 
+        # Mark approved
         sub.status = "approved"
+
+        # Move rider into the correct course grid
+        sub.current_course = sub.courseno
 
         db.session.commit()
 
         return redirect(url_for('course_form_submissions',
                                 year=sub.term_year,
                                 term=sub.term_number))
+
+    @app.route('/unapprove_course_submission/<int:id>')
+    def unapprove_course_submission(id):
+        sub = CourseFormSubmission.query.get(id)
+        if not sub:
+            return "Submission not found"
+
+        # Move back to unprocessed
+        sub.status = "unprocessed"
+        sub.current_course = None
+
+        db.session.commit()
+
+        return redirect(url_for('course_form_submissions',
+                                year=sub.term_year,
+                                term=sub.term_number))
+
 
 
     @app.route('/courses_menu')
