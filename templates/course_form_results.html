@@ -138,8 +138,10 @@
     'Thursday': 5, 'Friday': 6, 'Saturday': 7
 } %}
 
-{% set sorted_courses = courses | sort(attribute='timerange') 
-                                | sort(attribute='day_of_week', key=lambda d: day_order[d.day_of_week]) %}
+{% set sorted_courses = courses
+    | sort(attribute='timerange')
+    | sort(attribute='day_of_week', key=day_order.get)
+%}
 
 {% for c in sorted_courses %}
     {% if c.active %}
