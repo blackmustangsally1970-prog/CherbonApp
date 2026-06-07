@@ -2136,31 +2136,27 @@ def create_app():
         selected_year = request.args.get("year", datetime.datetime.now().year, type=int)
         selected_term = request.args.get("term", 1, type=int)
 
-        # --- LOAD COURSE REFERENCE (ACTIVE ONLY) ---
-        courses = CourseReference.query.filter_by(active=True).all()
-
         # --- LOAD ALL SUBMISSIONS FOR THIS TERM ---
-        all_subs = CourseFormSubmission.query.filter_by(
+        course_submissions = CourseFormSubmission.query.filter_by(
             term_year=selected_year,
             term_number=selected_term
         ).all()
 
-        # --- UNPROCESSED SUBMISSIONS (TOP GRID) ---
-        unprocessed = [s for s in all_subs if s.status == "unprocessed"]
-
-        # --- APPROVED SUBMISSIONS (FOR COURSE GRIDS) ---
-        approved = [s for s in all_subs if s.status not in ("unprocessed", "deleted")]
+        # --- LOAD COURSE REFERENCE (ACTIVE ONLY) ---
+        courses = CourseReference.query.filter_by(active=True).all()
 
         # --- PRICING LOOKUP ---
-        pricing = get_pricing_lookup()   # your existing pricing loader
+        pricing = get_pricing_lookup()
 
         # --- YEARS FOR FILTER DROPDOWN ---
-        years = sorted({s.term_year for s in CourseFormSubmission.query.all() if s.term_year}, reverse=True)
+        years = sorted(
+            {s.term_year for s in CourseFormSubmission.query.all() if s.term_year},
+            reverse=True
+        )
 
         return render_template(
             "course_form_results.html",
-            rows=unprocessed,
-            course_submissions=approved,
+            course_submissions=course_submissions,
             courses=courses,
             pricing=pricing,
             years=years,
