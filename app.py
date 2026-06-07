@@ -2159,23 +2159,6 @@ def create_app():
             selected_term=selected_term
         )
 
-    @app.route('/approve_course_submission/<int:id>')
-    def approve_course_submission(id):
-        sub = CourseFormSubmission.query.get(id)
-        if not sub:
-            return "Submission not found"
-
-        sub.status = "approved"
-
-        # current_course stays whatever it already is
-        # courseno stays original nomination
-
-        db.session.commit()
-
-        return redirect(url_for('course_form_submissions',
-                                year=sub.term_year,
-                                term=sub.term_number))
-
 
     @app.route("/daily-summary", methods=["GET", "POST"])
     def daily_summary():
