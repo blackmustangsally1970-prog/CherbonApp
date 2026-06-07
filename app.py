@@ -2138,8 +2138,8 @@ def create_app():
 
         # --- LOAD ALL SUBMISSIONS FOR THIS TERM ---
         course_submissions = CourseFormSubmission.query.filter_by(
-            term_year=selected_year,
-            term_number=selected_term
+            year=selected_year,
+            term=selected_term
         ).all()
 
         # --- LOAD COURSE REFERENCE (ACTIVE ONLY) ---
