@@ -138,9 +138,15 @@
     'Thursday': 5, 'Friday': 6, 'Saturday': 7
 } %}
 
+{# Assign a numeric sort key to each course #}
+{% for c in courses %}
+    {% set _ = c.__setattr__('day_sort', day_order[c.day_of_week]) %}
+{% endfor %}
+
+{# Now sort by time, then by day_sort #}
 {% set sorted_courses = courses
     | sort(attribute='timerange')
-    | sort(attribute='day_of_week', key=day_order.get)
+    | sort(attribute='day_sort')
 %}
 
 {% for c in sorted_courses %}
@@ -168,12 +174,14 @@
             </thead>
 
             <tbody>
-                {% set riders = course_submissions | selectattr("current_course", "equalto", c.course_code)
-                                                  | selectattr("status", "ne", "unprocessed")
-                                                  | selectattr("status", "ne", "deleted")
-                                                  | selectattr("year", "equalto", selected_year)
-                                                  | selectattr("term", "equalto", selected_term)
-                                                  | list %}
+                {% set riders = course_submissions
+                    | selectattr("current_course", "equalto", c.course_code)
+                    | selectattr("status", "ne", "unprocessed")
+                    | selectattr("status", "ne", "deleted")
+                    | selectattr("year", "equalto", selected_year)
+                    | selectattr("term", "equalto", selected_term)
+                    | list
+                %}
 
                 {% if riders|length == 0 %}
                     <tr>
