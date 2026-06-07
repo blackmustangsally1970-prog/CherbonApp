@@ -4728,7 +4728,6 @@ def create_app():
         valid_riders = [r for r in all_riders if not r.get("incomplete")]
         rider = valid_riders[rider_index - 1]
 
-
         # Skip incomplete riders
         if rider.get("incomplete"):
             row.processed = True
@@ -4736,24 +4735,20 @@ def create_app():
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-        # ---------------------------------------------------------
-        # IGNORE OPTION — HARD STOP (NO FALLTHROUGH)
-        # ---------------------------------------------------------
+        # IGNORE OPTION — HARD STOP
         if choice == "ignore":
-                row.processed = True
-                row.ignored = True
-                row.processed_at = datetime.utcnow()
-                db.session.commit()
-                return redirect(url_for('process_all_pending'))
+            row.processed = True
+            row.ignored = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('process_all_pending'))
 
         # Preload clients
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(int(client_id)) if client_id else None
 
-        # ---------------------------------------------------------
-        # SAFE EXTRACTION (prevents NameErrors + bad values)
-        # ---------------------------------------------------------
+        # SAFE EXTRACTION HELPERS
         def safe_int(v):
             if v is None:
                 return None
@@ -4774,16 +4769,18 @@ def create_app():
         guardian = safe_text(rider.get("guardian"))
         mobile = clean_mobile(rider.get("mobile"))
         email = safe_text(rider.get("email"))
-        disclaimer = safe_int(rider.get("disclaimer"))
+
+        # Submission-wide disclaimer
+        submission_disclaimer = valid_riders[0].get("disclaimer")
+        disclaimer = safe_int(submission_disclaimer)
+
         height_cm = safe_int(rider.get("height_cm"))
         weight_kg = safe_int(rider.get("weight_kg"))
         notes = safe_text(rider.get("notes"))
 
         jotform_id = str(row.form_id)
 
-        # ---------------------------------------------------------
         # USE EXISTING (SAFE MERGE)
-        # ---------------------------------------------------------
         if choice == "use_existing" and existing:
 
             if guardian:
@@ -4798,9 +4795,6 @@ def create_app():
             if email:
                 existing.email_primary = email
 
-            if disclaimer is not None:
-                existing.disclaimer = disclaimer
-
             if height_cm is not None:
                 existing.height_cm = height_cm
 
@@ -4810,19 +4804,19 @@ def create_app():
             if notes is not None:
                 existing.notes = notes
 
+            existing.disclaimer = disclaimer
             existing.jotform_submission_id = jotform_id
 
-            # ⭐ NEW: mark submission processed
             row.processed = True
             row.processed_at = datetime.utcnow()
+
+            names = [r["name"] for r in valid_riders]
+            log_disclaimer_processed(names)
 
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-
-        # ---------------------------------------------------------
-        # OVERWRITE EXISTING (FULL REPLACEMENT)
-        # ---------------------------------------------------------
+        # OVERWRITE EXISTING
         if choice == "overwrite" and existing:
 
             existing.full_name = clean_name(name)
@@ -4831,24 +4825,21 @@ def create_app():
             existing.mobile = mobile
             existing.email_primary = email
             existing.disclaimer = disclaimer
-
             existing.height_cm = height_cm
             existing.weight_kg = weight_kg
             existing.notes = notes
-
             existing.jotform_submission_id = jotform_id
 
-            # ⭐ NEW: mark submission processed
             row.processed = True
             row.processed_at = datetime.utcnow()
+
+            names = [r["name"] for r in valid_riders]
+            log_disclaimer_processed(names)
 
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-
-        # ---------------------------------------------------------
         # CREATE NEW CLIENT
-        # ---------------------------------------------------------
         if choice == "new":
             new_client = Client(
                 full_name=clean_name(name),
@@ -4865,17 +4856,16 @@ def create_app():
             )
             db.session.add(new_client)
 
-            # ⭐ NEW: mark submission processed
             row.processed = True
             row.processed_at = datetime.utcnow()
+
+            names = [r["name"] for r in valid_riders]
+            log_disclaimer_processed(names)
 
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-
-        # ---------------------------------------------------------
         # CREATE NEW CLIENT (SAME NAME)
-        # ---------------------------------------------------------
         if choice == "new_same_name":
             base = clean_name(name)
             counter = 2
@@ -4902,17 +4892,23 @@ def create_app():
             )
             db.session.add(new_client)
 
-            # ⭐ NEW: mark submission processed
             row.processed = True
             row.processed_at = datetime.utcnow()
+
+            names = [r["name"] for r in valid_riders]
+            log_disclaimer_processed(names)
 
             db.session.commit()
             return redirect(url_for('process_all_pending'))
 
-        # ---------------------------------------------------------
         # FALLBACK
-        # ---------------------------------------------------------
+        names = [r["name"] for r in valid_riders]
+        log_disclaimer_processed(names)
+
+        row.processed = True
+        row.processed_at = datetime.utcnow()
         db.session.commit()
+
         return redirect(url_for('process_all_pending'))
 
     @app.route("/pricing_setup")
@@ -5045,6 +5041,19 @@ def create_app():
                 existing_id = int(choice.replace("existing_", ""))
                 client = clients_by_id.get(existing_id)
                 if client:
+                    # ⭐ Update ALL fields
+                    client.full_name = name
+                    client.guardian_name = guardian
+                    client.age = age
+                    client.mobile = mobile
+                    client.email_primary = email
+                    client.height_cm = height_cm
+                    client.weight_kg = weight_kg
+                    client.notes = notes
+
+                    # ⭐ ALWAYS update disclaimer
+                    client.disclaimer = disclaimer
+
                     client.jotform_submission_id = jotform_id
                     log_submission_link("USE_EXISTING", client, jotform_id)
                 continue
