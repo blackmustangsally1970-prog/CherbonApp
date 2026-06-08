@@ -1923,11 +1923,8 @@ def create_app():
             notes = mapped.get("anythingWe", "")
 
             # TYPE‑SAFE TERM + YEAR (THE FIX)
-            raw_year = mapped.get("year")
-            raw_term = mapped.get("term")
-
-            term_year = int(raw_year) if raw_year and str(raw_year).isdigit() else None
-            term_number = int(raw_term) if raw_term and str(raw_term).isdigit() else None
+            term_year = int(request.args.get("year"))
+            term_number = int(request.args.get("term"))
 
             if not rider_full and not courseno:
                 continue
