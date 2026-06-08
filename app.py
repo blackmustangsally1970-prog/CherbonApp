@@ -1987,42 +1987,58 @@ def create_app():
         db.session.commit()
         db.session.expire_all()
 
-        selected_year = request.args.get("year", datetime.datetime.now().year)
-        selected_term = request.args.get("term", 1)
+        return redirect(url_for(
+            'course_form_submissions',
+            year=term_year,
+            term=term_number
+        ))
 
-        rows = CourseFormSubmission.query.filter(
-            CourseFormSubmission.term_year == int(selected_year),
-            CourseFormSubmission.term_number == int(selected_term),
-            CourseFormSubmission.ignore_jotform.is_(False)
-        ).order_by(CourseFormSubmission.id.desc()).all()
 
-        years = sorted({r.term_year for r in CourseFormSubmission.query.all() if r.term_year})
+    @app.route('/update_course_field/<int:id>', methods=['POST'])
+    def update_course_field(id):
+        data = request.get_json()
+        field = data.get("field")
+        value = data.get("value")
 
-        return render_template(
-            'course_form_results.html',
-            rows=rows,
-            years=years,
-            selected_year=int(selected_year),
-            selected_term=int(selected_term)
-        )
+        row = CourseFormSubmission.query.get(id)
+        if not row:
+            return "Not found", 404
 
-    @app.route('/update_course_submission/<int:id>', methods=['POST'])
-    def update_course_submission(id):
-        sub = CourseFormSubmission.query.get(id)
-        if not sub:
-            return "Submission not found"
+        allowed = ["rider_name", "ftor", "horse_1", "cherbon_notes"]
+        if field not in allowed:
+            return "Invalid field", 400
 
-        new_course = request.form.get("courseno")
-
-        # Update fields
-        sub.current_course = new_course
-        sub.teacher_changed = True
-
+        setattr(row, field, value)
         db.session.commit()
+        return "OK", 200
 
-        return redirect(url_for('course_form_submissions',
-                                year=sub.term_year,
-                                term=sub.term_number))
+
+    @app.route('/approve_course_submission/<int:id>')
+    def approve_course_submission(id):
+        r = CourseFormSubmission.query.get(id)
+        if r:
+            r.status = "approved"
+            db.session.commit()
+        return redirect(request.referrer)
+
+
+    @app.route('/unapprove_course_submission/<int:id>')
+    def unapprove_course_submission(id):
+        r = CourseFormSubmission.query.get(id)
+        if r:
+            r.status = "unprocessed"
+            db.session.commit()
+        return redirect(request.referrer)
+
+
+    @app.route('/delete_course_submission/<int:id>')
+    def delete_course_submission(id):
+        r = CourseFormSubmission.query.get(id)
+        if r:
+            r.status = "deleted"
+            db.session.commit()
+        return redirect(request.referrer)
+
 
     @app.route('/edit_course_submission/<int:id>')
     def edit_course_submission(id):
@@ -2067,29 +2083,23 @@ def create_app():
     def course_form_submissions():
         import datetime
 
-        # --- GET FILTERS ---
         selected_year = request.args.get("year", datetime.datetime.now().year, type=int)
         selected_term = request.args.get("term", 1, type=int)
 
-        # --- LOAD ALL SUBMISSIONS FOR THIS TERM (EXCLUDING DELETED) ---
         all_subs = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
-            CourseFormSubmission.ignore_jotform == False,
+            CourseFormSubmission.ignore_jotform.is_(False),
             CourseFormSubmission.status != "deleted"
         ).all()
 
-        # --- SPLIT INTO UNPROCESSED + APPROVED ---
         unprocessed = [s for s in all_subs if s.status == "unprocessed"]
         approved = [s for s in all_subs if s.status == "approved"]
 
-        # --- LOAD ACTIVE COURSES ---
         courses = CourseReference.query.filter_by(active=True).all()
+        horses = Horse.query.order_by(Horse.horse).all()
+        client_names = Client.query.order_by(Client.full_name).all()
 
-        # --- PRICING LOOKUP ---
-        pricing = get_pricing_lookup()
-
-        # --- YEARS FOR FILTER DROPDOWN ---
         years = sorted(
             {s.term_year for s in CourseFormSubmission.query.all() if s.term_year},
             reverse=True
@@ -2100,7 +2110,8 @@ def create_app():
             unprocessed_submissions=unprocessed,
             approved_submissions=approved,
             courses=courses,
-            pricing=pricing,
+            horses=horses,
+            client_names=client_names,
             years=years,
             selected_year=selected_year,
             selected_term=selected_term
@@ -2161,51 +2172,6 @@ def create_app():
         )
 
 
-    @app.route('/approve_course_submission/<int:id>')
-    def approve_course_submission(id):
-        sub = CourseFormSubmission.query.get(id)
-        if not sub:
-            return "Submission not found"
-
-        sub.status = "approved"
-        sub.current_course = sub.courseno  # or whatever field maps to course_code
-
-        db.session.commit()
-
-        return redirect(url_for('course_form_submissions',
-                                year=sub.term_year,
-                                term=sub.term_number))
-
-    @app.route('/unapprove_course_submission/<int:id>')
-    def unapprove_course_submission(id):
-        sub = CourseFormSubmission.query.get(id)
-        if not sub:
-            return "Submission not found"
-
-        sub.status = "unprocessed"
-        sub.current_course = None
-
-        db.session.commit()
-
-        return redirect(url_for('course_form_submissions',
-                                year=sub.term_year,
-                                term=sub.term_number))
-
-    @app.route('/delete_course_submission/<int:id>')
-    def delete_course_submission(id):
-        sub = CourseFormSubmission.query.get(id)
-        if not sub:
-            return "Submission not found"
-
-        sub.status = "deleted"
-        sub.ignore_jotform = True
-        sub.current_course = None
-
-        db.session.commit()
-
-        return redirect(url_for('course_form_submissions',
-                                year=sub.term_year,
-                                term=sub.term_number))
 
 
     @app.route('/courses_menu')

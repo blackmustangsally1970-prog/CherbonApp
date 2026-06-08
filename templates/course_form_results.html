@@ -154,15 +154,21 @@
     {% for c in sorted_courses %}
         {% if c.active %}
 
-            <h3 style="margin-top:30px;">
-                {{ c.course_code }} – {{ c.display_label }} –
-                {{ c.day_of_week }} {{ c.timerange }} –
-                {{ c.group_priv }} –
-                ${{ pricing[c.group_priv].weekly_price }}/wk
+            {% set riders = approved_submissions
+                | selectattr("current_course", "equalto", c.course_code)
+                | list
+            %}
+
+            {% set approved_count = riders | length %}
+
+            <h3 style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
+                {{ c.day_of_week }} {{ c.timerange }}
+                {{ c.display_label }} - {{ c.course_code }}
+                ({{ approved_count }})
             </h3>
 
             <table>
-                <thead>
+                <thead style="background:#ffe5cc;">
                     <tr>
                         <th>Rider</th>
                         <th>FT/W</th>
@@ -170,38 +176,81 @@
                         <th>Horse 2</th>
                         <th>Horse 3</th>
                         <th>Notes</th>
+                        <th>Cherbon Notes</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    {% set riders = approved_submissions
-                        | selectattr("current_course", "equalto", c.course_code)
-                        | list
-                    %}
-
-                    {% if riders|length == 0 %}
+                    {% if approved_count == 0 %}
                         <tr>
-                            <td colspan="8" style="text-align:center; color:#777;">
+                            <td colspan="9" style="text-align:center; color:#777;">
                                 No riders assigned to this course yet.
                             </td>
                         </tr>
                     {% else %}
                         {% for r in riders %}
                         <tr>
-                            <td>{{ r.rider_name }}</td>
-                            <td>{{ r.ftor }}</td>
-                            <td>{{ r.horse_1 }}</td>
+
+                            {# RIDER NAME — RED IF NO CLIENT MATCH + EDITABLE #}
+                            {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
+                            <td>
+                                <input type="text"
+                                       value="{{ r.rider_name }}"
+                                       style="width:140px; {% if match|length == 0 %}color:red; font-weight:bold;{% endif %}"
+                                       onchange="updateField({{ r.id }}, 'rider_name', this.value)">
+                            </td>
+
+                            {# FT/W — EDITABLE #}
+                            <td>
+                                <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
+                                    <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
+                                    <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
+                                    <option value="F"  {% if r.ftor == 'F'  %}selected{% endif %}>F</option>
+                                    <option value="Casual" {% if r.ftor == 'Casual' %}selected{% endif %}>Casual</option>
+                                </select>
+                            </td>
+
+                            {# HORSE 1 — EDITABLE DROPDOWN #}
+                            <td>
+                                <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
+                                    {% for h in horses %}
+                                        <option value="{{ h.horse }}"
+                                            {% if h.horse == r.horse_1 %}selected{% endif %}>
+                                            {{ h.horse }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+
+                            {# HORSE 2 — READ ONLY #}
                             <td>{{ r.horse_2 }}</td>
+
+                            {# HORSE 3 — READ ONLY #}
                             <td>{{ r.horse_3 }}</td>
+
+                            {# NOTES — READ ONLY #}
                             <td>{{ r.notes }}</td>
+
+                            {# CHERBON NOTES — EDITABLE #}
+                            <td>
+                                <input type="text"
+                                       value="{{ r.cherbon_notes or '' }}"
+                                       style="width:160px;"
+                                       onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
+                            </td>
+
+                            {# STATUS #}
                             <td>{{ r.status }}</td>
+
+                            {# ACTIONS #}
                             <td>
                                 <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
                                 <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
                                 <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
                             </td>
+
                         </tr>
                         {% endfor %}
                     {% endif %}
@@ -210,6 +259,16 @@
 
         {% endif %}
     {% endfor %}
+
+    <script>
+        function updateField(id, field, value) {
+            fetch(`/update_course_field/${id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ field: field, value: value })
+            });
+        }
+    </script>
 
 </body>
 </html>
