@@ -85,6 +85,7 @@ class CourseFormSubmission(db.Model):
 
     # Notes
     notes = db.Column(db.String(500))
+    cherbon_notes = db.Column(db.String(255))
 
     # Term info
     term_year = db.Column(db.Integer)
