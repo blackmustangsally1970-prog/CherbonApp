@@ -2053,26 +2053,6 @@ def create_app():
         )
 
 
-
-
-
-    @app.route('/delete_course_submission/<int:id>')
-    def delete_course_submission(id):
-        sub = CourseFormSubmission.query.get(id)
-        if not sub:
-            return "Submission not found"
-
-        sub.ignore_jotform = True
-        sub.status = "deleted"
-
-        db.session.commit()
-
-        return redirect(url_for('course_form_submissions',
-                                year=sub.term_year,
-                                term=sub.term_number))
-
-
-
     @app.route('/course_form_submissions')
     def course_form_submissions():
         import datetime
@@ -2081,13 +2061,19 @@ def create_app():
         selected_year = request.args.get("year", datetime.datetime.now().year, type=int)
         selected_term = request.args.get("term", 1, type=int)
 
-        # --- LOAD ALL SUBMISSIONS FOR THIS TERM ---
-        course_submissions = CourseFormSubmission.query.filter_by(
-            term_year=selected_year,
-            term_number=selected_term
+        # --- LOAD ALL SUBMISSIONS FOR THIS TERM (EXCLUDING DELETED) ---
+        all_subs = CourseFormSubmission.query.filter(
+            CourseFormSubmission.term_year == selected_year,
+            CourseFormSubmission.term_number == selected_term,
+            CourseFormSubmission.ignore_jotform == False,
+            CourseFormSubmission.status != "deleted"
         ).all()
 
-        # --- LOAD COURSE REFERENCE (ACTIVE ONLY) ---
+        # --- SPLIT INTO UNPROCESSED + APPROVED ---
+        unprocessed = [s for s in all_subs if s.status == "unprocessed"]
+        approved = [s for s in all_subs if s.status == "approved"]
+
+        # --- LOAD ACTIVE COURSES ---
         courses = CourseReference.query.filter_by(active=True).all()
 
         # --- PRICING LOOKUP ---
@@ -2101,14 +2087,14 @@ def create_app():
 
         return render_template(
             "course_form_results.html",
-            course_submissions=course_submissions,
+            unprocessed_submissions=unprocessed,
+            approved_submissions=approved,
             courses=courses,
             pricing=pricing,
             years=years,
             selected_year=selected_year,
             selected_term=selected_term
         )
-
 
     @app.route("/daily-summary", methods=["GET", "POST"])
     def daily_summary():
@@ -2171,11 +2157,8 @@ def create_app():
         if not sub:
             return "Submission not found"
 
-        # Mark approved
         sub.status = "approved"
-
-        # Move rider into the correct course grid
-        sub.current_course = sub.courseno
+        sub.current_course = sub.courseno  # or whatever field maps to course_code
 
         db.session.commit()
 
@@ -2189,7 +2172,6 @@ def create_app():
         if not sub:
             return "Submission not found"
 
-        # Move back to unprocessed
         sub.status = "unprocessed"
         sub.current_course = None
 
@@ -2199,6 +2181,21 @@ def create_app():
                                 year=sub.term_year,
                                 term=sub.term_number))
 
+    @app.route('/delete_course_submission/<int:id>')
+    def delete_course_submission(id):
+        sub = CourseFormSubmission.query.get(id)
+        if not sub:
+            return "Submission not found"
+
+        sub.status = "deleted"
+        sub.ignore_jotform = True
+        sub.current_course = None
+
+        db.session.commit()
+
+        return redirect(url_for('course_form_submissions',
+                                year=sub.term_year,
+                                term=sub.term_number))
 
 
     @app.route('/courses_menu')

@@ -318,12 +318,14 @@ function sendSMSConfirmed() {
                     table.classList.add("lesson-table");
                 }
 
-                header.addEventListener('click', function () {
-                    const t = header.nextElementSibling;
-                    if (t && t.classList.contains("lesson-table")) {
-                        t.classList.toggle("expanded");
-                    }
-                });
+header.addEventListener('click', function () {
+    let el = header.nextElementSibling;
+
+    while (el && el.classList.contains("lesson-table")) {
+        el.classList.toggle("expanded");
+        el = el.nextElementSibling;
+    }
+});
             });
         });
     </script>
@@ -426,7 +428,7 @@ function sendSMSConfirmed() {
     </div>
 
 {% if row.last_sms %}
-<div style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
+<div class="lesson-table sms-history-block" style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
     <strong>Last SMS Sent:</strong>
     <div style="margin-top:4px; white-space:pre-wrap;">
         <em>{{ row.last_sms_time.strftime("%d %b %Y %I:%M %p") }}</em><br>

@@ -67,129 +67,128 @@
 
 <body>
 
-<h2>Course Form Submissions</h2>
+    <h2>Course Form Submissions</h2>
 
-<a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
-<a href="{{ url_for('pull_courses_from_jotform') }}" class="menu-btn">↻ Refresh From JotForm</a>
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+    <a href="{{ url_for('pull_courses_from_jotform', year=selected_year, term=selected_term) }}" class="menu-btn">↻ Refresh From JotForm</a>
 
-<!-- ⭐ FILTER BAR -->
-<form method="get" class="filter-box">
-    <label>Year:</label>
-    <select name="year" onchange="this.form.submit()">
-        {% for y in years %}
-            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
-        {% endfor %}
-    </select>
+    <!-- ⭐ FILTER BAR -->
+    <form method="get" class="filter-box">
+        <label>Year:</label>
+        <select name="year" onchange="this.form.submit()">
+            {% for y in years %}
+                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
 
-    <label style="margin-left: 20px;">Term:</label>
-    <select name="term" onchange="this.form.submit()">
-        {% for t in [1,2,3,4] %}
-            <option value="{{ t }}" {% if t == selected_term %}selected{% endif %}>Term {{ t }}</option>
-        {% endfor %}
-    </select>
-</form>
+        <label style="margin-left: 20px;">Term:</label>
+        <select name="term" onchange="this.form.submit()">
+            {% for t in [1,2,3,4] %}
+                <option value="{{ t }}" {% if t == selected_term %}selected{% endif %}>Term {{ t }}</option>
+            {% endfor %}
+        </select>
+    </form>
 
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Rider Name</th>
-            <th>Course No</th>
-            <th>FT/W</th>
-            <th>Horse 1</th>
-            <th>Horse 2</th>
-            <th>Horse 3</th>
-            <th>Notes</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+    <!-- ========================================================= -->
+    <!--  TOP GRID — UNPROCESSED SUBMISSIONS ONLY                  -->
+    <!-- ========================================================= -->
 
-    <tbody>
-        {% for r in course_submissions %}
-        <tr>
-            <td>{{ r.id }}</td>
-            <td>{{ r.rider_name }}</td>
-            <td>{{ r.courseno }}</td>
-            <td>{{ r.ftor }}</td>
-            <td>{{ r.horse_1 }}</td>
-            <td>{{ r.horse_2 }}</td>
-            <td>{{ r.horse_3 }}</td>
-            <td>{{ r.notes }}</td>
-            <td>{{ r.status }}</td>
-            <td>
-                <a class="action-link" href="{{ url_for('approve_course_submission', id=r.id) }}">Approve</a>
-                <a class="action-link" href="{{ url_for('edit_course_submission', id=r.id) }}">Change</a>
-                <a class="delete-link" href="{{ url_for('delete_course_submission', id=r.id) }}">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Rider Name</th>
+                <th>Course No</th>
+                <th>FT/W</th>
+                <th>Horse 1</th>
+                <th>Horse 2</th>
+                <th>Horse 3</th>
+                <th>Notes</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
 
-<!-- ========================================================= -->
-<!--  COURSE GRIDS (APPROVED RIDERS BY CURRENT COURSE)         -->
-<!-- ========================================================= -->
+        <tbody>
+            {% for r in unprocessed_submissions %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.rider_name }}</td>
+                <td>{{ r.courseno }}</td>
+                <td>{{ r.ftor }}</td>
+                <td>{{ r.horse_1 }}</td>
+                <td>{{ r.horse_2 }}</td>
+                <td>{{ r.horse_3 }}</td>
+                <td>{{ r.notes }}</td>
+                <td>{{ r.status }}</td>
+                <td>
+                    <a class="action-link" href="{{ url_for('approve_course_submission', id=r.id) }}">Approve</a>
+                    <a class="action-link" href="{{ url_for('edit_course_submission', id=r.id) }}">Change</a>
+                    <a class="delete-link" href="{{ url_for('delete_course_submission', id=r.id) }}">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-<h2 style="margin-top:40px;">Approved Riders by Course</h2>
+    <!-- ========================================================= -->
+    <!--  APPROVED RIDERS BY COURSE                                -->
+    <!-- ========================================================= -->
 
-{% set day_order = {
-    'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4,
-    'Thursday': 5, 'Friday': 6, 'Saturday': 7
-} %}
+    <h2 style="margin-top:40px;">Approved Riders by Course</h2>
 
-{# Assign a numeric sort key to each course #}
-{% for c in courses %}
-    {% set _ = c.__setattr__('day_sort', day_order[c.day_of_week]) %}
-{% endfor %}
+    {% set day_order = {
+        'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4,
+        'Thursday': 5, 'Friday': 6, 'Saturday': 7
+    } %}
 
-{# Now sort by time, then by day_sort #}
-{% set sorted_courses = courses
-    | sort(attribute='timerange')
-    | sort(attribute='day_sort')
-%}
+    {% for c in courses %}
+        {% set _ = c.__setattr__('day_sort', day_order[c.day_of_week]) %}
+    {% endfor %}
 
-{% for c in sorted_courses %}
-    {% if c.active %}
+    {% set sorted_courses = courses
+        | sort(attribute='timerange')
+        | sort(attribute='day_sort')
+    %}
 
-        <h3 style="margin-top:30px;">
-            {{ c.course_code }} – {{ c.display_label }} –
-            {{ c.day_of_week }} {{ c.timerange }} –
-            {{ c.group_priv }} –
-            ${{ pricing[c.group_priv].weekly_price }}/wk
-        </h3>
+    {% for c in sorted_courses %}
+        {% if c.active %}
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Rider</th>
-                    <th>FT/W</th>
-                    <th>Horse 1</th>
-                    <th>Horse 2</th>
-                    <th>Horse 3</th>
-                    <th>Notes</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+            <h3 style="margin-top:30px;">
+                {{ c.course_code }} – {{ c.display_label }} –
+                {{ c.day_of_week }} {{ c.timerange }} –
+                {{ c.group_priv }} –
+                ${{ pricing[c.group_priv].weekly_price }}/wk
+            </h3>
 
-            <tbody>
-{% set riders = course_submissions
-    | selectattr("current_course", "equalto", c.course_code)
-    | selectattr("status", "equalto", "approved")
-    | selectattr("year", "equalto", selected_year)
-    | selectattr("term", "equalto", selected_term)
-    | list
-%}
-
-                {% if riders|length == 0 %}
+            <table>
+                <thead>
                     <tr>
-                        <td colspan="8" style="text-align:center; color:#777;">
-                            No riders assigned to this course yet.
-                        </td>
+                        <th>Rider</th>
+                        <th>FT/W</th>
+                        <th>Horse 1</th>
+                        <th>Horse 2</th>
+                        <th>Horse 3</th>
+                        <th>Notes</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
-                {% else %}
-                    {% for r in riders %}
+                </thead>
+
+                <tbody>
+                    {% set riders = approved_submissions
+                        | selectattr("current_course", "equalto", c.course_code)
+                        | list
+                    %}
+
+                    {% if riders|length == 0 %}
+                        <tr>
+                            <td colspan="8" style="text-align:center; color:#777;">
+                                No riders assigned to this course yet.
+                            </td>
+                        </tr>
+                    {% else %}
+                        {% for r in riders %}
                         <tr>
                             <td>{{ r.rider_name }}</td>
                             <td>{{ r.ftor }}</td>
@@ -204,15 +203,13 @@
                                 <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
                             </td>
                         </tr>
-                    {% endfor %}
-                {% endif %}
-            </tbody>
-        </table>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
 
-    {% endif %}
-{% endfor %}
-
-
+        {% endif %}
+    {% endfor %}
 
 </body>
 </html>
