@@ -1969,6 +1969,8 @@ def create_app():
             pulled += 1
 
         db.session.commit()
+        db.session.expire_all()
+
 
         selected_year = request.args.get("year", datetime.datetime.now().year)
         selected_term = request.args.get("term", 1)
