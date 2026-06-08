@@ -406,6 +406,9 @@ class IncomingSubmission(db.Model):
     # JotForm ID (same as submission_id)
     jotform_id = db.Column(db.String, index=True)
 
+    # ⭐ NEW FIELD
+    universal_disclaimer = db.Column(db.Integer)
+
 
 class GeneralEnquirySubmission(db.Model):
     __tablename__ = "general_enquiry_submissions"
