@@ -1921,30 +1921,29 @@ def create_app():
             horse_2 = mapped.get("horse_2", "")
             horse_3 = mapped.get("horse_3", "")
             notes = mapped.get("anythingWe", "")
-            term_year = mapped.get("year", None)
-            term_number = mapped.get("term", None)
+
+            # TYPE‑SAFE TERM + YEAR (THE FIX)
+            raw_year = mapped.get("year")
+            raw_term = mapped.get("term")
+
+            term_year = int(raw_year) if raw_year and str(raw_year).isdigit() else None
+            term_number = int(raw_term) if raw_term and str(raw_term).isdigit() else None
 
             if not rider_full and not courseno:
                 continue
 
-            # ---------------------------------------------------------
             # FIND EXISTING RIDER FOR THIS TERM/YEAR
-            # ---------------------------------------------------------
             existing = CourseFormSubmission.query.filter_by(
                 rider_name=rider_full,
                 term_year=term_year,
                 term_number=term_number
             ).first()
 
-            # ---------------------------------------------------------
             # IF DELETED → IGNORE FOREVER
-            # ---------------------------------------------------------
             if existing and existing.ignore_jotform:
                 continue
 
-            # ---------------------------------------------------------
             # IF EXISTS → UPDATE ORIGINAL ONLY
-            # ---------------------------------------------------------
             if existing:
                 if courseno != existing.original_course:
                     existing.original_course = courseno
@@ -1952,9 +1951,7 @@ def create_app():
                 # DO NOT TOUCH current_course
                 continue
 
-            # ---------------------------------------------------------
             # NEW RIDER → CREATE ENTRY
-            # ---------------------------------------------------------
             entry = CourseFormSubmission(
                 jotform_id=sub_id,
                 rider_name=rider_full,
@@ -1982,7 +1979,7 @@ def create_app():
         rows = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == int(selected_year),
             CourseFormSubmission.term_number == int(selected_term),
-            CourseFormSubmission.ignore_jotform == False
+            CourseFormSubmission.ignore_jotform.is_(False)
         ).order_by(CourseFormSubmission.id.desc()).all()
 
         years = sorted({r.term_year for r in CourseFormSubmission.query.all() if r.term_year})
@@ -1994,7 +1991,6 @@ def create_app():
             selected_year=int(selected_year),
             selected_term=int(selected_term)
         )
-
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
     def update_course_submission(id):
