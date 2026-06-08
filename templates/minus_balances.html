@@ -355,13 +355,13 @@
     </div>
 
     {% if row.last_sms %}
-    <div class="lesson-table sms-history-block" style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
-        <strong>Last SMS Sent:</strong>
-        <div style="margin-top:4px; white-space:pre-wrap;">
-            <em>{{ row.last_sms_time.strftime("%d %b %Y %I:%M %p") }}</em><br>
-            "{{ row.last_sms }}"
-        </div>
+<div class="lesson-table sms-history-block" style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
+    <strong>Last SMS Sent:</strong>
+    <div style="margin-top:4px; white-space:normal;">
+        <em>{{ row.last_sms_time.strftime("%d %b %Y %I:%M %p") }}</em>
+        — "{{ row.last_sms }}"
     </div>
+</div>
     {% endif %}
 
     <table class="lesson-table">
