@@ -1922,11 +1922,28 @@ def create_app():
             horse_3 = mapped.get("horse_3", "")
             notes = mapped.get("anythingWe", "")
 
-            # TYPE‑SAFE TERM + YEAR (THE FIX)
-            term_year = int(request.args.get("year"))
-            term_number = int(request.args.get("term"))
+            # --- JOTFORM TERM/YEAR (SOURCE OF TRUTH) ---
+            raw_year = mapped.get("year")
+            raw_term = mapped.get("term")
+
+            if raw_year is None or raw_term is None:
+                return f"JotForm submission missing year/term for submission {sub_id}"
+
+            if not str(raw_year).isdigit() or not str(raw_term).isdigit():
+                return f"Invalid year/term in JotForm submission {sub_id}"
+
+            term_year = int(raw_year)
+            term_number = int(raw_term)
+
+            if term_year <= 0 or term_number <= 0:
+                return f"Invalid year/term values in JotForm submission {sub_id}"
 
             if not rider_full and not courseno:
+                continue
+
+            # PREVENT DUPLICATE INSERTS BY JOTFORM ID
+            existing_by_id = CourseFormSubmission.query.filter_by(jotform_id=sub_id).first()
+            if existing_by_id:
                 continue
 
             # FIND EXISTING RIDER FOR THIS TERM/YEAR
@@ -1945,7 +1962,6 @@ def create_app():
                 if courseno != existing.original_course:
                     existing.original_course = courseno
                     existing.notes = notes or existing.notes
-                # DO NOT TOUCH current_course
                 continue
 
             # NEW RIDER → CREATE ENTRY
@@ -1970,7 +1986,6 @@ def create_app():
 
         db.session.commit()
         db.session.expire_all()
-
 
         selected_year = request.args.get("year", datetime.datetime.now().year)
         selected_term = request.args.get("term", 1)
