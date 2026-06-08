@@ -2100,6 +2100,9 @@ def create_app():
         horses = Horse.query.order_by(Horse.horse).all()
         client_names = Client.query.order_by(Client.full_name).all()
 
+        # ⭐ NEW: lookup for course metadata
+        course_lookup = {c.course_code: c for c in courses}
+
         years = sorted(
             {s.term_year for s in CourseFormSubmission.query.all() if s.term_year},
             reverse=True
@@ -2112,6 +2115,7 @@ def create_app():
             courses=courses,
             horses=horses,
             client_names=client_names,
+            course_lookup=course_lookup,
             years=years,
             selected_year=selected_year,
             selected_term=selected_term

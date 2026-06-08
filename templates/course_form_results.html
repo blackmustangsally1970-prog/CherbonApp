@@ -102,44 +102,49 @@ thead.orange-header th {
     <!--  TOP GRID — UNPROCESSED SUBMISSIONS ONLY                  -->
     <!-- ========================================================= -->
 
-    <table>
-        <thead class="orange-header">
+        <table>
+            <thead class="orange-header">
+                <tr>
+                    <th>Rider Name</th>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Group/Priv</th>
+                    <th>FT/W</th>
+                    <th>Horse 1</th>
+                    <th>Horse 2</th>
+                    <th>Horse 3</th>
+                    <th>Notes</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
 
-            <tr>
-                <th>ID</th>
-                <th>Rider Name</th>
-                <th>Course No</th>
-                <th>FT/W</th>
-                <th>Horse 1</th>
-                <th>Horse 2</th>
-                <th>Horse 3</th>
-                <th>Notes</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
+            <tbody>
+                {% for r in unprocessed_submissions %}
+                {% set c = course_lookup.get(r.current_course) %}
+                <tr>
+                    <td>{{ r.rider_name }}</td>
 
-        <tbody>
-            {% for r in unprocessed_submissions %}
-            <tr>
-                <td>{{ r.id }}</td>
-                <td>{{ r.rider_name }}</td>
-                <td>{{ r.current_course }}</td>
-                <td>{{ r.ftor }}</td>
-                <td>{{ r.horse_1 }}</td>
-                <td>{{ r.horse_2 }}</td>
-                <td>{{ r.horse_3 }}</td>
-                <td>{{ r.notes }}</td>
-                <td>{{ r.status }}</td>
-                <td>
-                    <a class="action-link" href="{{ url_for('approve_course_submission', id=r.id) }}">Approve</a>
-                    <a class="action-link" href="{{ url_for('edit_course_submission', id=r.id) }}">Change</a>
-                    <a class="delete-link" href="{{ url_for('delete_course_submission', id=r.id) }}">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    <td>{{ c.day_of_week if c else '' }}</td>
+                    <td>{{ c.timerange if c else '' }}</td>
+                    <td>{{ c.group_priv if c else '' }}</td>
+
+                    <td>{{ r.ftor }}</td>
+                    <td>{{ r.horse_1 }}</td>
+                    <td>{{ r.horse_2 }}</td>
+                    <td>{{ r.horse_3 }}</td>
+                    <td>{{ r.notes }}</td>
+                    <td>{{ r.status }}</td>
+
+                    <td>
+                        <a class="action-link" href="{{ url_for('approve_course_submission', id=r.id) }}">Approve</a>
+                        <a class="action-link" href="{{ url_for('edit_course_submission', id=r.id) }}">Change</a>
+                        <a class="delete-link" href="{{ url_for('delete_course_submission', id=r.id) }}">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
     <!-- ========================================================= -->
     <!--  APPROVED RIDERS BY COURSE                                -->
