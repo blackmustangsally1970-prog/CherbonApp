@@ -24,6 +24,8 @@
             background: #f2f2f2;
         }
 
+
+
         .menu-btn {
             display: inline-block;
             background: #eee;
@@ -63,6 +65,12 @@
             color: red;
             font-weight: bold;
         }
+
+thead.orange-header th {
+    background: #ffe5cc !important;
+}
+
+
     </style>
 </head>
 
@@ -95,7 +103,8 @@
     <!-- ========================================================= -->
 
     <table>
-        <thead style="background:#ffe5cc;">
+        <thead class="orange-header">
+
             <tr>
                 <th>ID</th>
                 <th>Rider Name</th>
@@ -169,7 +178,8 @@
             </h3>
 
             <table>
-                <thead style="background:#ffe5cc;">
+                <thead class="orange-header">
+
                     <tr>
                         <th style="width:32ch;">Rider</th>
                         <th style="width:3ch;">FT/W</th>
