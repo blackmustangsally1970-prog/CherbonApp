@@ -17,6 +17,7 @@
             padding: 6px;
             font-size: 14px;
             text-align: left;
+            vertical-align: top;
         }
 
         th {
@@ -94,7 +95,7 @@
     <!-- ========================================================= -->
 
     <table>
-        <thead>
+        <thead style="background:#ffe5cc;">
             <tr>
                 <th>ID</th>
                 <th>Rider Name</th>
@@ -170,15 +171,15 @@
             <table>
                 <thead style="background:#ffe5cc;">
                     <tr>
-                        <th>Rider</th>
-                        <th>FT/W</th>
-                        <th>Horse 1</th>
-                        <th>Horse 2</th>
-                        <th>Horse 3</th>
-                        <th>Notes</th>
-                        <th>Cherbon Notes</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th style="width:32ch;">Rider</th>
+                        <th style="width:3ch;">FT/W</th>
+                        <th style="width:12ch;">Horse 1</th>
+                        <th style="width:12ch;">Horse 2</th>
+                        <th style="width:12ch;">Horse 3</th>
+                        <th style="width:50ch;">Notes</th>
+                        <th style="width:50ch;">Cherbon Notes</th>
+                        <th style="width:12ch;">Status</th>
+                        <th style="width:50ch;">Actions</th>
                     </tr>
                 </thead>
 
@@ -193,17 +194,15 @@
                         {% for r in riders %}
                         <tr>
 
-                            {# RIDER NAME — RED IF NO CLIENT MATCH + EDITABLE #}
                             {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
-                            <td>
+                            <td style="width:32ch; white-space:normal; word-break:break-word;">
                                 <input type="text"
                                        value="{{ r.rider_name }}"
-                                       style="width:140px; {% if match|length == 0 %}color:red; font-weight:bold;{% endif %}"
+                                       style="width:30ch; {% if match|length == 0 %}color:red; font-weight:bold;{% endif %}"
                                        onchange="updateField({{ r.id }}, 'rider_name', this.value)">
                             </td>
 
-                            {# FT/W — EDITABLE #}
-                            <td>
+                            <td style="width:3ch; white-space:nowrap;">
                                 <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
                                     <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
                                     <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
@@ -212,8 +211,7 @@
                                 </select>
                             </td>
 
-                            {# HORSE 1 — EDITABLE DROPDOWN #}
-                            <td>
+                            <td style="width:12ch; white-space:nowrap;">
                                 <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
                                     {% for h in horses %}
                                         <option value="{{ h.horse }}"
@@ -224,28 +222,21 @@
                                 </select>
                             </td>
 
-                            {# HORSE 2 — READ ONLY #}
-                            <td>{{ r.horse_2 }}</td>
+                            <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
+                            <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
 
-                            {# HORSE 3 — READ ONLY #}
-                            <td>{{ r.horse_3 }}</td>
+                            <td style="width:50ch; white-space:normal;">{{ r.notes }}</td>
 
-                            {# NOTES — READ ONLY #}
-                            <td>{{ r.notes }}</td>
-
-                            {# CHERBON NOTES — EDITABLE #}
-                            <td>
+                            <td style="width:50ch; white-space:normal;">
                                 <input type="text"
                                        value="{{ r.cherbon_notes or '' }}"
-                                       style="width:160px;"
+                                       style="width:48ch;"
                                        onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
                             </td>
 
-                            {# STATUS #}
-                            <td>{{ r.status }}</td>
+                            <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
 
-                            {# ACTIONS #}
-                            <td>
+                            <td style="width:50ch; white-space:normal;">
                                 <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
                                 <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
                                 <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
