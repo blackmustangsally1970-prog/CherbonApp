@@ -4683,190 +4683,190 @@ def create_app():
         )
 
 
-@app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
-def finalize_conflict(submission_id, rider_index):
-    choice = request.form.get("choice")
-    client_id = request.form.get("client_id")
+    @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
+    def finalize_conflict(submission_id, rider_index):
+        choice = request.form.get("choice")
+        client_id = request.form.get("client_id")
 
-    row = db.session.query(IncomingSubmission).get_or_404(submission_id)
+        row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-    # Parse riders once (use VALID riders to keep indexes aligned)
-    all_riders = parse_jotform_payload(
-        row.raw_payload,
-        forced_submission_id=row.id
-    )
-    valid_riders = [r for r in all_riders if not r.get("incomplete")]
-    rider = valid_riders[rider_index - 1]
+        # Parse riders once (use VALID riders to keep indexes aligned)
+        all_riders = parse_jotform_payload(
+            row.raw_payload,
+            forced_submission_id=row.id
+        )
+        valid_riders = [r for r in all_riders if not r.get("incomplete")]
+        rider = valid_riders[rider_index - 1]
 
-    # Skip incomplete riders
-    if rider.get("incomplete"):
-        rider["resolved"] = True
-        return redirect(url_for('notifications'))
+        # Skip incomplete riders
+        if rider.get("incomplete"):
+            rider["resolved"] = True
+            return redirect(url_for('notifications'))
 
-    # IGNORE OPTION — HARD STOP FOR THIS RIDER ONLY
-    if choice == "ignore":
-        rider["resolved"] = True
-        row.ignored = True
+        # IGNORE OPTION — HARD STOP FOR THIS RIDER ONLY
+        if choice == "ignore":
+            rider["resolved"] = True
+            row.ignored = True
+            db.session.commit()
+            return redirect(url_for('notifications'))
+
+        # Preload clients
+        all_clients = db.session.query(Client).all()
+        clients_by_id = {c.client_id: c for c in all_clients}
+        existing = clients_by_id.get(int(client_id)) if client_id else None
+
+        # SAFE EXTRACTION HELPERS
+        def safe_int(v):
+            if v is None:
+                return None
+            if isinstance(v, int):
+                return v
+            v = str(v).strip()
+            return int(v) if v.isdigit() else None
+
+        def safe_text(v):
+            if not v:
+                return None
+            v = str(v).strip()
+            return v if v not in ("", "N/A") else None
+
+        raw_name = rider.get("name")
+        name = clean_name(raw_name)
+        age = safe_int(rider.get("age"))
+        guardian = safe_text(rider.get("guardian"))
+        mobile = clean_mobile(rider.get("mobile"))
+        email = safe_text(rider.get("email"))
+
+        # Submission-wide disclaimer
+        # Always capture the universal disclaimer for the entire submission
+        submission_disclaimer = valid_riders[0].get("disclaimer")
+        disclaimer = safe_int(submission_disclaimer)
+
+        # Store it on the submission so ALL riders can use it later
+        row.universal_disclaimer = disclaimer
         db.session.commit()
-        return redirect(url_for('notifications'))
 
-    # Preload clients
-    all_clients = db.session.query(Client).all()
-    clients_by_id = {c.client_id: c for c in all_clients}
-    existing = clients_by_id.get(int(client_id)) if client_id else None
+        height_cm = safe_int(rider.get("height_cm"))
+        weight_kg = safe_int(rider.get("weight_kg"))
+        notes = safe_text(rider.get("notes"))
 
-    # SAFE EXTRACTION HELPERS
-    def safe_int(v):
-        if v is None:
-            return None
-        if isinstance(v, int):
-            return v
-        v = str(v).strip()
-        return int(v) if v.isdigit() else None
+        jotform_id = str(row.form_id)
 
-    def safe_text(v):
-        if not v:
-            return None
-        v = str(v).strip()
-        return v if v not in ("", "N/A") else None
+        # USE EXISTING (SAFE MERGE)
+        if choice == "use_existing" and existing:
 
-    raw_name = rider.get("name")
-    name = clean_name(raw_name)
-    age = safe_int(rider.get("age"))
-    guardian = safe_text(rider.get("guardian"))
-    mobile = clean_mobile(rider.get("mobile"))
-    email = safe_text(rider.get("email"))
+            if guardian:
+                existing.guardian_name = guardian
 
-    # Submission-wide disclaimer
-    # Always capture the universal disclaimer for the entire submission
-    submission_disclaimer = valid_riders[0].get("disclaimer")
-    disclaimer = safe_int(submission_disclaimer)
+            if age is not None:
+                existing.age = age
 
-    # Store it on the submission so ALL riders can use it later
-    row.universal_disclaimer = disclaimer
-    db.session.commit()
+            if mobile:
+                existing.mobile = mobile
 
-    height_cm = safe_int(rider.get("height_cm"))
-    weight_kg = safe_int(rider.get("weight_kg"))
-    notes = safe_text(rider.get("notes"))
+            if email:
+                existing.email_primary = email
 
-    jotform_id = str(row.form_id)
+            if height_cm is not None:
+                existing.height_cm = height_cm
 
-    # USE EXISTING (SAFE MERGE)
-    if choice == "use_existing" and existing:
+            if weight_kg is not None:
+                existing.weight_kg = weight_kg
 
-        if guardian:
-            existing.guardian_name = guardian
+            if notes is not None:
+                existing.notes = notes
 
-        if age is not None:
+            existing.disclaimer = disclaimer
+            existing.jotform_submission_id = jotform_id
+
+            log_disclaimer_processed([r["name"] for r in valid_riders])
+            db.session.commit()
+
+            rider["resolved"] = True
+            return redirect(url_for('notifications'))
+
+        # OVERWRITE EXISTING
+        if choice == "overwrite" and existing:
+
+            existing.full_name = clean_name(name)
             existing.age = age
-
-        if mobile:
+            existing.guardian_name = guardian
             existing.mobile = mobile
-
-        if email:
             existing.email_primary = email
-
-        if height_cm is not None:
+            existing.disclaimer = disclaimer
             existing.height_cm = height_cm
-
-        if weight_kg is not None:
             existing.weight_kg = weight_kg
-
-        if notes is not None:
             existing.notes = notes
+            existing.jotform_submission_id = jotform_id
 
-        existing.disclaimer = disclaimer
-        existing.jotform_submission_id = jotform_id
+            log_disclaimer_processed([r["name"] for r in valid_riders])
+            db.session.commit()
 
+            rider["resolved"] = True
+            return redirect(url_for('notifications'))
+
+        # CREATE NEW CLIENT
+        if choice == "new":
+            new_client = Client(
+                full_name=clean_name(name),
+                age=age,
+                guardian_name=guardian,
+                mobile=mobile,
+                email_primary=email,
+                disclaimer=disclaimer,
+                height_cm=height_cm,
+                weight_kg=weight_kg,
+                notes=notes,
+                invoice_required=False,
+                jotform_submission_id=jotform_id
+            )
+            db.session.add(new_client)
+
+            log_disclaimer_processed([r["name"] for r in valid_riders])
+            db.session.commit()
+
+            rider["resolved"] = True
+            return redirect(url_for('notifications'))
+
+        # CREATE NEW CLIENT (SAME NAME)
+        if choice == "new_same_name":
+            base = clean_name(name)
+            counter = 2
+
+            while True:
+                candidate = f"{base} ({counter})"
+                exists = db.session.query(Client).filter_by(full_name=candidate).first()
+                if not exists:
+                    break
+                counter += 1
+
+            new_client = Client(
+                full_name=clean_name(candidate),
+                age=age,
+                guardian_name=guardian,
+                mobile=mobile,
+                email_primary=email,
+                disclaimer=disclaimer,
+                height_cm=height_cm,
+                weight_kg=weight_kg,
+                notes=notes,
+                invoice_required=False,
+                jotform_submission_id=jotform_id
+            )
+            db.session.add(new_client)
+
+            log_disclaimer_processed([r["name"] for r in valid_riders])
+            db.session.commit()
+
+            rider["resolved"] = True
+            return redirect(url_for('notifications'))
+
+        # FALLBACK
         log_disclaimer_processed([r["name"] for r in valid_riders])
         db.session.commit()
 
         rider["resolved"] = True
         return redirect(url_for('notifications'))
-
-    # OVERWRITE EXISTING
-    if choice == "overwrite" and existing:
-
-        existing.full_name = clean_name(name)
-        existing.age = age
-        existing.guardian_name = guardian
-        existing.mobile = mobile
-        existing.email_primary = email
-        existing.disclaimer = disclaimer
-        existing.height_cm = height_cm
-        existing.weight_kg = weight_kg
-        existing.notes = notes
-        existing.jotform_submission_id = jotform_id
-
-        log_disclaimer_processed([r["name"] for r in valid_riders])
-        db.session.commit()
-
-        rider["resolved"] = True
-        return redirect(url_for('notifications'))
-
-    # CREATE NEW CLIENT
-    if choice == "new":
-        new_client = Client(
-            full_name=clean_name(name),
-            age=age,
-            guardian_name=guardian,
-            mobile=mobile,
-            email_primary=email,
-            disclaimer=disclaimer,
-            height_cm=height_cm,
-            weight_kg=weight_kg,
-            notes=notes,
-            invoice_required=False,
-            jotform_submission_id=jotform_id
-        )
-        db.session.add(new_client)
-
-        log_disclaimer_processed([r["name"] for r in valid_riders])
-        db.session.commit()
-
-        rider["resolved"] = True
-        return redirect(url_for('notifications'))
-
-    # CREATE NEW CLIENT (SAME NAME)
-    if choice == "new_same_name":
-        base = clean_name(name)
-        counter = 2
-
-        while True:
-            candidate = f"{base} ({counter})"
-            exists = db.session.query(Client).filter_by(full_name=candidate).first()
-            if not exists:
-                break
-            counter += 1
-
-        new_client = Client(
-            full_name=clean_name(candidate),
-            age=age,
-            guardian_name=guardian,
-            mobile=mobile,
-            email_primary=email,
-            disclaimer=disclaimer,
-            height_cm=height_cm,
-            weight_kg = weight_kg,
-            notes=notes,
-            invoice_required=False,
-            jotform_submission_id=jotform_id
-        )
-        db.session.add(new_client)
-
-        log_disclaimer_processed([r["name"] for r in valid_riders])
-        db.session.commit()
-
-        rider["resolved"] = True
-        return redirect(url_for('notifications'))
-
-    # FALLBACK
-    log_disclaimer_processed([r["name"] for r in valid_riders])
-    db.session.commit()
-
-    rider["resolved"] = True
-    return redirect(url_for('notifications'))
 
     @app.route("/pricing_setup")
     def pricing_setup():
