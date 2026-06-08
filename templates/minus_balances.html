@@ -10,42 +10,26 @@
         /* ============================
            CLIENT HEADER ROW (CLICKABLE)
            ============================ */
-.client-line {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: nowrap;
-    margin-top: 25px;
-    margin-bottom: 0;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
+        .client-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+            margin-top: 25px;
+            margin-bottom: 0;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
 
-    padding-bottom: 8px;          /* space above the line */
-    border-bottom: 2px solid #ccc; /* full-width line */
-}
-
-        /* 40 characters for name */
-        .client-name {
-            width: 40ch;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ccc;
         }
 
-        /* 14 characters for owes */
-        .client-owes {
-            width: 14ch;
-            white-space: nowrap;
-        }
+        .client-name { width: 40ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .client-guardian { width: 30ch; white-space: nowrap; }
+        .client-owes { width: 14ch; white-space: nowrap; }
+        .client-mobile { width: 20ch; white-space: nowrap; }
 
-        /* 20 characters for mobile */
-        .client-mobile {
-            width: 20ch;
-            white-space: nowrap;
-        }
-
-        /* Term Course Balance block */
         .client-tc {
             width: 22ch;
             display: flex;
@@ -54,36 +38,33 @@
             white-space: nowrap;
         }
 
-        .tc-input {
-            width: 60px;
+        .tc-input { width: 60px; }
+
+        .sms-btn {
+            background: #007bff;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 12ch;
         }
 
-.sms-btn {
-    background: #007bff;
-    color: white;
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-left: 12ch; /* <-- pushes button right by ~12 characters */
-}
-
-        .sms-btn:disabled {
-            background: #999;
-            cursor: not-allowed;
-        }
-
+        .sms-btn:disabled { background: #999; cursor: not-allowed; }
         .sms-btn:hover:enabled { background: #0056b3; }
+        .sent { color: green; font-weight: bold; margin-left: 10px; }
 
-        .sent {
-            color: green;
-            font-weight: bold;
-            margin-left: 10px;
+        /* ============================
+           COLLAPSIBLE BLOCKS
+           ============================ */
+        .lesson-table {
+            display: none;
         }
 
-
-
+        .lesson-table.expanded {
+            display: block;
+        }
 
         /* ============================
            TABLE + NEGATIVE BALANCE
@@ -106,19 +87,7 @@
             margin-bottom: 10px;
         }
 
-        .test-mode {
-            margin: 10px 0 20px 0;
-        }
-
-
-.lesson-table {
-    display: none;
-}
-
-.lesson-table.expanded {
-    display: block;
-}
-
+        .test-mode { margin: 10px 0 20px 0; }
 
         /* ============================
            MODAL
@@ -148,10 +117,7 @@
             white-space: pre-wrap;
         }
 
-        .modal-buttons {
-            margin-top: 10px;
-            text-align: right;
-        }
+        .modal-buttons { margin-top: 10px; text-align: right; }
 
         .btn-secondary {
             background: #6c757d;
@@ -163,33 +129,48 @@
             margin-right: 8px;
         }
 
-
-@media print {
-
-    /* Hide everything */
-    body * {
-        visibility: hidden;
-    }
-
-    /* Show only the print report */
-    #print-simple-report, 
-    #print-simple-report * {
-        visibility: visible;
-    }
-
-    #print-simple-report {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        width: 95%;
-    }
-}
-
-</style>
-
+        /* ============================
+           PRINT MODE
+           ============================ */
+        @media print {
+            body * { visibility: hidden; }
+            #print-simple-report, #print-simple-report * { visibility: visible; }
+            #print-simple-report {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                width: 95%;
+            }
+        }
+    </style>
 
     <script>
+        /* ============================
+           COLLAPSE / EXPAND LOGIC
+           ============================ */
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.client-line').forEach(header => {
+
+                header.addEventListener('click', function () {
+
+                    let el = header.nextElementSibling;
+
+                    // Toggle ALL lesson-table blocks until next client-line
+                    while (el && !el.classList.contains("client-line")) {
+                        if (el.classList.contains("lesson-table")) {
+                            el.classList.toggle("expanded");
+                        }
+                        el = el.nextElementSibling;
+                    }
+                });
+            });
+        });
+
+        /* ============================
+           SMS PREVIEW + SEND
+           ============================ */
         let currentClient = null;
+        let currentGuardian = null;
         let currentMobile = null;
         let currentBalance = null;
         let currentTcBalanceInputId = null;
@@ -197,15 +178,13 @@
 
         function getSelectedTemplateChoice() {
             const radios = document.getElementsByName("template_choice");
-            for (let r of radios) {
-                if (r.checked) return r.value;
-            }
+            for (let r of radios) if (r.checked) return r.value;
             return "standard";
         }
 
         function openPreview(client, guardian, mobile, balance, tcInputId, buttonId) {
             currentClient = client;
-            currentGuardian = guardian;   // ⭐ NEW
+            currentGuardian = guardian;
             currentMobile = mobile;
             currentBalance = balance;
             currentTcBalanceInputId = tcInputId;
@@ -220,7 +199,7 @@
 
             let preview = template
                 .replace("{client}", client)
-                .replace("{guardian}", guardian)   // ⭐ NEW
+                .replace("{guardian}", guardian)
                 .replace("{balance}", balance)
                 .replace("{tc_balance}", tcBalance);
 
@@ -244,89 +223,60 @@
                 "Hi {guardian},{client} - Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin";
         }
 
+        function sendSMSConfirmed() {
+            const templateChoice = getSelectedTemplateChoice();
+            const msgStandard = document.getElementById("msg_standard").value;
+            const msgTerm = document.getElementById("msg_term").value;
+            const tcBalance = document.getElementById(currentTcBalanceInputId).value || "";
+            const testMode = document.getElementById("test_mode").checked;
 
-function sendSMSConfirmed() {
-    const templateChoice = getSelectedTemplateChoice();
-    const msgStandard = document.getElementById("msg_standard").value;
-    const msgTerm = document.getElementById("msg_term").value;
-    const tcBalance = document.getElementById(currentTcBalanceInputId).value || "";
-    const testMode = document.getElementById("test_mode").checked;
+            const finalMessage = document.getElementById("preview_body").textContent;
 
-    // ⭐ NEW — this is the ACTUAL message the user saw in the preview
-    const finalMessage = document.getElementById("preview_body").textContent;
+            const formData = new FormData();
+            formData.append("client_name", currentClient);
+            formData.append("guardian", currentGuardian);
+            formData.append("mobile", currentMobile);
+            formData.append("balance", currentBalance);
+            formData.append("tc_balance", tcBalance);
+            formData.append("template_choice", templateChoice);
+            formData.append("msg_standard", msgStandard);
+            formData.append("msg_term", msgTerm);
+            formData.append("test_mode", testMode ? "true" : "false");
+            formData.append("final_message", finalMessage);
 
-    const formData = new FormData();
-    formData.append("client_name", currentClient);
-    formData.append("guardian", currentGuardian);
-    formData.append("mobile", currentMobile);
-    formData.append("balance", currentBalance);
-    formData.append("tc_balance", tcBalance);
-    formData.append("template_choice", templateChoice);
-    formData.append("msg_standard", msgStandard);
-    formData.append("msg_term", msgTerm);
-    formData.append("test_mode", testMode ? "true" : "false");
+            const btn = document.getElementById(currentButtonId);
+            btn.disabled = true;
+            let remaining = 5;
+            const originalText = btn.textContent;
+            btn.textContent = "Sending...";
 
-    // ⭐ NEW — send the preview text to backend
-    formData.append("final_message", finalMessage);
-
-    const btn = document.getElementById(currentButtonId);
-    btn.disabled = true;
-    let remaining = 5;
-    const originalText = btn.textContent;
-    btn.textContent = "Sending...";
-
-    fetch("/send_negative_balance_sms", {
-        method: "POST",
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.status === "ok") {
-            const sentSpan = document.getElementById("sent_" + currentButtonId);
-            sentSpan.innerHTML = "SMS Sent ✔";
-        } else {
-            alert("SMS failed: " + data.detail);
-        }
-    })
-    .catch(err => {
-        alert("SMS error: " + err);
-    })
-    .finally(() => {
-        closePreview();
-        const interval = setInterval(() => {
-            remaining -= 1;
-            if (remaining > 0) {
-                btn.textContent = "Wait " + remaining + "s";
-            } else {
-                clearInterval(interval);
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        }, 1000);
-    });
-}
-
-
-        /* ============================
-           COLLAPSE / EXPAND LOGIC
-           ============================ */
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.client-line').forEach(header => {
-                const table = header.nextElementSibling;
-                if (table && table.tagName === "TABLE") {
-                    table.classList.add("lesson-table");
+            fetch("/send_negative_balance_sms", {
+                method: "POST",
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("sent_" + currentButtonId).innerHTML = "SMS Sent ✔";
+                } else {
+                    alert("SMS failed: " + data.detail);
                 }
-
-header.addEventListener('click', function () {
-    let el = header.nextElementSibling;
-
-    while (el && el.classList.contains("lesson-table")) {
-        el.classList.toggle("expanded");
-        el = el.nextElementSibling;
-    }
-});
+            })
+            .catch(err => alert("SMS error: " + err))
+            .finally(() => {
+                closePreview();
+                const interval = setInterval(() => {
+                    remaining -= 1;
+                    if (remaining > 0) {
+                        btn.textContent = "Wait " + remaining + "s";
+                    } else {
+                        clearInterval(interval);
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                }, 1000);
             });
-        });
+        }
     </script>
 </head>
 
@@ -334,34 +284,23 @@ header.addEventListener('click', function () {
 
 <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
 
-
 <button onclick="window.print()" 
-        style="padding:12px 20px; 
-               font-size:18px; 
-               background:#2a7ae2; 
-               color:white; 
-               border:none; 
-               border-radius:8px; 
-               cursor:pointer; 
-               margin-bottom:20px;">
+        style="padding:12px 20px; font-size:18px; background:#2a7ae2; color:white; border:none; border-radius:8px; cursor:pointer; margin-bottom:20px;">
     Print Simple Report
 </button>
 
-
 <h1>Clients With Negative Balances</h1>
 
-
+<!-- ============================
+     MESSAGE TEMPLATES
+     ============================ -->
 <div class="template-block">
     <label>
         <input type="radio" name="template_choice" value="standard" checked>
         Standard Negative Balance Message
     </label>
     <textarea id="msg_standard">Hi {guardian},{client} - acc bal is ${balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
-<button type="button"
-            onclick="resetStandard()"
-            style="margin-top:6px; padding:4px 10px; font-size:13px;">
-        Restore Default
-    </button>
+    <button type="button" onclick="resetStandard()" style="margin-top:6px; padding:4px 10px; font-size:13px;">Restore Default</button>
 </div>
 
 <div class="template-block">
@@ -370,13 +309,8 @@ header.addEventListener('click', function () {
         Term Course Balance Message
     </label>
     <textarea id="msg_term">Hi {guardian},{client} - Term Course bal is ${tc_balance}. Please pay today to keep your bookings current. Thank you, CW Admin</textarea>
-    <button type="button"
-            onclick="resetTerm()"
-            style="margin-top:6px; padding:4px 10px; font-size:13px;">
-        Restore Default
-    </button>
+    <button type="button" onclick="resetTerm()" style="margin-top:6px; padding:4px 10px; font-size:13px;">Restore Default</button>
 </div>
-
 
 <div class="test-mode">
     <label>
@@ -385,27 +319,22 @@ header.addEventListener('click', function () {
     </label>
 </div>
 
+<!-- ============================
+     CLIENT LIST
+     ============================ -->
 {% for row in rows %}
 
     {% set btn_id = 'btn_' ~ loop.index %}
     {% set tc_id = 'tc_' ~ loop.index %}
 
     <div class="client-line">
-        <div class="client-name">
-            {{ row.client }}
-        </div>
+        <div class="client-name">{{ row.client }}</div>
 
-    <div class="client-guardian" style="width:30ch; white-space:nowrap;">
-        Guardian: {{ row.guardian }}
-    </div>
+        <div class="client-guardian">Guardian: {{ row.guardian }}</div>
 
-        <div class="client-owes">
-            — Owes ${{ "%.2f"|format(row.current_balance) }}
-        </div>
+        <div class="client-owes">— Owes ${{ "%.2f"|format(row.current_balance) }}</div>
 
-        <div class="client-mobile">
-            Mobile: {{ row.mobile }}
-        </div>
+        <div class="client-mobile">Mobile: {{ row.mobile }}</div>
 
         <div class="client-tc">
             Term Course Balance:
@@ -423,30 +352,28 @@ header.addEventListener('click', function () {
         </button>
 
         <span id="sent_{{ btn_id }}" class="sent"></span>
-
     </div>
 
-{% if row.last_sms %}
-<div class="lesson-table sms-history-block" style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
-    <strong>Last SMS Sent:</strong>
-    <div style="margin-top:4px; white-space:pre-wrap;">
-        <em>{{ row.last_sms_time.strftime("%d %b %Y %I:%M %p") }}</em><br>
-        "{{ row.last_sms }}"
+    {% if row.last_sms %}
+    <div class="lesson-table sms-history-block" style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
+        <strong>Last SMS Sent:</strong>
+        <div style="margin-top:4px; white-space:pre-wrap;">
+            <em>{{ row.last_sms_time.strftime("%d %b %Y %I:%M %p") }}</em><br>
+            "{{ row.last_sms }}"
+        </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
-
-    <table>
+    <table class="lesson-table">
         <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Att</th>
-            <th>Group</th>
-            <th>Payment</th>
-            <th>Price</th>
-            <th>Carry Fwd</th>
-            <th>Balance</th>
+            <th style="width:14ch;">Date</th>
+            <th style="width:12ch;">Type</th>
+            <th style="width:6ch;">Att</th>
+            <th style="width:10ch;">Group</th>
+            <th style="width:12ch;">Payment</th>
+            <th style="width:12ch;">Price</th>
+            <th style="width:12ch;">Carry Fwd</th>
+            <th style="width:12ch;">Balance</th>
         </tr>
 
         {% for l in row.lessons %}
@@ -471,7 +398,9 @@ header.addEventListener('click', function () {
 <p>No clients currently owe money.</p>
 {% endif %}
 
-<!-- Preview Modal -->
+<!-- ============================
+     PREVIEW MODAL
+     ============================ -->
 <div id="preview_modal" class="modal-backdrop">
     <div class="modal">
         <h3>Preview SMS</h3>
@@ -484,46 +413,43 @@ header.addEventListener('click', function () {
     </div>
 </div>
 
-
+<!-- ============================
+     PRINT REPORT
+     ============================ -->
 <div id="print-simple-report" style="display:block; visibility:hidden;">
-
 
     <h2 style="margin-bottom:20px;">
         Minus Balances Report – {{ date.today().strftime("%d %B %Y") }}
     </h2>
 
-<table style="width:100%; border-collapse:collapse; font-size:20px; table-layout:fixed;">
-    <thead>
-        <tr>
-            <th style="border:2px solid #000; padding:14px; width:25%;">Client</th>
-            <th style="border:2px solid #000; padding:14px; width:12%;">Balance</th>
-            <th style="border:2px solid #000; padding:14px; width:63%;">Notes</th>
-        </tr>
-    </thead>
+    <table style="width:100%; border-collapse:collapse; font-size:20px; table-layout:fixed;">
+        <thead>
+            <tr>
+                <th style="border:2px solid #000; padding:14px; width:25%;">Client</th>
+                <th style="border:2px solid #000; padding:14px; width:12%;">Balance</th>
+                <th style="border:2px solid #000; padding:14px; width:63%;">Notes</th>
+            </tr>
+        </thead>
 
-    <tbody>
-        {% for row in rows %}
-        <tr>
-            <td style="border:1px solid #000; padding:20px;">
-                {{ row.client }}
-            </td>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td style="border:1px solid #000; padding:20px;">{{ row.client }}</td>
 
-            <td style="border:1px solid #000; padding:20px;">
-                {% set b = row.current_balance %}
-                {% if b|round(2) == b|round(0) %}
-                    ${{ b|round(0)|int }}
-                {% else %}
-                    ${{ "%.2f"|format(b) }}
-                {% endif %}
-            </td>
+                <td style="border:1px solid #000; padding:20px;">
+                    {% set b = row.current_balance %}
+                    {% if b|round(2) == b|round(0) %}
+                        ${{ b|round(0)|int }}
+                    {% else %}
+                        ${{ "%.2f"|format(b) }}
+                    {% endif %}
+                </td>
 
-            <td style="border:1px solid #000; padding:20px;">
-                &nbsp;
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                <td style="border:1px solid #000; padding:20px;">&nbsp;</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
 </div>
 

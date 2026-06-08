@@ -212,14 +212,13 @@ thead.orange-header th {
                                        onchange="updateField({{ r.id }}, 'rider_name', this.value)">
                             </td>
 
-                            <td style="width:3ch; white-space:nowrap;">
-                                <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
-                                    <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
-                                    <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
-                                    <option value="F"  {% if r.ftor == 'F'  %}selected{% endif %}>F</option>
-                                    <option value="Casual" {% if r.ftor == 'Casual' %}selected{% endif %}>Casual</option>
-                                </select>
-                            </td>
+<td style="width:3ch; white-space:nowrap;">
+    <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
+        <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
+        <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
+    </select>
+</td>
+
 
                             <td style="width:12ch; white-space:nowrap;">
                                 <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
