@@ -2002,19 +2002,17 @@ def create_app():
         if not sub:
             return "Submission not found"
 
-        new_course = request.form.get('courseno')
+        new_course = request.form.get("courseno")
 
+        # Update fields
         sub.current_course = new_course
         sub.teacher_changed = True
-        sub.courseno = new_course
-        sub.status = "approved"
 
         db.session.commit()
 
         return redirect(url_for('course_form_submissions',
                                 year=sub.term_year,
                                 term=sub.term_number))
-
 
     @app.route('/edit_course_submission/<int:id>')
     def edit_course_submission(id):
@@ -2032,7 +2030,7 @@ def create_app():
             "Saturday": 7
         }
 
-        courses = CourseReference.query.all()
+        courses = CourseReference.query.filter_by(active=True).all()
 
         def sort_key(c):
             try:
@@ -2049,7 +2047,9 @@ def create_app():
         return render_template(
             'edit_course_submission.html',
             sub=sub,
-            courses=courses
+            courses=courses,
+            selected_year=sub.term_year,
+            selected_term=sub.term_number
         )
 
 

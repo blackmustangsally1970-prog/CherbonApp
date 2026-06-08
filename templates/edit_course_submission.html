@@ -53,31 +53,34 @@
 
 <body>
 
-<h2>Change Course for {{ sub.rider_name }}</h2>
+    <h2>Change Course for {{ sub.rider_name }}</h2>
 
-<div class="container">
+    <div class="container">
 
-    <form method="POST" action="{{ url_for('update_course_submission', id=sub.id) }}">
+        <form method="POST" action="{{ url_for('update_course_submission', id=sub.id) }}">
 
-        <label>Select New Course:</label>
+            <label>Select New Course:</label>
 
-        <select name="courseno">
-            {% for c in courses %}
-                <option value="{{ c.course_code }}"
-                    {% if c.course_code == sub.courseno %}selected{% endif %}>
-                    {{ c.day_of_week }} — {{ c.display_label }} — {{ c.timerange }}
-                </option>
-            {% endfor %}
-        </select>
+            <select name="courseno">
+                {% for c in courses %}
+                    <option value="{{ c.course_code }}"
+                        {% if c.course_code == sub.current_course %}selected{% endif %}>
+                        {{ c.day_of_week }} — {{ c.display_label }} — {{ c.timerange }}
+                    </option>
+                {% endfor %}
+            </select>
 
-        <button type="submit">Save Changes</button>
-    </form>
+            <button type="submit">Save Changes</button>
+        </form>
 
-    <a class="cancel-btn" href="{{ url_for('course_form_results', year=sub.term_year, term=sub.term_number) }}">
-        ← Cancel and go back
-    </a>
+        <a class="cancel-btn"
+           href="{{ url_for('course_form_submissions',
+                            year=sub.term_year,
+                            term=sub.term_number) }}">
+            ← Cancel and go back
+        </a>
 
-</div>
+    </div>
 
 </body>
 </html>
