@@ -9677,7 +9677,6 @@ Cherbon Waters Admin
     def enquiries_home():
         return render_template('enquiries_home.html')
 
-
     @app.route('/client_view')
     def client_view():
         client_id = request.args.get('client', type=int) or request.args.get('client_filter', type=int)
