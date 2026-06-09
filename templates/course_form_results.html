@@ -67,6 +67,35 @@
         thead.orange-header th {
             background: #ffe5cc !important;
         }
+
+.missing-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.45);
+}
+
+.missing-modal-content {
+    background: white;
+    padding: 20px;
+    width: 320px;
+    margin: 120px auto;
+    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.3);
+}
+
+.close {
+    float: right;
+    cursor: pointer;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+
     </style>
 </head>
 
@@ -142,174 +171,200 @@
             </tbody>
         </table>
 
-    <!-- ========================================================= -->
-    <!--  APPROVED RIDERS BY COURSE                                -->
-    <!-- ========================================================= -->
-    <div id="approved-table-container">
-    <h2 style="margin-top:40px;">Approved Riders by Course</h2>
+<!-- ========================================================= -->
+<!--  APPROVED RIDERS BY COURSE                                -->
+<!-- ========================================================= -->
+<div id="approved-table-container">
+<h2 style="margin-top:40px;">Approved Riders by Course</h2>
 
-    {% set day_order = {
-        'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4,
-        'Thursday': 5, 'Friday': 6, 'Saturday': 7
-    } %}
+{% set day_order = {
+    'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4,
+    'Thursday': 5, 'Friday': 6, 'Saturday': 7
+} %}
 
-    {% for c in courses %}
-        {% set _ = c.__setattr__('day_sort', day_order[c.day_of_week]) %}
-    {% endfor %}
+{% for c in courses %}
+    {% set _ = c.__setattr__('day_sort', day_order[c.day_of_week]) %}
+{% endfor %}
 
-    {% set sorted_courses = courses
-        | sort(attribute='timerange')
-        | sort(attribute='day_sort')
-    %}
+{% set sorted_courses = courses
+    | sort(attribute='timerange')
+    | sort(attribute='day_sort')
+%}
 
-    {% for c in sorted_courses %}
-        {% if c.active %}
+{% for c in sorted_courses %}
+    {% if c.active %}
 
-            {% set riders = approved_submissions
-                | selectattr("current_course", "equalto", c.course_code)
-                | list
-            %}
+        {% set riders = approved_submissions
+            | selectattr("current_course", "equalto", c.course_code)
+            | list
+        %}
+        {% set approved_count = riders | length %}
 
-            {% set approved_count = riders | length %}
+        <h3 style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
+            {{ c.day_of_week }} {{ c.timerange }}
+            {{ c.display_label }} - {{ c.course_code }}
+            ({{ approved_count }})
 
-            <h3 style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
-                {{ c.day_of_week }} {{ c.timerange }}
-                {{ c.display_label }} - {{ c.course_code }}
-                ({{ approved_count }})
-
-                <!-- ⭐ NEW BUTTON -->
-                <button onclick="generateLessons('{{ c.course_code }}')"
-                        style="float:right; padding:6px 12px; border-radius:6px;">
-                    ➕ Add Lessons for Selected Riders
+            <!-- ⭐ Last Term Riders Button -->
+            {% set missing = missing_by_course.get(c.course_code, []) %}
+            {% if missing %}
+                <button class="missing-btn"
+                        data-course="{{ c.course_code }}"
+                        style="margin-left:20px; background:#ffcc00; padding:6px 10px; border-radius:6px;">
+                    Last Term Riders ({{ missing|length }})
                 </button>
-            </h3>
+            {% endif %}
 
-            <table>
-                <thead class="orange-header">
-                    <tr>
-                        <th style="width:4ch;">Sel</th>
-                        <th style="width:32ch;">Rider</th>
-                        <th style="width:12ch;">Horse 1</th>
-                        <th style="width:12ch;">Horse 2</th>
-                        <th style="width:12ch;">Horse 3</th>
-                        <th style="width:50ch;">Notes</th>
-                        <th style="width:50ch;">Cherbon Notes</th>
-                        <th style="width:6ch;">FT/W</th>
-                        <th style="width:6ch;">Freq</th>
-                        <th style="width:10ch;">Start Week</th>
-                        <th style="width:10ch;">Price</th>
-                        <th style="width:12ch;">Status</th>
-                        <th style="width:50ch;">Actions</th>
-                    </tr>
-                </thead>
+            <!-- ⭐ Add Lessons Button -->
+            <button onclick="generateLessons('{{ c.course_code }}')"
+                    style="float:right; padding:6px 12px; border-radius:6px;">
+                ➕ Add Lessons for Selected Riders
+            </button>
+        </h3>
 
-                <tbody>
-                    {% if approved_count == 0 %}
-                        <tr>
-                            <td colspan="13" style="text-align:center; color:#777;">
-                                No riders assigned to this course yet.
-                            </td>
-                        </tr>
-                    {% else %}
-                        {% for r in riders %}
-                        <tr>
+        <!-- ⭐ POPUP MODAL FOR THIS COURSE -->
+        {% if missing %}
+        <div id="missing-modal-{{ c.course_code }}" class="missing-modal">
+            <div class="missing-modal-content">
+                <span class="close" data-course="{{ c.course_code }}">&times;</span>
 
-                            <!-- ⭐ NEW CHECKBOX -->
-                            <td>
-                                {% set has_lessons = lessons
-                                    | selectattr("time_frame", "equalto", c.timerange)
-                                    | selectattr("client", "equalto", r.rider_name)
-                                    | list
-                                %}
+                <h3>Last Term Riders – {{ c.course_code }}</h3>
 
-                                {% if has_lessons|length > 0 %}
-                                    <span style="color:green; font-weight:bold;">Added</span>
-                                {% else %}
-                                    <input type="checkbox"
-                                           class="lesson-select"
-                                           data-id="{{ r.id }}"
-                                           data-course="{{ c.course_code }}">
-                                {% endif %}
-                            </td>
+                <ul>
+                    {% for name in missing %}
+                        <li>{{ name }}</li>
+                    {% endfor %}
+                </ul>
 
-                            {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
-                            <td style="width:32ch; white-space:normal; word-break:break-word;">
-                                <input type="text"
-                                       value="{{ r.rider_name }}"
-                                       style="width:30ch; {% if match|length == 0 %}color:red; font-weight:bold;{% endif %}"
-                                       onchange="updateField({{ r.id }}, 'rider_name', this.value)">
-                            </td>
-
-                            <td style="width:12ch; white-space:nowrap;">
-                                <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
-                                    {% for h in horses %}
-                                        <option value="{{ h.horse }}"
-                                            {% if h.horse == r.horse_1 %}selected{% endif %}>
-                                            {{ h.horse }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-
-                            <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
-                            <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
-
-                            <td style="width:50ch; white-space:normal;">{{ r.notes }}</td>
-
-                            <td style="width:50ch; white-space:normal;">
-                                <input type="text"
-                                       value="{{ r.cherbon_notes or '' }}"
-                                       style="width:48ch;"
-                                       onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
-                            </td>
-
-                            <td style="width:6ch; white-space:nowrap;">
-                                <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
-                                    <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
-                                    <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
-                                </select>
-                            </td>
-
-                            <td style="width:6ch; white-space:nowrap;">
-                                <select onchange="updateField({{ r.id }}, 'frequency', this.value)">
-                                    <option value="W" {% if r.frequency == 'W' %}selected{% endif %}>W</option>
-                                    <option value="F" {% if r.frequency == 'F' %}selected{% endif %}>F</option>
-                                </select>
-                            </td>
-
-                            <td style="width:10ch; white-space:nowrap;">
-                                <select onchange="updateField({{ r.id }}, 'start_week', this.value)">
-                                    <option value=""></option>
-                                    <option value="W1" {% if r.start_week == 'W1' %}selected{% endif %}>W1</option>
-                                    <option value="W2" {% if r.start_week == 'W2' %}selected{% endif %}>W2</option>
-                                </select>
-                            </td>
-
-                            <td style="width:10ch; white-space:nowrap;">
-                                <input type="number"
-                                       value="{{ r.price or '' }}"
-                                       style="width:9ch;"
-                                       onchange="updateField({{ r.id }}, 'price', this.value)">
-                            </td>
-
-                            <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
-
-                            <td style="width:50ch; white-space:normal;">
-                                <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
-                                <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
-                                <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
-                            </td>
-
-                        </tr>
-                        {% endfor %}
-                    {% endif %}
-                </tbody>
-            </table>
-
+            </div>
+        </div>
         {% endif %}
-    {% endfor %}
-</div>
 
+        <table>
+            <thead class="orange-header">
+                <tr>
+                    <th style="width:4ch;">Sel</th>
+                    <th style="width:32ch;">Rider</th>
+                    <th style="width:12ch;">Horse 1</th>
+                    <th style="width:12ch;">Horse 2</th>
+                    <th style="width:12ch;">Horse 3</th>
+                    <th style="width:50ch;">Notes</th>
+                    <th style="width:50ch;">Cherbon Notes</th>
+                    <th style="width:6ch;">FT/W</th>
+                    <th style="width:6ch;">Freq</th>
+                    <th style="width:10ch;">Start Week</th>
+                    <th style="width:10ch;">Price</th>
+                    <th style="width:12ch;">Status</th>
+                    <th style="width:50ch;">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% if approved_count == 0 %}
+                    <tr>
+                        <td colspan="13" style="text-align:center; color:#777;">
+                            No riders assigned to this course yet.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for r in riders %}
+                    <tr>
+
+                        <!-- ⭐ NEW CHECKBOX -->
+                        <td>
+                            {% set has_lessons = lessons
+                                | selectattr("time_frame", "equalto", c.timerange)
+                                | selectattr("client", "equalto", r.rider_name)
+                                | list
+                            %}
+
+                            {% if has_lessons|length > 0 %}
+                                <span style="color:green; font-weight:bold;">Added</span>
+                            {% else %}
+                                <input type="checkbox"
+                                       class="lesson-select"
+                                       data-id="{{ r.id }}"
+                                       data-course="{{ c.course_code }}">
+                            {% endif %}
+                        </td>
+
+                        {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
+                        <td style="width:32ch; white-space:normal; word-break:break-word;">
+                            <input type="text"
+                                   value="{{ r.rider_name }}"
+                                   style="width:30ch; {% if match|length == 0 %}color:red; font-weight:bold;{% endif %}"
+                                   onchange="updateField({{ r.id }}, 'rider_name', this.value)">
+                        </td>
+
+                        <td style="width:12ch; white-space:nowrap;">
+                            <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
+                                {% for h in horses %}
+                                    <option value="{{ h.horse }}"
+                                        {% if h.horse == r.horse_1 %}selected{% endif %}>
+                                        {{ h.horse }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
+                        <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
+
+                        <td style="width:50ch; white-space:normal;">{{ r.notes }}</td>
+
+                        <td style="width:50ch; white-space:normal;">
+                            <input type="text"
+                                   value="{{ r.cherbon_notes or '' }}"
+                                   style="width:48ch;"
+                                   onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
+                        </td>
+
+                        <td style="width:6ch; white-space:nowrap;">
+                            <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
+                                <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
+                                <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
+                            </select>
+                        </td>
+
+                        <td style="width:6ch; white-space:nowrap;">
+                            <select onchange="updateField({{ r.id }}, 'frequency', this.value)">
+                                <option value="W" {% if r.frequency == 'W' %}selected{% endif %}>W</option>
+                                <option value="F" {% if r.frequency == 'F' %}selected{% endif %}>F</option>
+                            </select>
+                        </td>
+
+                        <td style="width:10ch; white-space:nowrap;">
+                            <select onchange="updateField({{ r.id }}, 'start_week', this.value)">
+                                <option value=""></option>
+                                <option value="W1" {% if r.start_week == 'W1' %}selected{% endif %}>W1</option>
+                                <option value="W2" {% if r.start_week == 'W2' %}selected{% endif %}>W2</option>
+                            </select>
+                        </td>
+
+                        <td style="width:10ch; white-space:nowrap;">
+                            <input type="number"
+                                   value="{{ r.price or '' }}"
+                                   style="width:9ch;"
+                                   onchange="updateField({{ r.id }}, 'price', this.value)">
+                        </td>
+
+                        <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
+
+                        <td style="width:50ch; white-space:normal;">
+                            <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
+                            <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
+                            <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
+                        </td>
+
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+
+    {% endif %}
+{% endfor %}
+</div>
 
 <script>
 
@@ -348,6 +403,38 @@ function updateField(id, field, value) {
             else alert("Lessons created successfully.");
         });
     }
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    // Open modal
+    document.querySelectorAll(".missing-btn").forEach(btn => {
+        btn.addEventListener("click", function() {
+            const code = this.dataset.course;
+            document.getElementById("missing-modal-" + code).style.display = "block";
+        });
+    });
+
+    // Close modal
+    document.querySelectorAll(".close").forEach(btn => {
+        btn.addEventListener("click", function() {
+            const code = this.dataset.course;
+            document.getElementById("missing-modal-" + code).style.display = "none";
+        });
+    });
+
+    // Close when clicking outside modal
+    window.addEventListener("click", function(e) {
+        document.querySelectorAll(".missing-modal").forEach(modal => {
+            if (e.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+    });
+
+});
 </script>
 
 

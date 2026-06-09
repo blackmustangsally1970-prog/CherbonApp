@@ -2410,6 +2410,36 @@ def create_app():
 
             db.session.commit()
 
+        # ⭐ MISSING RIDERS POPUP LOGIC
+        # Only run if we're looking at Term > 1
+        if selected_term > 1:
+
+            # Load last term entries (Term 2 when viewing Term 3)
+            last_term_entries = CourseFormSubmission.query.filter_by(
+                term_year=selected_year,
+                term_number=selected_term - 1,
+                status="backfill"
+            ).all()
+
+            # Build last-term roster by course
+            last_term_by_course = {}
+            for c in courses:
+                last_term_by_course[c.course_code] = set()
+
+            for entry in last_term_entries:
+                last_term_by_course[entry.current_course].add(entry.rider_name)
+
+            # Build current-term booked riders
+            booked_riders = {s.rider_name for s in unprocessed + approved}
+
+            # Compute missing riders per course
+            missing_by_course = {
+                code: sorted(list(riders - booked_riders))
+                for code, riders in last_term_by_course.items()
+            }
+        else:
+            missing_by_course = {}
+
         return render_template(
             "course_form_results.html",
             unprocessed_submissions=unprocessed,
@@ -2421,7 +2451,8 @@ def create_app():
             years=years,
             selected_year=selected_year,
             selected_term=selected_term,
-            lessons=lessons
+            lessons=lessons,
+            missing_by_course=missing_by_course 
         )
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
