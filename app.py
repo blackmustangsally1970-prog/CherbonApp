@@ -687,9 +687,6 @@ def get_sundays_for_financial_year(fy_string):
     return sundays
 
 
-
-
-
 def get_week_window(sunday_date):
     from datetime import timedelta
     start = sunday_date
@@ -2335,6 +2332,7 @@ def create_app():
     @app.route('/course_form_submissions')
     def course_form_submissions():
         import datetime
+        from sqlalchemy import extract
 
         selected_year = request.args.get("year", datetime.datetime.now().year, type=int)
         selected_term = request.args.get("term", 1, type=int)
@@ -2368,6 +2366,24 @@ def create_app():
             extract('year', Lesson.lesson_date) == selected_year,
             extract('month', Lesson.lesson_date).in_(term_months[selected_term])
         ).all()
+
+        # ⭐ NEW: sort unprocessed by day_of_week (Sun→Sat) then timerange
+        day_order = {
+            "Sunday": 0,
+            "Monday": 1,
+            "Tuesday": 2,
+            "Wednesday": 3,
+            "Thursday": 4,
+            "Friday": 5,
+            "Saturday": 6
+        }
+
+        unprocessed.sort(
+            key=lambda s: (
+                day_order.get(course_lookup.get(s.current_course).day_of_week, 99),
+                course_lookup.get(s.current_course).timerange
+            )
+        )
 
         years = sorted(
             {s.term_year for s in CourseFormSubmission.query.all() if s.term_year},
@@ -2407,6 +2423,7 @@ def create_app():
             selected_term=selected_term,
             lessons=lessons
         )
+
 
 
     @app.route("/daily-summary", methods=["GET", "POST"])
