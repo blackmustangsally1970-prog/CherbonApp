@@ -24,8 +24,6 @@
             background: #f2f2f2;
         }
 
-
-
         .menu-btn {
             display: inline-block;
             background: #eee;
@@ -66,11 +64,9 @@
             font-weight: bold;
         }
 
-thead.orange-header th {
-    background: #ffe5cc !important;
-}
-
-
+        thead.orange-header th {
+            background: #ffe5cc !important;
+        }
     </style>
 </head>
 
@@ -149,7 +145,7 @@ thead.orange-header th {
     <!-- ========================================================= -->
     <!--  APPROVED RIDERS BY COURSE                                -->
     <!-- ========================================================= -->
-
+    <div id="approved-table-container">
     <h2 style="margin-top:40px;">Approved Riders by Course</h2>
 
     {% set day_order = {
@@ -180,19 +176,28 @@ thead.orange-header th {
                 {{ c.day_of_week }} {{ c.timerange }}
                 {{ c.display_label }} - {{ c.course_code }}
                 ({{ approved_count }})
+
+                <!-- ⭐ NEW BUTTON -->
+                <button onclick="generateLessons('{{ c.course_code }}')"
+                        style="float:right; padding:6px 12px; border-radius:6px;">
+                    ➕ Add Lessons for Selected Riders
+                </button>
             </h3>
 
             <table>
                 <thead class="orange-header">
-
                     <tr>
+                        <th style="width:4ch;">Sel</th>
                         <th style="width:32ch;">Rider</th>
-                        <th style="width:3ch;">FT/W</th>
                         <th style="width:12ch;">Horse 1</th>
                         <th style="width:12ch;">Horse 2</th>
                         <th style="width:12ch;">Horse 3</th>
                         <th style="width:50ch;">Notes</th>
                         <th style="width:50ch;">Cherbon Notes</th>
+                        <th style="width:6ch;">FT/W</th>
+                        <th style="width:6ch;">Freq</th>
+                        <th style="width:10ch;">Start Week</th>
+                        <th style="width:10ch;">Price</th>
                         <th style="width:12ch;">Status</th>
                         <th style="width:50ch;">Actions</th>
                     </tr>
@@ -201,13 +206,21 @@ thead.orange-header th {
                 <tbody>
                     {% if approved_count == 0 %}
                         <tr>
-                            <td colspan="9" style="text-align:center; color:#777;">
+                            <td colspan="13" style="text-align:center; color:#777;">
                                 No riders assigned to this course yet.
                             </td>
                         </tr>
                     {% else %}
                         {% for r in riders %}
                         <tr>
+
+                            <!-- ⭐ NEW CHECKBOX -->
+                            <td>
+                                <input type="checkbox"
+                                       class="lesson-select"
+                                       data-id="{{ r.id }}"
+                                       data-course="{{ c.course_code }}">
+                            </td>
 
                             {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
                             <td style="width:32ch; white-space:normal; word-break:break-word;">
@@ -216,14 +229,6 @@ thead.orange-header th {
                                        style="width:30ch; {% if match|length == 0 %}color:red; font-weight:bold;{% endif %}"
                                        onchange="updateField({{ r.id }}, 'rider_name', this.value)">
                             </td>
-
-<td style="width:3ch; white-space:nowrap;">
-    <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
-        <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
-        <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
-    </select>
-</td>
-
 
                             <td style="width:12ch; white-space:nowrap;">
                                 <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
@@ -248,6 +253,35 @@ thead.orange-header th {
                                        onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
                             </td>
 
+                            <td style="width:6ch; white-space:nowrap;">
+                                <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
+                                    <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
+                                    <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
+                                </select>
+                            </td>
+
+                            <td style="width:6ch; white-space:nowrap;">
+                                <select onchange="updateField({{ r.id }}, 'frequency', this.value)">
+                                    <option value="W" {% if r.frequency == 'W' %}selected{% endif %}>W</option>
+                                    <option value="F" {% if r.frequency == 'F' %}selected{% endif %}>F</option>
+                                </select>
+                            </td>
+
+                            <td style="width:10ch; white-space:nowrap;">
+                                <select onchange="updateField({{ r.id }}, 'start_week', this.value)">
+                                    <option value=""></option>
+                                    <option value="W1" {% if r.start_week == 'W1' %}selected{% endif %}>W1</option>
+                                    <option value="W2" {% if r.start_week == 'W2' %}selected{% endif %}>W2</option>
+                                </select>
+                            </td>
+
+                            <td style="width:10ch; white-space:nowrap;">
+                                <input type="number"
+                                       value="{{ r.price or '' }}"
+                                       style="width:9ch;"
+                                       onchange="updateField({{ r.id }}, 'price', this.value)">
+                            </td>
+
                             <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
 
                             <td style="width:50ch; white-space:normal;">
@@ -264,16 +298,48 @@ thead.orange-header th {
 
         {% endif %}
     {% endfor %}
+</div>
 
-    <script>
-        function updateField(id, field, value) {
-            fetch(`/update_course_field/${id}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ field: field, value: value })
-            });
+
+<script>
+
+function updateField(id, field, value) {
+    fetch(`/update_course_field/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ field: field, value: value })
+    })
+    .then(() => {
+        $("#approved-table-container").load(location.href + " #approved-table-container>*", "");
+    });
+}
+</script>
+
+
+<script>
+    function generateLessons(course_code) {
+        const ids = [...document.querySelectorAll(
+            `.lesson-select[data-course="${course_code}"]:checked`
+        )].map(cb => cb.dataset.id);
+
+        if (ids.length === 0) {
+            alert("No riders selected.");
+            return;
         }
-    </script>
+
+        fetch("/generate_lessons", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ course_code, ids })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) alert("Error: " + data.error);
+            else alert("Lessons created successfully.");
+        });
+    }
+</script>
+
 
 </body>
 </html>

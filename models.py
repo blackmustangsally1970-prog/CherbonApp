@@ -97,11 +97,13 @@ class CourseFormSubmission(db.Model):
     # Processing status
     status = db.Column(db.String(20), default="unprocessed")
 
-    # ⭐ NEW FIELDS ⭐
     original_course = db.Column(db.String(50))   # What parent submitted
     current_course  = db.Column(db.String(50))   # What teacher allocated
     teacher_changed = db.Column(db.Boolean, default=False)
     ignore_jotform = db.Column(db.Boolean, default=False)
+    frequency = db.Column(db.String(1), default='W')      # 'W' = weekly, 'F' = fortnightly
+    start_week = db.Column(db.String(2), nullable=True)   # None, 'W1', 'W2'
+    price = db.Column(db.Integer, nullable=True)          # price in cents or dollars (your c
 
 
 

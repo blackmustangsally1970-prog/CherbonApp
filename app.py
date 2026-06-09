@@ -1,4 +1,3 @@
-
 from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, make_response, after_this_request, flash,
@@ -6,7 +5,10 @@ from flask import (
 )
 
 from collections import defaultdict
+from collections import Counter
 from config import Config
+from datetime import timedelta
+
 
 # Database + Models
 from extensions import db
@@ -47,6 +49,7 @@ from models import (
     Employee,
     EmployeeHours
 )
+
 
 # Core libs
 import os
@@ -136,6 +139,76 @@ def get_static_teacher_time():
         TeacherTime.time
     ).all()
 
+
+def get_group_pricing(group_priv):
+    """Return the pricing row for a given group_priv, or None."""
+    return GroupPricing.query.filter_by(group_priv=group_priv).first()
+
+def detect_two_course(rider_name, approved_submissions):
+    """
+    Auto-detect two-course:
+    rider appears in 2+ approved courses.
+    """
+    count = sum(1 for r in approved_submissions if r.rider_name == rider_name)
+    return count >= 2
+
+def detect_sibling(rider_name, approved_submissions):
+    """
+    Auto-detect sibling:
+    surname appears in 2+ riders.
+    """
+    def surname(name):
+        parts = name.strip().split()
+        return parts[-1].lower() if parts else ""
+
+    target_surname = surname(rider_name)
+    if not target_surname:
+        return False
+
+    surnames = [surname(r.rider_name) for r in approved_submissions]
+    counts = Counter(surnames)
+    return counts.get(target_surname, 0) >= 2
+
+def calculate_price(group_priv, ftor, frequency, rider_name, approved_submissions):
+    """
+    Core pricing engine:
+    - auto-detect two-course
+    - auto-detect sibling
+    - choose correct tier (two_course / sibling / base)
+    - pick weekly / fortnightly / full
+    """
+    gp = get_group_pricing(group_priv)
+    if not gp:
+        return None
+
+    is_two_course = detect_two_course(rider_name, approved_submissions)
+    is_sibling = False
+    if not is_two_course:
+        is_sibling = detect_sibling(rider_name, approved_submissions)
+
+    if is_two_course:
+        weekly = gp.two_course_weekly
+        fortnightly = gp.two_course_fortnightly
+        full = gp.two_course_full
+    elif is_sibling:
+        weekly = gp.sibling_weekly
+        fortnightly = gp.sibling_fortnightly
+        full = gp.sibling_full
+    else:
+        weekly = gp.weekly_price
+        fortnightly = gp.fortnightly_price
+        full = gp.full_price
+
+    if ftor == "FT":
+        return full
+    if frequency == "W":
+        return weekly
+    if frequency == "F":
+        return fortnightly
+
+    return None
+
+
 def get_incomplete_days(employee_id):
     sql = """
         SELECT work_date, sign_in, sign_out
@@ -150,6 +223,50 @@ def get_incomplete_days(employee_id):
     rows = cur.fetchall()
     cur.close()
     return rows
+
+def get_active_term():
+    return Term.query.filter_by(active=True).first()
+
+
+def build_term_weeks(term):
+    """
+    Returns a list of 10 week-start dates based on the term start date
+    and the week pattern (Sun-Sat or Mon-Sun).
+    """
+
+    start = term.start_date
+
+    # Determine week start offset
+    if term.week_pattern == "Sun-Sat":
+        desired_weekday = 6  # Sunday = 6 in Python's weekday() (Mon=0)
+    else:
+        desired_weekday = 0  # Monday = 0
+
+    # Shift start date to the correct week boundary
+    offset = (start.weekday() - desired_weekday) % 7
+    week1 = start - timedelta(days=offset)
+
+    # Build 10 weeks
+    return [week1 + timedelta(weeks=i) for i in range(10)]
+
+
+def get_day_offset(day_name):
+    """
+    Convert course.day_of_week into Python weekday offset.
+    Python: Monday=0 ... Sunday=6
+    """
+    mapping = {
+        "Monday": 0,
+        "Tuesday": 1,
+        "Wednesday": 2,
+        "Thursday": 3,
+        "Friday": 4,
+        "Saturday": 5,
+        "Sunday": 6
+    }
+    return mapping.get(day_name, 0)
+
+
 
 
 def get_pricing_lookup():
@@ -1774,6 +1891,96 @@ def create_app():
         db.session.commit()
 
 
+    @app.route("/generate_lessons", methods=["POST"])
+    def generate_lessons():
+        data = request.get_json()
+        course_code = data.get("course_code")
+        ids = data.get("ids", [])
+
+        if not ids:
+            return jsonify(success=False, error="No rider IDs provided")
+
+        course = CourseReference.query.filter_by(course_code=course_code).first()
+        if not course:
+            return jsonify(success=False, error="Course not found")
+
+        term = get_active_term()
+        if not term:
+            return jsonify(success=False, error="No active term set")
+
+        week_starts = build_term_weeks(term)
+        day_offset = get_day_offset(course.day_of_week)
+
+        # Load all approved riders for auto-detection
+        approved = CourseFormSubmission.query.filter_by(status="Approved").all()
+
+        created = 0
+
+        for rid in ids:
+            r = CourseFormSubmission.query.get(rid)
+            if not r:
+                continue
+
+            if r.frequency not in ("W", "F"):
+                continue
+
+            if r.frequency == "F" and not r.start_week:
+                continue
+
+            # AUTO‑CALCULATE PRICE HERE (NEW)
+            price = calculate_price(
+                group_priv = course.group_priv,
+                ftor = r.ftor,
+                frequency = r.frequency,
+                rider_name = r.rider_name,
+                approved_submissions = approved
+            )
+
+            if price is None:
+                continue
+
+            # Determine weeks
+            if r.frequency == "W":
+                week_indexes = [0,1,2,3,4,5,6,7,8,9]
+            else:
+                week_indexes = [0,2,4,6,8] if r.start_week == "W1" else [1,3,5,7,9]
+
+            lesson_no = 1
+
+            for wi in week_indexes:
+                week_start = week_starts[wi]
+                lesson_date = week_start + timedelta(days=day_offset)
+
+                lesson = Lesson(
+                    lesson_date = lesson_date,
+                    time_frame = course.timerange,
+                    block_key = "",
+                    client = r.rider_name,
+                    horse = r.horse_1,
+                    adjust = 0,
+                    carry_fwd = None,
+                    payment = None,
+                    price_pl = price,          # ← NEW: auto‑calculated
+                    attendance = None,
+                    balance = None,
+                    lesson_notes = "",
+                    lesson_type = "Arena",
+                    group_priv = course.group_priv,
+                    blockends = None,
+                    lesson_no = str(lesson_no),
+                    freq = r.frequency,
+                    voucher_number = None
+                )
+
+                db.session.add(lesson)
+                lesson_no += 1
+                created += 1
+
+        db.session.commit()
+        return jsonify(success=True, created=created)
+
+
+
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if request.method == "POST":
@@ -2004,14 +2211,59 @@ def create_app():
         if not row:
             return "Not found", 404
 
-        allowed = ["rider_name", "ftor", "horse_1", "cherbon_notes"]
+        allowed = ["rider_name", "ftor", "horse_1", "cherbon_notes",
+                   "frequency", "current_course", "status"]
         if field not in allowed:
             return "Invalid field", 400
 
+        # Update the field
         setattr(row, field, value)
         db.session.commit()
-        return "OK", 200
 
+        # If status changed → recalc pricing for ALL approved riders
+        if field == "status":
+            approved = CourseFormSubmission.query.filter_by(status="Approved").all()
+
+            for r in approved:
+                course = CourseReference.query.filter_by(course_code=r.current_course).first()
+                if not course:
+                    continue
+
+                new_price = calculate_price(
+                    group_priv = course.group_priv,
+                    ftor = r.ftor,
+                    frequency = r.frequency,
+                    rider_name = r.rider_name,
+                    approved_submissions = approved
+                )
+
+                if new_price is not None:
+                    r.price = new_price
+
+            db.session.commit()
+            return "OK", 200
+
+        # Only recalc price when relevant fields change
+        if field in ("rider_name", "ftor", "frequency", "current_course"):
+            approved = CourseFormSubmission.query.filter_by(status="Approved").all()
+
+            course = CourseReference.query.filter_by(course_code=row.current_course).first()
+            if course:
+                new_price = calculate_price(
+                    group_priv = course.group_priv,
+                    ftor = row.ftor,
+                    frequency = row.frequency,
+                    rider_name = row.rider_name,
+                    approved_submissions = approved
+                )
+
+                if new_price is not None:
+                    row.price = new_price
+
+            db.session.commit()
+            return "OK", 200
+
+        return "OK", 200
 
     @app.route('/approve_course_submission/<int:id>')
     def approve_course_submission(id):
