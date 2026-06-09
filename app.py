@@ -9597,6 +9597,23 @@ Cherbon Waters Admin
         return render_template("employees_home.html")
 
 
+    @app.route("/mark_cancelled", methods=["POST"])
+    def mark_cancelled():
+        data = request.get_json()
+        course = data["course"]
+        name = data["name"]
+        cancelled = data["cancelled"]
+
+        sub = CourseFormSubmission.query.filter_by(
+            current_course=course,
+            rider_name=name
+        ).first()
+
+        if sub:
+            sub.cancelled = cancelled
+            db.session.commit()
+
+        return jsonify(success=True)
 
 
     @app.route("/other_tools")

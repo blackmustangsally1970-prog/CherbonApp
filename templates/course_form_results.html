@@ -79,22 +79,46 @@
     background: rgba(0,0,0,0.45);
 }
 
+/* ⭐ Popup container */
 .missing-modal-content {
     background: white;
     padding: 20px;
-    width: 550px;
+    width: 600px;        /* FINAL WIDTH */
+    max-width: 90%;
     margin: 120px auto;
     border-radius: 8px;
     box-shadow: 0 0 12px rgba(0,0,0,0.3);
 }
 
-.missing-modal-content ul li span:first-child {
-    flex-shrink: 0;
-}
+/* ⭐ Rider rows as a grid */
 .missing-modal-content ul li {
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 240px 140px 60px 120px 120px; /* ⭐ 5 columns now */
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    padding: 4px 0;
 }
 
+/* ⭐ Prevent name from shrinking */
+.missing-modal-content ul li .rider-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ⭐ SMS button */
+.missing-modal-content ul li .sms-btn {
+    width: 50px;
+    text-align: center;
+    padding: 2px 4px;
+}
+
+/* ⭐ Contacted area */
+.missing-modal-content ul li .contacted-area {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 
 
 .close {
@@ -247,36 +271,55 @@
     {% set moved = new_course and new_course != c.course_code %}
     style="{% if moved %}background:#ffe6e6; font-weight:bold;{% endif %}"
 >
-    {{ name }}
 
-    {% if moved %}
-        <span style="color:red; margin-left:6px;">
-            → moved to {{ new_course }}
-        </span>
-    {% endif %}
-
-    {% set client = client_names | selectattr("full_name", "equalto", name) | first %}
-    {% if client %}
-        <span style="color:#555; margin-left:6px;">
-            ({{ client.mobile or client.phone or 'No number' }})
-        </span>
-
-        {% if client.mobile %}
-            <button class="sms-btn"
-                    data-number="{{ client.mobile }}"
-                    data-name="{{ name }}"
-                    style="margin-left:10px; padding:2px 6px; font-size:12px;">
-                SMS
-            </button>
+    <!-- COL 1: Rider Name -->
+    <span class="rider-name">
+        {{ name }}
+        {% if moved %}
+            <span style="color:red;">→ {{ new_course }}</span>
         {% endif %}
+    </span>
+
+    <!-- COL 2: Phone -->
+    <span>
+        {% if client %}
+            {{ client.mobile or client.phone or 'No number' }}
+        {% else %}
+            No number
+        {% endif %}
+    </span>
+
+    <!-- COL 3: SMS Button -->
+    {% if client and client.mobile and not sub.cancelled %}
+        <button class="sms-btn"
+                data-number="{{ client.mobile }}"
+                data-name="{{ name }}">
+            SMS
+        </button>
+    {% else %}
+        <span></span>
     {% endif %}
 
-    <input type="checkbox"
-           class="contacted-checkbox"
-           data-course="{{ c.course_code }}"
-           data-name="{{ name }}"
-           style="margin-left:10px;">
-    <span style="font-size:12px;">contacted</span>
+    <!-- COL 4: Contacted -->
+    <span class="contacted-area">
+        <input type="checkbox"
+               class="contacted-checkbox"
+               data-course="{{ c.course_code }}"
+               data-name="{{ name }}"
+               {% if sub.contacted %}checked{% endif %}>
+        contacted
+    </span>
+
+    <!-- COL 5: CANCELLED -->
+    <span class="contacted-area">
+        <input type="checkbox"
+               class="cancelled-checkbox"
+               data-course="{{ c.course_code }}"
+               data-name="{{ name }}"
+               {% if sub.cancelled %}checked{% endif %}>
+        cancel
+    </span>
+
 </li>
 
     {% endfor %}
@@ -298,7 +341,7 @@
                     <th style="width:50ch;">Cherbon Notes</th>
                     <th style="width:6ch;">FT/W</th>
                     <th style="width:6ch;">Freq</th>
-                    <th style="width:10ch;">Start Week</th>
+                    <th style="width:10ch;">Week</th>
                     <th style="width:10ch;">Price</th>
                     <th style="width:12ch;">Status</th>
                     <th style="width:50ch;">Actions</th>
@@ -498,6 +541,24 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     /* -----------------------------------------
+       CANCELLED CHECKBOXES
+    ----------------------------------------- */
+    document.querySelectorAll(".cancelled-checkbox").forEach(cb => {
+        cb.addEventListener("change", function() {
+            fetch("/mark_cancelled", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    course: this.dataset.course,
+                    name: this.dataset.name,
+                    cancelled: this.checked
+                })
+            });
+        });
+    });
+
+
+    /* -----------------------------------------
        MARK CONTACTED CHECKBOXES
     ----------------------------------------- */
     document.querySelectorAll(".contacted-checkbox").forEach(cb => {
@@ -516,7 +577,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 });
 </script>
-
 
 
 </body>

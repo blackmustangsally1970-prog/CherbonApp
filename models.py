@@ -104,8 +104,7 @@ class CourseFormSubmission(db.Model):
     frequency = db.Column(db.String(1), default='W')      # 'W' = weekly, 'F' = fortnightly
     start_week = db.Column(db.String(2), nullable=True)   # None, 'W1', 'W2'
     price = db.Column(db.Integer, nullable=True)          # price in cents or dollars (your c
-
-
+    cancelled = db.Column(db.Boolean, default=False)
 
 class CourseEnrolment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
