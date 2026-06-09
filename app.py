@@ -72,6 +72,7 @@ from zoneinfo import ZoneInfo
 from markupsafe import Markup, escape
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
+from sqlalchemy import extract
 
 # Third‑party libs
 import requests
@@ -2356,7 +2357,9 @@ def create_app():
         course_lookup = {c.course_code: c for c in courses}
 
         # ⭐ NEW: load lessons so template can detect "Added"
-        lessons = Lesson.query.all()
+        lessons = Lesson.query.filter(
+            extract('year', Lesson.lesson_date) == selected_year
+        ).all()
 
         years = sorted(
             {s.term_year for s in CourseFormSubmission.query.all() if s.term_year},
