@@ -2424,6 +2424,34 @@ def create_app():
             lessons=lessons
         )
 
+    @app.route('/update_course_submission/<int:id>', methods=['POST'])
+    def update_course_submission(id):
+        sub = CourseFormSubmission.query.get(id)
+        if not sub:
+            return "Submission not found"
+
+        # Update the course
+        new_course = request.form.get("current_course")
+        if new_course:
+            sub.current_course = new_course
+
+        # Update FTOR
+        new_ftor = request.form.get("ftor")
+        if new_ftor:
+            sub.ftor = new_ftor
+
+        # Update frequency
+        new_freq = request.form.get("frequency")
+        if new_freq:
+            sub.frequency = new_freq
+
+        db.session.commit()
+
+        return redirect(url_for(
+            'course_form_submissions',
+            year=sub.term_year,
+            term=sub.term_number
+        ))
 
 
     @app.route("/daily-summary", methods=["GET", "POST"])

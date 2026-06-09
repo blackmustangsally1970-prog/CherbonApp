@@ -61,7 +61,8 @@
 
             <label>Select New Course:</label>
 
-            <select name="courseno">
+            <select name="current_course">
+
                 {% for c in courses %}
                     <option value="{{ c.course_code }}"
                         {% if c.course_code == sub.current_course %}selected{% endif %}>
