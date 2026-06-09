@@ -266,6 +266,8 @@
 <ul>
     {% for name in missing %}
         {% set client = client_names | selectattr("full_name", "equalto", name) | first %}
+        {% set sub = submissions_map.get(name) %}
+
 <li
     {% set new_course = current_course_map.get(name) %}
     {% set moved = new_course and new_course != c.course_code %}
@@ -306,7 +308,7 @@
                class="contacted-checkbox"
                data-course="{{ c.course_code }}"
                data-name="{{ name }}"
-               {% if sub.contacted %}checked{% endif %}>
+               {% if sub and sub.contacted %}checked{% endif %}>
         contacted
     </span>
 
@@ -316,7 +318,7 @@
                class="cancelled-checkbox"
                data-course="{{ c.course_code }}"
                data-name="{{ name }}"
-               {% if sub.cancelled %}checked{% endif %}>
+               {% if sub and sub.cancelled %}checked{% endif %}>
         cancel
     </span>
 
@@ -324,6 +326,7 @@
 
     {% endfor %}
 </ul>
+
 
             </div>
         </div>
