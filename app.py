@@ -2440,6 +2440,18 @@ def create_app():
         else:
             missing_by_course = {}
 
+        # ============================================================
+        #  Build map of current-term course per rider
+        # ============================================================
+        current_course_map = {}
+
+        for s in approved:
+            current_course_map[s.rider_name] = s.current_course
+
+        for s in unprocessed:
+            current_course_map[s.rider_name] = s.current_course
+
+
         return render_template(
             "course_form_results.html",
             unprocessed_submissions=unprocessed,
@@ -2452,7 +2464,8 @@ def create_app():
             selected_year=selected_year,
             selected_term=selected_term,
             lessons=lessons,
-            missing_by_course=missing_by_course 
+            missing_by_course=missing_by_course,
+            current_course_map=current_course_map
         )
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
@@ -9730,6 +9743,23 @@ Cherbon Waters Admin
         db.session.commit()
 
         return redirect(url_for("client_view", client=client_name))
+
+    @app.route("/mark_contacted", methods=["POST"])
+    def mark_contacted():
+        data = request.json
+        course = data["course"]
+        name = data["name"]
+        contacted = data["contacted"]
+
+        record = MissingContact.query.filter_by(course=course, rider=name).first()
+        if not record:
+            record = MissingContact(course=course, rider=name)
+            db.session.add(record)
+
+        record.contacted = contacted
+        db.session.commit()
+
+        return "OK"
 
 
     @app.route('/enquiries')

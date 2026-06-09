@@ -230,11 +230,48 @@
 
                 <h3>Last Term Riders – {{ c.course_code }}</h3>
 
-                <ul>
-                    {% for name in missing %}
-                        <li>{{ name }}</li>
-                    {% endfor %}
-                </ul>
+<ul>
+    {% for name in missing %}
+        {% set client = client_names | selectattr("full_name", "equalto", name) | first %}
+<li
+    {% set new_course = current_course_map.get(name) %}
+    {% set moved = new_course and new_course != c.course_code %}
+    style="{% if moved %}background:#ffe6e6; font-weight:bold;{% endif %}"
+>
+    {{ name }}
+
+    {% if moved %}
+        <span style="color:red; margin-left:6px;">
+            → moved to {{ new_course }}
+        </span>
+    {% endif %}
+
+    {% set client = client_names | selectattr("full_name", "equalto", name) | first %}
+    {% if client %}
+        <span style="color:#555; margin-left:6px;">
+            ({{ client.mobile or client.phone or 'No number' }})
+        </span>
+
+        {% if client.mobile %}
+            <button class="sms-btn"
+                    data-number="{{ client.mobile }}"
+                    data-name="{{ name }}"
+                    style="margin-left:10px; padding:2px 6px; font-size:12px;">
+                SMS
+            </button>
+        {% endif %}
+    {% endif %}
+
+    <input type="checkbox"
+           class="contacted-checkbox"
+           data-course="{{ c.course_code }}"
+           data-name="{{ name }}"
+           style="margin-left:10px;">
+    <span style="font-size:12px;">contacted</span>
+</li>
+
+    {% endfor %}
+</ul>
 
             </div>
         </div>
@@ -367,22 +404,27 @@
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", function() {
 
-function updateField(id, field, value) {
-    fetch(`/update_course_field/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field: field, value: value })
-    })
-    .then(() => {
-        $("#approved-table-container").load(location.href + " #approved-table-container>*", "");
-    });
-}
-</script>
+    /* -----------------------------------------
+       UPDATE FIELD (inline edits)
+    ----------------------------------------- */
+    window.updateField = function(id, field, value) {
+        fetch(`/update_course_field/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ field: field, value: value })
+        })
+        .then(() => {
+            $("#approved-table-container").load(location.href + " #approved-table-container>*", "");
+        });
+    };
 
 
-<script>
-    function generateLessons(course_code) {
+    /* -----------------------------------------
+       GENERATE LESSONS
+    ----------------------------------------- */
+    window.generateLessons = function(course_code) {
         const ids = [...document.querySelectorAll(
             `.lesson-select[data-course="${course_code}"]:checked`
         )].map(cb => cb.dataset.id);
@@ -402,14 +444,12 @@ function updateField(id, field, value) {
             if (!data.success) alert("Error: " + data.error);
             else alert("Lessons created successfully.");
         });
-    }
-</script>
+    };
 
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-
-    // Open modal
+    /* -----------------------------------------
+       MISSING RIDERS MODAL OPEN/CLOSE
+    ----------------------------------------- */
     document.querySelectorAll(".missing-btn").forEach(btn => {
         btn.addEventListener("click", function() {
             const code = this.dataset.course;
@@ -417,7 +457,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    // Close modal
     document.querySelectorAll(".close").forEach(btn => {
         btn.addEventListener("click", function() {
             const code = this.dataset.course;
@@ -425,7 +464,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    // Close when clicking outside modal
     window.addEventListener("click", function(e) {
         document.querySelectorAll(".missing-modal").forEach(modal => {
             if (e.target === modal) {
@@ -434,8 +472,42 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
+
+    /* -----------------------------------------
+       INDIVIDUAL SMS BUTTONS
+    ----------------------------------------- */
+    document.querySelectorAll(".sms-btn").forEach(btn => {
+        btn.addEventListener("click", function() {
+            const number = this.dataset.number;
+            const name = this.dataset.name;
+
+            window.location.href =
+                "/send_sms?to=" + encodeURIComponent(number) +
+                "&name=" + encodeURIComponent(name);
+        });
+    });
+
+
+    /* -----------------------------------------
+       MARK CONTACTED CHECKBOXES
+    ----------------------------------------- */
+    document.querySelectorAll(".contacted-checkbox").forEach(cb => {
+        cb.addEventListener("change", function() {
+            fetch("/mark_contacted", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    course: this.dataset.course,
+                    name: this.dataset.name,
+                    contacted: this.checked
+                })
+            });
+        });
+    });
+
 });
 </script>
+
 
 
 </body>
