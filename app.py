@@ -2357,8 +2357,16 @@ def create_app():
         course_lookup = {c.course_code: c for c in courses}
 
         # ⭐ NEW: load lessons so template can detect "Added"
+        term_months = {
+            1: [1, 2, 3],
+            2: [4, 5, 6],
+            3: [7, 8, 9],
+            4: [10, 11, 12]
+        }
+
         lessons = Lesson.query.filter(
-            extract('year', Lesson.lesson_date) == selected_year
+            extract('year', Lesson.lesson_date) == selected_year,
+            extract('month', Lesson.lesson_date).in_(term_months[selected_term])
         ).all()
 
         years = sorted(
