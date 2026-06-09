@@ -5069,12 +5069,13 @@ def create_app():
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
+
         choice = request.form.get("choice")
         client_id = request.form.get("client_id")
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-        # Parse riders once (use VALID riders to keep indexes aligned)
+        # Parse riders once
         all_riders = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id
@@ -5087,7 +5088,7 @@ def create_app():
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
-        # IGNORE OPTION — HARD STOP FOR THIS RIDER ONLY
+        # IGNORE OPTION
         if choice == "ignore":
             rider["resolved"] = True
             row.ignored = True
@@ -5121,12 +5122,11 @@ def create_app():
         mobile = clean_mobile(rider.get("mobile"))
         email = safe_text(rider.get("email"))
 
-        # Submission-wide disclaimer
-        # Always capture the universal disclaimer for the entire submission
+        # Universal disclaimer (submission-wide)
         submission_disclaimer = valid_riders[0].get("disclaimer")
         disclaimer = safe_int(submission_disclaimer)
 
-        # Store it on the submission so ALL riders can use it later
+        # Store universal disclaimer on submission
         row.universal_disclaimer = disclaimer
         db.session.commit()
 
@@ -5136,7 +5136,9 @@ def create_app():
 
         jotform_id = str(row.form_id)
 
+        # ---------------------------------------------------------
         # USE EXISTING (SAFE MERGE)
+        # ---------------------------------------------------------
         if choice == "use_existing" and existing:
 
             if guardian:
@@ -5169,7 +5171,9 @@ def create_app():
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
-        # OVERWRITE EXISTING
+        # ---------------------------------------------------------
+        # OVERWRITE EXISTING (FULL REPLACEMENT)
+        # ---------------------------------------------------------
         if choice == "overwrite" and existing:
 
             existing.full_name = clean_name(name)
@@ -5189,8 +5193,11 @@ def create_app():
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
+        # ---------------------------------------------------------
         # CREATE NEW CLIENT
+        # ---------------------------------------------------------
         if choice == "new":
+
             new_client = Client(
                 full_name=clean_name(name),
                 age=age,
@@ -5212,8 +5219,11 @@ def create_app():
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
+        # ---------------------------------------------------------
         # CREATE NEW CLIENT (SAME NAME)
+        # ---------------------------------------------------------
         if choice == "new_same_name":
+
             base = clean_name(name)
             counter = 2
 
@@ -5245,12 +5255,15 @@ def create_app():
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
-        # FALLBACK
+        # ---------------------------------------------------------
+        # FALLBACK (SHOULD NEVER HIT)
+        # ---------------------------------------------------------
         log_disclaimer_processed([r["name"] for r in valid_riders])
         db.session.commit()
 
         rider["resolved"] = True
         return redirect(url_for('notifications'))
+
 
     @app.route("/pricing_setup")
     def pricing_setup():
