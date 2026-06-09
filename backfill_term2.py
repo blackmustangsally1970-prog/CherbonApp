@@ -2,7 +2,7 @@ from app import app, db
 from models import CourseFormSubmission, Lesson, CourseReference
 from sqlalchemy import extract
 
-def run_backfill():
+def run_target_backfill():
     selected_year = 2026
     selected_term = 2
 
@@ -13,39 +13,29 @@ def run_backfill():
         4: [10, 11, 12]
     }
 
-    courses = CourseReference.query.filter_by(active=True).all()
+    # ONLY the corrected Sunday CC 14:30 - 15:50 course
+    target_course = CourseReference.query.filter_by(
+        active=True,
+        day_of_week="Sunday",
+        group_priv="CC",
+        timerange="14:30 - 15:50"
+    ).first()
 
-    weekday_to_name = {
-        6: "Sunday",
-        0: "Monday",
-        1: "Tuesday",
-        2: "Wednesday",
-        3: "Thursday",
-        4: "Friday",
-        5: "Saturday"
-    }
+    if not target_course:
+        print("No matching CourseReference for Sunday CC 14:30 - 15:50")
+        return
 
-    term2_lessons = Lesson.query.filter(
+    lessons = Lesson.query.filter(
         extract('year', Lesson.lesson_date) == selected_year,
-        extract('month', Lesson.lesson_date).in_(term_months[selected_term])
+        extract('month', Lesson.lesson_date).in_(term_months[selected_term]),
+        Lesson.group_priv == "CC",
+        Lesson.time_frame == "14:30 - 15:50"
     ).all()
 
     created = 0
 
-    for l in term2_lessons:
+    for l in lessons:
         rider = l.client
-        dow = weekday_to_name[l.lesson_date.weekday()]
-
-        matched = next(
-            (c for c in courses
-             if c.day_of_week == dow
-             and c.timerange == l.time_frame
-             and c.group_priv == l.group_priv),
-            None
-        )
-
-        if not matched:
-            continue
 
         exists = CourseFormSubmission.query.filter_by(
             rider_name=rider,
@@ -58,7 +48,7 @@ def run_backfill():
 
         new_sub = CourseFormSubmission(
             rider_name=rider,
-            current_course=matched.course_code,
+            current_course=target_course.course_code,
             term_year=selected_year,
             term_number=selected_term,
             status="backfill",
@@ -70,9 +60,9 @@ def run_backfill():
         created += 1
 
     db.session.commit()
-    print(f"Backfill complete. Created {created} Term 2 entries.")
+    print(f"Target backfill complete. Created {created} Sunday CC 14:30 - 15:50 T2 entries.")
 
 
 if __name__ == "__main__":
     with app.app_context():
-        run_backfill()
+        run_target_backfill()
