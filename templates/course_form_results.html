@@ -24,6 +24,15 @@
             background: #f2f2f2;
         }
 
+.course-header {
+    margin-bottom: 0 !important;
+}
+
+.course-header + table {
+    margin-top: 0 !important;
+}
+
+
         .menu-btn {
             display: inline-block;
             background: #eee;
@@ -233,7 +242,7 @@
         %}
         {% set approved_count = riders | length %}
 
-        <h3 style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
+        <h3 class="course-header" style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
             {{ c.day_of_week }} {{ c.timerange }}
             {{ c.display_label }} - {{ c.course_code }}
             ({{ approved_count }})
