@@ -216,10 +216,20 @@
 
                             <!-- ⭐ NEW CHECKBOX -->
                             <td>
-                                <input type="checkbox"
-                                       class="lesson-select"
-                                       data-id="{{ r.id }}"
-                                       data-course="{{ c.course_code }}">
+                                {% set has_lessons = lessons
+                                    | selectattr("client", "equalto", r.rider_name)
+                                    | selectattr("time_frame", "equalto", c.timerange)
+                                    | list
+                                %}
+
+                                {% if has_lessons|length > 0 %}
+                                    <span style="color:green; font-weight:bold;">Added</span>
+                                {% else %}
+                                    <input type="checkbox"
+                                           class="lesson-select"
+                                           data-id="{{ r.id }}"
+                                           data-course="{{ c.course_code }}">
+                                {% endif %}
                             </td>
 
                             {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}

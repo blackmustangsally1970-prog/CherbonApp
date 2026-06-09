@@ -2355,6 +2355,9 @@ def create_app():
         # ⭐ NEW: lookup for course metadata
         course_lookup = {c.course_code: c for c in courses}
 
+        # ⭐ NEW: load lessons so template can detect "Added"
+        lessons = Lesson.query.all()
+
         years = sorted(
             {s.term_year for s in CourseFormSubmission.query.all() if s.term_year},
             reverse=True
@@ -2390,8 +2393,10 @@ def create_app():
             course_lookup=course_lookup,
             years=years,
             selected_year=selected_year,
-            selected_term=selected_term
+            selected_term=selected_term,
+            lessons=lessons
         )
+
 
     @app.route("/daily-summary", methods=["GET", "POST"])
     def daily_summary():
