@@ -217,8 +217,8 @@
                             <!-- ⭐ NEW CHECKBOX -->
                             <td>
                                 {% set has_lessons = lessons
-                                    | selectattr("client", "equalto", r.rider_name)
                                     | selectattr("time_frame", "equalto", c.timerange)
+                                    | selectattr("client", "equalto", r.rider_name)
                                     | list
                                 %}
 
