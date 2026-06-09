@@ -2346,6 +2346,8 @@ def create_app():
 
         unprocessed = [s for s in all_subs if s.status == "unprocessed"]
         approved = [s for s in all_subs if s.status == "approved"]
+        # ⭐ Build map of rider → submission (for cancelled/contacted checkboxes)
+        submissions_map = {s.rider_name: s for s in approved + unprocessed}
 
         courses = CourseReference.query.filter_by(active=True).all()
         horses = Horse.query.order_by(Horse.horse).all()
@@ -2465,7 +2467,8 @@ def create_app():
             selected_term=selected_term,
             lessons=lessons,
             missing_by_course=missing_by_course,
-            current_course_map=current_course_map
+            current_course_map=current_course_map,
+            submissions_map=submissions_map,
         )
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
