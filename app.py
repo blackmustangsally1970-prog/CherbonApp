@@ -2360,6 +2360,26 @@ def create_app():
             reverse=True
         )
 
+        # ⭐ NEW: auto‑price all approved riders on page load
+        if approved:
+            for r in approved:
+                course = course_lookup.get(r.current_course)
+                if not course:
+                    continue
+
+                new_price = calculate_price(
+                    group_priv=course.group_priv,
+                    ftor=r.ftor,
+                    frequency=r.frequency,
+                    rider_name=r.rider_name,
+                    approved_submissions=approved
+                )
+
+                if new_price is not None:
+                    r.price = new_price
+
+            db.session.commit()
+
         return render_template(
             "course_form_results.html",
             unprocessed_submissions=unprocessed,
