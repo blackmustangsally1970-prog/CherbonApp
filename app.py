@@ -5883,8 +5883,8 @@ def create_app():
         )
 
 
-    @app.route('/update_course_field', methods=['POST'])
-    def update_course_field():
+    @app.route('/update_course_reference_field', methods=['POST'])
+    def update_course_reference_field():
         data = request.get_json()
         cid = data.get('id')
         field = data.get('field')

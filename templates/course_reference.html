@@ -201,7 +201,7 @@ $(document).on('change', '.course-edit', function () {
     const field = $(this).data('field');
     let value = (this.type === 'checkbox') ? (this.checked ? 1 : 0) : $(this).val();
 
-    fetch('/update_course_field', {
+    fetch('/update_course_reference_field', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, field, value })
