@@ -492,19 +492,29 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-    /* -----------------------------------------
-       UPDATE FIELD (inline edits)
-    ----------------------------------------- */
-    window.updateField = function(id, field, value) {
-        fetch(`/update_course_field/${id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ field: field, value: value })
-        })
-        .then(() => {
-            $("#approved-table-container").load(location.href + " #approved-table-container>*", "");
-        });
-    };
+/* -----------------------------------------
+   UPDATE FIELD (inline edits)
+----------------------------------------- */
+window.updateField = function(id, field, value) {
+
+    fetch(`/update_course_field/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ field, value })
+    })
+    .then(r => r.text())
+    .then(() => {
+        // Optional: tiny visual feedback so user knows it saved
+        const el = document.querySelector(`[onchange*="${id}"][onchange*="${field}"]`);
+        if (el) {
+            el.style.backgroundColor = "#d4ffd4";   // light green flash
+            setTimeout(() => el.style.backgroundColor = "", 400);
+        }
+    })
+    .catch(err => {
+        alert("Save failed: " + err);
+    });
+};
 
 
     /* -----------------------------------------
