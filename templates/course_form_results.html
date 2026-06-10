@@ -492,29 +492,29 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-/* -----------------------------------------
-   UPDATE FIELD (inline edits)
------------------------------------------ */
-window.updateField = function(id, field, value) {
+    /* -----------------------------------------
+       UPDATE FIELD (inline edits)
+    ----------------------------------------- */
+    window.updateField = function(id, field, value) {
 
-    fetch(`/update_course_field/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field, value })
-    })
-    .then(r => r.text())
-    .then(() => {
-        // Optional: tiny visual feedback so user knows it saved
-        const el = document.querySelector(`[onchange*="${id}"][onchange*="${field}"]`);
-        if (el) {
-            el.style.backgroundColor = "#d4ffd4";   // light green flash
-            setTimeout(() => el.style.backgroundColor = "", 400);
-        }
-    })
-    .catch(err => {
-        alert("Save failed: " + err);
-    });
-};
+        fetch(`/update_course_field/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ field, value })
+        })
+        .then(r => r.text())
+        .then(() => {
+            // Tiny visual confirmation
+            const el = document.querySelector(`[onchange*="${id}"][onchange*="${field}"]`);
+            if (el) {
+                el.style.backgroundColor = "#d4ffd4";
+                setTimeout(() => el.style.backgroundColor = "", 400);
+            }
+        })
+        .catch(err => {
+            alert("Save failed: " + err);
+        });
+    };
 
 
     /* -----------------------------------------
@@ -621,15 +621,24 @@ window.updateField = function(id, field, value) {
 
 
     /* -----------------------------------------
-       CHECK LESSONS ADDED (lazy load)
+       CHECK LESSONS ADDED
     ----------------------------------------- */
     document.getElementById("checkLessonsBtn").addEventListener("click", function () {
-        console.log("CHECK BUTTON CLICKED");   // ← ADD THIS 
-        console.log("URL:", `/check_lessons_for_term?year={{ selected_year }}&term={{ selected_term }}`);
- 
-        fetch(`/check_lessons_for_term?year={{ selected_year }}&term={{ selected_term }}`)
+
+        console.log("CHECK BUTTON CLICKED");
+
+        const year = "{{ selected_year }}";
+        const term = "{{ selected_term }}";
+
+        const url = "/check_lessons_for_term?year=" + year + "&term=" + term;
+
+        console.log("FETCH URL:", url);
+
+        fetch(url)
             .then(r => r.json())
             .then(data => {
+                console.log("FETCH RETURNED", data);
+
                 if (!data.success) return;
 
                 const added = data.added;
@@ -645,13 +654,12 @@ window.updateField = function(id, field, value) {
                         }
                     }
                 });
-            });
+            })
+            .catch(err => console.log("FETCH ERROR", err));
     });
 
 });
 </script>
-
-
 
 </body>
 </html>
