@@ -146,7 +146,7 @@
 
             <td>
                 <select class="course-edit" data-id="{{ row.id }}" data-field="group_priv">
-                    {% for g in ['CC','CT','D','GY','IC','J','NS'] %}
+                    {% for g in ['CC','CT','D','GY','IC','J'] %}
                         <option value="{{ g }}" {% if row.group_priv == g %}selected{% endif %}>{{ g }}</option>
                     {% endfor %}
                 </select>
