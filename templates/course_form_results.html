@@ -24,14 +24,13 @@
             background: #f2f2f2;
         }
 
-.course-header {
-    margin-bottom: 0 !important;
-}
+        .course-header {
+            margin-bottom: 0 !important;
+        }
 
-.course-header ~ table {
-    margin-top: 0 !important;
-}
-
+        .course-header ~ table {
+            margin-top: 0 !important;
+        }
 
         .menu-btn {
             display: inline-block;
@@ -47,16 +46,6 @@
 
         .menu-btn:hover {
             background: #ddd;
-        }
-
-        .filter-box {
-            margin-top: 15px;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #f7f7f7;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            display: inline-block;
         }
 
         select {
@@ -77,108 +66,118 @@
             background: #ffe5cc !important;
         }
 
-.missing-modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.45);
-}
+        .missing-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.45);
+            margin: 0 !important;
+            padding: 0 !important;
+        }
 
-/* ⭐ Popup container */
-.missing-modal-content {
-    background: white;
-    padding: 20px;
-    width: 600px;        /* FINAL WIDTH */
-    max-width: 90%;
-    margin: 120px auto;
-    border-radius: 8px;
-    box-shadow: 0 0 12px rgba(0,0,0,0.3);
-}
+        .missing-modal-content {
+            background: white;
+            padding: 20px;
+            width: 600px;
+            max-width: 90%;
+            margin: 120px auto;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.3);
+        }
 
-/* ⭐ Rider rows as a grid */
-.missing-modal-content ul li {
-    display: grid;
-    grid-template-columns: 240px 140px 60px 120px 120px; /* ⭐ 5 columns now */
-    align-items: center;
-    gap: 10px;
-    white-space: nowrap;
-    padding: 4px 0;
-}
+        .missing-modal-content ul li {
+            display: grid;
+            grid-template-columns: 240px 140px 60px 120px 120px;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            padding: 4px 0;
+        }
 
-/* ⭐ Prevent name from shrinking */
-.missing-modal-content ul li .rider-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+        .missing-modal-content ul li .rider-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-/* ⭐ SMS button */
-.missing-modal-content ul li .sms-btn {
-    width: 50px;
-    text-align: center;
-    padding: 2px 4px;
-}
+        .missing-modal-content ul li .sms-btn {
+            width: 50px;
+            text-align: center;
+            padding: 2px 4px;
+        }
 
-/* ⭐ Contacted area */
-.missing-modal-content ul li .contacted-area {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+        .missing-modal-content ul li .contacted-area {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-.missing-modal ul {
-    margin: 0 !important;
-    padding: 0 !important;
-}
+        .missing-modal ul {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
 
-.missing-modal {
-    margin: 0 !important;
-    padding: 0 !important;
-}
+        .missing-modal,
+        .missing-modal * {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
 
-.missing-modal,
-.missing-modal * {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.close {
-    float: right;
-    cursor: pointer;
-    font-size: 22px;
-    font-weight: bold;
-}
-
-
+        .close {
+            float: right;
+            cursor: pointer;
+            font-size: 22px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
 
-    <h2>Course Form Submissions</h2>
+<!-- ========================================================= -->
+<!--  TOP MENU + FILTERS                                       -->
+<!-- ========================================================= -->
+
+<div style="margin-bottom: 20px; display:flex; gap:12px;">
 
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
-    <a href="{{ url_for('pull_courses_from_jotform', year=selected_year, term=selected_term) }}" class="menu-btn">↻ Refresh From JotForm</a>
 
-    <!-- ⭐ FILTER BAR -->
-    <form method="get" class="filter-box">
-        <label>Year:</label>
-        <select name="year" onchange="this.form.submit()">
+    <a href="{{ url_for('courses_menu') }}" class="menu-btn">Course Menu</a>
+
+    <a href="{{ url_for('pull_courses_from_jotform', year=selected_year, term=selected_term) }}"
+       class="menu-btn">
+        ↻ Refresh JotForm Submissions
+    </a>
+
+</div>
+
+<div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+
+    <h2 style="margin:0;">Course Form Submissions</h2>
+
+    <div>
+        <label><strong>Year:</strong></label>
+        <select onchange="window.location='?year='+this.value+'&term={{ selected_term }}'">
             {% for y in years %}
                 <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
             {% endfor %}
         </select>
+    </div>
 
-        <label style="margin-left: 20px;">Term:</label>
-        <select name="term" onchange="this.form.submit()">
-            {% for t in [1,2,3,4] %}
-                <option value="{{ t }}" {% if t == selected_term %}selected{% endif %}>Term {{ t }}</option>
-            {% endfor %}
+    <div>
+        <label><strong>Term:</strong></label>
+        <select onchange="window.location='?year={{ selected_year }}&term='+this.value">
+            <option value="1" {% if selected_term == 1 %}selected{% endif %}>T1</option>
+            <option value="2" {% if selected_term == 2 %}selected{% endif %}>T2</option>
+            <option value="3" {% if selected_term == 3 %}selected{% endif %}>T3</option>
+            <option value="4" {% if selected_term == 4 %}selected{% endif %}>T4</option>
         </select>
-    </form>
+    </div>
+
+</div>
 
     <!-- ========================================================= -->
     <!--  TOP GRID — UNPROCESSED SUBMISSIONS ONLY                  -->
