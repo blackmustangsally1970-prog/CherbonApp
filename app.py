@@ -2343,11 +2343,25 @@ def create_app():
     def course_form_submissions():
         import datetime
 
-        selected_year = request.args.get("year", datetime.datetime.now().year, type=int)
-        selected_term = request.args.get("term", 1, type=int)
+        # ------------------------------------------------------------
+        # Use active term as default if no parameters provided
+        # ------------------------------------------------------------
+        active = Term.query.filter_by(active=True).first()
+
+        selected_year = request.args.get(
+            "year",
+            active.year if active else datetime.datetime.now().year,
+            type=int
+        )
+
+        selected_term = request.args.get(
+            "term",
+            active.term_number if active else 1,
+            type=int
+        )
 
         # ------------------------------------------------------------
-        # Load the active term boundaries (FAST, INDEX‑FRIENDLY)
+        # Load the selected term (FAST, INDEX‑FRIENDLY)
         # ------------------------------------------------------------
         term = Term.query.filter_by(
             year=selected_year,
