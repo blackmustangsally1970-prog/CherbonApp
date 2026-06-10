@@ -2127,6 +2127,15 @@ def create_app():
             horse_3 = mapped.get("horse_3", "")
             notes = mapped.get("anythingWe", "")
 
+            # --- NORMALISE COURSE SELECTION ---
+            if courseno is None:
+                courseno = ""
+            courseno = str(courseno).strip()
+
+            # Allow NS (No Selection) to pass through
+            if courseno.upper() == "NS":
+                courseno = "NS"
+
             # --- JOTFORM TERM/YEAR (SOURCE OF TRUTH) ---
             raw_year = mapped.get("year")
             raw_term = mapped.get("term")
@@ -2143,7 +2152,8 @@ def create_app():
             if term_year <= 0 or term_number <= 0:
                 return f"Invalid year/term values in JotForm submission {sub_id}"
 
-            if not rider_full and not courseno:
+            # Ignore only if BOTH rider name AND course are truly blank
+            if rider_full == "" and courseno == "":
                 continue
 
             # PREVENT DUPLICATE INSERTS BY JOTFORM ID
@@ -2169,7 +2179,7 @@ def create_app():
                     existing.notes = notes or existing.notes
                 continue
 
-            # NEW RIDER → CREATE ENTRY
+            # NEW RIDER → CREATE ENTRY (NS allowed)
             entry = CourseFormSubmission(
                 jotform_id=sub_id,
                 rider_name=rider_full,

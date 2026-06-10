@@ -444,10 +444,10 @@
 </td>
 
 <td style="width:50ch; max-width:50ch; white-space:normal;">
-    <input type="text"
-           value="{{ r.cherbon_notes or '' }}"
-           style="width:100%; max-width:100%; box-sizing:border-box; white-space:normal;"
-           onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
+    <textarea
+        style="width:100%; max-width:100%; box-sizing:border-box; height:3em; resize:vertical;"
+        onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)"
+    >{{ r.cherbon_notes or '' }}</textarea>
 </td>
 
                         <td style="width:6ch; white-space:nowrap;">
