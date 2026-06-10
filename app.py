@@ -2396,14 +2396,6 @@ def create_app():
         client_names = Client.query.order_by(Client.full_name).all()
 
         # ------------------------------------------------------------
-        # FAST LESSON LOAD (date‑bounded, index‑friendly)
-        # ------------------------------------------------------------
-        lessons = Lesson.query.filter(
-            Lesson.lesson_date >= term.start_date,
-            Lesson.lesson_date <= term.end_date
-        ).all()
-
-        # ------------------------------------------------------------
         # Sort unprocessed safely (NS‑safe)
         # ------------------------------------------------------------
         day_order = {
@@ -2511,6 +2503,32 @@ def create_app():
             current_course_map=current_course_map,
             submissions_map=submissions_map,
         )
+
+    @app.route('/check_lessons_for_term')
+    def check_lessons_for_term():
+        year = int(request.args.get("year"))
+        term_number = int(request.args.get("term"))
+
+        term = Term.query.filter_by(
+            year=year,
+            term_number=term_number
+        ).first()
+
+        if not term:
+            return jsonify(success=False, error="Term not found")
+
+        lessons = Lesson.query.filter(
+            Lesson.lesson_date >= term.start_date,
+            Lesson.lesson_date <= term.end_date
+        ).all()
+
+        # Build a simple map: time_frame → True
+        added_map = {}
+        for l in lessons:
+            added_map[l.time_frame] = True
+
+        return jsonify(success=True, added=added_map)
+
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
     def update_course_submission(id):

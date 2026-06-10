@@ -152,6 +152,17 @@
         ↻ Refresh JotForm Submissions
     </a>
 
+    <button id="checkLessonsBtn" class="menu-btn">Check Lessons Added</button>
+
+</div>
+
+<div id="lessonStatus" style="margin-top:10px; font-weight:bold;"></div>
+
+
+
+
+
+
 </div>
 
 <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
@@ -178,6 +189,7 @@
     </div>
 
 </div>
+
 
     <!-- ========================================================= -->
     <!--  TOP GRID — UNPROCESSED SUBMISSIONS ONLY                  -->
@@ -619,6 +631,42 @@ document.addEventListener("DOMContentLoaded", function() {
 
 });
 </script>
+
+<script>
+document.getElementById("checkLessonsBtn").onclick = function () {
+
+    const statusDiv = document.getElementById("lessonStatus");
+    statusDiv.innerHTML = "Checking lessons…";
+
+    fetch(`/check_lessons_for_term?year={{ selected_year }}&term={{ selected_term }}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                statusDiv.innerHTML = "Error: " + data.error;
+                return;
+            }
+
+            const added = data.added;
+            let html = "<h4>Lesson Status</h4>";
+
+            if (Object.keys(added).length === 0) {
+                html += "<p>No lessons found for this term.</p>";
+            } else {
+                html += "<ul>";
+                for (const tf in added) {
+                    html += `<li>${tf}: <span style="color:green;">Added</span></li>`;
+                }
+                html += "</ul>";
+            }
+
+            statusDiv.innerHTML = html;
+        })
+        .catch(err => {
+            statusDiv.innerHTML = "Error contacting server.";
+        });
+};
+</script>
+
 
 
 </body>
