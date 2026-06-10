@@ -2498,7 +2498,6 @@ def create_app():
             years=years,
             selected_year=selected_year,
             selected_term=selected_term,
-            lessons=lessons,
             missing_by_course=missing_by_course,
             current_course_map=current_course_map,
             submissions_map=submissions_map,
