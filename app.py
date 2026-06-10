@@ -2342,11 +2342,24 @@ def create_app():
     @app.route('/course_form_submissions')
     def course_form_submissions():
         import datetime
-        from sqlalchemy import extract
 
         selected_year = request.args.get("year", datetime.datetime.now().year, type=int)
         selected_term = request.args.get("term", 1, type=int)
 
+        # ------------------------------------------------------------
+        # Load the active term boundaries (FAST, INDEX‑FRIENDLY)
+        # ------------------------------------------------------------
+        term = Term.query.filter_by(
+            year=selected_year,
+            term_number=selected_term
+        ).first()
+
+        if not term:
+            return "No term found", 400
+
+        # ------------------------------------------------------------
+        # Load submissions for this term
+        # ------------------------------------------------------------
         all_subs = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
@@ -2356,30 +2369,29 @@ def create_app():
 
         unprocessed = [s for s in all_subs if s.status == "unprocessed"]
         approved = [s for s in all_subs if s.status == "approved"]
-        # ⭐ Build map of rider → submission (for cancelled/contacted checkboxes)
+
         submissions_map = {s.rider_name: s for s in approved + unprocessed}
 
+        # ------------------------------------------------------------
+        # Load course metadata
+        # ------------------------------------------------------------
         courses = CourseReference.query.filter_by(active=True).all()
+        course_lookup = {c.course_code: c for c in courses}
+
         horses = Horse.query.order_by(Horse.horse).all()
         client_names = Client.query.order_by(Client.full_name).all()
 
-        # ⭐ NEW: lookup for course metadata
-        course_lookup = {c.course_code: c for c in courses}
-
-        # ⭐ NEW: load lessons so template can detect "Added"
-        term_months = {
-            1: [1, 2, 3],
-            2: [4, 5, 6],
-            3: [7, 8, 9],
-            4: [10, 11, 12]
-        }
-
+        # ------------------------------------------------------------
+        # FAST LESSON LOAD (date‑bounded, index‑friendly)
+        # ------------------------------------------------------------
         lessons = Lesson.query.filter(
-            extract('year', Lesson.lesson_date) == selected_year,
-            extract('month', Lesson.lesson_date).in_(term_months[selected_term])
+            Lesson.lesson_date >= term.start_date,
+            Lesson.lesson_date <= term.end_date
         ).all()
 
-        # ⭐ NEW: sort unprocessed by day_of_week (Sun→Sat) then timerange
+        # ------------------------------------------------------------
+        # Sort unprocessed safely (NS‑safe)
+        # ------------------------------------------------------------
         day_order = {
             "Sunday": 0,
             "Monday": 1,
@@ -2390,19 +2402,28 @@ def create_app():
             "Saturday": 6
         }
 
-        unprocessed.sort(
-            key=lambda s: (
-                day_order.get(course_lookup.get(s.current_course).day_of_week, 99),
-                course_lookup.get(s.current_course).timerange
+        def sort_key(s):
+            course = course_lookup.get(s.current_course)
+            if not course:
+                return (99, "23:59")
+            return (
+                day_order.get(course.day_of_week, 99),
+                course.timerange
             )
-        )
 
+        unprocessed.sort(key=sort_key)
+
+        # ------------------------------------------------------------
+        # Build year dropdown
+        # ------------------------------------------------------------
         years = sorted(
-            {s.term_year for s in CourseFormSubmission.query.all() if s.term_year},
+            {s.term_year for s in CourseFormSubmission.query.with_entities(CourseFormSubmission.term_year).all()},
             reverse=True
         )
 
-        # ⭐ NEW: auto‑price all approved riders on page load
+        # ------------------------------------------------------------
+        # Auto‑price approved riders
+        # ------------------------------------------------------------
         if approved:
             for r in approved:
                 course = course_lookup.get(r.current_course)
@@ -2422,29 +2443,23 @@ def create_app():
 
             db.session.commit()
 
-        # ⭐ MISSING RIDERS POPUP LOGIC
-        # Only run if we're looking at Term > 1
+        # ------------------------------------------------------------
+        # Missing riders popup logic
+        # ------------------------------------------------------------
         if selected_term > 1:
-
-            # Load last term entries (Term 2 when viewing Term 3)
             last_term_entries = CourseFormSubmission.query.filter_by(
                 term_year=selected_year,
                 term_number=selected_term - 1,
                 status="backfill"
             ).all()
 
-            # Build last-term roster by course
-            last_term_by_course = {}
-            for c in courses:
-                last_term_by_course[c.course_code] = set()
+            last_term_by_course = {c.course_code: set() for c in courses}
 
             for entry in last_term_entries:
                 last_term_by_course[entry.current_course].add(entry.rider_name)
 
-            # Build current-term booked riders
             booked_riders = {s.rider_name for s in unprocessed + approved}
 
-            # Compute missing riders per course
             missing_by_course = {
                 code: sorted(list(riders - booked_riders))
                 for code, riders in last_term_by_course.items()
@@ -2452,9 +2467,9 @@ def create_app():
         else:
             missing_by_course = {}
 
-        # ============================================================
-        #  Build map of current-term course per rider
-        # ============================================================
+        # ------------------------------------------------------------
+        # Build rider → course map
+        # ------------------------------------------------------------
         current_course_map = {}
 
         for s in approved:
@@ -2463,7 +2478,9 @@ def create_app():
         for s in unprocessed:
             current_course_map[s.rider_name] = s.current_course
 
-
+        # ------------------------------------------------------------
+        # Render
+        # ------------------------------------------------------------
         return render_template(
             "course_form_results.html",
             unprocessed_submissions=unprocessed,
