@@ -256,27 +256,41 @@
         %}
         {% set approved_count = riders | length %}
 
-        <h3 class="course-header" style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
+<h3 class="course-header" 
+    style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+
+        <!-- LEFT SIDE: COURSE INFO -->
+        <div style="flex:1;">
             {{ c.day_of_week }} {{ c.timerange }}
             {{ c.display_label }} - {{ c.course_code }}
             ({{ approved_count }})
+        </div>
 
-            <!-- ⭐ Last Term Riders Button -->
+        <!-- CENTER: LAST TERM RIDERS BUTTON -->
+        <div style="flex:1; text-align:center;">
             {% set missing = missing_by_course.get(c.course_code, []) %}
             {% if missing %}
                 <button class="missing-btn"
                         data-course="{{ c.course_code }}"
-                        style="margin-left:20px; background:#ffcc00; padding:6px 10px; border-radius:6px;">
+                        style="background:#ffcc00; padding:6px 10px; border-radius:6px;">
                     Last Term Riders ({{ missing|length }})
                 </button>
             {% endif %}
+        </div>
 
-            <!-- ⭐ Add Lessons Button -->
+        <!-- RIGHT SIDE: ADD LESSONS BUTTON -->
+        <div style="flex:1; text-align:right;">
             <button onclick="generateLessons('{{ c.course_code }}')"
-                    style="float:right; padding:6px 12px; border-radius:6px;">
+                    style="padding:6px 12px; border-radius:6px;">
                 ➕ Add Lessons for Selected Riders
             </button>
-        </h3>
+        </div>
+
+    </div>
+
+</h3>
 
         <!-- ⭐ POPUP MODAL FOR THIS COURSE -->
         {% if missing %}
