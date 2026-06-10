@@ -439,14 +439,16 @@
                         <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
                         <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
 
-                        <td style="width:50ch; white-space:normal;">{{ r.notes }}</td>
+<td style="width:50ch; max-width:50ch; white-space:normal; word-break:break-word;">
+    {{ r.notes }}
+</td>
 
-                        <td style="width:50ch; white-space:normal;">
-                            <input type="text"
-                                   value="{{ r.cherbon_notes or '' }}"
-                                   style="width:48ch;"
-                                   onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
-                        </td>
+<td style="width:50ch; max-width:50ch; white-space:normal;">
+    <input type="text"
+           value="{{ r.cherbon_notes or '' }}"
+           style="width:100%; max-width:100%; box-sizing:border-box; white-space:normal;"
+           onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)">
+</td>
 
                         <td style="width:6ch; white-space:nowrap;">
                             <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
