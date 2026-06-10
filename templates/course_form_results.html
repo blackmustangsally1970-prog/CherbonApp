@@ -609,34 +609,36 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
+
+    /* -----------------------------------------
+       CHECK LESSONS ADDED (lazy load)
+    ----------------------------------------- */
+    document.getElementById("checkLessonsBtn").addEventListener("click", function () {
+
+        fetch(`/check_lessons_for_term?year={{ selected_year }}&term={{ selected_term }}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+
+                const added = data.added;
+
+                document.querySelectorAll("[data-timeframe]").forEach(row => {
+                    const tf = row.getAttribute("data-timeframe");
+
+                    if (added[tf]) {
+                        const selCell = row.querySelector(".sel-cell");
+                        if (selCell) {
+                            selCell.innerHTML =
+                                "<span style='color:green; font-weight:bold;'>Added</span>";
+                        }
+                    }
+                });
+            });
+    });
+
 });
 </script>
 
-<script>
-document.getElementById("checkLessonsBtn").onclick = function () {
-
-    fetch(`/check_lessons_for_term?year={{ selected_year }}&term={{ selected_term }}`)
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) return;
-
-            const added = data.added;
-
-            // Loop through every rider row that has a timeframe
-            document.querySelectorAll("[data-timeframe]").forEach(row => {
-                const tf = row.getAttribute("data-timeframe");
-
-                if (added[tf]) {
-                    const selCell = row.querySelector(".sel-cell");
-                    if (selCell) {
-                        selCell.innerHTML =
-                            "<span style='color:green; font-weight:bold;'>Added</span>";
-                    }
-                }
-            });
-        });
-};
-</script>
 
 
 </body>
