@@ -646,11 +646,13 @@ document.getElementById("checkLessonsBtn").addEventListener("click", function ()
 
             const added = data.added;
 
-            // Loop through every rider row that has a timeframe
-            document.querySelectorAll("[data-timeframe]").forEach(row => {
+            document.querySelectorAll("tr[data-timeframe]").forEach(row => {
                 const tf = row.getAttribute("data-timeframe");
+                const rider = row.getAttribute("data-rider");
 
-                if (added[tf]) {
+                const key = tf + "|" + rider;
+
+                if (added[key]) {
                     const selCell = row.querySelector(".sel-cell");
                     if (selCell) {
                         selCell.innerHTML =
