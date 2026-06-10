@@ -400,7 +400,8 @@
                     </tr>
                 {% else %}
                     {% for r in riders %}
-                    <tr data-timeframe="{{ c.timerange }}">
+                    <tr data-timeframe="{{ c.timerange }}" data-rider="{{ r.rider_name }}">
+
 
 <td class="sel-cell">
     <input type="checkbox"

@@ -2521,10 +2521,15 @@ def create_app():
             Lesson.lesson_date <= term.end_date
         ).all()
 
-        # Build a simple map: time_frame → True
+        # Build a map: "time_frame|rider_name" → True
         added_map = {}
         for l in lessons:
-            added_map[l.time_frame] = True
+            rider = (l.client or "").strip()
+            tf = (l.time_frame or "").strip()
+
+            if rider and tf:
+                key = f"{tf}|{rider}"
+                added_map[key] = True
 
         return jsonify(success=True, added=added_map)
 
