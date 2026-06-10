@@ -620,43 +620,44 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 
-    /* -----------------------------------------
-       CHECK LESSONS ADDED
-    ----------------------------------------- */
-    document.getElementById("checkLessonsBtn").addEventListener("click", function () {
+/* -----------------------------------------
+   CHECK LESSONS ADDED
+----------------------------------------- */
+document.getElementById("checkLessonsBtn").addEventListener("click", function () {
 
-        console.log("CHECK BUTTON CLICKED");
+    console.log("CHECK BUTTON CLICKED");
 
-        const year = "{{ selected_year }}";
-        const term = "{{ selected_term }}";
+    const year = "{{ selected_year }}";
+    const term = "{{ selected_term }}";
 
-        const url = "/check_lessons_for_term?year=" + year + "&term=" + term;
+    const url = "/check_lessons_for_term?year=" + year + "&term=" + term;
 
-        console.log("FETCH URL:", url);
+    console.log("FETCH URL:", url);
 
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                console.log("FETCH RETURNED", data);
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            console.log("FETCH RETURNED", data);
 
-                if (!data.success) return;
+            if (!data.success) return;
 
-                const added = data.added;
+            const added = data.added;
 
-                document.querySelectorAll("[data-timeframe]").forEach(row => {
-                    const tf = row.getAttribute("data-timeframe");
+            // Loop through every rider row that has a timeframe
+            document.querySelectorAll("[data-timeframe]").forEach(row => {
+                const tf = row.getAttribute("data-timeframe");
 
-                    if (added[tf]) {
-                        const selCell = row.querySelector(".sel-cell");
-                        if (selCell) {
-                            selCell.innerHTML =
-                                "<span style='color:green; font-weight:bold;'>Added</span>";
-                        }
+                if (added[tf]) {
+                    const selCell = row.querySelector(".sel-cell");
+                    if (selCell) {
+                        selCell.innerHTML =
+                            "<span style='color:green; font-weight:bold;'>Added</span>";
                     }
-                });
-            })
-            .catch(err => console.log("FETCH ERROR", err));
-    });
+                }
+            });
+        })
+        .catch(err => console.log("FETCH ERROR", err));
+});
 
 });
 </script>
