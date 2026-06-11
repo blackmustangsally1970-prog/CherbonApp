@@ -1416,7 +1416,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             continue
 
         # DISCLAIMER FORM → must contain BOTH "rider" AND "name"
-        if "rider" in label and "name" in label:
+        if "rider" in label:
             fullname_fields.append(key)
 
     fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
