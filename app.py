@@ -1411,11 +1411,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
         label = (item.get("text") or "").lower()
 
-        # INVITE FORM → ANY fullname field is a rider
-        if is_invite_form:
-            fullname_fields.append(key)
-            continue
-
         # DISCLAIMER FORM → skip guardian fields
         if "guardian" in label:
             continue
