@@ -406,7 +406,7 @@
                     </tr>
                 {% else %}
                     {% for r in riders %}
-                                                           <tr data-timeframe="{{ c.timerange }}" data-rider="{{ r.rider_name }}">
+              <tr data-timeframe="{{ c.timerange }}" data-rider="{{ r.rider_name }}">
 
 
 
@@ -418,13 +418,19 @@
            data-course="{{ c.course_code }}">
 </td>
 
-                        {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
-                        <td style="width:32ch; white-space:normal; word-break:break-word;">
-                            <input type="text"
-                                   value="{{ r.rider_name }}"
-                                   style="width:30ch; {% if match|length == 0 %}color:red; font-weight:bold;{% endif %}"
-                                   onchange="updateField({{ r.id }}, 'rider_name', this.value)">
-                        </td>
+{% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
+<td style="width:32ch; white-space:normal; word-break:break-word;">
+    <input type="text"
+           value="{{ r.rider_name }}"
+           onchange="updateField({{ r.id }}, 'rider_name', this.value)"
+           style="
+               width:30ch;
+               {% if match|length == 0 %}
+                   color:red;
+                   font-weight:bold;
+               {% endif %}
+           ">
+</td>
 
 <td style="width:12ch; white-space:nowrap;">
     <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">

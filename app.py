@@ -2337,7 +2337,7 @@ def create_app():
         from collections import defaultdict
         from sqlalchemy import and_
 
-        # ---- HORSES (THE MISSING PIECE) ----
+        # ---- HORSES ----
         horses = Horse.query.order_by(Horse.horse).all()
 
         # ---- YEARS ----
@@ -2456,8 +2456,9 @@ def create_app():
             submissions_map=submissions_map,
             current_course_map=current_course_map,
             client_names=client_names,
-            horses=horses   # ⭐ THE FIX THAT MAKES HORSE 1 WORK AGAIN
+            horses=horses
         )
+
 
     @app.route('/check_lessons_for_term')
     def check_lessons_for_term():
@@ -2488,6 +2489,7 @@ def create_app():
                 added_map[key] = True
 
         return jsonify(success=True, added=added_map)
+
 
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
