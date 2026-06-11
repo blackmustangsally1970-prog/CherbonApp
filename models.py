@@ -409,6 +409,7 @@ class IncomingSubmission(db.Model):
 
     # ⭐ NEW FIELD
     universal_disclaimer = db.Column(db.Integer)
+    display_names = db.Column(db.String(255))
 
 
 class GeneralEnquirySubmission(db.Model):
