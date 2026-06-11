@@ -1415,7 +1415,9 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         fullname_fields = [
             key for key, item in answers.items()
             if item.get("type") == "control_fullname"
-            and item.get("text", "").lower().startswith("rider")
+            label = item.get("text", "").lower()
+            if "rider" in label or "name" in label:
+                fullname_fields.append(key)
         ]
         fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
 
