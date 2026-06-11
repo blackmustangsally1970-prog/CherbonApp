@@ -2337,6 +2337,9 @@ def create_app():
         from collections import defaultdict
         from sqlalchemy import and_
 
+        # ---- HORSES (THE MISSING PIECE) ----
+        horses = Horse.query.order_by(Horse.horse).all()
+
         # ---- YEARS ----
         years = sorted({
             s.term_year
@@ -2404,10 +2407,9 @@ def create_app():
         }
 
         # ============================================================
-        # ⭐ RESTORED: LAST TERM RIDERS LOGIC
+        # LAST TERM RIDERS LOGIC
         # ============================================================
 
-        # Determine previous term
         prev_term = term - 1
         prev_year = year
 
@@ -2415,7 +2417,6 @@ def create_app():
             prev_term = 4
             prev_year = year - 1
 
-        # Load last term submissions
         last_term_subs = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
@@ -2423,10 +2424,8 @@ def create_app():
             CourseFormSubmission.cancelled.is_(False)
         ).all()
 
-        # Riders already booked this term
         this_term_names = {s.rider_name for s in approved_submissions}
 
-        # Build missing_by_course
         missing_by_course = {}
         for sub in last_term_subs:
             rider = sub.rider_name
@@ -2434,7 +2433,6 @@ def create_app():
 
             if not course:
                 continue
-
             if rider in this_term_names:
                 continue
 
@@ -2457,7 +2455,8 @@ def create_app():
             missing_by_course=missing_by_course,
             submissions_map=submissions_map,
             current_course_map=current_course_map,
-            client_names=client_names
+            client_names=client_names,
+            horses=horses   # ⭐ THE FIX THAT MAKES HORSE 1 WORK AGAIN
         )
 
     @app.route('/check_lessons_for_term')
