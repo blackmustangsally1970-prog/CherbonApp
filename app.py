@@ -1301,10 +1301,8 @@ def normalize_name(s: str) -> str:
 def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None, mode="full"):
     """
     mode:
-      - "light": parse names/fields only. NO DB client load. NO matching.
+      - "light": parse names/fields only. NO DB client load / no matching.
       - "full": full matching behaviour (may use clients_cache or DB load).
-    clients_cache:
-      - Optional preloaded list of Client rows (or tuples) to avoid repeated DB scans.
     """
     import json
     import unicodedata
@@ -1333,7 +1331,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
     answers = payload.get("answers", {}) or {}
     disclaimer_id = str(answers.get("63", {}).get("answer") or "")
-
 
     # ---- Email autodetect ----
     email = ""
@@ -1404,21 +1401,23 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     # Global fields
     guardian = answers.get("86", {}).get("answer", "") or ""
     mobile = answers.get("87", {}).get("answer", {}).get("full", "") or ""
-    email_fallback = answers.get("47", {}).get("answer", "") or ""    
+    email_fallback = answers.get("47", {}).get("answer", "") or ""
     if email_fallback and not email:
         email = email_fallback
 
-    # Detect rider fullname fields
+    # ---------------------------------------------------------
+    # FIXED: Detect rider fullname fields (NO list comprehension)
+    # ---------------------------------------------------------
     if is_invite_form:
         fullname_fields = INVITE_FULLNAME_FIELDS
     else:
-        fullname_fields = [
-            key for key, item in answers.items()
-            if item.get("type") == "control_fullname"
-            label = item.get("text", "").lower()
-            if "rider" in label or "name" in label:
-                fullname_fields.append(key)
-        ]
+        fullname_fields = []
+        for key, item in answers.items():
+            if item.get("type") == "control_fullname":
+                label = item.get("text", "").lower()
+                if "rider" in label or "name" in label:
+                    fullname_fields.append(key)
+
         fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
 
     riders = []
@@ -1427,14 +1426,12 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     do_matching = (mode == "full")
 
     # ---------------------------------------------------------
-    # CLIENT CACHE LOADING — FIXED (NO FULL TABLE SCAN)
+    # CLIENT CACHE LOADING — FIXED
     # ---------------------------------------------------------
     client_cache = None
     exact_lookup = None
 
     if do_matching:
-        # If caller did NOT provide a cache, we DO NOT load all clients.
-        # We only load clients when we have a rider name.
         client_cache = []
         exact_lookup = {}
 
@@ -1499,10 +1496,9 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         rider["notes"] = notes_val or ""
 
         # ---------------------------------------------------------
-        # MATCHING — FIXED (NO FULL TABLE SCAN)
+        # MATCHING — FIXED
         # ---------------------------------------------------------
         if do_matching:
-            # Load only relevant clients ONCE per rider
             if clients_cache is None:
                 compact = name_norm.replace(" ", "").replace("-", "")
                 like_pattern = f"%{compact}%"
@@ -1521,7 +1517,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                     ).like(like_pattern)
                 ).all()
 
-            # Build lookup
             client_cache = []
             for c in clients_cache:
                 full_name = getattr(c, "full_name", None)
@@ -1532,16 +1527,11 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
             exact_lookup = {norm: c for c, norm, _ in client_cache}
 
-            # ---------------------------------------------------------
-            # NEW MATCHING LOGIC — NAME → MOBILE → EMAIL
-            # ---------------------------------------------------------
             matched_client = None
 
-            # 1. Exact name match
             if name_norm in exact_lookup:
                 matched_client = exact_lookup[name_norm]
 
-            # 2. Mobile match (normalized)
             if not matched_client and mobile:
                 mobile_norm = re.sub(r"\D", "", mobile)
                 for c, norm, _ in client_cache:
@@ -1550,7 +1540,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                         matched_client = c
                         break
 
-            # 3. Email match (lowercase)
             if not matched_client and email:
                 email_norm = email.strip().lower()
                 for c, norm, _ in client_cache:
@@ -1558,14 +1547,13 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                         matched_client = c
                         break
 
-            # Store match
             if matched_client:
                 rider["matches"].append(matched_client)
-
 
         riders.append(rider)
 
     return riders
+
 
 
 
