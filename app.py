@@ -1330,7 +1330,13 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         )
 
     answers = payload.get("answers", {}) or {}
+    print("\n\n===== JOTFORM FIELD DEBUG =====")
+    for key, item in answers.items():
+        print(key, item.get("text"), item.get("type"))
+    print("===== END DEBUG =====\n\n")
+    
     disclaimer_id = str(answers.get("63", {}).get("answer") or "")
+
 
     # ---- Email autodetect ----
     email = ""
