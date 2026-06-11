@@ -2336,7 +2336,8 @@ def create_app():
         ).order_by(CourseFormSubmission.id.desc()).all()
 
         # Load active courses (your existing logic)
-        active_courses = {c.code for c in Courses.query.filter_by(active=True).all()}
+        active_courses = {c.code for c in CourseReference.query.filter_by(active=True).all()}
+
 
         # Dictionary for last-term riders per course
         last_term_by_course = defaultdict(set)
