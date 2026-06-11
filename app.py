@@ -2325,66 +2325,85 @@ def create_app():
     @app.route('/course_form_submissions')
     def course_form_submissions():
         from collections import defaultdict
+        from sqlalchemy import and_
 
-        # Build list of available years
         years = sorted({
             s.term_year
-            for s in CourseFormSubmission.query.all()
+            for s in CourseFormSubmission.query
+            .filter(CourseFormSubmission.term_year.isnot(None))
+            .all()
         })
 
-        # Default year = latest year if none selected
         year = request.args.get('year', type=int)
         if year is None and years:
             year = years[-1]
 
-        # Build list of available terms for that year
         terms = sorted({
             s.term_number
-            for s in CourseFormSubmission.query.filter_by(term_year=year).all()
+            for s in CourseFormSubmission.query
+            .filter(
+                and_(
+                    CourseFormSubmission.term_year == year,
+                    CourseFormSubmission.term_number.isnot(None)
+                )
+            ).all()
         })
 
-        # Default term = latest term if none selected
         term = request.args.get('term', type=int)
         if term is None and terms:
             term = terms[-1]
 
-        # Load submissions for selected year/term
-        submissions = CourseFormSubmission.query.filter_by(
-            term_year=year,
-            term_number=term
-        ).order_by(CourseFormSubmission.id.desc()).all()
+        base_q = CourseFormSubmission.query.filter(
+            and_(
+                CourseFormSubmission.term_year == year,
+                CourseFormSubmission.term_number == term,
+                CourseFormSubmission.ignore_jotform.is_(False)
+            )
+        )
 
-        # Load active courses
-        active_courses = {
-            c.course_code
-            for c in CourseReference.query.filter_by(active=True).all()
+        unprocessed_submissions = (
+            base_q.filter(CourseFormSubmission.status == "unprocessed")
+            .order_by(CourseFormSubmission.id.desc())
+            .all()
+        )
+
+        approved_submissions = (
+            base_q.filter(CourseFormSubmission.status == "approved")
+            .order_by(CourseFormSubmission.id.desc())
+            .all()
+        )
+
+        courses = CourseReference.query.order_by(
+            CourseReference.day_of_week,
+            CourseReference.timerange
+        ).all()
+
+        course_lookup = {c.course_code: c for c in courses}
+
+        submissions_map = {s.rider_name: s for s in approved_submissions}
+        current_course_map = {
+            s.rider_name: (s.current_course or s.original_course)
+            for s in approved_submissions
         }
 
-        # Dictionary for last-term riders per course
-        last_term_by_course = defaultdict(set)
+        missing_by_course = {}
 
-        for entry in submissions:
-            course = entry.current_course or ""
-            rider = entry.rider_name or ""
-            last_term_by_course[course].add(rider)
-
-        # Sort courses: active first, inactive after
-        sorted_courses = sorted(
-            last_term_by_course.keys(),
-            key=lambda c: (c not in active_courses, c)
-        )
+        client_names = Client.query.all()
 
         return render_template(
             'course_form_results.html',
-            submissions=submissions,
-            last_term_by_course=last_term_by_course,
-            sorted_courses=sorted_courses,
-            year=year,
-            term=term,
+            selected_year=year,
+            selected_term=term,
             years=years,
             terms=terms,
-            selected_year=year,
-            selected_term=term
+            unprocessed_submissions=unprocessed_submissions,
+            approved_submissions=approved_submissions,
+            courses=courses,
+            course_lookup=course_lookup,
+            missing_by_course=missing_by_course,
+            submissions_map=submissions_map,
+            current_course_map=current_course_map,
+            client_names=client_names
         )
 
     @app.route('/check_lessons_for_term')
