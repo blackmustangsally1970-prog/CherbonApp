@@ -4842,6 +4842,7 @@ def create_app():
         import json
         import hashlib
         from datetime import datetime, timedelta
+        from sqlalchemy.exc import IntegrityError
 
         API_KEY = os.getenv("JOTFORM_API_KEY", "")
         FORM_ID = "211021514885045"   # Disclaimer & Indemnity form
@@ -4863,22 +4864,11 @@ def create_app():
         CUTOFF = datetime.utcnow() - timedelta(days=30)
 
         # ---------------------------------------------------------
-        # 2. CHECKPOINT — latest submission (ANY state)
-        # ---------------------------------------------------------
-        latest_any = (
-            db.session.query(IncomingSubmission)
-            .filter(IncomingSubmission.form_id == FORM_ID)
-            .order_by(IncomingSubmission.received_at.desc())
-            .first()
-        )
-        latest_ts = latest_any.received_at if latest_any else None
-
-        # ---------------------------------------------------------
-        # 3. PAGINATION — fetch ALL pages from JotForm
+        # 2. FETCH ALL SUBMISSIONS FROM JOTFORM
         # ---------------------------------------------------------
         submissions = []
         offset = 0
-        limit = 1000  # JotForm max per page
+        limit = 1000
 
         while True:
             url = (
@@ -4903,21 +4893,24 @@ def create_app():
         new_global_max = current_max_disclaimer
 
         # ---------------------------------------------------------
-        # 4. PROCESS EACH SUBMISSION
+        # 3. PROCESS EACH SUBMISSION
         # ---------------------------------------------------------
         for sub in submissions:
             submission_id = str(sub.get("id"))
 
-            # PRIMARY DEDUPE — submission_id
-            existing = (
-                db.session.query(IncomingSubmission)
-                .filter_by(submission_id=submission_id)
-                .first()
-            )
+            # -----------------------------------------------------
+            # PRIMARY DEDUPE — MUST BE FIRST
+            # -----------------------------------------------------
+            existing = IncomingSubmission.query.filter_by(
+                submission_id=submission_id
+            ).first()
+
             if existing:
                 continue
 
-            # EXTRACT ALL DISCLAIMER NUMBERS FROM PAYLOAD
+            # -----------------------------------------------------
+            # EXTRACT DISCLAIMER NUMBERS
+            # -----------------------------------------------------
             answers = sub.get("answers", {}) or {}
             disclaimer_numbers = []
 
@@ -4930,55 +4923,61 @@ def create_app():
                     elif ans is not None:
                         disclaimer_numbers.append(ans)
 
-            # NORMALISE TO INTS AND FIND MAX
             numeric_disclaimers = []
             for dn in disclaimer_numbers:
                 try:
                     numeric_disclaimers.append(int(str(dn).strip()))
-                except Exception:
-                    continue
+                except:
+                    pass
 
-            if numeric_disclaimers:
-                max_in_submission = max(numeric_disclaimers)
-            else:
-                max_in_submission = None
+            max_in_submission = max(numeric_disclaimers) if numeric_disclaimers else None
 
-            # HARD RULE:
-            # If this submission's max disclaimer number is
-            # <= global max, it is OLD and must be ignored.
+            # -----------------------------------------------------
+            # IGNORE OLD DISCLAIMER NUMBERS
+            # -----------------------------------------------------
             if max_in_submission is not None:
                 if max_in_submission <= current_max_disclaimer:
                     continue
-                # Track the highest we've seen this run
                 if max_in_submission > new_global_max:
                     new_global_max = max_in_submission
 
-            # SECONDARY DEDUPE — hash of payload
-            payload_str = json.dumps(sub, sort_keys=True)
-            payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
-
-            # TIMESTAMP
+            # -----------------------------------------------------
+            # TIMESTAMP HANDLING
+            # -----------------------------------------------------
             submission_created = sub.get("created_at") or sub.get("updated_at")
 
             try:
                 if submission_created:
-                    # JotForm sends ISO8601 strings, not epoch ints
                     submission_dt = datetime.fromisoformat(
                         submission_created.replace("Z", "")
                     )
                 else:
                     submission_dt = datetime.utcnow()
-            except Exception as e:
-                print("TIMESTAMP ERROR:", e, "RAW VALUE:", submission_created)
+            except:
                 submission_dt = datetime.utcnow()
 
-
-
-            # CUTOFF
+            # -----------------------------------------------------
+            # CUTOFF CHECK
+            # -----------------------------------------------------
             if submission_dt < CUTOFF:
                 continue
 
-            # INSERT NEW ROW
+            # -----------------------------------------------------
+            # SECONDARY DEDUPE — HASH
+            # -----------------------------------------------------
+            payload_str = json.dumps(sub, sort_keys=True)
+            payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
+
+            hash_exists = IncomingSubmission.query.filter_by(
+                unique_hash=payload_hash
+            ).first()
+
+            if hash_exists:
+                continue
+
+            # -----------------------------------------------------
+            # INSERT NEW ROW (SAFE)
+            # -----------------------------------------------------
             row = IncomingSubmission(
                 submission_id=submission_id,
                 form_id=FORM_ID,
@@ -4988,59 +4987,26 @@ def create_app():
                 received_at=submission_dt,
                 jotform_id=submission_id
             )
-            db.session.add(row)
-            inserted += 1
+
+            try:
+                db.session.add(row)
+                db.session.commit()
+                inserted += 1
+            except IntegrityError:
+                db.session.rollback()
+                continue
 
         # ---------------------------------------------------------
-        # 5. UPDATE GLOBAL MAX DISCLAIMER NUMBER
+        # 4. UPDATE GLOBAL MAX DISCLAIMER NUMBER
         # ---------------------------------------------------------
         if new_global_max > current_max_disclaimer:
             state.max_disclaimer_number = new_global_max
             db.session.commit()
             print(f"Updated max disclaimer number to {new_global_max}")
-        else:
-            db.session.commit()
 
         print(f"Inserted {inserted} new submissions.")
 
         return redirect(url_for('notifications'))
-
-
-    @app.route('/notifications/<int:webhook_id>')
-    def process_notification(webhook_id):
-        submission = db.session.query(IncomingSubmission).get_or_404(webhook_id)
-        riders = parse_jotform_payload(
-            submission.raw_payload,
-            forced_submission_id=submission.id
-        )
-
-        # NEW: filter valid riders (skip incomplete)
-        valid_riders = [r for r in riders if not r.get("incomplete")]
-
-        # NEW: if all riders incomplete → auto-ignore
-        if not valid_riders:
-            submission.processed = True
-            submission.ignored = True
-            submission.processed_at = datetime.utcnow()
-            db.session.commit()
-            return redirect(url_for('notifications'))
-
-        # NEW: conflict detection only on valid riders
-        for i, rider in enumerate(valid_riders, start=1):
-            if rider.get("matches"):
-                return redirect(url_for(
-                    'resolve_conflict',
-                    submission_id=submission.id,
-                    rider_index=i
-                ))
-
-        # No conflicts → show normal processing screen
-        return render_template(
-            'process_notification.html',
-            submission=submission,
-            clients=valid_riders
-        )
-
 
 
 
