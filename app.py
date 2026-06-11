@@ -1406,7 +1406,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         email = email_fallback
 
     # ---------------------------------------------------------
-    # FIXED: Detect rider fullname fields (NO list comprehension)
+    # FIXED: Detect rider fullname fields
     # ---------------------------------------------------------
     if is_invite_form:
         fullname_fields = INVITE_FULLNAME_FIELDS
@@ -1426,7 +1426,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     do_matching = (mode == "full")
 
     # ---------------------------------------------------------
-    # CLIENT CACHE LOADING — FIXED
+    # CLIENT CACHE LOADING
     # ---------------------------------------------------------
     client_cache = None
     exact_lookup = None
@@ -1496,9 +1496,11 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         rider["notes"] = notes_val or ""
 
         # ---------------------------------------------------------
-        # MATCHING — FIXED
+        # MATCHING — PATCHED (NO SELF-MATCH, CORRECT PRIORITY)
         # ---------------------------------------------------------
         if do_matching:
+
+            # Load only relevant clients ONCE per rider
             if clients_cache is None:
                 compact = name_norm.replace(" ", "").replace("-", "")
                 like_pattern = f"%{compact}%"
@@ -1517,6 +1519,7 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                     ).like(like_pattern)
                 ).all()
 
+            # Build lookup
             client_cache = []
             for c in clients_cache:
                 full_name = getattr(c, "full_name", None)
@@ -1529,9 +1532,19 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
             matched_client = None
 
+            # 1. NAME MATCH (strongest)
             if name_norm in exact_lookup:
                 matched_client = exact_lookup[name_norm]
 
+            # 2. EMAIL MATCH (medium)
+            if not matched_client and email:
+                email_norm = email.strip().lower()
+                for c, norm, _ in client_cache:
+                    if (c.email_primary or "").strip().lower() == email_norm:
+                        matched_client = c
+                        break
+
+            # 3. MOBILE MATCH (weakest — parent phone shared)
             if not matched_client and mobile:
                 mobile_norm = re.sub(r"\D", "", mobile)
                 for c, norm, _ in client_cache:
@@ -1540,13 +1553,13 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                         matched_client = c
                         break
 
-            if not matched_client and email:
-                email_norm = email.strip().lower()
-                for c, norm, _ in client_cache:
-                    if (c.email_primary or "").strip().lower() == email_norm:
-                        matched_client = c
-                        break
+            # 4. SELF-MATCH PROTECTION
+            if matched_client:
+                client_jotform = str(getattr(matched_client, "jotform_submission_id", "") or "")
+                if client_jotform == str(submission_id):
+                    matched_client = None
 
+            # Store match
             if matched_client:
                 rider["matches"].append(matched_client)
 
