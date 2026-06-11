@@ -3004,12 +3004,41 @@ def create_app():
 
 
 
-    @app.route('/notifications/process/<int:sub_id>')
-    def process_submission_route(sub_id):
-        sub = db.session.query(IncomingSubmission).get_or_404(sub_id)
-        result = process_submission(sub)
-        flash(result, "success")
-        return redirect(url_for('notifications'))
+    @app.route('/notifications/<int:webhook_id>')
+    def process_notification(webhook_id):
+        submission = db.session.query(IncomingSubmission).get_or_404(webhook_id)
+
+        riders = parse_jotform_payload(
+            submission.raw_payload,
+            forced_submission_id=submission.id
+        )
+
+        # Filter valid riders (skip incomplete)
+        valid_riders = [r for r in riders if not r.get("incomplete")]
+
+        # If all riders incomplete → auto-ignore
+        if not valid_riders:
+            submission.processed = True
+            submission.ignored = True
+            submission.processed_at = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('notifications'))
+
+        # Conflict detection
+        for i, rider in enumerate(valid_riders, start=1):
+            if rider.get("matches"):
+                return redirect(url_for(
+                    'resolve_conflict',
+                    submission_id=submission.id,
+                    rider_index=i
+                ))
+
+        # No conflicts → normal processing screen
+        return render_template(
+            'process_notification.html',
+            submission=submission,
+            clients=valid_riders
+        )
 
     @app.route("/summaries", methods=["GET"])
     def summaries_page():
@@ -5018,8 +5047,6 @@ def create_app():
 
         # rider_index is 1‑based
         rider = riders[rider_index - 1]
-        print("RIDER DEBUG:", rider)
-        print("RIDER KEYS:", rider.keys())
 
         # Raw matches from parse_jotform_payload (SQLAlchemy tuples)
         raw_matches = rider.get("matches", [])
@@ -5042,7 +5069,7 @@ def create_app():
         # Load REAL Client objects
         matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
 
-        # ⭐ Attach last lesson date
+        # Attach last lesson date
         for m in matches:
             last = (
                 Lesson.query
@@ -5086,6 +5113,8 @@ def create_app():
         if choice == "ignore":
             rider["resolved"] = True
             row.ignored = True
+            row.processed = True
+            row.processed_at = datetime.utcnow()
             db.session.commit()
             return redirect(url_for('notifications'))
 
