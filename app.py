@@ -1404,17 +1404,23 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     # RIDER NAME FIELD DETECTION (THE FIX)
     # ---------------------------------------------------------
     fullname_fields = []
+
     for key, item in answers.items():
         if item.get("type") != "control_fullname":
             continue
 
         label = (item.get("text") or "").lower()
 
-        # Skip guardian fields entirely
+        # INVITE FORM → ANY fullname field is a rider
+        if is_invite_form:
+            fullname_fields.append(key)
+            continue
+
+        # DISCLAIMER FORM → skip guardian fields
         if "guardian" in label:
             continue
 
-        # Only treat as rider name if BOTH words appear
+        # DISCLAIMER FORM → must contain BOTH "rider" AND "name"
         if "rider" in label and "name" in label:
             fullname_fields.append(key)
 
