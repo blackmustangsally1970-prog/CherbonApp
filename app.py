@@ -2216,12 +2216,19 @@ def create_app():
         if field not in allowed:
             return "Invalid field", 400
 
-        # Update the field
-        if field == "horse_1" and value.strip() == "":
-            return "OK", 200
-        db.session.commit()
+        # ⭐ ACTUALLY UPDATE THE FIELD (THIS WAS MISSING)
+        setattr(row, field, value)
 
-        # If status changed → recalc pricing for ALL approved riders
+        # Special case: empty horse_1 allowed
+        if field == "horse_1" and value.strip() == "":
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        db.session.commit()
+        db.session.refresh(row)
+
+        # ---- STATUS CHANGE → RECALC ALL APPROVED ----
         if field == "status":
             approved = CourseFormSubmission.query.filter_by(status="Approved").all()
 
@@ -2244,7 +2251,7 @@ def create_app():
             db.session.commit()
             return "OK", 200
 
-        # Only recalc price when relevant fields change
+        # ---- RECALC PRICE WHEN RELEVANT FIELDS CHANGE ----
         if field in ("rider_name", "ftor", "frequency", "current_course"):
             approved = CourseFormSubmission.query.filter_by(status="Approved").all()
 
