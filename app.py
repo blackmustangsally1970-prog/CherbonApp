@@ -2324,166 +2324,42 @@ def create_app():
 
     @app.route('/course_form_submissions')
     def course_form_submissions():
-        import datetime
+        from collections import defaultdict
 
-        # ------------------------------------------------------------
-        # Use active term as default if no parameters provided
-        # ------------------------------------------------------------
-        active = Term.query.filter_by(active=True).first()
+        year = request.args.get('year', type=int)
+        term = request.args.get('term', type=int)
 
-        selected_year = request.args.get(
-            "year",
-            active.year if active else datetime.datetime.now().year,
-            type=int
+        # Load all submissions for this term/year
+        submissions = CourseFormSubmission.query.filter_by(
+            term_year=year,
+            term_number=term
+        ).order_by(CourseFormSubmission.id.desc()).all()
+
+        # Load active courses (your existing logic)
+        active_courses = {c.code for c in Courses.query.filter_by(active=True).all()}
+
+        # Dictionary for last-term riders per course
+        last_term_by_course = defaultdict(set)
+
+        # Build dictionary safely (no KeyErrors ever again)
+        for entry in submissions:
+            course = entry.current_course or ""
+            rider = entry.rider_name or ""
+            last_term_by_course[course].add(rider)
+
+        # Sort courses: active first, inactive after
+        sorted_courses = sorted(
+            last_term_by_course.keys(),
+            key=lambda c: (c not in active_courses, c)
         )
 
-        selected_term = request.args.get(
-            "term",
-            active.term_number if active else 1,
-            type=int
-        )
-
-        # ------------------------------------------------------------
-        # Load the selected term (FAST, INDEX‑FRIENDLY)
-        # ------------------------------------------------------------
-        term = Term.query.filter_by(
-            year=selected_year,
-            term_number=selected_term
-        ).first()
-
-        if not term:
-            return "No term found", 400
-
-        # ------------------------------------------------------------
-        # Load submissions for this term
-        # ------------------------------------------------------------
-        all_subs = CourseFormSubmission.query.filter(
-            CourseFormSubmission.term_year == selected_year,
-            CourseFormSubmission.term_number == selected_term,
-            CourseFormSubmission.ignore_jotform.is_(False),
-            CourseFormSubmission.status != "deleted"
-        ).all()
-
-        unprocessed = [s for s in all_subs if s.status == "unprocessed"]
-        approved = [s for s in all_subs if s.status == "approved"]
-
-        submissions_map = {s.rider_name: s for s in approved + unprocessed}
-
-        # ------------------------------------------------------------
-        # Load course metadata
-        # ------------------------------------------------------------
-        courses = CourseReference.query.filter_by(active=True).all()
-        course_lookup = {c.course_code: c for c in courses}
-
-        horses = Horse.query.order_by(Horse.horse).all()
-        client_names = Client.query.order_by(Client.full_name).all()
-
-        # ------------------------------------------------------------
-        # Sort unprocessed safely (NS‑safe)
-        # ------------------------------------------------------------
-        day_order = {
-            "Sunday": 0,
-            "Monday": 1,
-            "Tuesday": 2,
-            "Wednesday": 3,
-            "Thursday": 4,
-            "Friday": 5,
-            "Saturday": 6
-        }
-
-        def sort_key(s):
-            course = course_lookup.get(s.current_course)
-            if not course:
-                return (99, "23:59")
-            return (
-                day_order.get(course.day_of_week, 99),
-                course.timerange
-            )
-
-        unprocessed.sort(key=sort_key)
-
-        # ------------------------------------------------------------
-        # Build year dropdown
-        # ------------------------------------------------------------
-        years = sorted(
-            {s.term_year for s in CourseFormSubmission.query.with_entities(CourseFormSubmission.term_year).all()},
-            reverse=True
-        )
-
-        # ------------------------------------------------------------
-        # Auto‑price approved riders
-        # ------------------------------------------------------------
-        if approved:
-            for r in approved:
-                course = course_lookup.get(r.current_course)
-                if not course:
-                    continue
-
-                new_price = calculate_price(
-                    group_priv=course.group_priv,
-                    ftor=r.ftor,
-                    frequency=r.frequency,
-                    rider_name=r.rider_name,
-                    approved_submissions=approved
-                )
-
-                if new_price is not None:
-                    r.price = new_price
-
-            db.session.commit()
-
-        # ------------------------------------------------------------
-        # Missing riders popup logic
-        # ------------------------------------------------------------
-        if selected_term > 1:
-            last_term_entries = CourseFormSubmission.query.filter_by(
-                term_year=selected_year,
-                term_number=selected_term - 1,
-                status="backfill"
-            ).all()
-
-            last_term_by_course = {c.course_code: set() for c in courses}
-
-            for entry in last_term_entries:
-                last_term_by_course[entry.current_course].add(entry.rider_name)
-
-            booked_riders = {s.rider_name for s in unprocessed + approved}
-
-            missing_by_course = {
-                code: sorted(list(riders - booked_riders))
-                for code, riders in last_term_by_course.items()
-            }
-        else:
-            missing_by_course = {}
-
-        # ------------------------------------------------------------
-        # Build rider → course map
-        # ------------------------------------------------------------
-        current_course_map = {}
-
-        for s in approved:
-            current_course_map[s.rider_name] = s.current_course
-
-        for s in unprocessed:
-            current_course_map[s.rider_name] = s.current_course
-
-        # ------------------------------------------------------------
-        # Render
-        # ------------------------------------------------------------
         return render_template(
-            "course_form_results.html",
-            unprocessed_submissions=unprocessed,
-            approved_submissions=approved,
-            courses=courses,
-            horses=horses,
-            client_names=client_names,
-            course_lookup=course_lookup,
-            years=years,
-            selected_year=selected_year,
-            selected_term=selected_term,
-            missing_by_course=missing_by_course,
-            current_course_map=current_course_map,
-            submissions_map=submissions_map,
+            'course_form_submissions.html',
+            submissions=submissions,
+            last_term_by_course=last_term_by_course,
+            sorted_courses=sorted_courses,
+            year=year,
+            term=term
         )
 
     @app.route('/check_lessons_for_term')
