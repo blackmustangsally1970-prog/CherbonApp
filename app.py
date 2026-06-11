@@ -2098,7 +2098,8 @@ def create_app():
         API_KEY = app.config['JOTFORM_API_KEY']
         FORM_ID = "212936006493860"
 
-        url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}"
+        url = f"https://api.jotform.com/form/{FORM_ID}/submissions?apiKey={API_KEY}&limit=1000"
+
         r = requests.get(url).json()
 
         if "content" not in r:
