@@ -2356,7 +2356,7 @@ def create_app():
         )
 
         return render_template(
-            'course_form_submissions.html',
+            'course_form_submission.html',
             submissions=submissions,
             last_term_by_course=last_term_by_course,
             sorted_courses=sorted_courses,
