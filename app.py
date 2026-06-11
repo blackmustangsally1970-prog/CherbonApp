@@ -2217,7 +2217,8 @@ def create_app():
             return "Invalid field", 400
 
         # Update the field
-        setattr(row, field, value)
+        if field == "horse_1" and value.strip() == "":
+            return "OK", 200
         db.session.commit()
 
         # If status changed → recalc pricing for ALL approved riders
