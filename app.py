@@ -2382,7 +2382,9 @@ def create_app():
             year=year,
             term=term,
             years=years,
-            terms=terms
+            terms=terms,
+            selected_year=year,
+            selected_term=term
         )
 
     @app.route('/check_lessons_for_term')
