@@ -133,6 +133,12 @@
             font-weight: bold;
         }
     </style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+
+
 </head>
 
 <body>
@@ -376,11 +382,11 @@
             <thead class="orange-header">
                 <tr>
                     <th style="width:4ch;">Sel</th>
-                    <th style="width:20ch;">Rider</th>
+                    <th style="width:14ch;">Rider</th>
                     <th style="width:12ch;">Horse 1</th>
                     <th style="width:12ch;">Horse 2</th>
                     <th style="width:12ch;">Horse 3</th>
-                    <th style="width:57ch;">Notes</th>
+                    <th style="width:70ch;">Notes</th>
                     <th style="width:57ch;">Cherbon Notes</th>
                     <th style="width:6ch;">FT/W</th>
                     <th style="width:6ch;">Freq</th>
@@ -667,6 +673,12 @@ document.getElementById("checkLessonsBtn").addEventListener("click", function ()
 
 });
 </script>
+<script>
+$(document).ready(function() {
+    $('select').select2();
+});
+</script>
+
 
 </body>
 </html>
