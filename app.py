@@ -2327,6 +2327,7 @@ def create_app():
         from collections import defaultdict
         from sqlalchemy import and_
 
+        # ---- YEARS ----
         years = sorted({
             s.term_year
             for s in CourseFormSubmission.query
@@ -2338,6 +2339,7 @@ def create_app():
         if year is None and years:
             year = years[-1]
 
+        # ---- TERMS ----
         terms = sorted({
             s.term_number
             for s in CourseFormSubmission.query
@@ -2353,6 +2355,7 @@ def create_app():
         if term is None and terms:
             term = terms[-1]
 
+        # ---- BASE QUERY ----
         base_q = CourseFormSubmission.query.filter(
             and_(
                 CourseFormSubmission.term_year == year,
@@ -2361,18 +2364,21 @@ def create_app():
             )
         )
 
+        # ---- UNPROCESSED ----
         unprocessed_submissions = (
             base_q.filter(CourseFormSubmission.status == "unprocessed")
             .order_by(CourseFormSubmission.id.desc())
             .all()
         )
 
+        # ---- APPROVED ----
         approved_submissions = (
             base_q.filter(CourseFormSubmission.status == "approved")
             .order_by(CourseFormSubmission.id.desc())
             .all()
         )
 
+        # ---- COURSES ----
         courses = CourseReference.query.order_by(
             CourseReference.day_of_week,
             CourseReference.timerange
@@ -2380,16 +2386,54 @@ def create_app():
 
         course_lookup = {c.course_code: c for c in courses}
 
+        # ---- MAPS ----
         submissions_map = {s.rider_name: s for s in approved_submissions}
         current_course_map = {
             s.rider_name: (s.current_course or s.original_course)
             for s in approved_submissions
         }
 
-        missing_by_course = {}
+        # ============================================================
+        # ⭐ RESTORED: LAST TERM RIDERS LOGIC
+        # ============================================================
 
+        # Determine previous term
+        prev_term = term - 1
+        prev_year = year
+
+        if prev_term == 0:
+            prev_term = 4
+            prev_year = year - 1
+
+        # Load last term submissions
+        last_term_subs = CourseFormSubmission.query.filter(
+            CourseFormSubmission.term_year == prev_year,
+            CourseFormSubmission.term_number == prev_term,
+            CourseFormSubmission.ignore_jotform.is_(False),
+            CourseFormSubmission.cancelled.is_(False)
+        ).all()
+
+        # Riders already booked this term
+        this_term_names = {s.rider_name for s in approved_submissions}
+
+        # Build missing_by_course
+        missing_by_course = {}
+        for sub in last_term_subs:
+            rider = sub.rider_name
+            course = sub.current_course or sub.original_course
+
+            if not course:
+                continue
+
+            if rider in this_term_names:
+                continue
+
+            missing_by_course.setdefault(course, []).append(rider)
+
+        # ---- CLIENTS ----
         client_names = Client.query.all()
 
+        # ---- RENDER ----
         return render_template(
             'course_form_results.html',
             selected_year=year,
