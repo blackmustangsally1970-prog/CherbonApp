@@ -2326,10 +2326,29 @@ def create_app():
     def course_form_submissions():
         from collections import defaultdict
 
-        year = request.args.get('year', type=int)
-        term = request.args.get('term', type=int)
+        # Build list of available years
+        years = sorted({
+            s.term_year
+            for s in CourseFormSubmission.query.all()
+        })
 
-        # Load all submissions for this term/year
+        # Default year = latest year if none selected
+        year = request.args.get('year', type=int)
+        if year is None and years:
+            year = years[-1]
+
+        # Build list of available terms for that year
+        terms = sorted({
+            s.term_number
+            for s in CourseFormSubmission.query.filter_by(term_year=year).all()
+        })
+
+        # Default term = latest term if none selected
+        term = request.args.get('term', type=int)
+        if term is None and terms:
+            term = terms[-1]
+
+        # Load submissions for selected year/term
         submissions = CourseFormSubmission.query.filter_by(
             term_year=year,
             term_number=term
@@ -2341,16 +2360,9 @@ def create_app():
             for c in CourseReference.query.filter_by(active=True).all()
         }
 
-        # Build list of available years for dropdown
-        years = sorted({
-            s.term_year
-            for s in CourseFormSubmission.query.all()
-        })
-
         # Dictionary for last-term riders per course
         last_term_by_course = defaultdict(set)
 
-        # Build dictionary safely (no KeyErrors ever again)
         for entry in submissions:
             course = entry.current_course or ""
             rider = entry.rider_name or ""
@@ -2369,7 +2381,8 @@ def create_app():
             sorted_courses=sorted_courses,
             year=year,
             term=term,
-            years=years
+            years=years,
+            terms=terms
         )
 
     @app.route('/check_lessons_for_term')
