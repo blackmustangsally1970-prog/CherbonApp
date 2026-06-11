@@ -4852,6 +4852,7 @@ def create_app():
         
     @app.route('/notifications/fetch')
     def fetch_jotform_submissions():
+        print("🔥 FETCH ROUTE EXECUTED 🔥")
         import requests
         import json
         import hashlib
@@ -4917,6 +4918,7 @@ def create_app():
                 submission_id=submission_id
             ).first()
             if existing:
+                print("SKIP: already have submission_id", submission_id)
                 continue
 
             # EXTRACT DISCLAIMER NUMBERS
@@ -4944,6 +4946,7 @@ def create_app():
             # IGNORE OLD DISCLAIMER NUMBERS
             if max_in_submission is not None:
                 if max_in_submission <= current_max_disclaimer:
+                    print("SKIP: disclaimer too old", max_in_submission)
                     continue
                 if max_in_submission > new_global_max:
                     new_global_max = max_in_submission
@@ -4972,6 +4975,7 @@ def create_app():
                 unique_hash=payload_hash
             ).first()
             if hash_exists:
+                print("SKIP: hash exists", payload_hash)
                 continue
 
             # -----------------------------------------------------
