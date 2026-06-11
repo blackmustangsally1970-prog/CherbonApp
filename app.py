@@ -4912,19 +4912,14 @@ def create_app():
         for sub in submissions:
             submission_id = str(sub.get("id"))
 
-            # -----------------------------------------------------
-            # PRIMARY DEDUPE — MUST BE FIRST
-            # -----------------------------------------------------
+            # PRIMARY DEDUPE — submission_id
             existing = IncomingSubmission.query.filter_by(
                 submission_id=submission_id
             ).first()
-
             if existing:
                 continue
 
-            # -----------------------------------------------------
             # EXTRACT DISCLAIMER NUMBERS
-            # -----------------------------------------------------
             answers = sub.get("answers", {}) or {}
             disclaimer_numbers = []
 
@@ -4946,20 +4941,15 @@ def create_app():
 
             max_in_submission = max(numeric_disclaimers) if numeric_disclaimers else None
 
-            # -----------------------------------------------------
             # IGNORE OLD DISCLAIMER NUMBERS
-            # -----------------------------------------------------
             if max_in_submission is not None:
                 if max_in_submission <= current_max_disclaimer:
                     continue
                 if max_in_submission > new_global_max:
                     new_global_max = max_in_submission
 
-            # -----------------------------------------------------
             # TIMESTAMP HANDLING
-            # -----------------------------------------------------
             submission_created = sub.get("created_at") or sub.get("updated_at")
-
             try:
                 if submission_created:
                     submission_dt = datetime.fromisoformat(
@@ -4970,24 +4960,34 @@ def create_app():
             except:
                 submission_dt = datetime.utcnow()
 
-            # -----------------------------------------------------
             # CUTOFF CHECK
-            # -----------------------------------------------------
             if submission_dt < CUTOFF:
                 continue
 
-            # -----------------------------------------------------
             # SECONDARY DEDUPE — HASH
-            # -----------------------------------------------------
             payload_str = json.dumps(sub, sort_keys=True)
             payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
 
             hash_exists = IncomingSubmission.query.filter_by(
                 unique_hash=payload_hash
             ).first()
-
             if hash_exists:
                 continue
+
+            # -----------------------------------------------------
+            # DISPLAY NAMES FOR NOTIFICATIONS LIST
+            # -----------------------------------------------------
+            try:
+                parsed = parse_jotform_payload(
+                    sub,
+                    forced_submission_id=submission_id,
+                    mode="light"
+                )
+                names = [r.get("name") for r in parsed if r.get("name")]
+                display_names = ", ".join(names) if names else "Invite Submission"
+            except Exception as e:
+                print("ERROR parsing names for display:", e)
+                display_names = "Invite Submission"
 
             # -----------------------------------------------------
             # INSERT NEW ROW (SAFE)
@@ -4999,7 +4999,8 @@ def create_app():
                 processed=False,
                 unique_hash=payload_hash,
                 received_at=submission_dt,
-                jotform_id=submission_id
+                jotform_id=submission_id,
+                display_names=display_names
             )
 
             try:
