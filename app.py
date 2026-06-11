@@ -2161,24 +2161,6 @@ def create_app():
             if existing_by_id:
                 continue
 
-            # FIND EXISTING RIDER FOR THIS TERM/YEAR
-            existing = CourseFormSubmission.query.filter_by(
-                rider_name=rider_full,
-                term_year=term_year,
-                term_number=term_number
-            ).first()
-
-            # IF DELETED → IGNORE FOREVER
-            if existing and existing.ignore_jotform:
-                continue
-
-            # IF EXISTS → UPDATE ORIGINAL ONLY
-            if existing:
-                if courseno != existing.original_course:
-                    existing.original_course = courseno
-                    existing.notes = notes or existing.notes
-                continue
-
             # NEW RIDER → CREATE ENTRY (NS allowed)
             entry = CourseFormSubmission(
                 jotform_id=sub_id,

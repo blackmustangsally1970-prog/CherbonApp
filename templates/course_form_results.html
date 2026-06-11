@@ -420,16 +420,17 @@
                                    onchange="updateField({{ r.id }}, 'rider_name', this.value)">
                         </td>
 
-                        <td style="width:12ch; white-space:nowrap;">
-                            <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
-                                {% for h in horses %}
-                                    <option value="{{ h.horse }}"
-                                        {% if h.horse == r.horse_1 %}selected{% endif %}>
-                                        {{ h.horse }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </td>
+<td style="width:12ch; white-space:nowrap;">
+    <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
+        <option value=""></option>
+        {% for h in horses %}
+            <option value="{{ h.horse }}"
+                {% if h.horse == r.horse_1 %}selected{% endif %}>
+                {{ h.horse }}
+            </option>
+        {% endfor %}
+    </select>
+</td>
 
                         <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
                         <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
