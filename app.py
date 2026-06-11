@@ -1300,17 +1300,20 @@ def normalize_name(s: str) -> str:
 
 def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None, mode="full"):
     """
-    mode:
-      - "light": parse names/fields only. NO DB client load / no matching.
-      - "full": full matching behaviour (may use clients_cache or DB load).
+    Deterministic, guardian‑safe, multi‑rider‑safe parser for Cherbon Waters
+    disclaimer form. No guessing, no fuzzy matching, no guardian-as-rider bugs.
     """
+
     import json
-    import unicodedata
+    import re
     from sqlalchemy.util._collections import immutabledict
 
-    # Ensure payload is a real dict
+    # ---------------------------------------------------------
+    # NORMALISE PAYLOAD
+    # ---------------------------------------------------------
     if isinstance(payload, immutabledict):
         payload = dict(payload)
+
     if not isinstance(payload, dict):
         try:
             payload = json.loads(payload)
@@ -1318,27 +1321,25 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             print("ERROR: Could not decode payload:", type(payload))
             return []
 
-    # Submission ID
-    if forced_submission_id:
-        submission_id = str(forced_submission_id)
-    else:
-        submission_id = str(
-            payload.get("id")
-            or payload.get("submission_id")
-            or payload.get("form_id")
-            or ""
-        )
-
     answers = payload.get("answers", {}) or {}
-    print("\n\n===== JOTFORM FIELD DEBUG =====")
-    for key, item in answers.items():
-        print(key, item.get("text"), item.get("type"))
-    print("===== END DEBUG =====\n\n")
-    
+
+    # ---------------------------------------------------------
+    # SUBMISSION ID
+    # ---------------------------------------------------------
+    submission_id = (
+        str(forced_submission_id)
+        if forced_submission_id
+        else str(payload.get("id") or payload.get("submission_id") or "")
+    )
+
+    # ---------------------------------------------------------
+    # DISCLAIMER ID (submission-wide)
+    # ---------------------------------------------------------
     disclaimer_id = str(answers.get("63", {}).get("answer") or "")
 
-
-    # ---- Email autodetect ----
+    # ---------------------------------------------------------
+    # EMAIL EXTRACTION
+    # ---------------------------------------------------------
     email = ""
     for key, item in answers.items():
         if item.get("type") == "control_email":
@@ -1349,168 +1350,151 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                 email = ans or ""
             break
 
+    # fallback email
     if not email:
-        for key, item in answers.items():
-            if item.get("name", "").lower() == "email":
-                ans = item.get("answer")
-                if isinstance(ans, dict):
-                    email = ans.get("value") or ans.get("text") or ans.get("full") or ""
-                else:
-                    email = ans or ""
-                break
+        fallback = answers.get("47", {}).get("answer")
+        if fallback:
+            email = fallback
 
     email = email or ""
 
-    # Detect form type
-    form_id = str(payload.get("form_id") or "")
-    is_invite_form = form_id == "253599154628066"
+    # ---------------------------------------------------------
+    # MOBILE EXTRACTION
+    # ---------------------------------------------------------
+    mobile = ""
+    mob_field = answers.get("87", {}).get("answer")
+    if isinstance(mob_field, dict):
+        mobile = mob_field.get("full") or mob_field.get("text") or ""
+    else:
+        mobile = mob_field or ""
 
-    # Invite token extraction
-    invite_token = None
-    field3 = answers.get("3")
-    if field3:
-        ans = field3.get("answer")
-        if isinstance(ans, dict):
-            invite_token = ans.get("text") or ans.get("value") or ans.get("full")
-        else:
-            invite_token = ans
+    mobile = mobile or ""
 
-    if not invite_token:
-        for f in answers.values():
-            if f.get("name") == "i_t":
-                ans = f.get("answer")
-                if isinstance(ans, dict):
-                    invite_token = ans.get("text") or ans.get("value") or ans.get("full")
-                else:
-                    invite_token = ans
-                break
+    # ---------------------------------------------------------
+    # GUARDIAN EXTRACTION
+    # ---------------------------------------------------------
+    guardian = answers.get("86", {}).get("answer") or ""
 
-    if not invite_token:
-        direct = answers.get("i_t")
-        if direct:
-            ans = direct.get("answer")
+    # ---------------------------------------------------------
+    # INVITE TOKEN
+    # ---------------------------------------------------------
+    invite_token = ""
+    for key, item in answers.items():
+        if item.get("name") == "i_t":
+            ans = item.get("answer")
             if isinstance(ans, dict):
                 invite_token = ans.get("text") or ans.get("value") or ans.get("full")
             else:
                 invite_token = ans
+            break
 
     invite_token = invite_token or ""
 
-    # Age field detection
+    # ---------------------------------------------------------
+    # AGE FIELDS (sorted)
+    # ---------------------------------------------------------
     age_fields = [
         key for key, item in answers.items()
         if item.get("type") in ("control_number", "control_dropdown")
-        and "age" in item.get("text", "").lower()
+        and "age" in (item.get("text") or "").lower()
     ]
     age_fields = sorted(age_fields, key=lambda x: int(x))
 
-    # Global fields
-    guardian = answers.get("86", {}).get("answer", "") or ""
-    mobile = answers.get("87", {}).get("answer", {}).get("full", "") or ""
-    email_fallback = answers.get("47", {}).get("answer", "") or ""
-    if email_fallback and not email:
-        email = email_fallback
+    # ---------------------------------------------------------
+    # RIDER NAME FIELD DETECTION (THE FIX)
+    # ---------------------------------------------------------
+    fullname_fields = []
+    for key, item in answers.items():
+        if item.get("type") != "control_fullname":
+            continue
+
+        label = (item.get("text") or "").lower()
+
+        # Skip guardian fields entirely
+        if "guardian" in label:
+            continue
+
+        # Only treat as rider name if BOTH words appear
+        if "rider" in label and "name" in label:
+            fullname_fields.append(key)
+
+    fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
 
     # ---------------------------------------------------------
-    # FIXED: Detect rider fullname fields
+    # HEIGHT / WEIGHT / NOTES FIELDS (aligned by index)
     # ---------------------------------------------------------
-    if is_invite_form:
-        fullname_fields = INVITE_FULLNAME_FIELDS
-    else:
-        fullname_fields = []
-        for key, item in answers.items():
-            if item.get("type") == "control_fullname":
-                label = item.get("text", "").lower()
-                if "rider" in label or "name" in label:
-                    fullname_fields.append(key)
+    height_fields = sorted(
+        [k for k, v in answers.items() if "height" in (v.get("text") or "").lower()],
+        key=lambda x: int(x)
+    )
+    weight_fields = sorted(
+        [k for k, v in answers.items() if "weight" in (v.get("text") or "").lower()],
+        key=lambda x: int(x)
+    )
+    notes_fields = sorted(
+        [k for k, v in answers.items() if "notes" in (v.get("text") or "").lower()],
+        key=lambda x: int(x)
+    )
 
-        fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
-
+    # ---------------------------------------------------------
+    # RIDER LOOP
+    # ---------------------------------------------------------
     riders = []
 
-    # Matching mode
-    do_matching = (mode == "full")
-
-    # ---------------------------------------------------------
-    # CLIENT CACHE LOADING
-    # ---------------------------------------------------------
-    client_cache = None
-    exact_lookup = None
-
-    if do_matching:
-        client_cache = []
-        exact_lookup = {}
-
-    # ---------------------------------------------------------
-    # MAIN RIDER LOOP
-    # ---------------------------------------------------------
     for idx, fullname_key in enumerate(fullname_fields):
         item = answers.get(fullname_key)
         if not item:
             continue
 
+        # Extract name
         pretty = item.get("prettyFormat")
         if pretty:
             raw_name = pretty
         else:
-            first = (item.get("answer", {}) or {}).get("first", "")
-            last = (item.get("answer", {}) or {}).get("last", "")
-            raw_name = f"{first} {last}"
+            ans = item.get("answer") or {}
+            raw_name = f"{ans.get('first','')} {ans.get('last','')}".strip()
 
-        name_norm = normalize_name(raw_name)
-        if not name_norm:
+        name = normalize_name(raw_name)
+        if not name:
             continue
 
         # Age
         age_key = age_fields[idx] if idx < len(age_fields) else None
         age = answers.get(age_key, {}).get("answer") if age_key else None
 
+        # Height / Weight / Notes
+        height_key = height_fields[idx] if idx < len(height_fields) else None
+        weight_key = weight_fields[idx] if idx < len(weight_fields) else None
+        notes_key = notes_fields[idx] if idx < len(notes_fields) else None
+
+        height_val = answers.get(height_key, {}).get("answer") if height_key else None
+        weight_val = answers.get(weight_key, {}).get("answer") if weight_key else None
+        notes_val = answers.get(notes_key, {}).get("answer") if notes_key else ""
+
+        # Build rider dict
         rider = {
-            "name": name_norm,
+            "name": name,
             "age": age,
             "guardian": guardian,
             "mobile": mobile,
             "email": email,
             "disclaimer": disclaimer_id,
+            "height_cm": extract_number(height_val),
+            "weight_kg": extract_number(weight_val),
+            "notes": notes_val or "",
             "matches": [],
             "jotform_submission_id": submission_id,
-            "invite_token": invite_token
+            "invite_token": invite_token,
         }
 
-        # Height/weight/notes
-        if is_invite_form:
-            if idx < len(INVITE_HEIGHT_FIELDS):
-                height_field = INVITE_HEIGHT_FIELDS[idx]
-                weight_field = INVITE_WEIGHT_FIELDS[idx]
-                notes_field = INVITE_NOTES_FIELDS[idx] if idx < len(INVITE_NOTES_FIELDS) else None
-            else:
-                height_field = weight_field = notes_field = None
-        else:
-            if idx < len(HEIGHT_FIELDS):
-                height_field = HEIGHT_FIELDS[idx]
-                weight_field = WEIGHT_FIELDS[idx]
-                notes_field = NOTES_FIELDS[idx]
-            else:
-                height_field = weight_field = notes_field = None
-
-        height_val = answers.get(height_field, {}).get("answer") if height_field else None
-        weight_val = answers.get(weight_field, {}).get("answer") if weight_field else None
-        notes_val = answers.get(notes_field, {}).get("answer") if notes_field else None
-
-        rider["height_cm"] = extract_number(height_val)
-        rider["weight_kg"] = extract_number(weight_val)
-        rider["notes"] = notes_val or ""
-
         # ---------------------------------------------------------
-        # MATCHING — PATCHED (NO SELF-MATCH, CORRECT PRIORITY)
+        # MATCHING (only in full mode)
         # ---------------------------------------------------------
-        if do_matching:
+        if mode == "full":
+            compact = name.replace(" ", "").replace("-", "")
+            like_pattern = f"%{compact}%"
 
-            # Load only relevant clients ONCE per rider
             if clients_cache is None:
-                compact = name_norm.replace(" ", "").replace("-", "")
-                like_pattern = f"%{compact}%"
-
                 clients_cache = db.session.query(
                     Client.client_id,
                     Client.full_name,
@@ -1526,48 +1510,43 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                 ).all()
 
             # Build lookup
-            client_cache = []
+            lookup = []
             for c in clients_cache:
-                full_name = getattr(c, "full_name", None)
-                if not full_name:
-                    continue
-                norm = normalize_name(full_name)
-                client_cache.append((c, norm, getattr(c, "jotform_submission_id", None)))
+                full = getattr(c, "full_name", "")
+                norm = normalize_name(full)
+                lookup.append((c, norm))
 
-            exact_lookup = {norm: c for c, norm, _ in client_cache}
+            # Exact name match
+            matched = None
+            for c, norm in lookup:
+                if norm == name:
+                    matched = c
+                    break
 
-            matched_client = None
-
-            # 1. NAME MATCH (strongest)
-            if name_norm in exact_lookup:
-                matched_client = exact_lookup[name_norm]
-
-            # 2. EMAIL MATCH (medium)
-            if not matched_client and email:
-                email_norm = email.strip().lower()
-                for c, norm, _ in client_cache:
-                    if (c.email_primary or "").strip().lower() == email_norm:
-                        matched_client = c
+            # Email match
+            if not matched and email:
+                e = email.strip().lower()
+                for c, norm in lookup:
+                    if (c.email_primary or "").strip().lower() == e:
+                        matched = c
                         break
 
-            # 3. MOBILE MATCH (weakest — parent phone shared)
-            if not matched_client and mobile:
-                mobile_norm = re.sub(r"\D", "", mobile)
-                for c, norm, _ in client_cache:
-                    c_mobile = re.sub(r"\D", "", (c.mobile or ""))
-                    if c_mobile and c_mobile == mobile_norm:
-                        matched_client = c
+            # Mobile match
+            if not matched and mobile:
+                m = re.sub(r"\D", "", mobile)
+                for c, norm in lookup:
+                    cm = re.sub(r"\D", "", (c.mobile or ""))
+                    if cm == m and cm:
+                        matched = c
                         break
 
-            # 4. SELF-MATCH PROTECTION
-            if matched_client:
-                client_jotform = str(getattr(matched_client, "jotform_submission_id", "") or "")
-                if client_jotform == str(submission_id):
-                    matched_client = None
+            # Self-match protection
+            if matched:
+                if str(matched.jotform_submission_id or "") == submission_id:
+                    matched = None
 
-            # Store match
-            if matched_client:
-                rider["matches"].append(matched_client)
+            if matched:
+                rider["matches"].append(matched)
 
         riders.append(rider)
 
