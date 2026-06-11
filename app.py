@@ -2335,10 +2335,17 @@ def create_app():
             term_number=term
         ).order_by(CourseFormSubmission.id.desc()).all()
 
-        # Load active courses (your existing logic)
-        active_courses = {c.course_code for c in CourseReference.query.filter_by(active=True).all()}
+        # Load active courses
+        active_courses = {
+            c.course_code
+            for c in CourseReference.query.filter_by(active=True).all()
+        }
 
-
+        # Build list of available years for dropdown
+        years = sorted({
+            s.term_year
+            for s in CourseFormSubmission.query.all()
+        })
 
         # Dictionary for last-term riders per course
         last_term_by_course = defaultdict(set)
@@ -2361,7 +2368,8 @@ def create_app():
             last_term_by_course=last_term_by_course,
             sorted_courses=sorted_courses,
             year=year,
-            term=term
+            term=term,
+            years=years
         )
 
     @app.route('/check_lessons_for_term')
