@@ -175,12 +175,6 @@
         </select>
     </div>
 
-    <div style="display:flex; align-items:center; gap:6px;">
-        <label><strong>Total nominations:</strong></label>
-        <span style="font-size:16px; font-weight:bold; color:#333;">
-            {{ total_nominations }}
-        </span>
-    </div>
 
 
 
@@ -193,6 +187,17 @@
             <option value="4" {% if selected_term == 4 %}selected{% endif %}>T4</option>
         </select>
     </div>
+
+
+    <div style="display:flex; align-items:center; gap:6px;">
+        <label><strong>Total nominations:</strong></label>
+        <span style="font-size:16px; font-weight:bold; color:#333;">
+            {{ total_nominations }}
+        </span>
+    </div>
+
+
+
 
 </div>
 
