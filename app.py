@@ -2432,7 +2432,7 @@ def create_app():
         # ---- CLIENTS ----
         client_names = Client.query.all()
 
-       total_nominations = len(unprocessed_submissions) + len(approved_submissions)
+        total_nominations = len(unprocessed_submissions) + len(approved_submissions)
 
         # ---- RENDER ----
         return render_template(
