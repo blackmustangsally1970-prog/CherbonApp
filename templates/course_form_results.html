@@ -698,5 +698,43 @@ $(document).ready(function() {
 });
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const total = {{ total_nominations|int }};
+    const last = parseInt(localStorage.getItem("last_total_nominations") || "0");
+
+    // Trigger fireworks ONLY when crossing the threshold
+    if (total >= 190 && last < 190) {
+
+        // First big burst
+        confetti({
+            particleCount: 200,
+            spread: 120,
+            startVelocity: 45,
+            origin: { y: 0.6 }
+        });
+
+        // A few follow-up bursts
+        let count = 0;
+        const interval = setInterval(() => {
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                startVelocity: 40,
+                origin: { y: Math.random() }
+            });
+            count++;
+            if (count > 3) clearInterval(interval);
+        }, 800);
+    }
+
+    // Update stored value
+    localStorage.setItem("last_total_nominations", total);
+});
+</script>
+
+
 </body>
 </html>
