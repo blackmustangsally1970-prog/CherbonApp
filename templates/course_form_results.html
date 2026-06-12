@@ -32,6 +32,36 @@
             margin-top: 0 !important;
         }
 
+/* The collapsible grid wrapper */
+.course-grid {
+    margin-top: 10px;
+    transition: all 0.25s ease;
+}
+
+/* Make the header look clickable */
+.toggle-header {
+    user-select: none;
+}
+
+/* Optional: hover effect so users know it's interactive */
+.toggle-header:hover {
+    background: #cbe4ff;
+}
+
+/* Optional: smooth slide (fake slide using max-height) */
+.course-grid {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+}
+
+.course-grid.open {
+    max-height: 2000px; /* big enough for any table */
+    opacity: 1;
+}
+
+
         .menu-btn {
             display: inline-block;
             background: #eee;
@@ -279,8 +309,9 @@
         %}
         {% set approved_count = riders | length %}
 
-<h3 class="course-header" 
-    style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px;">
+<h3 class="course-header toggle-header"
+    data-target="grid-{{ c.course_code }}"
+    style="margin-top:30px; background:#d9ecff; padding:10px; border-radius:6px; cursor:pointer;">
 
     <div style="display:flex; align-items:center; justify-content:space-between;">
 
@@ -391,132 +422,127 @@
             </div>
         </div>
         {% endif %}
+<div class="course-grid" id="grid-{{ c.course_code }}">
 
-        <table>
-            <thead class="orange-header">
+    <table>
+        <thead class="orange-header">
+            <tr>
+                <th style="width:4ch;">Sel</th>
+                <th style="width:14ch;">Rider</th>
+                <th style="width:12ch;">Horse 1</th>
+                <th style="width:12ch;">Horse 2</th>
+                <th style="width:12ch;">Horse 3</th>
+                <th style="width:70ch;">Notes</th>
+                <th style="width:57ch;">Cherbon Notes</th>
+                <th style="width:6ch;">FT/W</th>
+                <th style="width:6ch;">Freq</th>
+                <th style="width:10ch;">Week</th>
+                <th style="width:8ch;">Price</th>
+                <th style="width:12ch;">Status</th>
+                <th style="width:50ch;">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% if approved_count == 0 %}
                 <tr>
-                    <th style="width:4ch;">Sel</th>
-                    <th style="width:14ch;">Rider</th>
-                    <th style="width:12ch;">Horse 1</th>
-                    <th style="width:12ch;">Horse 2</th>
-                    <th style="width:12ch;">Horse 3</th>
-                    <th style="width:70ch;">Notes</th>
-                    <th style="width:57ch;">Cherbon Notes</th>
-                    <th style="width:6ch;">FT/W</th>
-                    <th style="width:6ch;">Freq</th>
-                    <th style="width:10ch;">Week</th>
-                    <th style="width:8ch;">Price</th>
-                    <th style="width:12ch;">Status</th>
-                    <th style="width:50ch;">Actions</th>
+                    <td colspan="13" style="text-align:center; color:#777;">
+                        No riders assigned to this course yet.
+                    </td>
                 </tr>
-            </thead>
+            {% else %}
+{% for r in riders %}
+<tr data-timeframe="{{ c.timerange }}" data-rider="{{ r.rider_name }}">
 
-            <tbody>
-                {% if approved_count == 0 %}
-                    <tr>
-                        <td colspan="13" style="text-align:center; color:#777;">
-                            No riders assigned to this course yet.
-                        </td>
-                    </tr>
-                {% else %}
-                    {% for r in riders %}
-              <tr data-timeframe="{{ c.timerange }}" data-rider="{{ r.rider_name }}">
+    <td class="sel-cell">
+        <input type="checkbox"
+               class="lesson-select"
+               data-id="{{ r.id }}"
+               data-course="{{ c.course_code }}">
+    </td>
 
+    {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
+    <td style="width:32ch; white-space:normal; word-break:break-word;">
+        <input type="text"
+               value="{{ r.rider_name }}"
+               onchange="updateField({{ r.id }}, 'rider_name', this.value)"
+               style="
+                   width:30ch;
+                   {% if match|length == 0 %}
+                       color:red;
+                       font-weight:bold;
+                   {% endif %}
+               ">
+    </td>
 
+    <td style="width:12ch; white-space:nowrap;">
+        <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
+            <option value=""></option>
+            {% for h in horses %}
+                <option value="{{ h.horse }}"
+                    {% if h.horse == r.horse_1 %}selected{% endif %}>
+                    {{ h.horse }}
+                </option>
+            {% endfor %}
+        </select>
+    </td>
 
+    <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
+    <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
 
-<td class="sel-cell">
-    <input type="checkbox"
-           class="lesson-select"
-           data-id="{{ r.id }}"
-           data-course="{{ c.course_code }}">
-</td>
+    <td style="width:50ch; max-width:50ch; white-space:normal; word-break:break-word;">
+        {{ r.notes }}
+    </td>
 
-{% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
-<td style="width:32ch; white-space:normal; word-break:break-word;">
-    <input type="text"
-           value="{{ r.rider_name }}"
-           onchange="updateField({{ r.id }}, 'rider_name', this.value)"
-           style="
-               width:30ch;
-               {% if match|length == 0 %}
-                   color:red;
-                   font-weight:bold;
-               {% endif %}
-           ">
-</td>
+    <td style="width:50ch; max-width:50ch; white-space:normal;">
+        <textarea
+            style="width:100%; max-width:100%; box-sizing:border-box; height:3em; resize:vertical;"
+            onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)"
+        >{{ r.cherbon_notes or '' }}</textarea>
+    </td>
 
-<td style="width:12ch; white-space:nowrap;">
-    <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
-        <option value=""></option>
-        {% for h in horses %}
-            <option value="{{ h.horse }}"
-                {% if h.horse == r.horse_1 %}selected{% endif %}>
-                {{ h.horse }}
-            </option>
-        {% endfor %}
-    </select>
-</td>
+    <td style="width:6ch; white-space:nowrap;">
+        <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
+            <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
+            <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
+        </select>
+    </td>
 
-                        <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
-                        <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
+    <td style="width:6ch; white-space:nowrap;">
+        <select onchange="updateField({{ r.id }}, 'frequency', this.value)">
+            <option value="W" {% if r.frequency == 'W' %}selected{% endif %}>W</option>
+            <option value="F" {% if r.frequency == 'F' %}selected{% endif %}>F</option>
+        </select>
+    </td>
 
-<td style="width:50ch; max-width:50ch; white-space:normal; word-break:break-word;">
-    {{ r.notes }}
-</td>
+    <td style="width:10ch; white-space:nowrap;">
+        <select onchange="updateField({{ r.id }}, 'start_week', this.value)">
+            <option value=""></option>
+            <option value="W1" {% if r.start_week == 'W1' %}selected{% endif %}>W1</option>
+            <option value="W2" {% if r.start_week == 'W2' %}selected{% endif %}>W2</option>
+        </select>
+    </td>
 
-<td style="width:50ch; max-width:50ch; white-space:normal;">
-    <textarea
-        style="width:100%; max-width:100%; box-sizing:border-box; height:3em; resize:vertical;"
-        onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)"
-    >{{ r.cherbon_notes or '' }}</textarea>
-</td>
+    <td style="width:10ch; white-space:nowrap;">
+        <input type="number"
+               value="{{ r.price or '' }}"
+               style="width:9ch;"
+               onchange="updateField({{ r.id }}, 'price', this.value)">
+    </td>
 
-                        <td style="width:6ch; white-space:nowrap;">
-                            <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
-                                <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
-                                <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
-                            </select>
-                        </td>
+    <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
 
-                        <td style="width:6ch; white-space:nowrap;">
-                            <select onchange="updateField({{ r.id }}, 'frequency', this.value)">
-                                <option value="W" {% if r.frequency == 'W' %}selected{% endif %}>W</option>
-                                <option value="F" {% if r.frequency == 'F' %}selected{% endif %}>F</option>
-                            </select>
-                        </td>
+    <td style="width:50ch; white-space:normal;">
+        <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
+        <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
+        <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
+    </td>
 
-                        <td style="width:10ch; white-space:nowrap;">
-                            <select onchange="updateField({{ r.id }}, 'start_week', this.value)">
-                                <option value=""></option>
-                                <option value="W1" {% if r.start_week == 'W1' %}selected{% endif %}>W1</option>
-                                <option value="W2" {% if r.start_week == 'W2' %}selected{% endif %}>W2</option>
-                            </select>
-                        </td>
-
-                        <td style="width:10ch; white-space:nowrap;">
-                            <input type="number"
-                                   value="{{ r.price or '' }}"
-                                   style="width:9ch;"
-                                   onchange="updateField({{ r.id }}, 'price', this.value)">
-                        </td>
-
-                        <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
-
-                        <td style="width:50ch; white-space:normal;">
-                            <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
-                            <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
-                            <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
-                        </td>
-
-                    </tr>
-                    {% endfor %}
-                {% endif %}
-            </tbody>
-        </table>
-
-    {% endif %}
+</tr>
 {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
 </div>
 
 <script>
@@ -735,6 +761,18 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".toggle-header").forEach(header => {
+        header.addEventListener("click", function() {
+            const targetId = this.getAttribute("data-target");
+            const grid = document.getElementById(targetId);
+
+            grid.classList.toggle("open");
+        });
+    });
+});
+</script>
 
 </body>
 </html>
