@@ -2432,6 +2432,8 @@ def create_app():
         # ---- CLIENTS ----
         client_names = Client.query.all()
 
+       total_nominations = len(unprocessed_submissions) + len(approved_submissions)
+
         # ---- RENDER ----
         return render_template(
             'course_form_results.html',
@@ -2441,6 +2443,7 @@ def create_app():
             terms=terms,
             unprocessed_submissions=unprocessed_submissions,
             approved_submissions=approved_submissions,
+            total_nominations=total_nominations,
             courses=courses,
             course_lookup=course_lookup,
             missing_by_course=missing_by_course,

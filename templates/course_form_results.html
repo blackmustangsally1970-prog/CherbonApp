@@ -175,6 +175,15 @@
         </select>
     </div>
 
+    <div style="display:flex; align-items:center; gap:6px;">
+        <label><strong>Total nominations:</strong></label>
+        <span style="font-size:16px; font-weight:bold; color:#333;">
+            {{ total_nominations }}
+        </span>
+    </div>
+
+
+
     <div>
         <label><strong>Term:</strong></label>
         <select onchange="window.location='?year={{ selected_year }}&term='+this.value">
