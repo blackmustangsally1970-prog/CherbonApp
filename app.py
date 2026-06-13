@@ -1541,15 +1541,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                         matched = c
                         break
 
-            # Self-match protection
-            if matched:
-                if str(matched.jotform_submission_id or "").strip() == str(submission_id).strip():
-                    matched = None
-
-            # Prevent matching if the DB record has NO submission ID (legacy)
-            if matched and not (matched.jotform_submission_id or "").strip():
-                matched = None
-
             if matched:
                 rider["matches"].append(matched)
 
