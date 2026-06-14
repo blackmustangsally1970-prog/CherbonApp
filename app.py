@@ -4768,12 +4768,14 @@ def create_app():
 
         for r in rows:
             try:
-                riders = parse_jotform_payload(
+                parsed = parse_jotform_payload(
                     r.raw_payload,
-                    forced_submission_id=r.id,        # ✅
+                    forced_submission_id=r.id,
                     clients_cache=None,
                     mode="light"
                 )
+
+                riders = parsed["riders"]
 
                 names = []
                 for rider in riders:
@@ -4781,7 +4783,8 @@ def create_app():
                     if n:
                         names.append(n)
 
-                r.display_names = ", ".join(names) if names else "Invite Submission"
+                r.display_names = ", ".join(names) if names else "(no riders)"
+
 
             except Exception as e:
                 print("ERROR extracting names:", e)
@@ -4932,11 +4935,16 @@ def create_app():
                     forced_submission_id=submission_id,
                     mode="light"
                 )
-                names = [r.get("name") for r in parsed if r.get("name")]
-                display_names = ", ".join(names) if names else "Invite Submission"
+
+                riders = parsed["riders"]
+
+                names = [r.get("name") for r in riders if r.get("name")]
+
+                display_names = ", ".join(names) if names else "(no riders)"
+
             except Exception as e:
                 print("ERROR parsing names for display:", e)
-                display_names = "Invite Submission"
+                display_names = "(unknown)"
 
             # -----------------------------------------------------
             # INSERT NEW ROW (SAFE)
