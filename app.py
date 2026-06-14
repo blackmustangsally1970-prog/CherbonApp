@@ -5061,6 +5061,170 @@ def create_app():
         # In conflict mode, we ALWAYS use the exact rider index
         rider = all_riders[rider_index - 1]
 
+        # Helpers
+        def safe_int(v):
+            if v is None:
+                return None
+            if isinstance(v, int):
+                return v
+            v = str(v).strip()
+            return int(v) if v.isdigit() else None
+
+        def safe_text(v):
+            if not v:
+                return None
+            v = str(v).strip()
+            return v if v not in ("", "N/A") else None
+
+        # Extract fields
+        raw_name = rider.get("name")
+        name = clean_name(raw_name)
+        age = safe_int(rider.get("age"))
+        guardian = safe_text(parsed.get("guardian"))
+        mobile = clean_mobile(parsed.get("mobile"))
+        email = safe_text(parsed.get("email"))
+
+        row.universal_disclaimer = safe_int(disclaimer)
+        db.session.commit()
+
+        height_cm = safe_int(rider.get("height_cm"))
+        weight_kg = safe_int(rider.get("weight_kg"))
+        notes = safe_text(rider.get("notes"))
+
+        jotform_id = str(row.form_id)
+
+        # Load clients
+        all_clients = db.session.query(Client).all()
+        clients_by_id = {c.client_id: c for c in all_clients}
+        existing = clients_by_id.get(int(client_id)) if client_id else None
+
+        # IGNORE
+        if choice == "ignore":
+            row.ignored = True
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('notifications'))
+
+        # USE EXISTING
+        if choice == "use_existing" and existing:
+
+            if guardian:
+                existing.guardian_name = guardian
+            if age is not None:
+                existing.age = age
+            if mobile:
+                existing.mobile = mobile
+            if email:
+                existing.email_primary = email
+            if height_cm is not None:
+                existing.height_cm = height_cm
+            if weight_kg is not None:
+                existing.weight_kg = weight_kg
+            if notes is not None:
+                existing.notes = notes
+
+            existing.disclaimer = safe_int(disclaimer)
+            existing.jotform_submission_id = jotform_id
+
+            log_disclaimer_processed([r["name"] for r in all_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+
+            return redirect(url_for('notifications'))
+
+        # OVERWRITE EXISTING
+        if choice == "overwrite" and existing:
+
+            existing.full_name = clean_name(name)
+            existing.age = age
+            existing.guardian_name = guardian
+            existing.mobile = mobile
+            existing.email_primary = email
+            existing.disclaimer = safe_int(disclaimer)
+            existing.height_cm = height_cm
+            existing.weight_kg = weight_kg
+            existing.notes = notes
+            existing.jotform_submission_id = jotform_id
+
+            log_disclaimer_processed([r["name"] for r in all_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+
+            return redirect(url_for('notifications'))
+
+        # CREATE NEW
+        if choice == "new":
+
+            new_client = Client(
+                full_name=clean_name(name),
+                age=age,
+                guardian_name=guardian,
+                mobile=mobile,
+                email_primary=email,
+                disclaimer=safe_int(disclaimer),
+                height_cm=height_cm,
+                weight_kg=weight_kg,
+                notes=notes,
+                invoice_required=False,
+                jotform_submission_id=jotform_id
+            )
+            db.session.add(new_client)
+
+            log_disclaimer_processed([r["name"] for r in all_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+
+            return redirect(url_for('notifications'))
+
+        # CREATE NEW (SAME NAME)
+        if choice == "new_same_name":
+
+            base = clean_name(name)
+            counter = 2
+
+            while True:
+                candidate = f"{base} ({counter})"
+                exists = db.session.query(Client).filter_by(full_name=candidate).first()
+                if not exists:
+                    break
+                counter += 1
+
+            new_client = Client(
+                full_name=clean_name(candidate),
+                age=age,
+                guardian_name=guardian,
+                mobile=mobile,
+                email_primary=email,
+                disclaimer=safe_int(disclaimer),
+                height_cm=height_cm,
+                weight_kg=weight_kg,
+                notes=notes,
+                invoice_required=False,
+                jotform_submission_id=jotform_id
+            )
+            db.session.add(new_client)
+
+            log_disclaimer_processed([r["name"] for r in all_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
+
+            return redirect(url_for('notifications'))
+
+        # SAFETY NET — should never hit
+        row.processed = True
+        row.processed_at = datetime.utcnow()
+        db.session.commit()
+        return redirect(url_for('notifications'))
+
 
     @app.route("/pricing_setup")
     def pricing_setup():
