@@ -2947,7 +2947,8 @@ def create_app():
         submission.universal_disclaimer = disclaimer or None
         db.session.commit()
 
-        valid_riders = [r for r in riders if not r.get("incomplete")]
+        # DO NOT FILTER RIDERS — conflict index must match original index
+        valid_riders = riders
 
         if not valid_riders:
             submission.processed = True
@@ -2956,6 +2957,7 @@ def create_app():
             db.session.commit()
             return redirect(url_for('notifications'))
 
+        # Conflict detection must use ORIGINAL rider index
         for i, rider in enumerate(valid_riders, start=1):
             if rider.get("matches"):
                 return redirect(url_for(
@@ -5102,7 +5104,7 @@ def create_app():
         jotform_id = str(row.form_id)
 
         # PHASE 3: Skip incomplete riders
-        valid_riders = [r for r in riders if not r.get("incomplete")]
+        rider = all_riders[rider_index - 1]
 
         # If all riders incomplete → auto-ignore
         if not valid_riders:
