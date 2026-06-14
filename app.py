@@ -5477,7 +5477,7 @@ def create_app():
             guardian = rider["guardian"]
             mobile = clean_mobile(rider["mobile"])
             email = rider["email"]
-            disclaimer = int(rider["disclaimer"]) if rider["disclaimer"] else None
+            disclaimer = int(parsed["disclaimer"]) if parsed["disclaimer"] else None
             jotform_id = rider["jotform_submission_id"]
 
             new_client = Client(
