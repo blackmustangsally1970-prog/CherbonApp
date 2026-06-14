@@ -5056,8 +5056,8 @@ def create_app():
         all_riders = parsed["riders"]
         disclaimer = parsed["disclaimer"]
 
-        valid_riders = [r for r in all_riders if not r.get("incomplete")]
-        rider = valid_riders[rider_index - 1]
+        # In conflict mode, we ALWAYS use the exact rider index
+        rider = all_riders[rider_index - 1]
 
 
     @app.route("/pricing_setup")
