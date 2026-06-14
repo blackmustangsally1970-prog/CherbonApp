@@ -1299,18 +1299,10 @@ def normalize_name(s: str) -> str:
 
 
 def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None, mode="full"):
-    """
-    Deterministic, guardian‑safe, multi‑rider‑safe parser for Cherbon Waters
-    disclaimer form. No guessing, no fuzzy matching, no guardian-as-rider bugs.
-    """
-
     import json
     import re
     from sqlalchemy.util._collections import immutabledict
 
-    # ---------------------------------------------------------
-    # NORMALISE PAYLOAD
-    # ---------------------------------------------------------
     if isinstance(payload, immutabledict):
         payload = dict(payload)
 
@@ -1319,27 +1311,21 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             payload = json.loads(payload)
         except Exception:
             print("ERROR: Could not decode payload:", type(payload))
-            return []
+            return {"riders": [], "disclaimer": None}
 
     answers = payload.get("answers", {}) or {}
 
-    # ---------------------------------------------------------
-    # SUBMISSION ID
-    # ---------------------------------------------------------
+    # Submission ID
     submission_id = (
         str(forced_submission_id)
         if forced_submission_id
         else str(payload.get("id") or payload.get("submission_id") or "")
     )
 
-    # ---------------------------------------------------------
     # DISCLAIMER ID (submission-wide)
-    # ---------------------------------------------------------
     disclaimer_id = str(answers.get("63", {}).get("answer") or "")
 
-    # ---------------------------------------------------------
-    # EMAIL EXTRACTION
-    # ---------------------------------------------------------
+    # EMAIL
     email = ""
     for key, item in answers.items():
         if item.get("type") == "control_email":
@@ -1349,35 +1335,25 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             else:
                 email = ans or ""
             break
-
-    # fallback email
     if not email:
         fallback = answers.get("47", {}).get("answer")
         if fallback:
             email = fallback
-
     email = email or ""
 
-    # ---------------------------------------------------------
-    # MOBILE EXTRACTION
-    # ---------------------------------------------------------
+    # MOBILE
     mobile = ""
     mob_field = answers.get("87", {}).get("answer")
     if isinstance(mob_field, dict):
         mobile = mob_field.get("full") or mob_field.get("text") or ""
     else:
         mobile = mob_field or ""
-
     mobile = mobile or ""
 
-    # ---------------------------------------------------------
-    # GUARDIAN EXTRACTION
-    # ---------------------------------------------------------
+    # GUARDIAN
     guardian = answers.get("86", {}).get("answer") or ""
 
-    # ---------------------------------------------------------
     # INVITE TOKEN
-    # ---------------------------------------------------------
     invite_token = ""
     for key, item in answers.items():
         if item.get("name") == "i_t":
@@ -1387,12 +1363,9 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             else:
                 invite_token = ans
             break
-
     invite_token = invite_token or ""
 
-    # ---------------------------------------------------------
-    # AGE FIELDS (sorted)
-    # ---------------------------------------------------------
+    # AGE FIELDS
     age_fields = [
         key for key, item in answers.items()
         if item.get("type") in ("control_number", "control_dropdown")
@@ -1400,30 +1373,19 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     ]
     age_fields = sorted(age_fields, key=lambda x: int(x))
 
-    # ---------------------------------------------------------
-    # RIDER NAME FIELD DETECTION (THE FIX)
-    # ---------------------------------------------------------
+    # RIDER NAME FIELDS
     fullname_fields = []
-
     for key, item in answers.items():
         if item.get("type") != "control_fullname":
             continue
-
         label = (item.get("text") or "").lower()
-
-        # DISCLAIMER FORM → skip guardian fields
         if "guardian" in label:
             continue
-
-        # DISCLAIMER FORM → must contain BOTH "rider" AND "name"
         if "rider" in label:
             fullname_fields.append(key)
-
     fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
 
-    # ---------------------------------------------------------
-    # HEIGHT / WEIGHT / NOTES FIELDS (aligned by index)
-    # ---------------------------------------------------------
+    # HEIGHT / WEIGHT / NOTES
     height_fields = sorted(
         [k for k, v in answers.items() if "height" in (v.get("text") or "").lower()],
         key=lambda x: int(x)
@@ -1437,9 +1399,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         key=lambda x: int(x)
     )
 
-    # ---------------------------------------------------------
-    # RIDER LOOP
-    # ---------------------------------------------------------
     riders = []
 
     for idx, fullname_key in enumerate(fullname_fields):
@@ -1447,7 +1406,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         if not item:
             continue
 
-        # Extract name
         pretty = item.get("prettyFormat")
         if pretty:
             raw_name = pretty
@@ -1459,11 +1417,9 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         if not name:
             continue
 
-        # Age
         age_key = age_fields[idx] if idx < len(age_fields) else None
         age = answers.get(age_key, {}).get("answer") if age_key else None
 
-        # Height / Weight / Notes
         height_key = height_fields[idx] if idx < len(height_fields) else None
         weight_key = weight_fields[idx] if idx < len(weight_fields) else None
         notes_key = notes_fields[idx] if idx < len(notes_fields) else None
@@ -1472,14 +1428,12 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         weight_val = answers.get(weight_key, {}).get("answer") if weight_key else None
         notes_val = answers.get(notes_key, {}).get("answer") if notes_key else ""
 
-        # Build rider dict
         rider = {
             "name": name,
             "age": age,
             "guardian": guardian,
             "mobile": mobile,
             "email": email,
-            "disclaimer": disclaimer_id,
             "height_cm": extract_number(height_val),
             "weight_kg": extract_number(weight_val),
             "notes": notes_val or "",
@@ -1488,9 +1442,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             "invite_token": invite_token,
         }
 
-        # ---------------------------------------------------------
-        # MATCHING (only in full mode)
-        # ---------------------------------------------------------
         if mode == "full":
             compact = name.replace(" ", "").replace("-", "")
             like_pattern = f"%{compact}%"
@@ -1510,21 +1461,19 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                     ).like(like_pattern)
                 ).all()
 
-            # Build lookup
             lookup = []
             for c in clients_cache:
                 full = getattr(c, "full_name", "")
                 norm = normalize_name(full)
                 lookup.append((c, norm))
 
-            # Exact name match
             matched = None
-            for c, norm in lookup:
-                if norm == name:
-                    matched = c
-                    break
+            if not matched:
+                for c, norm in lookup:
+                    if norm == name:
+                        matched = c
+                        break
 
-            # Email match
             if not matched and email:
                 e = email.strip().lower()
                 for c, norm in lookup:
@@ -1532,7 +1481,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                         matched = c
                         break
 
-            # Mobile match
             if not matched and mobile:
                 m = re.sub(r"\D", "", mobile)
                 for c, norm in lookup:
@@ -1546,12 +1494,14 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
         riders.append(rider)
 
-    return riders
-
-
-
-
-
+    return {
+        "riders": riders,
+        "disclaimer": disclaimer_id,
+        "submission_id": submission_id,
+        "guardian": guardian,
+        "email": email,
+        "mobile": mobile,
+    }
 
 
 
@@ -2986,15 +2936,19 @@ def create_app():
     def process_notification(webhook_id):
         submission = db.session.query(IncomingSubmission).get_or_404(webhook_id)
 
-        riders = parse_jotform_payload(
+        parsed = parse_jotform_payload(
             submission.raw_payload,
             forced_submission_id=submission.id
         )
 
-        # Filter valid riders (skip incomplete)
+        riders = parsed["riders"]
+        disclaimer = parsed["disclaimer"]
+
+        submission.universal_disclaimer = disclaimer or None
+        db.session.commit()
+
         valid_riders = [r for r in riders if not r.get("incomplete")]
 
-        # If all riders incomplete → auto-ignore
         if not valid_riders:
             submission.processed = True
             submission.ignored = True
@@ -3002,7 +2956,6 @@ def create_app():
             db.session.commit()
             return redirect(url_for('notifications'))
 
-        # Conflict detection
         for i, rider in enumerate(valid_riders, start=1):
             if rider.get("matches"):
                 return redirect(url_for(
@@ -3011,7 +2964,6 @@ def create_app():
                     rider_index=i
                 ))
 
-        # No conflicts → normal processing screen
         return render_template(
             'process_notification.html',
             submission=submission,
@@ -5079,20 +5031,24 @@ def create_app():
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-        # Parse riders once
-        all_riders = parse_jotform_payload(
+        parsed = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id
         )
+
+        all_riders = parsed["riders"]
+        disclaimer = parsed["disclaimer"]
+
         valid_riders = [r for r in all_riders if not r.get("incomplete")]
         rider = valid_riders[rider_index - 1]
 
-        # Skip incomplete riders
         if rider.get("incomplete"):
             rider["resolved"] = True
+            row.processed = True
+            row.processed_at = datetime.utcnow()
+            db.session.commit()
             return redirect(url_for('notifications'))
 
-        # IGNORE OPTION
         if choice == "ignore":
             rider["resolved"] = True
             row.ignored = True
@@ -5101,12 +5057,10 @@ def create_app():
             db.session.commit()
             return redirect(url_for('notifications'))
 
-        # Preload clients
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(int(client_id)) if client_id else None
 
-        # SAFE EXTRACTION HELPERS
         def safe_int(v):
             if v is None:
                 return None
@@ -5128,12 +5082,7 @@ def create_app():
         mobile = clean_mobile(rider.get("mobile"))
         email = safe_text(rider.get("email"))
 
-        # Universal disclaimer (submission-wide)
-        submission_disclaimer = valid_riders[0].get("disclaimer")
-        disclaimer = safe_int(submission_disclaimer)
-
-        # Store universal disclaimer on submission
-        row.universal_disclaimer = disclaimer
+        row.universal_disclaimer = safe_int(disclaimer)
         db.session.commit()
 
         height_cm = safe_int(rider.get("height_cm"))
@@ -5142,44 +5091,35 @@ def create_app():
 
         jotform_id = str(row.form_id)
 
-        # ---------------------------------------------------------
-        # USE EXISTING (SAFE MERGE)
-        # ---------------------------------------------------------
         if choice == "use_existing" and existing:
 
             if guardian:
                 existing.guardian_name = guardian
-
             if age is not None:
                 existing.age = age
-
             if mobile:
                 existing.mobile = mobile
-
             if email:
                 existing.email_primary = email
-
             if height_cm is not None:
                 existing.height_cm = height_cm
-
             if weight_kg is not None:
                 existing.weight_kg = weight_kg
-
             if notes is not None:
                 existing.notes = notes
 
-            existing.disclaimer = disclaimer
+            existing.disclaimer = safe_int(disclaimer)
             existing.jotform_submission_id = jotform_id
 
             log_disclaimer_processed([r["name"] for r in valid_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
             db.session.commit()
 
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
-        # ---------------------------------------------------------
-        # OVERWRITE EXISTING (FULL REPLACEMENT)
-        # ---------------------------------------------------------
         if choice == "overwrite" and existing:
 
             existing.full_name = clean_name(name)
@@ -5187,21 +5127,21 @@ def create_app():
             existing.guardian_name = guardian
             existing.mobile = mobile
             existing.email_primary = email
-            existing.disclaimer = disclaimer
+            existing.disclaimer = safe_int(disclaimer)
             existing.height_cm = height_cm
             existing.weight_kg = weight_kg
             existing.notes = notes
             existing.jotform_submission_id = jotform_id
 
             log_disclaimer_processed([r["name"] for r in valid_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
             db.session.commit()
 
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
-        # ---------------------------------------------------------
-        # CREATE NEW CLIENT
-        # ---------------------------------------------------------
         if choice == "new":
 
             new_client = Client(
@@ -5210,7 +5150,7 @@ def create_app():
                 guardian_name=guardian,
                 mobile=mobile,
                 email_primary=email,
-                disclaimer=disclaimer,
+                disclaimer=safe_int(disclaimer),
                 height_cm=height_cm,
                 weight_kg=weight_kg,
                 notes=notes,
@@ -5220,14 +5160,14 @@ def create_app():
             db.session.add(new_client)
 
             log_disclaimer_processed([r["name"] for r in valid_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
             db.session.commit()
 
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
-        # ---------------------------------------------------------
-        # CREATE NEW CLIENT (SAME NAME)
-        # ---------------------------------------------------------
         if choice == "new_same_name":
 
             base = clean_name(name)
@@ -5246,7 +5186,7 @@ def create_app():
                 guardian_name=guardian,
                 mobile=mobile,
                 email_primary=email,
-                disclaimer=disclaimer,
+                disclaimer=safe_int(disclaimer),
                 height_cm=height_cm,
                 weight_kg=weight_kg,
                 notes=notes,
@@ -5256,15 +5196,17 @@ def create_app():
             db.session.add(new_client)
 
             log_disclaimer_processed([r["name"] for r in valid_riders])
+
+            row.processed = True
+            row.processed_at = datetime.utcnow()
             db.session.commit()
 
             rider["resolved"] = True
             return redirect(url_for('notifications'))
 
-        # ---------------------------------------------------------
-        # FALLBACK (SHOULD NEVER HIT)
-        # ---------------------------------------------------------
         log_disclaimer_processed([r["name"] for r in valid_riders])
+        row.processed = True
+        row.processed_at = datetime.utcnow()
         db.session.commit()
 
         rider["resolved"] = True
