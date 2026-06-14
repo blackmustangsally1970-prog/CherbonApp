@@ -72,20 +72,16 @@
 <table>
     <tr>
         <th>Name</th>
-        <td>{{ rider.full_name or rider.name }}</td>
+        <td>{{ rider.name }}</td>
     </tr>
 
-    {% if invite_mode %}
-        <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
-        <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
-    {% else %}
-        <tr><th>Age</th><td>{{ rider.age }}</td></tr>
-        <tr><th>Email</th><td>{{ rider.email }}</td></tr>
-        <tr><th>Mobile</th><td>{{ rider.mobile }}</td></tr>
-        <tr><th>Guardian</th><td>{{ rider.guardian }}</td></tr>        
-        <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
-        <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
-    {% endif %}
+    <tr><th>Age</th><td>{{ rider.age }}</td></tr>
+    <tr><th>Email</th><td>{{ email }}</td></tr>
+    <tr><th>Mobile</th><td>{{ mobile }}</td></tr>
+    <tr><th>Guardian</th><td>{{ guardian }}</td></tr>
+    <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
+    <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
+    <tr><th>Disclaimer</th><td>{{ disclaimer }}</td></tr>
 </table>
 
 <div class="section-title">Matching Existing Clients</div>

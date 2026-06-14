@@ -4993,11 +4993,15 @@ def create_app():
         )
 
         riders = parsed["riders"]
-
-        # rider_index is 1‑based
         rider = riders[rider_index - 1]
 
-        # Raw matches from parse_jotform_payload (SQLAlchemy tuples)
+        # submission‑level fields
+        guardian = parsed.get("guardian")
+        email = parsed.get("email")
+        mobile = parsed.get("mobile")
+        disclaimer = parsed.get("disclaimer")
+
+        # Raw matches from parser
         raw_matches = rider.get("matches", [])
 
         match_dicts = [
@@ -5012,7 +5016,6 @@ def create_app():
         ]
 
         match_ids = [m["client_id"] for m in match_dicts]
-
         matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
 
         for m in matches:
@@ -5029,7 +5032,11 @@ def create_app():
             submission=row,
             rider=rider,
             matches=matches,
-            rider_index=rider_index
+            rider_index=rider_index,
+            guardian=guardian,
+            email=email,
+            mobile=mobile,
+            disclaimer=disclaimer
         )
 
 
