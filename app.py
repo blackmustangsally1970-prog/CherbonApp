@@ -5422,10 +5422,12 @@ def create_app():
         # -----------------------------------------
         # PHASE 3: Parse riders ONCE
         # -----------------------------------------
-        riders = parse_jotform_payload(
+        parsed = parse_jotform_payload(
             next_row.raw_payload,
-            forced_submission_id=next_row.id        # ✅
+            forced_submission_id=next_row.id
         )
+
+        riders = parsed["riders"]
 
         # -----------------------------------------
         # PHASE 3: Skip incomplete riders
@@ -5498,7 +5500,6 @@ def create_app():
         db.session.commit()
 
         return redirect(url_for('process_all_pending'))
-
 
     @app.route('/admin/cleanup_incoming_submissions')
     def cleanup_incoming_submissions():
