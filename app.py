@@ -2959,7 +2959,7 @@ def create_app():
 
         # Conflict detection must use ORIGINAL rider index
         for i, rider in enumerate(valid_riders, start=1):
-            if rider.get("matches"):
+            if rider.get("matches") and len(rider["matches"]) >= 1:
                 return redirect(url_for(
                     'resolve_conflict',
                     submission_id=submission.id,
@@ -3687,7 +3687,7 @@ def create_app():
     def detect_conflicts(riders):
         conflicts = []
         for rider in riders:
-            if rider.get("matches"):
+            if rider.get("matches") and len(rider["matches"]) >= 1:
                 conflicts.append({
                     "rider": rider,
                     "matches": rider["matches"]
