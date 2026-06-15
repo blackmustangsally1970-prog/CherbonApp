@@ -2266,11 +2266,16 @@ def create_app():
 
     @app.route('/course_form_submissions')
     def course_form_submissions():
+        import time
+        t0 = time.time()
+        print("=== COURSE FORM SUBMISSIONS START ===")
+
         from collections import defaultdict
         from sqlalchemy import and_
 
         # ---- HORSES ----
         horses = Horse.query.order_by(Horse.horse).all()
+        print("Loaded horses in", time.time() - t0); t0 = time.time()
 
         # ---- YEARS ----
         years = sorted({
@@ -2279,6 +2284,7 @@ def create_app():
             .filter(CourseFormSubmission.term_year.isnot(None))
             .all()
         })
+        print("Loaded years in", time.time() - t0); t0 = time.time()
 
         year = request.args.get('year', type=int)
         if year is None and years:
@@ -2295,6 +2301,7 @@ def create_app():
                 )
             ).all()
         })
+        print("Loaded terms in", time.time() - t0); t0 = time.time()
 
         term = request.args.get('term', type=int)
         if term is None and terms:
@@ -2315,6 +2322,7 @@ def create_app():
             .order_by(CourseFormSubmission.id.desc())
             .all()
         )
+        print("Loaded unprocessed in", time.time() - t0); t0 = time.time()
 
         # ---- APPROVED ----
         approved_submissions = (
@@ -2322,12 +2330,14 @@ def create_app():
             .order_by(CourseFormSubmission.id.desc())
             .all()
         )
+        print("Loaded approved in", time.time() - t0); t0 = time.time()
 
         # ---- COURSES ----
         courses = CourseReference.query.order_by(
             CourseReference.day_of_week,
             CourseReference.timerange
         ).all()
+        print("Loaded courses in", time.time() - t0); t0 = time.time()
 
         course_lookup = {c.course_code: c for c in courses}
 
@@ -2355,6 +2365,7 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False),
             CourseFormSubmission.cancelled.is_(False)
         ).all()
+        print("Loaded last term riders in", time.time() - t0); t0 = time.time()
 
         this_term_names = {s.rider_name for s in approved_submissions}
 
@@ -2372,8 +2383,11 @@ def create_app():
 
         # ---- CLIENTS ----
         client_names = Client.query.all()
+        print("Loaded clients in", time.time() - t0); t0 = time.time()
 
         total_nominations = len(unprocessed_submissions) + len(approved_submissions)
+
+        print("=== COURSE FORM SUBMISSIONS COMPLETE in", time.time() - t0, "seconds ===")
 
         # ---- RENDER ----
         return render_template(
