@@ -342,7 +342,7 @@
         </div>
 
 <button id="{{ btn_id }}" class="sms-btn"
-        onclick="openPreview(
+        onclick="event.stopPropagation(); openPreview(
             {{ row.client|tojson }},
             {{ ((row.guardian or '').split()[0] if (row.guardian or '').split() else '')|tojson }},
             {{ row.mobile|tojson }},
