@@ -327,24 +327,21 @@
     {% set btn_id = 'btn_' ~ loop.index %}
     {% set tc_id = 'tc_' ~ loop.index %}
 
-    <div class="client-line">
-        <div class="client-name">{{ row.client }}</div>
-
-        <div class="client-guardian">Guardian: {{ row.guardian }}</div>
-
-        <div class="client-owes">— Owes ${{ "%.2f"|format(row.current_balance) }}</div>
-
-        <div class="client-mobile">Mobile: {{ row.mobile }}</div>
-
-        <div class="client-tc">
-            Term Course Balance:
-            <input type="text" id="{{ tc_id }}" class="tc-input" value="">
-        </div>
+<div class="client-line">
+    <div class="client-name">{{ row.client }}</div>
+    <div class="client-guardian">Guardian: {{ row.guardian }}</div>
+    <div class="client-owes">— Owes ${{ "%.2f"|format(row.current_balance) }}</div>
+    <div class="client-mobile">Mobile: {{ row.mobile }}</div>
+    <div class="client-tc">
+        Term Course Balance:
+        <input type="text" id="{{ tc_id }}" class="tc-input" value="">
+    </div>
+</div>
 
 <button id="{{ btn_id }}" class="sms-btn"
-        onclick="event.stopPropagation(); openPreview(
+        onclick="openPreview(
             {{ row.client|tojson }},
-            {{ ((row.guardian or '').split()[0] if (row.guardian or '').split() else '')|tojson }},
+            {{ ((row.guardian or '').split()[0] if (row.guardardian or '').split() else '')|tojson }},
             {{ row.mobile|tojson }},
             {{ ('%.2f'|format(row.current_balance))|tojson }},
             {{ tc_id|tojson }},
@@ -353,8 +350,7 @@
     Send SMS
 </button>
 
-        <span id="sent_{{ btn_id }}" class="sent"></span>
-    </div>
+<span id="sent_{{ btn_id }}" class="sent"></span>
 
     {% if row.last_sms %}
 <div class="lesson-table sms-history-block" style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
