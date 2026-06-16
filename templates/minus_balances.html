@@ -332,27 +332,29 @@
     <div class="client-guardian">Guardian: {{ row.guardian }}</div>
     <div class="client-owes">— Owes ${{ "%.2f"|format(row.current_balance) }}</div>
     <div class="client-mobile">Mobile: {{ row.mobile }}</div>
+
     <div class="client-tc">
         Term Course Balance:
         <input type="text" id="{{ tc_id }}" class="tc-input" value="">
     </div>
+
+    <!-- ⭐ SMS BUTTON (inside row, protected from row-click) -->
+    <button id="{{ btn_id }}" class="sms-btn"
+            onclick='event.stopPropagation(); openPreview(
+                {{ row.client|tojson }},
+                {{ ((row.guardian or "").split()[0] if (row.guardian or "").split() else "")|tojson }},
+                {{ row.mobile|tojson }},
+                {{ ("%.2f"|format(row.current_balance))|tojson }},
+                {{ tc_id|tojson }},
+                {{ btn_id|tojson }}
+            )'>
+        Send SMS
+    </button>
+
+    <span id="sent_{{ btn_id }}" class="sent"></span>
 </div>
 
-<button id="{{ btn_id }}" class="sms-btn"
-        onclick="openPreview(
-            {{ row.client|tojson }},
-            {{ ((row.guardian or '').split()[0] if (row.guardian or '').split() else '')|tojson }},
-            {{ row.mobile|tojson }},
-            {{ ('%.2f'|format(row.current_balance))|tojson }},
-            {{ tc_id|tojson }},
-            {{ btn_id|tojson }}
-        )">
-    Send SMS
-</button>
-
-<span id="sent_{{ btn_id }}" class="sent"></span>
-
-    {% if row.last_sms %}
+{% if row.last_sms %}
 <div class="lesson-table sms-history-block" style="margin-left: 10px; margin-top: 6px; font-size: 14px; color:#444;">
     <strong>Last SMS Sent:</strong>
     <div style="margin-top:4px; white-space:normal;">
@@ -360,35 +362,35 @@
         — "{{ row.last_sms }}"
     </div>
 </div>
-    {% endif %}
+{% endif %}
 
-    <table class="lesson-table">
-        <tr>
-            <th style="width:14ch;">Date</th>
-            <th style="width:12ch;">Type</th>
-            <th style="width:6ch;">Att</th>
-            <th style="width:10ch;">Group</th>
-            <th style="width:12ch;">Payment</th>
-            <th style="width:12ch;">Price</th>
-            <th style="width:12ch;">Carry Fwd</th>
-            <th style="width:12ch;">Balance</th>
-        </tr>
+<table class="lesson-table">
+    <tr>
+        <th style="width:14ch;">Date</th>
+        <th style="width:12ch;">Type</th>
+        <th style="width:6ch;">Att</th>
+        <th style="width:10ch;">Group</th>
+        <th style="width:12ch;">Payment</th>
+        <th style="width:12ch;">Price</th>
+        <th style="width:12ch;">Carry Fwd</th>
+        <th style="width:12ch;">Balance</th>
+    </tr>
 
-        {% for l in row.lessons %}
-        <tr>
-            <td>{{ l.lesson_date.strftime("%d-%m-%Y") }}</td>
-            <td>{{ l.lesson_type }}</td>
-            <td>{{ l.attendance }}</td>
-            <td>{{ l.group_priv }}</td>
-            <td>{{ "%.2f"|format(l.payment or 0) }}</td>
-            <td>{{ "%.2f"|format(l.price_pl or 0) }}</td>
-            <td>{{ "%.2f"|format(l.carry_fwd or 0) }}</td>
-            <td class="{% if l.balance < 0 %}neg{% endif %}">
-                {{ "%.2f"|format(l.balance) }}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+    {% for l in row.lessons %}
+    <tr>
+        <td>{{ l.lesson_date.strftime("%d-%m-%Y") }}</td>
+        <td>{{ l.lesson_type }}</td>
+        <td>{{ l.attendance }}</td>
+        <td>{{ l.group_priv }}</td>
+        <td>{{ "%.2f"|format(l.payment or 0) }}</td>
+        <td>{{ "%.2f"|format(l.price_pl or 0) }}</td>
+        <td>{{ "%.2f"|format(l.carry_fwd or 0) }}</td>
+        <td class="{% if l.balance < 0 %}neg{% endif %}">
+            {{ "%.2f"|format(l.balance) }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 
 {% endfor %}
 
