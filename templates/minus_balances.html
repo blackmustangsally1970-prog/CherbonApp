@@ -341,15 +341,17 @@
             <input type="text" id="{{ tc_id }}" class="tc-input" value="">
         </div>
 
-        <button id="{{ btn_id }}" class="sms-btn"
-                onclick="openPreview('{{ row.client }}',
-                                     '{{ (row.guardian or "").split()[0] if (row.guardian or "").split() else "" }}',
-                                     '{{ row.mobile }}',
-                                     '{{ '%.2f'|format(row.current_balance) }}',
-                                     '{{ tc_id }}',
-                                     '{{ btn_id }}')">
-            Send SMS
-        </button>
+<button id="{{ btn_id }}" class="sms-btn"
+        onclick="openPreview(
+            {{ row.client|tojson }},
+            {{ ((row.guardian or '').split()[0] if (row.guardian or '').split() else '')|tojson }},
+            {{ row.mobile|tojson }},
+            {{ ('%.2f'|format(row.current_balance))|tojson }},
+            {{ tc_id|tojson }},
+            {{ btn_id|tojson }}
+        )">
+    Send SMS
+</button>
 
         <span id="sent_{{ btn_id }}" class="sent"></span>
     </div>
