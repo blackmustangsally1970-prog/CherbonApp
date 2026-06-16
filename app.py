@@ -5162,9 +5162,9 @@ def create_app():
         )
 
         all_riders = parsed["riders"]
-        disclaimer = parsed["disclaimer"]
+        total_riders = len(all_riders)
 
-        # In conflict mode, we ALWAYS use the exact rider index
+        # Always use the exact rider index
         rider = all_riders[rider_index - 1]
 
         # Helpers
@@ -5189,8 +5189,10 @@ def create_app():
         guardian = safe_text(parsed.get("guardian"))
         mobile = clean_mobile(parsed.get("mobile"))
         email = safe_text(parsed.get("email"))
+        disclaimer = safe_int(parsed.get("disclaimer"))
 
-        row.universal_disclaimer = safe_int(disclaimer)
+        # Store submission-level disclaimer
+        row.universal_disclaimer = disclaimer
         db.session.commit()
 
         height_cm = safe_int(rider.get("height_cm"))
@@ -5206,14 +5208,11 @@ def create_app():
 
         # IGNORE
         if choice == "ignore":
-            row.ignored = True
-            row.processed = True
-            row.processed_at = datetime.utcnow()
+            # Only ignore THIS rider — do NOT mark submission processed yet
             db.session.commit()
-            return redirect(url_for('notifications'))
 
         # USE EXISTING
-        if choice == "use_existing" and existing:
+        elif choice == "use_existing" and existing:
 
             if guardian:
                 existing.guardian_name = guardian
@@ -5230,41 +5229,31 @@ def create_app():
             if notes is not None:
                 existing.notes = notes
 
-            existing.disclaimer = safe_int(disclaimer)
+            existing.disclaimer = disclaimer
             existing.jotform_submission_id = jotform_id
 
             log_disclaimer_processed([r["name"] for r in all_riders])
-
-            row.processed = True
-            row.processed_at = datetime.utcnow()
             db.session.commit()
 
-            return redirect(url_for('notifications'))
-
         # OVERWRITE EXISTING
-        if choice == "overwrite" and existing:
+        elif choice == "overwrite" and existing:
 
             existing.full_name = clean_name(name)
             existing.age = age
             existing.guardian_name = guardian
             existing.mobile = mobile
             existing.email_primary = email
-            existing.disclaimer = safe_int(disclaimer)
+            existing.disclaimer = disclaimer
             existing.height_cm = height_cm
             existing.weight_kg = weight_kg
             existing.notes = notes
             existing.jotform_submission_id = jotform_id
 
             log_disclaimer_processed([r["name"] for r in all_riders])
-
-            row.processed = True
-            row.processed_at = datetime.utcnow()
             db.session.commit()
 
-            return redirect(url_for('notifications'))
-
         # CREATE NEW
-        if choice == "new":
+        elif choice == "new":
 
             new_client = Client(
                 full_name=clean_name(name),
@@ -5272,7 +5261,7 @@ def create_app():
                 guardian_name=guardian,
                 mobile=mobile,
                 email_primary=email,
-                disclaimer=safe_int(disclaimer),
+                disclaimer=disclaimer,
                 height_cm=height_cm,
                 weight_kg=weight_kg,
                 notes=notes,
@@ -5282,15 +5271,10 @@ def create_app():
             db.session.add(new_client)
 
             log_disclaimer_processed([r["name"] for r in all_riders])
-
-            row.processed = True
-            row.processed_at = datetime.utcnow()
             db.session.commit()
 
-            return redirect(url_for('notifications'))
-
         # CREATE NEW (SAME NAME)
-        if choice == "new_same_name":
+        elif choice == "new_same_name":
 
             base = clean_name(name)
             counter = 2
@@ -5308,7 +5292,7 @@ def create_app():
                 guardian_name=guardian,
                 mobile=mobile,
                 email_primary=email,
-                disclaimer=safe_int(disclaimer),
+                disclaimer=disclaimer,
                 height_cm=height_cm,
                 weight_kg=weight_kg,
                 notes=notes,
@@ -5318,17 +5302,28 @@ def create_app():
             db.session.add(new_client)
 
             log_disclaimer_processed([r["name"] for r in all_riders])
-
-            row.processed = True
-            row.processed_at = datetime.utcnow()
             db.session.commit()
 
-            return redirect(url_for('notifications'))
+        # SAFETY NET
+        else:
+            db.session.commit()
 
-        # SAFETY NET — should never hit
+        # ----------------------------------------------------
+        # NEXT RIDER OR FINISH
+        # ----------------------------------------------------
+        if rider_index < total_riders:
+            # Go to next rider
+            return redirect(url_for(
+                'resolve_conflict',
+                submission_id=submission_id,
+                rider_index=rider_index + 1
+            ))
+
+        # If we reached the last rider, mark submission processed
         row.processed = True
         row.processed_at = datetime.utcnow()
         db.session.commit()
+
         return redirect(url_for('notifications'))
 
 
