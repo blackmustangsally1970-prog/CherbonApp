@@ -106,6 +106,12 @@ class CourseFormSubmission(db.Model):
     price = db.Column(db.Integer, nullable=True)          # price in cents or dollars (your c
     cancelled = db.Column(db.Boolean, default=False)
 
+    price = db.Column(db.Numeric(10, 2))
+    price_override = db.Column(db.Numeric(10, 2), nullable=True)
+    price_locked = db.Column(db.Boolean, default=False)
+
+
+
 class CourseEnrolment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 

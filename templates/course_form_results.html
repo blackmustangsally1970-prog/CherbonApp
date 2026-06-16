@@ -4,6 +4,20 @@
     <title>Course Form Submissions</title>
 
     <style>
+
+    .price-lock {
+        color: #d9534f;
+        font-weight: bold;
+    }
+    .price-override {
+        color: #0275d8;
+        font-weight: bold;
+    }
+    .price-auto {
+        color: #5cb85c;
+        font-weight: bold;
+    }
+
         body { font-family: sans-serif; margin: 20px; }
 
         table {
@@ -523,12 +537,37 @@
         </select>
     </td>
 
-    <td style="width:10ch; white-space:nowrap;">
+<td style="width:14ch; white-space:nowrap;">
+
+    {% if r.price_locked %}
+        <!-- 🔒 LOCKED PRICE -->
+        <span class="price-lock">🔒 {{ r.price }}</span>
+
+    {% elif r.price_override is not none %}
+        <!-- ✏️ OVERRIDE PRICE -->
+        <span class="price-override">✏️</span>
         <input type="number"
-               value="{{ r.price or '' }}"
+               step="0.01"
+               value="{{ r.price_override }}"
                style="width:9ch;"
-               onchange="updateField({{ r.id }}, 'price', this.value)">
-    </td>
+               onchange="updateField({{ r.id }}, 'price_override', this.value)">
+
+    {% else %}
+        <!-- 💰 AUTO PRICE -->
+        <span class="price-auto">💰</span>
+        <input type="number"
+               step="0.01"
+               value="{{ r.price }}"
+               style="width:9ch;"
+               onchange="updateField({{ r.id }}, 'price_override', this.value)">
+    {% endif %}
+
+    <!-- LOCK CHECKBOX -->
+    <input type="checkbox"
+           title="Lock price"
+           {% if r.price_locked %}checked{% endif %}
+           onchange="updateField({{ r.id }}, 'price_locked', this.checked)">
+</td>
 
     <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
 

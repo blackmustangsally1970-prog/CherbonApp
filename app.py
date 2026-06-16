@@ -268,6 +268,24 @@ def get_day_offset(day_name):
     return mapping.get(day_name, 0)
 
 
+def recalc_submission_price(submission, approved_submissions):
+    course = CourseReference.query.filter_by(
+        course_code=submission.current_course
+    ).first()
+    if not course:
+        return
+
+    new_price = calculate_price(
+        group_priv = course.group_priv,
+        ftor = submission.ftor,
+        frequency = submission.frequency,
+        rider_name = submission.rider_name,
+        approved_submissions = approved_submissions
+    )
+
+    if new_price is not None:
+        submission.price = new_price
+
 
 
 def get_pricing_lookup():
@@ -1844,7 +1862,7 @@ def create_app():
         day_offset = get_day_offset(course.day_of_week)
 
         # Load all approved riders for auto-detection
-        approved = CourseFormSubmission.query.filter_by(status="Approved").all()
+        approved = CourseFormSubmission.query.filter_by(status="approved").all()
 
         created = 0
 
@@ -1859,17 +1877,23 @@ def create_app():
             if r.frequency == "F" and not r.start_week:
                 continue
 
-            # AUTO‑CALCULATE PRICE HERE (NEW)
-            price = calculate_price(
-                group_priv = course.group_priv,
-                ftor = r.ftor,
-                frequency = r.frequency,
-                rider_name = r.rider_name,
-                approved_submissions = approved
-            )
-
-            if price is None:
-                continue
+            # ============================================================
+            # HYBRID MODE PRICE SELECTION
+            # ============================================================
+            if r.price_override is not None:
+                price = r.price_override
+            elif r.price is not None:
+                price = r.price
+            else:
+                price = calculate_price(
+                    group_priv=course.group_priv,
+                    ftor=r.ftor,
+                    frequency=r.frequency,
+                    rider_name=r.rider_name,
+                    approved_submissions=approved
+                )
+                if price is None:
+                    continue
 
             # Determine weeks
             if r.frequency == "W":
@@ -1884,24 +1908,24 @@ def create_app():
                 lesson_date = week_start + timedelta(days=day_offset)
 
                 lesson = Lesson(
-                    lesson_date = lesson_date,
-                    time_frame = course.timerange,
-                    block_key = "",
-                    client = r.rider_name,
-                    horse = r.horse_1,
-                    adjust = 0,
-                    carry_fwd = None,
-                    payment = None,
-                    price_pl = price,          # ← NEW: auto‑calculated
-                    attendance = None,
-                    balance = None,
-                    lesson_notes = "",
-                    lesson_type = "Arena",
-                    group_priv = course.group_priv,
-                    blockends = None,
-                    lesson_no = str(lesson_no),
-                    freq = r.frequency,
-                    voucher_number = None
+                    lesson_date=lesson_date,
+                    time_frame=course.timerange,
+                    block_key="",
+                    client=r.rider_name,
+                    horse=r.horse_1,
+                    adjust=0,
+                    carry_fwd=None,
+                    payment=None,
+                    price_pl=price,      # ⭐ HYBRID PRICE
+                    attendance=None,
+                    balance=None,
+                    lesson_notes="",
+                    lesson_type="Arena",
+                    group_priv=course.group_priv,
+                    blockends=None,
+                    lesson_no=str(lesson_no),
+                    freq=r.frequency,
+                    voucher_number=None
                 )
 
                 db.session.add(lesson)
@@ -1910,8 +1934,6 @@ def create_app():
 
         db.session.commit()
         return jsonify(success=True, created=created)
-
-
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -2136,15 +2158,42 @@ def create_app():
         if not row:
             return "Not found", 404
 
-        allowed = ["rider_name", "ftor", "horse_1", "cherbon_notes",
-                   "frequency", "current_course", "status"]
+        # HYBRID MODE: new allowed fields
+        allowed = [
+            "rider_name", "ftor", "horse_1", "cherbon_notes",
+            "frequency", "current_course", "status",
+            "price_override", "price_locked"
+        ]
         if field not in allowed:
             return "Invalid field", 400
 
-        # ⭐ ACTUALLY UPDATE THE FIELD (THIS WAS MISSING)
+        # -------------------------------
+        # NORMALISE TYPES FOR NEW FIELDS
+        # -------------------------------
+        if field == "price_locked":
+            row.price_locked = str(value).lower() in ("1", "true", "yes", "on")
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        if field == "price_override":
+            if value in ("", None):
+                row.price_override = None
+            else:
+                try:
+                    row.price_override = Decimal(value)
+                except:
+                    return "Invalid price override", 400
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        # -------------------------------
+        # NORMAL FIELD UPDATE
+        # -------------------------------
         setattr(row, field, value)
 
-        # Special case: empty horse_1 allowed
+        # horse_1 blank allowed
         if field == "horse_1" and value.strip() == "":
             db.session.commit()
             db.session.refresh(row)
@@ -2153,21 +2202,28 @@ def create_app():
         db.session.commit()
         db.session.refresh(row)
 
-        # ---- STATUS CHANGE → RECALC ALL APPROVED ----
+        # ============================================================
+        # STATUS CHANGE → RECALC ALL APPROVED (RESPECT LOCK)
+        # ============================================================
         if field == "status":
-            approved = CourseFormSubmission.query.filter_by(status="Approved").all()
+            approved = CourseFormSubmission.query.filter_by(status="approved").all()
 
             for r in approved:
-                course = CourseReference.query.filter_by(course_code=r.current_course).first()
+                if r.price_locked:
+                    continue
+
+                course = CourseReference.query.filter_by(
+                    course_code=r.current_course
+                ).first()
                 if not course:
                     continue
 
                 new_price = calculate_price(
-                    group_priv = course.group_priv,
-                    ftor = r.ftor,
-                    frequency = r.frequency,
-                    rider_name = r.rider_name,
-                    approved_submissions = approved
+                    group_priv=course.group_priv,
+                    ftor=r.ftor,
+                    frequency=r.frequency,
+                    rider_name=r.rider_name,
+                    approved_submissions=approved
                 )
 
                 if new_price is not None:
@@ -2176,24 +2232,31 @@ def create_app():
             db.session.commit()
             return "OK", 200
 
-        # ---- RECALC PRICE WHEN RELEVANT FIELDS CHANGE ----
+        # ============================================================
+        # RECALC PRICE WHEN CORE FIELDS CHANGE (RESPECT LOCK)
+        # ============================================================
         if field in ("rider_name", "ftor", "frequency", "current_course"):
-            approved = CourseFormSubmission.query.filter_by(status="Approved").all()
+            if not row.price_locked:
+                approved = CourseFormSubmission.query.filter_by(status="approved").all()
 
-            course = CourseReference.query.filter_by(course_code=row.current_course).first()
-            if course:
-                new_price = calculate_price(
-                    group_priv = course.group_priv,
-                    ftor = row.ftor,
-                    frequency = row.frequency,
-                    rider_name = row.rider_name,
-                    approved_submissions = approved
-                )
+                course = CourseReference.query.filter_by(
+                    course_code=row.current_course
+                ).first()
 
-                if new_price is not None:
-                    row.price = new_price
+                if course:
+                    new_price = calculate_price(
+                        group_priv=course.group_priv,
+                        ftor=row.ftor,
+                        frequency=row.frequency,
+                        rider_name=row.rider_name,
+                        approved_submissions=approved
+                    )
 
-            db.session.commit()
+                    if new_price is not None:
+                        row.price = new_price
+
+                db.session.commit()
+
             return "OK", 200
 
         return "OK", 200
@@ -2201,9 +2264,38 @@ def create_app():
     @app.route('/approve_course_submission/<int:id>')
     def approve_course_submission(id):
         r = CourseFormSubmission.query.get(id)
-        if r:
-            r.status = "approved"
-            db.session.commit()
+        if not r:
+            return redirect(request.referrer)
+
+        # Set status
+        r.status = "approved"
+        db.session.commit()
+
+        # Recalculate pricing for ALL approved riders (respect lock)
+        approved = CourseFormSubmission.query.filter_by(status="approved").all()
+
+        for sub in approved:
+            if sub.price_locked:
+                continue
+
+            course = CourseReference.query.filter_by(
+                course_code=sub.current_course
+            ).first()
+            if not course:
+                continue
+
+            new_price = calculate_price(
+                group_priv=course.group_priv,
+                ftor=sub.ftor,
+                frequency=sub.frequency,
+                rider_name=sub.rider_name,
+                approved_submissions=approved
+            )
+
+            if new_price is not None:
+                sub.price = new_price
+
+        db.session.commit()
         return redirect(request.referrer)
 
 
