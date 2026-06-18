@@ -441,7 +441,12 @@
     <table>
         <thead class="orange-header">
             <tr>
-                <th style="width:4ch;">Sel</th>
+<th style="width:4ch;">
+    <input type="checkbox"
+           class="master-select"
+           data-course="{{ c.course_code }}"
+           title="Select all">
+</th>
                 <th style="width:14ch;">Rider</th>
                 <th style="width:12ch;">Horse 1</th>
                 <th style="width:12ch;">Horse 2</th>
@@ -708,6 +713,27 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
     });
+
+
+/* -----------------------------------------
+   MASTER SELECT CHECKBOX
+----------------------------------------- */
+document.querySelectorAll(".master-select").forEach(master => {
+    master.addEventListener("change", function () {
+        const course = this.dataset.course;
+        const checked = this.checked;
+
+        document.querySelectorAll(
+            `.lesson-select[data-course="${course}"]`
+        ).forEach(cb => {
+            // Skip rows already marked "Added"
+            if (cb.closest(".sel-cell").textContent.trim() === "Added") return;
+
+            cb.checked = checked;
+        });
+    });
+});
+
 
 
     /* -----------------------------------------
