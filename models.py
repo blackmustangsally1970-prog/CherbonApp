@@ -1,7 +1,7 @@
 from extensions import db
 from datetime import datetime
 from app import db
-
+from flask_login import 
 
 
 class DailyEvent(db.Model):
@@ -535,7 +535,7 @@ class TeacherSlot(db.Model):
     teacher_name = db.Column(db.String(50))
 
 
-class Users(db.Model):
+class Users(db.Model, UserMixin):
     __tablename__ = "users"
 
     user_id = db.Column(db.Integer, primary_key=True)
@@ -543,6 +543,15 @@ class Users(db.Model):
     password_hash = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, default=True)
     role = db.Column(db.String(20), default="management")
+
+    # Flask-Login requires get_id() to return a string
+    def get_id(self):
+        return str(self.user_id)
+
+    # Tie Flask-Login's is_active to your DB field
+    @property
+    def is_active(self):
+        return self.active
 
 
 class LessonBlockTag(db.Model):
