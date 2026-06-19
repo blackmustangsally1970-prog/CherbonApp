@@ -1,0 +1,21 @@
+<h2>Upload Receipt File</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+    <label>Select File:</label><br>
+    <input type="file"
+           name="file"
+           accept="image/*,.pdf,.doc,.docx"
+           required>
+
+    <br><br>
+
+    <label>Notes (optional):</label><br>
+    <textarea name="notes"
+              rows="3"
+              style="width:100%;"></textarea>
+
+    <br><br>
+
+    <button type="submit">Upload File</button>
+</form>

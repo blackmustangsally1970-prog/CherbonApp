@@ -2066,6 +2066,33 @@ def create_app():
         return render_template("upload_receipt.html")
 
 
+    @app.route("/upload_receipt_file", methods=["GET", "POST"])
+    @login_required
+    def upload_receipt_file():
+        if request.method == "POST":
+            file = request.files.get("file")
+            notes = request.form.get("notes", "")
+
+            if not file:
+                return "No file", 400
+
+            filename = secure_filename(file.filename)
+            save_path = os.path.join("static/receipts", filename)
+            file.save(save_path)
+
+            r = Receipt(
+                staff_id=current_user.user_id,
+                image_path=save_path,
+                notes=notes
+            )
+            db.session.add(r)
+            db.session.commit()
+
+            return redirect(url_for("upload_receipt_file"))
+
+        return render_template("upload_receipt_file.html")
+
+
     @app.route("/receipt_review")
     @login_required
     def receipt_review():

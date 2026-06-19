@@ -69,6 +69,47 @@
     display: block;
 }
 
+/* RECEIPTS SUBMENU */
+.has-submenu {
+  position: relative;
+}
+
+/* hide submenu by default */
+.submenu {
+  display: none;
+  list-style: none;
+  padding-left: 20px;
+  margin-top: -10px;
+}
+
+/* submenu button style */
+.submenu-btn {
+  display: block;
+  background: #eef2ff;
+  border: 2px solid #4a6bff;
+  padding: 18px 20px;
+  border-radius: 12px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #001a66;
+  text-decoration: none;
+  margin: 10px 0;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.submenu-btn:hover {
+  background: #dce6ff;
+  transform: scale(1.03);
+}
+
+/* Desktop override for submenu */
+@media (min-width: 800px) {
+  .submenu-btn {
+    padding: 12px 14px !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+  }
+}
 
 
   </style>
@@ -184,10 +225,23 @@
     <a href="{{ url_for('daily_summary') }}" class="menu-btn">📊Daily Summaries</a>
   </li>
 
-  <li>
-    <a href="{{ url_for('upload_receipt') }}" class="menu-btn">🧾 Upload Receipt</a>
-  </li>
+<li class="has-submenu">
+    <a class="menu-btn submenu-toggle">🧾 Receipts</a>
 
+    <ul class="submenu">
+        <li>
+            <a href="{{ url_for('upload_receipt') }}" class="submenu-btn">📸 Take Picture</a>
+        </li>
+
+        <li>
+            <a href="{{ url_for('upload_receipt') }}" class="submenu-btn">📁 Upload File</a>
+        </li>
+
+        <li>
+            <a href="{{ url_for('receipt_review') }}" class="submenu-btn">👀 Review Receipts</a>
+        </li>
+    </ul>
+</li>
 
 
 </ul>
@@ -319,6 +373,17 @@ setInterval(checkDBHealth, 5000);
 // Run immediately on page load
 checkDBHealth();
 </script>
+
+<script>
+document.querySelectorAll('.submenu-toggle').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const submenu = this.parentElement.querySelector('.submenu');
+        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+    });
+});
+</script>
+
 
 </body>
 </html>
