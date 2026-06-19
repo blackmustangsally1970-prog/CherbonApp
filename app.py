@@ -2042,7 +2042,7 @@ def create_app():
 
     @app.route("/receipt_upload", methods=["GET", "POST"])
     @login_required
-    def upload_receipt():
+    def receipt_upload():
         if request.method == "POST":
             file = request.files.get("photo")
             notes = request.form.get("notes", "")
@@ -2062,7 +2062,7 @@ def create_app():
             db.session.add(r)
             db.session.commit()
 
-            return redirect(url_for("upload_receipt"))
+            return redirect(url_for("receipt_upload"))
 
         return render_template("upload_receipt.html")
 
