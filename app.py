@@ -30,6 +30,7 @@ from models import (
     LessonBlockTag,
     LessonInvite,
     LessonTeacherTag,
+    Receipt, 
     SmsLog,
     Teacher,
     TeacherBlock,
