@@ -4,6 +4,8 @@ from flask import (
     jsonify, current_app, Response, session
 )
 
+from flask_login import current_user
+
 from collections import defaultdict
 from collections import Counter
 from config import Config
