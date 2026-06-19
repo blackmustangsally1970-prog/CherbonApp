@@ -2054,7 +2054,7 @@ def create_app():
             file.save(save_path)
 
             r = Receipt(
-                staff_id=current_user.id,
+                staff_id=current_user.user_id,
                 image_path=save_path,
                 notes=notes
             )
