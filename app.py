@@ -8,6 +8,8 @@ from collections import defaultdict
 from collections import Counter
 from config import Config
 from datetime import timedelta
+from werkzeug.utils import secure_filename
+
 
 
 # Database + Models
@@ -1532,6 +1534,9 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "")
     app.config.from_object(Config())
     app.config['JOTFORM_API_KEY'] = os.getenv("JOTFORM_API_KEY", "")
+
+    # ⭐ Allow uploads up to 20 MB
+    app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
     # Load ClickSend credentials
     app.config['CLICKSEND_USERNAME'] = (
