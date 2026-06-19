@@ -5,6 +5,8 @@ from flask import (
 )
 
 from flask_login import LoginManager, current_user
+from flask_login import login_user
+
 
 from collections import defaultdict
 from collections import Counter
@@ -1960,8 +1962,14 @@ def create_app():
 
             user = Users.query.filter_by(username=username, active=True).first()
             if user and check_password_hash(user.password_hash, password):
+
+                # --- OLD SYSTEM (keeps current users working) ---
                 session["user_id"] = user.user_id
                 session["username"] = user.username
+
+                # --- NEW SYSTEM (Flask-Login) ---
+                login_user(user)
+
                 return redirect(url_for("dashboard"))
 
             return render_template("login.html", error="Invalid username or password")
