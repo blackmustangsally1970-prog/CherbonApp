@@ -2013,6 +2013,80 @@ def create_app():
 
         return f"User '{username}' created with role '{role}'"
 
+    @app.route("/upload_receipt", methods=["GET", "POST"])
+    @login_required
+    def upload_receipt():
+        if request.method == "POST":
+            file = request.files.get("photo")
+            notes = request.form.get("notes", "")
+
+            if not file:
+                return "No file", 400
+
+            filename = secure_filename(file.filename)
+            save_path = os.path.join("static/receipts", filename)
+            file.save(save_path)
+
+            r = Receipt(
+                staff_id=current_user.id,
+                image_path=save_path,
+                notes=notes
+            )
+            db.session.add(r)
+            db.session.commit()
+
+            return redirect(url_for("upload_receipt"))
+
+        return render_template("upload_receipt.html")
+
+    @app.route("/receipt_upload", methods=["GET", "POST"])
+    @login_required
+    def upload_receipt():
+        if request.method == "POST":
+            file = request.files.get("photo")
+            notes = request.form.get("notes", "")
+
+            if not file:
+                return "No file", 400
+
+            filename = secure_filename(file.filename)
+            save_path = os.path.join("static/receipts", filename)
+            file.save(save_path)
+
+            r = Receipt(
+                staff_id=current_user.id,
+                image_path=save_path,
+                notes=notes
+            )
+            db.session.add(r)
+            db.session.commit()
+
+            return redirect(url_for("upload_receipt"))
+
+        return render_template("upload_receipt.html")
+
+
+    @app.route("/receipt_review")
+    @login_required
+    def receipt_review():
+        receipts = Receipt.query.order_by(Receipt.created_at.desc()).all()
+        return render_template("receipt_review.html", receipts=receipts)
+
+    @app.route("/mark_receipt_reviewed", methods=["POST"])
+    @login_required
+    def mark_receipt_reviewed():
+        data = request.json
+        r = Receipt.query.get(data["id"])
+
+        if not r:
+            return "Not found", 404
+
+        r.reviewed = data["reviewed"]
+        db.session.commit()
+
+        return "OK"
+
+
 
     @app.route("/gift_voucher_edit/<int:id>", methods=["GET", "POST"])
     def gift_voucher_edit(id):

@@ -15,6 +15,18 @@ class DailyEvent(db.Model):
         db.UniqueConstraint('date', 'fy', name='uq_daily_date_fy'),
     )
 
+
+class Receipt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    staff_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    image_path = db.Column(db.String(255))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reviewed = db.Column(db.Boolean, default=False)
+
+    staff = db.relationship("User")
+
+
 class SmsLog(db.Model):
     __tablename__ = "sms_log"
 
