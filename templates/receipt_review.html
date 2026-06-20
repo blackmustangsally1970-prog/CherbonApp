@@ -84,3 +84,89 @@
 </tr>
 {% endfor %}
 </table>
+
+<script>
+    function markReviewed(id, checkbox) {
+        fetch("/mark_receipt_reviewed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: id, reviewed: checkbox.checked })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "success") {
+                const row = checkbox.closest("tr");
+                row.style.transition = "opacity 0.4s ease";
+                row.style.opacity = "0";
+                setTimeout(() => row.remove(), 400);
+            }
+        });
+    }
+
+    function setInvoiceDate(id, date) {
+        fetch("/set_invoice_date", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: id, invoice_date: date })
+        });
+    }
+
+    function setPaidDate(id, date) {
+        fetch("/set_paid_date", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: id, paid_date: date })
+        });
+    }
+
+    function setCategory(id, category) {
+        fetch("/set_receipt_category", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: id, category: category })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "success") {
+                location.reload();
+            }
+        });
+    }
+
+    function setSubfolder(id, folder) {
+        if (folder === "new") {
+            folder = prompt("Enter new subfolder name:");
+            if (!folder) return;
+        }
+
+        fetch("/set_receipt_subfolder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: id, folder: folder })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "success") {
+                location.reload();
+            }
+        });
+    }
+
+    function deleteReceipt(id) {
+        if (!confirm("Are you sure you want to delete this receipt?")) return;
+
+        fetch(`/delete_receipt/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: id })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "success") {
+                location.reload();
+            } else {
+                alert("Error deleting receipt.");
+            }
+        });
+    }
+</script>

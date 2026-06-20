@@ -2084,6 +2084,9 @@ def create_app():
         data = request.get_json()
         r = Receipt.query.get(data["id"])
 
+        if not r:
+            return {"status": "error", "msg": "Not found"}, 404
+
         old_path = os.path.join("static", r.image_path)
         r.category = data["category"]
 
@@ -2099,7 +2102,8 @@ def create_app():
             r.image_path = os.path.relpath(new_path, "static")
 
         db.session.commit()
-        return {"status": "success"}
+
+        return {"status": "success", "category": r.category}
 
     @app.route("/set_receipt_subfolder", methods=["POST"])
     @login_required
