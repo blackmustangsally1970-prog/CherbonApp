@@ -27,7 +27,6 @@
             background: #f2f2f2;
         }
 
-        /* MAIN MENU BUTTON */
         .menu-btn {
             display: inline-block;
             background: #eee;
@@ -63,7 +62,7 @@
             padding: 10px;
             border-radius: 10px;
             width: 90%;
-            max-width: 800px;
+            max-width: 900px;
             position: relative;
         }
 
@@ -75,20 +74,23 @@
             cursor: pointer;
         }
 
-        /* Prevent huge zoom */
-        #previewFrame {
+        #previewImage {
             max-width: 100%;
-            max-height: 100%;
+            max-height: 80vh;
             object-fit: contain;
+            display: none;
+        }
+
+        #previewPDF {
+            width: 100%;
+            height: 80vh;
+            border: none;
+            display: none;
         }
     </style>
 </head>
 
 <body>
-
-<!-- ========================================================= -->
-<!--  TOP MENU BUTTON                                          -->
-<!-- ========================================================= -->
 
 <div style="margin-bottom: 20px; display:flex; gap:12px;">
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
@@ -129,23 +131,22 @@
 </table>
 
 <script>
-    function markReviewed(id, state) {
-        fetch("/mark_receipt_reviewed", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ id: id, reviewed: state })
-        });
-    }
+function markReviewed(id, state) {
+    fetch("/mark_receipt_reviewed", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: id, reviewed: state })
+    });
+}
 </script>
 
-<!-- ========================================================= -->
-<!--  POPUP MODAL                                              -->
-<!-- ========================================================= -->
-
+<!-- MODAL -->
 <div id="previewModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
-        <iframe id="previewFrame" style="width:100%; height:80vh; border:none;"></iframe>
+
+        <img id="previewImage">
+        <embed id="previewPDF" type="application/pdf">
     </div>
 </div>
 
@@ -153,26 +154,34 @@
 document.querySelectorAll('.open-preview').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
+
         const file = this.dataset.file.toLowerCase();
-        const frame = document.getElementById('previewFrame');
+        const modal = document.getElementById('previewModal');
+        const img = document.getElementById('previewImage');
+        const pdf = document.getElementById('previewPDF');
 
         // Reset
-        frame.src = "";
+        img.style.display = "none";
+        pdf.style.display = "none";
+        img.src = "";
+        pdf.src = "";
 
-        // Detect PDF
-        if (file.endsWith(".pdf")) {
-            frame.src = this.dataset.file + "#zoom=100";
+        if (file.endsWith(".jpg") || file.endsWith(".jpeg") || file.endsWith(".png")) {
+            img.src = this.dataset.file;
+            img.style.display = "block";
         } else {
-            frame.src = this.dataset.file;
+            pdf.src = this.dataset.file + "#zoom=100";
+            pdf.style.display = "block";
         }
 
-        document.getElementById('previewModal').style.display = 'flex';
+        modal.style.display = "flex";
     });
 });
 
 document.querySelector('.close-modal').addEventListener('click', () => {
     document.getElementById('previewModal').style.display = 'none';
-    document.getElementById('previewFrame').src = "";
+    document.getElementById('previewImage').src = "";
+    document.getElementById('previewPDF').src = "";
 });
 </script>
 
