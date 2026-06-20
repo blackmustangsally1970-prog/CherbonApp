@@ -13,7 +13,7 @@ from collections import Counter
 from config import Config
 from datetime import timedelta
 from werkzeug.utils import secure_filename
-
+from datetime import datetime
 
 
 # Database + Models
@@ -65,6 +65,7 @@ import re
 import json
 import hashlib
 import secrets
+import shutil
 import string
 import tempfile
 import time
@@ -147,6 +148,13 @@ def get_static_teacher_time():
         TeacherTime.time
     ).all()
 
+
+def calculate_fy(date):
+    year = date.year
+    if date.month >= 7:
+        return f"{year}-{year+1}"
+    else:
+        return f"{year-1}-{year}"
 
 def get_group_pricing(group_priv):
     """Return the pricing row for a given group_priv, or None."""
@@ -2039,6 +2047,53 @@ def create_app():
 
         return f"User '{username}' created with role '{role}'"
 
+    @app.route("/set_receipt_category", methods=["POST"])
+    @login_required
+    def set_receipt_category():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+
+        old_path = os.path.join("static", r.image_path)
+        r.category = data["category"]
+
+        # Only move if subfolder already chosen
+        if r.subfolder:
+            new_dir = os.path.join("static", "receipts", r.category, r.subfolder)
+            os.makedirs(new_dir, exist_ok=True)
+
+            new_path = os.path.join(new_dir, os.path.basename(r.image_path))
+            shutil.move(old_path, new_path)
+
+            # Update DB path
+            r.image_path = os.path.relpath(new_path, "static")
+
+        db.session.commit()
+        return {"status": "ok"}
+
+    @app.route("/set_receipt_subfolder", methods=["POST"])
+    @login_required
+    def set_receipt_subfolder():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+
+        old_path = os.path.join("static", r.image_path)
+        r.subfolder = data["folder"]
+
+        # Only move if category already chosen
+        if r.category:
+            new_dir = os.path.join("static", "receipts", r.category, r.subfolder)
+            os.makedirs(new_dir, exist_ok=True)
+
+            new_path = os.path.join(new_dir, os.path.basename(r.image_path))
+            shutil.move(old_path, new_path)
+
+            # Update DB path
+            r.image_path = os.path.relpath(new_path, "static")
+
+        db.session.commit()
+        return {"status": "ok"}
+
+
     @app.route("/upload_receipt", methods=["GET", "POST"])
     @login_required
     def upload_receipt():
@@ -2050,13 +2105,30 @@ def create_app():
                 return "No file", 400
 
             filename = secure_filename(file.filename)
-            save_path = os.path.join("static/receipts", filename)
+
+            incoming_dir = os.path.join("static", "receipts", "_incoming")
+            os.makedirs(incoming_dir, exist_ok=True)
+
+            save_path = os.path.join(incoming_dir, filename)
             file.save(save_path)
+
+            from datetime import datetime
+            def calculate_fy(date):
+                year = date.year
+                if date.month >= 7:
+                    return f"{year}-{year+1}"
+                else:
+                    return f"{year-1}-{year}"
+
+            now = datetime.utcnow()
+            fy = calculate_fy(now)
 
             r = Receipt(
                 staff_id=current_user.user_id,
-                image_path=filename,
-                notes=notes
+                image_path=os.path.relpath(save_path, "static"),
+                notes=notes,
+                fy=fy,
+                created_at=now
             )
             db.session.add(r)
             db.session.commit()
@@ -2077,13 +2149,30 @@ def create_app():
                 return "No file", 400
 
             filename = secure_filename(file.filename)
-            save_path = os.path.join("static/receipts", filename)
+
+            incoming_dir = os.path.join("static", "receipts", "_incoming")
+            os.makedirs(incoming_dir, exist_ok=True)
+
+            save_path = os.path.join(incoming_dir, filename)
             file.save(save_path)
+
+            from datetime import datetime
+            def calculate_fy(date):
+                year = date.year
+                if date.month >= 7:
+                    return f"{year}-{year+1}"
+                else:
+                    return f"{year-1}-{year}"
+
+            now = datetime.utcnow()
+            fy = calculate_fy(now)
 
             r = Receipt(
                 staff_id=current_user.user_id,
-                image_path=filename,
-                notes=notes
+                image_path=os.path.relpath(save_path, "static"),
+                notes=notes,
+                fy=fy,
+                created_at=now
             )
             db.session.add(r)
             db.session.commit()
@@ -2097,7 +2186,17 @@ def create_app():
     @login_required
     def receipt_review():
         receipts = Receipt.query.order_by(Receipt.created_at.desc()).all()
-        return render_template("receipt_review.html", receipts=receipts)
+
+        SUBFOLDERS = {
+            "weddings": ["flowers", "catering", "staff", "venue"],
+            "equestrian": ["farrier", "vet", "feed", "tack"]
+        }
+
+        return render_template(
+            "receipt_review.html",
+            receipts=receipts,
+            subfolders=SUBFOLDERS
+        )
 
     @app.route("/mark_receipt_reviewed", methods=["POST"])
     @login_required

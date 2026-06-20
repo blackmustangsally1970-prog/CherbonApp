@@ -21,11 +21,14 @@ class Receipt(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     staff_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
-    staff = db.relationship("Users")   # ✔ FIXED
+    staff = db.relationship("Users")
     image_path = db.Column(db.String(255))
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     reviewed = db.Column(db.Boolean, default=False)
+    category = db.Column(db.String(50))
+    subfolder = db.Column(db.String(100))
+    fy = db.Column(db.String(20))
 
 
 class SmsLog(db.Model):
