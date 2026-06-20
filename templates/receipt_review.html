@@ -149,3 +149,15 @@ document.querySelectorAll('.open-preview').forEach(btn => {
         const file = this.dataset.file;
 
         document.getElementById('previewFrame').src = file;
+        document.getElementById('previewModal').style.display = 'flex';
+    });
+});
+
+document.querySelector('.close-modal').addEventListener('click', () => {
+    document.getElementById('previewModal').style.display = 'none';
+    document.getElementById('previewFrame').src = "";
+});
+</script>
+
+</body>
+</html>
