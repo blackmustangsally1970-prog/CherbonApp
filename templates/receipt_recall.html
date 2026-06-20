@@ -1,11 +1,8 @@
     <h2>Receipt Recall</h2>
 
-    <div style="margin-bottom: 15px;">
-        <a href="/menu"
-           style="padding:10px 16px; background:#444; color:white; text-decoration:none; border-radius:6px;">
-            ⬅ Main Menu
-        </a>
-    </div>
+<div style="margin-bottom: 20px; display:flex; gap:12px;">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+</div>
 
     <form method="GET" action="/receipt_recall" style="margin-bottom:20px;">
 
