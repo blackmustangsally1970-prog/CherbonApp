@@ -29,6 +29,9 @@ class Receipt(db.Model):
     category = db.Column(db.String(50))
     subfolder = db.Column(db.String(100))
     fy = db.Column(db.String(20))
+    invoice_date = db.Column(db.Date, nullable=True)
+    paid_date = db.Column(db.Date, nullable=True)
+
 
 
 class SmsLog(db.Model):

@@ -149,6 +149,13 @@ def get_static_teacher_time():
     ).all()
 
 
+def calculate_fy_from_paid(date):
+    year = date.year
+    if date.month >= 7:
+        return f"{year}-{year+1}"
+    else:
+        return f"{year-1}-{year}"
+
 def calculate_fy(date):
     year = date.year
     if date.month >= 7:
@@ -2129,8 +2136,13 @@ def create_app():
         # Base query: only show receipts that are fully processed
         q = Receipt.query.filter(
             Receipt.reviewed == True,
-            Receipt.category != None,
-            Receipt.subfolder != None
+            Receipt.fy.isnot(None),
+            Receipt.fy != "",
+            Receipt.category.isnot(None),
+            Receipt.category != "",
+            Receipt.subfolder.isnot(None),
+            Receipt.subfolder != "",
+            Receipt.paid_date.isnot(None)   # NEW: must have paid date
         )
 
         # Apply filters
@@ -2143,10 +2155,16 @@ def create_app():
         if subfolder:
             q = q.filter(Receipt.subfolder == subfolder)
 
-        receipts = q.order_by(Receipt.created_at.desc()).all()
+        # Order by PAID DATE (correct for accounting)
+        receipts = q.order_by(Receipt.paid_date.desc()).all()
 
-        # Build FY list dynamically from DB
-        fy_list = sorted({r.fy for r in Receipt.query.all()})
+        # Build FY list dynamically from DB (only valid FYs)
+        fy_list = sorted({
+            r.fy for r in Receipt.query.filter(
+                Receipt.fy.isnot(None),
+                Receipt.fy != ""
+            ).all()
+        })
 
         # Build dynamic subfolder list from filesystem
         BASE = "static/receipts"
@@ -2165,6 +2183,53 @@ def create_app():
             selected_subfolder=subfolder
         )
 
+
+    @app.route("/set_invoice_date", methods=["POST"])
+    @login_required
+    def set_invoice_date():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+
+        if not r:
+            return {"status": "error", "msg": "Not found"}, 404
+
+        r.invoice_date = datetime.strptime(data["invoice_date"], "%Y-%m-%d").date()
+        db.session.commit()
+
+        return {"status": "success"}
+
+    @app.route("/set_paid_date", methods=["POST"])
+    @login_required
+    def set_paid_date():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+
+        if not r:
+            return {"status": "error", "msg": "Not found"}, 404
+
+        paid = datetime.strptime(data["paid_date"], "%Y-%m-%d").date()
+        r.paid_date = paid
+
+        # Auto‑calculate FY from paid date
+        r.fy = calculate_fy_from_paid(paid)
+
+        db.session.commit()
+
+        return {"status": "success", "fy": r.fy}
+
+    @app.route("/mark_receipt_reviewed", methods=["POST"])
+    @login_required
+    def mark_receipt_reviewed():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+
+        if not r:
+            return "Not found", 404
+
+        r.reviewed = data["reviewed"]
+        db.session.commit()
+
+        return "OK"
 
 
     @app.route("/upload_receipt", methods=["GET", "POST"])
@@ -2278,19 +2343,7 @@ def create_app():
             subfolders=SUBFOLDERS
         )
 
-    @app.route("/mark_receipt_reviewed", methods=["POST"])
-    @login_required
-    def mark_receipt_reviewed():
-        data = request.json
-        r = Receipt.query.get(data["id"])
 
-        if not r:
-            return "Not found", 404
-
-        r.reviewed = data["reviewed"]
-        db.session.commit()
-
-        return "OK"
 
 
     @app.route("/gift_voucher_edit/<int:id>", methods=["GET", "POST"])
