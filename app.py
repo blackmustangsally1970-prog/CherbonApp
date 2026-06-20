@@ -2055,7 +2055,7 @@ def create_app():
 
             r = Receipt(
                 staff_id=current_user.user_id,
-                image_path=save_path,
+                image_path=filename,
                 notes=notes
             )
             db.session.add(r)
@@ -2082,7 +2082,7 @@ def create_app():
 
             r = Receipt(
                 staff_id=current_user.user_id,
-                image_path=save_path,
+                image_path=filename,
                 notes=notes
             )
             db.session.add(r)

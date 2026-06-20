@@ -110,9 +110,9 @@
     {% for r in receipts %}
     <tr>
         <td>
-            <a href="#" class="open-preview" data-file="/{{ r.image_path }}">
-                <img src="/{{ r.image_path }}" style="width:120px; border:1px solid #ccc;">
-            </a>
+<a href="#" class="open-preview" data-file="{{ url_for('static', filename='receipts/' + r.image_path) }}">
+    <img src="{{ url_for('static', filename='receipts/' + r.image_path) }}" style="width:120px; border:1px solid #ccc;">
+</a>
         </td>
 
         <td>{{ r.staff.name }}</td>
@@ -155,7 +155,9 @@ document.querySelectorAll('.open-preview').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
 
-        const file = this.dataset.file.toLowerCase();
+        const file = this.dataset.file;
+        const lower = file.toLowerCase();
+
         const modal = document.getElementById('previewModal');
         const img = document.getElementById('previewImage');
         const pdf = document.getElementById('previewPDF');
@@ -166,11 +168,12 @@ document.querySelectorAll('.open-preview').forEach(btn => {
         img.src = "";
         pdf.src = "";
 
-        if (file.endsWith(".jpg") || file.endsWith(".jpeg") || file.endsWith(".png")) {
-            img.src = this.dataset.file;
+        // IMAGE DETECTION (case-insensitive)
+        if (lower.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+            img.src = file;
             img.style.display = "block";
         } else {
-            pdf.src = this.dataset.file + "#zoom=100";
+            pdf.src = file + "#zoom=100";
             pdf.style.display = "block";
         }
 
