@@ -2213,6 +2213,20 @@ def create_app():
         return "OK"
 
 
+    @app.route("/fix_receipt_paths")
+    def fix_receipt_paths():
+        from app import db, Receipt
+
+        updated = 0
+        for r in Receipt.query.all():
+            if not r.image_path.startswith("receipts/"):
+                r.image_path = "receipts/" + r.image_path
+                updated += 1
+
+        db.session.commit()
+        return f"Updated {updated} receipt paths."
+
+
 
     @app.route("/gift_voucher_edit/<int:id>", methods=["GET", "POST"])
     def gift_voucher_edit(id):
