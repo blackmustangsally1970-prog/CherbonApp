@@ -2229,12 +2229,12 @@ def create_app():
         r = Receipt.query.get(data["id"])
 
         if not r:
-            return "Not found", 404
+            return {"status": "error", "msg": "Not found"}, 404
 
         r.reviewed = data["reviewed"]
         db.session.commit()
 
-        return "OK"
+        return {"status": "success"}
 
 
     @app.route("/upload_receipt", methods=["GET", "POST"])
