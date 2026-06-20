@@ -2091,7 +2091,7 @@ def create_app():
             r.image_path = os.path.relpath(new_path, "static")
 
         db.session.commit()
-        return {"status": "ok"}
+        return {"status": "success"}
 
     @app.route("/set_receipt_subfolder", methods=["POST"])
     @login_required
@@ -2211,7 +2211,7 @@ def create_app():
         receipts = Receipt.query.order_by(Receipt.created_at.desc()).all()
 
         SUBFOLDERS = {
-            "weddings": ["flowers", "catering", "staff", "venue"],
+            "weddings": ["maintenance", "catering", "staff"],
             "equestrian": ["farrier", "vet", "feed", "tack"]
         }
 
