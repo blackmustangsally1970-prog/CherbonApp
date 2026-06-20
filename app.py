@@ -2100,21 +2100,23 @@ def create_app():
         r = Receipt.query.get(data["id"])
 
         old_path = os.path.join("static", r.image_path)
+
+        # Update subfolder
         r.subfolder = data["folder"]
 
-        # Only move if category already chosen
-        if r.category:
-            new_dir = os.path.join("static", "receipts", r.category, r.subfolder)
-            os.makedirs(new_dir, exist_ok=True)
+        # Build new directory
+        new_dir = os.path.join("static", "receipts", r.category, r.subfolder)
+        os.makedirs(new_dir, exist_ok=True)
 
-            new_path = os.path.join(new_dir, os.path.basename(r.image_path))
-            shutil.move(old_path, new_path)
+        # Move file
+        new_path = os.path.join(new_dir, os.path.basename(r.image_path))
+        shutil.move(old_path, new_path)
 
-            # Update DB path
-            r.image_path = os.path.relpath(new_path, "static")
+        # Update DB path
+        r.image_path = os.path.relpath(new_path, "static")
 
         db.session.commit()
-        return {"status": "ok"}
+        return {"status": "success"}
 
 
     @app.route("/upload_receipt", methods=["GET", "POST"])
