@@ -32,9 +32,9 @@
     <td>{{ r.created_at.strftime("%d %b %Y %I:%M %p") }}</td>
 
     <td>
-        <input type="checkbox"
-               onchange="markReviewed({{ r.id }}, this.checked)"
-               {% if r.reviewed %}checked{% endif %}>
+<input type="checkbox"
+       onchange="markReviewed({{ r.id }}, this)"
+       {% if r.reviewed %}checked{% endif %}>
     </td>
 
     <!-- CATEGORY DROPDOWN -->
