@@ -130,3 +130,27 @@ function setSubfolder(id, folder) {
     });
 }
 </script>
+
+    <script>
+        function markReviewed(id, checkbox) {
+            fetch("/mark_receipt_reviewed", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id, reviewed: checkbox.checked })
+            })
+            .then(r => {
+                if (r.ok) {
+                    // Smooth fade-out animation
+                    const row = checkbox.closest("tr");
+                    row.style.transition = "opacity 0.4s ease";
+                    row.style.opacity = "0";
+
+                    setTimeout(() => {
+                        row.remove();
+                    }, 400);
+                }
+            });
+        }
+    </script>
+
+
