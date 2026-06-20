@@ -1,0 +1,70 @@
+    <h2>Receipt Recall</h2>
+
+    <div style="margin-bottom: 15px;">
+        <a href="/menu"
+           style="padding:10px 16px; background:#444; color:white; text-decoration:none; border-radius:6px;">
+            ⬅ Main Menu
+        </a>
+    </div>
+
+    <form method="GET" action="/receipt_recall" style="margin-bottom:20px;">
+
+        <!-- FY FILTER -->
+        <label>Financial Year:</label>
+        <select name="fy" onchange="this.form.submit()">
+            <option value="">-- all --</option>
+            {% for fy in fy_list %}
+                <option value="{{ fy }}" {% if fy == selected_fy %}selected{% endif %}>{{ fy }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- CATEGORY FILTER -->
+        <label style="margin-left:20px;">Category:</label>
+        <select name="category" onchange="this.form.submit()">
+            <option value="">-- all --</option>
+            <option value="weddings" {% if selected_category == 'weddings' %}selected{% endif %}>Weddings</option>
+            <option value="equestrian" {% if selected_category == 'equestrian' %}selected{% endif %}>Equestrian</option>
+        </select>
+
+        <!-- SUBFOLDER FILTER -->
+        <label style="margin-left:20px;">Subfolder:</label>
+        <select name="subfolder" onchange="this.form.submit()">
+            <option value="">-- all --</option>
+
+            {% if selected_category %}
+                {% for f in subfolders[selected_category] %}
+                    <option value="{{ f }}" {% if f == selected_subfolder %}selected{% endif %}>{{ f }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+
+    </form>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
+        <tr>
+            <th>Image</th>
+            <th>Staff</th>
+            <th>Notes</th>
+            <th>Date</th>
+            <th>FY</th>
+            <th>Category</th>
+            <th>Subfolder</th>
+        </tr>
+
+        {% for r in receipts %}
+        <tr>
+            <td>
+                <a href="/static/{{ r.image_path }}" target="_blank">
+                    <img src="/static/{{ r.image_path }}" style="width:120px; border:1px solid #ccc;">
+                </a>
+            </td>
+
+            <td>{{ r.staff.name }}</td>
+            <td style="white-space:pre-wrap;">{{ r.notes }}</td>
+            <td>{{ r.created_at.strftime("%d %b %Y %I:%M %p") }}</td>
+            <td>{{ r.fy }}</td>
+            <td>{{ r.category }}</td>
+            <td>{{ r.subfolder }}</td>
+        </tr>
+        {% endfor %}
+    </table>

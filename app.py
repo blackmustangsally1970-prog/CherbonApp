@@ -2118,6 +2118,54 @@ def create_app():
         db.session.commit()
         return {"status": "success"}
 
+    @app.route("/receipt_recall", methods=["GET"])
+    @login_required
+    def receipt_recall():
+        # Get filters from query string
+        fy = request.args.get("fy")
+        category = request.args.get("category")
+        subfolder = request.args.get("subfolder")
+
+        # Base query: only show receipts that are fully processed
+        q = Receipt.query.filter(
+            Receipt.reviewed == True,
+            Receipt.category != None,
+            Receipt.subfolder != None
+        )
+
+        # Apply filters
+        if fy:
+            q = q.filter(Receipt.fy == fy)
+
+        if category:
+            q = q.filter(Receipt.category == category)
+
+        if subfolder:
+            q = q.filter(Receipt.subfolder == subfolder)
+
+        receipts = q.order_by(Receipt.created_at.desc()).all()
+
+        # Build FY list dynamically from DB
+        fy_list = sorted({r.fy for r in Receipt.query.all()})
+
+        # Build dynamic subfolder list from filesystem
+        BASE = "static/receipts"
+        SUBFOLDERS = {
+            "weddings": sorted(os.listdir(os.path.join(BASE, "weddings"))),
+            "equestrian": sorted(os.listdir(os.path.join(BASE, "equestrian")))
+        }
+
+        return render_template(
+            "receipt_recall.html",
+            receipts=receipts,
+            fy_list=fy_list,
+            subfolders=SUBFOLDERS,
+            selected_fy=fy,
+            selected_category=category,
+            selected_subfolder=subfolder
+        )
+
+
 
     @app.route("/upload_receipt", methods=["GET", "POST"])
     @login_required
@@ -2210,11 +2258,18 @@ def create_app():
     @app.route("/receipt_review")
     @login_required
     def receipt_review():
-        receipts = Receipt.query.order_by(Receipt.created_at.desc()).all()
+        # Only show receipts that still need action
+        receipts = Receipt.query.filter(
+            (Receipt.reviewed == False) |
+            (Receipt.category == None) |
+            (Receipt.subfolder == None)
+        ).order_by(Receipt.created_at.desc()).all()
+
+        BASE = "static/receipts"
 
         SUBFOLDERS = {
-            "weddings": ["maintenance", "catering", "staff"],
-            "equestrian": ["farrier", "vet", "feed", "tack"]
+            "weddings": sorted(os.listdir(os.path.join(BASE, "weddings"))),
+            "equestrian": sorted(os.listdir(os.path.join(BASE, "equestrian")))
         }
 
         return render_template(
