@@ -15,8 +15,8 @@
     <th>Notes</th>
     <th>Date</th>
     <th>Reviewed</th>
-    <th>Category</th>      <!-- ADDED -->
-    <th>Subfolder</th>     <!-- ADDED -->
+    <th>Category</th>
+    <th>Subfolder</th>
     <th>Actions</th>
 </tr>
     {% for r in receipts %}
@@ -93,7 +93,7 @@ function deleteReceipt(id) {
         return;
     }
 
-    fetch("/delete_receipt", {
+    fetch(`/delete_receipt/${id}`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ id: id })
@@ -109,60 +109,6 @@ function deleteReceipt(id) {
         console.error(err);
         alert("Error deleting receipt.");
     });
-}
-</script>
-
-<script>
-function markReviewed(id, state) {
-    fetch("/mark_receipt_reviewed", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ id: id, reviewed: state })
-    });
-}
-
-function deleteReceipt(id) {
-    if (!confirm("Are you sure you want to delete this receipt?")) {
-        return;
-    }
-
-    fetch("/delete_receipt", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ id: id })
-    })
-    .then(response => {
-        if (!response.ok) {
-            alert("Error deleting receipt.");
-            return;
-        }
-        location.reload();
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Error deleting receipt.");
-    });
-}
-
-function setCategory(id, category) {
-    fetch("/set_receipt_category", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ id: id, category: category })
-    }).then(() => location.reload());
-}
-
-function setSubfolder(id, folder) {
-    if (folder === "new") {
-        folder = prompt("Enter new subfolder name:");
-        if (!folder) return;
-    }
-
-    fetch("/set_receipt_subfolder", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ id: id, folder: folder })
-    }).then(() => location.reload());
 }
 </script>
 

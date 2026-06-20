@@ -2047,6 +2047,29 @@ def create_app():
 
         return f"User '{username}' created with role '{role}'"
 
+    @app.route("/delete_receipt/<int:receipt_id>", methods=["POST"])
+    def delete_receipt(receipt_id):
+        from app import db, Receipt
+        import os
+
+        r = Receipt.query.get(receipt_id)
+        if not r:
+            return {"status": "error", "message": "Receipt not found"}, 404
+
+        # Build full file path
+        file_path = os.path.join("static", r.image_path)
+
+        # Delete file if it exists
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        # Delete DB entry
+        db.session.delete(r)
+        db.session.commit()
+
+        return {"status": "success"}
+
+
     @app.route("/set_receipt_category", methods=["POST"])
     @login_required
     def set_receipt_category():
@@ -2211,21 +2234,6 @@ def create_app():
         db.session.commit()
 
         return "OK"
-
-
-    @app.route("/fix_receipt_paths")
-    def fix_receipt_paths():
-        from app import db, Receipt
-
-        updated = 0
-        for r in Receipt.query.all():
-            if not r.image_path.startswith("receipts/"):
-                r.image_path = "receipts/" + r.image_path
-                updated += 1
-
-        db.session.commit()
-        return f"Updated {updated} receipt paths."
-
 
 
     @app.route("/gift_voucher_edit/<int:id>", methods=["GET", "POST"])
