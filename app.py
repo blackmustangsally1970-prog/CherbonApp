@@ -2327,11 +2327,18 @@ def create_app():
         receipts = Receipt.query.filter(
             (Receipt.reviewed == False) |
             (Receipt.category == None) |
-            (Receipt.subfolder == None)
+            (Receipt.subfolder == None) |
+            (Receipt.paid_date == None)  # NEW: must have paid date before leaving review
         ).order_by(Receipt.created_at.desc()).all()
 
-        BASE = "static/receipts"
+        # Convert timestamps to Brisbane time
+        bris = pytz.timezone("Australia/Brisbane")
+        for r in receipts:
+            if r.created_at:
+                r.local_created = r.created_at.astimezone(bris)
 
+        # Dynamic subfolder loading
+        BASE = "static/receipts"
         SUBFOLDERS = {
             "weddings": sorted(os.listdir(os.path.join(BASE, "weddings"))),
             "equestrian": sorted(os.listdir(os.path.join(BASE, "equestrian")))

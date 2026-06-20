@@ -32,7 +32,7 @@
 
     <!-- BRISBANE TIME -->
     <td>
-        {{ r.created_at.astimezone(pytz.timezone('Australia/Brisbane')).strftime("%d %b %Y %I:%M %p") }}
+        {{ r.local_created.strftime("%d %b %Y %I:%M %p") }}
     </td>
 
     <!-- INVOICE DATE -->
