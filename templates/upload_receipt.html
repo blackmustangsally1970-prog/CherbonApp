@@ -1,22 +1,92 @@
-    <h2>Upload Receipt</h2>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Receipt</title>
 
-    <form method="POST" enctype="multipart/form-data">
+    <style>
+        body { 
+            font-family: sans-serif; 
+            margin: 20px; 
+        }
 
-        <label>Take Photo:</label><br>
-        <input type="file"
-               name="photo"
-               accept="image/*"
-               capture="camera"
-               required>
+        /* MAIN MENU BUTTON */
+        .menu-btn {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            margin-right: 12px;
+        }
 
-        <br><br>
+        .menu-btn:hover {
+            background: #ddd;
+        }
 
-        <label>Notes (optional):</label><br>
-        <textarea name="notes"
-                  rows="3"
-                  style="width:100%;"></textarea>
+        label {
+            font-size: 15px;
+            font-weight: bold;
+        }
 
-        <br><br>
+        input[type="file"] {
+            margin-top: 6px;
+        }
 
-        <button type="submit">Upload Receipt</button>
-    </form>
+        textarea {
+            width: 100%;
+            font-size: 14px;
+            padding: 6px;
+        }
+
+        button {
+            padding: 10px 18px;
+            font-size: 15px;
+            border-radius: 6px;
+            border: 1px solid #888;
+            background: #f2f2f2;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #e2e2e2;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ========================================================= -->
+<!--  TOP MENU BUTTON                                          -->
+<!-- ========================================================= -->
+
+<div style="margin-bottom: 20px; display:flex; gap:12px;">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+</div>
+
+<h2>Upload Receipt</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+    <label>Take Photo:</label><br>
+    <input type="file"
+           name="photo"
+           accept="image/*"
+           capture="camera"
+           required>
+
+    <br><br>
+
+    <label>Notes (optional):</label><br>
+    <textarea name="notes"
+              rows="3"></textarea>
+
+    <br><br>
+
+    <button type="submit">Upload Receipt</button>
+</form>
+
+</body>
+</html>

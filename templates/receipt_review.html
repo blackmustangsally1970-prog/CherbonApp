@@ -1,43 +1,151 @@
-    <h2>Receipt Review</h2>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Receipt Review</title>
 
-    <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
-        <tr>
-            <th>Image</th>
-            <th>Staff</th>
-            <th>Notes</th>
-            <th>Date</th>
-            <th>Reviewed</th>
-        </tr>
-
-        {% for r in receipts %}
-        <tr>
-            <td>
-                <a href="/{{ r.image_path }}" target="_blank">
-                    <img src="/{{ r.image_path }}" style="width:120px; border:1px solid #ccc;">
-                </a>
-            </td>
-
-            <td>{{ r.staff.name }}</td>
-
-            <td style="white-space:pre-wrap;">{{ r.notes }}</td>
-
-            <td>{{ r.created_at.strftime("%d %b %Y %I:%M %p") }}</td>
-
-            <td>
-                <input type="checkbox"
-                       onchange="markReviewed({{ r.id }}, this.checked)"
-                       {% if r.reviewed %}checked{% endif %}>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-
-    <script>
-        function markReviewed(id, state) {
-            fetch("/mark_receipt_reviewed", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ id: id, reviewed: state })
-            });
+    <style>
+        body { 
+            font-family: sans-serif; 
+            margin: 20px; 
         }
-    </script>
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            font-size: 14px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        /* MAIN MENU BUTTON */
+        .menu-btn {
+            display: inline-block;
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #0645AD;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+
+        .menu-btn:hover {
+            background: #ddd;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ========================================================= -->
+<!--  TOP MENU BUTTON                                          -->
+<!-- ========================================================= -->
+
+<div style="margin-bottom: 20px; display:flex; gap:12px;">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+</div>
+
+<h2>Receipt Review</h2>
+
+<table>
+    <tr>
+        <th>Image</th>
+        <th>Staff</th>
+        <th>Notes</th>
+        <th>Date</th>
+        <th>Reviewed</th>
+    </tr>
+
+    {% for r in receipts %}
+    <tr>
+        <td>
+            <a href="#" class="open-preview" data-file="/{{ r.image_path }}">
+                <img src="/{{ r.image_path }}" style="width:120px; border:1px solid #ccc;">
+            </a>
+        </td>
+
+        <td>{{ r.staff.name }}</td>
+
+        <td style="white-space:pre-wrap;">{{ r.notes }}</td>
+
+        <td>{{ r.created_at.strftime("%d %b %Y %I:%M %p") }}</td>
+
+        <td>
+            <input type="checkbox"
+                   onchange="markReviewed({{ r.id }}, this.checked)"
+                   {% if r.reviewed %}checked{% endif %}>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<script>
+    function markReviewed(id, state) {
+        fetch("/mark_receipt_reviewed", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ id: id, reviewed: state })
+        });
+    }
+</script>
+
+<!-- ========================================================= -->
+<!--  POPUP MODAL                                              -->
+<!-- ========================================================= -->
+
+<div id="previewModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <iframe id="previewFrame" style="width:100%; height:80vh; border:none;"></iframe>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.open-preview').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const file = this.dataset.file;
+
+        document.getElementById('previewFrame').src = file;
