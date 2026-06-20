@@ -74,6 +74,13 @@
             font-size: 30px;
             cursor: pointer;
         }
+
+        /* Prevent huge zoom */
+        #previewFrame {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
     </style>
 </head>
 
@@ -146,9 +153,19 @@
 document.querySelectorAll('.open-preview').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
-        const file = this.dataset.file;
+        const file = this.dataset.file.toLowerCase();
+        const frame = document.getElementById('previewFrame');
 
-        document.getElementById('previewFrame').src = file;
+        // Reset
+        frame.src = "";
+
+        // Detect PDF
+        if (file.endsWith(".pdf")) {
+            frame.src = this.dataset.file + "#zoom=100";
+        } else {
+            frame.src = this.dataset.file;
+        }
+
         document.getElementById('previewModal').style.display = 'flex';
     });
 });
