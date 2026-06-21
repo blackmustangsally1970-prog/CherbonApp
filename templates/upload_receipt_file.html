@@ -9,7 +9,6 @@
             margin: 20px; 
         }
 
-        /* MAIN MENU BUTTON */
         .menu-btn {
             display: inline-block;
             background: #eee;
@@ -22,23 +21,43 @@
             margin-right: 12px;
         }
 
-        .menu-btn:hover {
-            background: #ddd;
-        }
+        .menu-btn:hover { background: #ddd; }
 
         label {
             font-size: 15px;
             font-weight: bold;
         }
 
+        input[type="file"],
+        textarea,
+        select,
+        button {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         input[type="file"] {
             margin-top: 6px;
+            padding: 10px;
+            font-size: 15px;
+            border: 1px solid #aaa;
+            border-radius: 6px;
+            background: #fafafa;
         }
 
         textarea {
-            width: 100%;
             font-size: 14px;
             padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #aaa;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 15px;
+            border-radius: 6px;
+            border: 1px solid #aaa;
+            background: #fafafa;
         }
 
         button {
@@ -50,17 +69,11 @@
             cursor: pointer;
         }
 
-        button:hover {
-            background: #e2e2e2;
-        }
+        button:hover { background: #e2e2e2; }
     </style>
 </head>
 
 <body>
-
-<!-- ========================================================= -->
-<!--  TOP MENU BUTTON                                          -->
-<!-- ========================================================= -->
 
 <div style="margin-bottom: 20px; display:flex; gap:12px;">
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
@@ -69,6 +82,24 @@
 <h2>Upload Receipt File</h2>
 
 <form method="POST" enctype="multipart/form-data">
+
+    <label>Category:</label>
+    <select name="category">
+        <option value="equestrian" selected>Equestrian</option>
+        <option value="weddings">Weddings</option>
+    </select>
+
+    <br><br>
+
+    <label>Account:</label>
+    <select name="account">
+        <option value="general">General Acc</option>
+        <option value="amex">Amex Platinum</option>
+        <option value="bendigo" selected>Bendigo MC</option>
+        <option value="anz">ANZ Visa</option>
+    </select>
+
+    <br><br>
 
     <label>Select File:</label><br>
     <input type="file"
@@ -79,8 +110,7 @@
     <br><br>
 
     <label>Notes (optional):</label><br>
-    <textarea name="notes"
-              rows="3"></textarea>
+    <textarea name="notes" rows="3"></textarea>
 
     <br><br>
 

@@ -47,6 +47,7 @@
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
     <tr>
         <th>Image</th>
+        <th>Account</th>
         <th>Notes</th>
         <th>Invoice Date</th>
         <th>Paid Date</th>
@@ -65,6 +66,17 @@
                  onclick="openViewer('/static/{{ r.image_path }}')"
                  style="width:120px; border:1px solid #ccc; cursor:pointer;">
         </td>
+
+        <!-- ACCOUNT -->
+        <td>
+            <select onchange="setAccount({{ r.id }}, this.value)">
+                <option value="general"  {% if r.account == 'general' %}selected{% endif %}>General Acc</option>
+                <option value="amex"     {% if r.account == 'amex' %}selected{% endif %}>Amex Platinum</option>
+                <option value="bendigo"  {% if r.account == 'bendigo' %}selected{% endif %}>Bendigo MC</option>
+                <option value="anz"      {% if r.account == 'anz' %}selected{% endif %}>ANZ Visa</option>
+            </select>
+        </td>
+
 
         <!-- NOTES -->
         <td style="white-space:pre-wrap;">
@@ -183,4 +195,13 @@ function rotateViewer() {
     viewerRotation = (viewerRotation + 90) % 360;
     img.style.transform = `rotate(${viewerRotation}deg)`;
 }
+
+function setAccount(id, value) {
+    fetch("/set_receipt_account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, account: value })
+    });
+}
+
 </script>

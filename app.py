@@ -2072,6 +2072,20 @@ def create_app():
         return {"status": "success"}
 
 
+    @app.route("/set_receipt_account", methods=["POST"])
+    def set_receipt_account():
+        data = request.get_json()
+        rid = data.get("id")
+        account = data.get("account")
+
+        db = get_db()
+        db.execute("UPDATE receipts SET account = ? WHERE id = ?", (account, rid))
+        db.commit()
+
+        return "OK"
+
+
+
     @app.route("/set_receipt_category", methods=["POST"])
     @login_required
     def set_receipt_category():
@@ -2237,6 +2251,8 @@ def create_app():
         if request.method == "POST":
             file = request.files.get("photo")
             notes = request.form.get("notes", "")
+            category = request.form.get("category")
+            account = request.form.get("account")
 
             if not file:
                 return "No file", 400
@@ -2265,7 +2281,9 @@ def create_app():
                 image_path=os.path.relpath(save_path, "static"),
                 notes=notes,
                 fy=fy,
-                created_at=now
+                created_at=now,
+                category=category,
+                account=account
             )
             db.session.add(r)
             db.session.commit()
@@ -2274,13 +2292,14 @@ def create_app():
 
         return render_template("upload_receipt.html")
 
-
     @app.route("/upload_receipt_file", methods=["GET", "POST"])
     @login_required
     def upload_receipt_file():
         if request.method == "POST":
             file = request.files.get("file")
             notes = request.form.get("notes", "")
+            category = request.form.get("category")
+            account = request.form.get("account")
 
             if not file:
                 return "No file", 400
@@ -2309,7 +2328,9 @@ def create_app():
                 image_path=os.path.relpath(save_path, "static"),
                 notes=notes,
                 fy=fy,
-                created_at=now
+                created_at=now,
+                category=category,
+                account=account
             )
             db.session.add(r)
             db.session.commit()
