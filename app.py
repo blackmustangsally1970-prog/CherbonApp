@@ -1339,7 +1339,7 @@ def normalize_name(s: str) -> str:
     return " ".join(s.strip().lower().split())
 
 
-def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None, mode="full"):
+def parse_jotform_payload(payload, forced_submission_id=None, mode="full"):
     import json
     import re
     from sqlalchemy.util._collections import immutabledict
@@ -1356,17 +1356,14 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
 
     answers = payload.get("answers", {}) or {}
 
-    # Submission ID
     submission_id = (
         str(forced_submission_id)
         if forced_submission_id
         else str(payload.get("id") or payload.get("submission_id") or "")
     )
 
-    # DISCLAIMER ID (submission-wide)
     disclaimer_id = str(answers.get("63", {}).get("answer") or "")
 
-    # EMAIL
     email = ""
     for key, item in answers.items():
         if item.get("type") == "control_email":
@@ -1382,7 +1379,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             email = fallback
     email = email or ""
 
-    # MOBILE
     mobile = ""
     mob_field = answers.get("87", {}).get("answer")
     if isinstance(mob_field, dict):
@@ -1391,10 +1387,8 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         mobile = mob_field or ""
     mobile = mobile or ""
 
-    # GUARDIAN
     guardian = answers.get("86", {}).get("answer") or ""
 
-    # INVITE TOKEN
     invite_token = ""
     for key, item in answers.items():
         if item.get("name") == "i_t":
@@ -1406,7 +1400,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             break
     invite_token = invite_token or ""
 
-    # AGE FIELDS
     age_fields = [
         key for key, item in answers.items()
         if item.get("type") in ("control_number", "control_dropdown")
@@ -1414,7 +1407,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
     ]
     age_fields = sorted(age_fields, key=lambda x: int(x))
 
-    # RIDER NAME FIELDS
     fullname_fields = []
     for key, item in answers.items():
         if item.get("type") != "control_fullname":
@@ -1426,7 +1418,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             fullname_fields.append(key)
     fullname_fields = sorted(fullname_fields, key=lambda x: int(x))
 
-    # HEIGHT / WEIGHT / NOTES
     height_fields = sorted(
         [k for k, v in answers.items() if "height" in (v.get("text") or "").lower()],
         key=lambda x: int(x)
@@ -1487,33 +1478,31 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
             compact = name.replace(" ", "").replace("-", "")
             like_pattern = f"%{compact}%"
 
-            if clients_cache is None:
-                clients_cache = db.session.query(
-                    Client.client_id,
-                    Client.full_name,
-                    Client.mobile,
-                    Client.email_primary,
-                    Client.jotform_submission_id
-                ).filter(
-                    Client.full_name.isnot(None),
-                    func.replace(
-                        func.replace(func.lower(Client.full_name), " ", ""),
-                        "-", ""
-                    ).like(like_pattern)
-                ).all()
+            candidates = db.session.query(
+                Client.client_id,
+                Client.full_name,
+                Client.mobile,
+                Client.email_primary,
+                Client.jotform_submission_id
+            ).filter(
+                Client.full_name.isnot(None),
+                func.replace(
+                    func.replace(func.lower(Client.full_name), " ", ""),
+                    "-", ""
+                ).like(like_pattern)
+            ).all()
 
             lookup = []
-            for c in clients_cache:
+            for c in candidates:
                 full = getattr(c, "full_name", "")
                 norm = normalize_name(full)
                 lookup.append((c, norm))
 
             matched = None
-            if not matched:
-                for c, norm in lookup:
-                    if norm == name:
-                        matched = c
-                        break
+            for c, norm in lookup:
+                if norm == name:
+                    matched = c
+                    break
 
             if not matched and email:
                 e = email.strip().lower()
@@ -1531,7 +1520,13 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
                         break
 
             if matched:
-                rider["matches"].append(matched)
+                rider["matches"].append((
+                    matched.client_id,
+                    matched.full_name,
+                    matched.mobile,
+                    matched.email_primary,
+                    matched.jotform_submission_id
+                ))
 
         riders.append(rider)
 
@@ -1543,7 +1538,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, clients_cache=None
         "email": email,
         "mobile": mobile,
     }
-
 
 
 def create_app():
@@ -3386,20 +3380,24 @@ def create_app():
     def process_notification(webhook_id):
         submission = db.session.query(IncomingSubmission).get_or_404(webhook_id)
 
+        # Always parse in FULL mode for conflict detection
         parsed = parse_jotform_payload(
             submission.raw_payload,
-            forced_submission_id=submission.id
+            forced_submission_id=submission.id,
+            mode="full"
         )
 
         riders = parsed["riders"]
         disclaimer = parsed["disclaimer"]
 
+        # Store submission-level disclaimer
         submission.universal_disclaimer = disclaimer or None
         db.session.commit()
 
-        # DO NOT FILTER RIDERS — conflict index must match original index
+        # DO NOT FILTER RIDERS — index must remain stable
         valid_riders = riders
 
+        # No riders? Mark ignored
         if not valid_riders:
             submission.processed = True
             submission.ignored = True
@@ -3407,7 +3405,7 @@ def create_app():
             db.session.commit()
             return redirect(url_for('notifications'))
 
-        # Conflict detection must use ORIGINAL rider index
+        # Conflict detection — FIRST rider with matches
         for i, rider in enumerate(valid_riders, start=1):
             if rider.get("matches") and len(rider["matches"]) >= 1:
                 return redirect(url_for(
@@ -3416,6 +3414,7 @@ def create_app():
                     rider_index=i
                 ))
 
+        # No conflicts — show normal processing page
         return render_template(
             'process_notification.html',
             submission=submission,
@@ -5203,7 +5202,7 @@ def create_app():
         """
         Fast notifications listing:
         - Limits rows rendered (prevents timeouts)
-        - Parses payload in LIGHT mode (no client-table load / no matching)
+        - Parses payload in LIGHT mode (no matching)
         """
         page = request.args.get("page", default=1, type=int)
         per_page = request.args.get("per_page", default=50, type=int)
@@ -5223,20 +5222,13 @@ def create_app():
                 parsed = parse_jotform_payload(
                     r.raw_payload,
                     forced_submission_id=r.id,
-                    clients_cache=None,
                     mode="light"
                 )
 
                 riders = parsed["riders"]
-
-                names = []
-                for rider in riders:
-                    n = rider.get("name")
-                    if n:
-                        names.append(n)
+                names = [rider.get("name") for rider in riders if rider.get("name")]
 
                 r.display_names = ", ".join(names) if names else "(no riders)"
-
 
             except Exception as e:
                 print("ERROR extracting names:", e)
@@ -5439,21 +5431,22 @@ def create_app():
     def resolve_conflict(submission_id, rider_index):
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
+        # Always parse fresh — prevents stale matches
         parsed = parse_jotform_payload(
             row.raw_payload,
-            forced_submission_id=row.id
+            forced_submission_id=row.id,
+            mode="full"
         )
 
         riders = parsed["riders"]
         rider = riders[rider_index - 1]
 
-        # submission‑level fields
         guardian = parsed.get("guardian")
         email = parsed.get("email")
         mobile = parsed.get("mobile")
         disclaimer = parsed.get("disclaimer")
 
-        # Raw matches from parser
+        # New match structure: list of tuples
         raw_matches = rider.get("matches", [])
 
         match_dicts = [
@@ -5468,8 +5461,12 @@ def create_app():
         ]
 
         match_ids = [m["client_id"] for m in match_dicts]
-        matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
 
+        matches = []
+        if match_ids:
+            matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
+
+        # Attach last lesson date for UI
         for m in matches:
             last = (
                 Lesson.query
@@ -5491,7 +5488,6 @@ def create_app():
             disclaimer=disclaimer
         )
 
-
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
@@ -5500,15 +5496,17 @@ def create_app():
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
+        # Always parse fresh — prevents stale matches and stale riders
         parsed = parse_jotform_payload(
             row.raw_payload,
-            forced_submission_id=row.id
+            forced_submission_id=row.id,
+            mode="full"
         )
 
         all_riders = parsed["riders"]
         total_riders = len(all_riders)
 
-        # Always use the exact rider index
+        # Always use exact rider index
         rider = all_riders[rider_index - 1]
 
         # Helpers
@@ -5545,14 +5543,13 @@ def create_app():
 
         jotform_id = str(row.form_id)
 
-        # Load clients
+        # Load clients fresh from DB
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(int(client_id)) if client_id else None
 
         # IGNORE
         if choice == "ignore":
-            # Only ignore THIS rider — do NOT mark submission processed yet
             db.session.commit()
 
         # USE EXISTING
@@ -5652,18 +5649,15 @@ def create_app():
         else:
             db.session.commit()
 
-        # ----------------------------------------------------
         # NEXT RIDER OR FINISH
-        # ----------------------------------------------------
         if rider_index < total_riders:
-            # Go to next rider
             return redirect(url_for(
                 'resolve_conflict',
                 submission_id=submission_id,
                 rider_index=rider_index + 1
             ))
 
-        # If we reached the last rider, mark submission processed
+        # Final rider — mark submission processed
         row.processed = True
         row.processed_at = datetime.utcnow()
         db.session.commit()
