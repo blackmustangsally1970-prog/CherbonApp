@@ -27,40 +27,98 @@
         }
 
         label {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
         }
 
+        /* FULL WIDTH MOBILE CONTROLS */
+        input[type="file"],
+        textarea,
+        button {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         input[type="file"] {
-            margin-top: 6px;
+            padding: 14px;
+            font-size: 16px;
+            background: #fafafa;
+            border: 1px solid #aaa;
+            border-radius: 6px;
         }
 
         textarea {
-            width: 100%;
-            font-size: 14px;
-            padding: 6px;
+            font-size: 16px;
+            padding: 10px;
         }
 
+        /* BLUE UPLOAD BUTTON */
         button {
-            padding: 10px 18px;
-            font-size: 15px;
+            padding: 14px;
+            font-size: 18px;
             border-radius: 6px;
-            border: 1px solid #888;
-            background: #f2f2f2;
+            border: none;
+            background: #007BFF;
+            color: white;
             cursor: pointer;
         }
 
         button:hover {
-            background: #e2e2e2;
+            background: #0069d9;
+        }
+
+        /* Preview image */
+        #preview-img {
+            display: none;
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        /* Retake button */
+        #retake-btn {
+            display: none;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            font-size: 16px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+
+        /* Spinner overlay */
+        #upload-spinner {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(3px);
+            z-index: 9999;
+            text-align: center;
+            padding-top: 40%;
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        /* Success tick */
+        #success-tick {
+            display: none;
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            color: #28a745;
+            z-index: 10000;
         }
     </style>
 </head>
 
 <body>
-
-<!-- ========================================================= -->
-<!--  TOP MENU BUTTON                                          -->
-<!-- ========================================================= -->
 
 <div style="margin-bottom: 20px; display:flex; gap:12px;">
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
@@ -68,25 +126,154 @@
 
 <h2>Upload Receipt</h2>
 
-<form method="POST" enctype="multipart/form-data">
+<form id="receipt-form" enctype="multipart/form-data">
 
     <label>Take Photo:</label><br>
     <input type="file"
+           id="photo-input"
            name="photo"
            accept="image/*"
            capture="camera"
            required>
 
+    <img id="preview-img">
+    <button id="retake-btn" type="button">Retake Photo</button>
+
     <br><br>
 
     <label>Notes (optional):</label><br>
-    <textarea name="notes"
-              rows="3"></textarea>
+    <textarea name="notes" rows="3"></textarea>
 
     <br><br>
 
-    <button type="submit">Upload Receipt</button>
+    <button type="submit" id="upload-btn">Upload Receipt</button>
 </form>
+
+<div id="upload-spinner">Uploading...</div>
+<div id="success-tick">✔</div>
+
+<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const fileInput = document.getElementById("photo-input");
+    const preview = document.getElementById("preview-img");
+    const retakeBtn = document.getElementById("retake-btn");
+    const uploadBtn = document.getElementById("upload-btn");
+    const spinner = document.getElementById("upload-spinner");
+    const successTick = document.getElementById("success-tick");
+    const form = document.getElementById("receipt-form");
+
+    uploadBtn.disabled = true;
+    uploadBtn.style.opacity = "0.5";
+
+    let finalBlob = null;
+
+    fileInput.addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        uploadBtn.disabled = false;
+        uploadBtn.style.opacity = "1";
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+
+            EXIF.getData(file, function () {
+                const orientation = EXIF.getTag(this, "Orientation");
+
+                const img = new Image();
+                img.onload = function () {
+
+                    const MAX_SIZE = 1080;
+                    let w = img.width;
+                    let h = img.height;
+
+                    if (w > h && w > MAX_SIZE) {
+                        h *= MAX_SIZE / w;
+                        w = MAX_SIZE;
+                    } else if (h > w && h > MAX_SIZE) {
+                        w *= MAX_SIZE / h;
+                        h = MAX_SIZE;
+                    }
+
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+
+                    if (orientation === 6) {
+                        canvas.width = h;
+                        canvas.height = w;
+                        ctx.rotate(90 * Math.PI / 180);
+                        ctx.drawImage(img, 0, -h, w, h);
+                    } else if (orientation === 8) {
+                        canvas.width = h;
+                        canvas.height = w;
+                        ctx.rotate(-90 * Math.PI / 180);
+                        ctx.drawImage(img, -w, 0, w, h);
+                    } else if (orientation === 3) {
+                        canvas.width = w;
+                        canvas.height = h;
+                        ctx.rotate(Math.PI);
+                        ctx.drawImage(img, -w, -h, w, h);
+                    } else {
+                        canvas.width = w;
+                        canvas.height = h;
+                        ctx.drawImage(img, 0, 0, w, h);
+                    }
+
+                    canvas.toBlob(function (blob) {
+                        finalBlob = blob;
+
+                        preview.src = URL.createObjectURL(blob);
+                        preview.style.display = "block";
+                        retakeBtn.style.display = "block";
+
+                    }, "image/jpeg", 0.7);
+                };
+
+                img.src = e.target.result;
+            });
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+    retakeBtn.addEventListener("click", function () {
+        fileInput.value = "";
+        preview.style.display = "none";
+        retakeBtn.style.display = "none";
+        uploadBtn.disabled = true;
+        uploadBtn.style.opacity = "0.5";
+    });
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        spinner.style.display = "block";
+
+        const formData = new FormData();
+        formData.append("photo", finalBlob, "receipt.jpg");
+        formData.append("notes", form.querySelector("textarea").value);
+
+        fetch("", {
+            method: "POST",
+            body: formData
+        })
+        .then(r => r.text())
+        .then(() => {
+            spinner.style.display = "none";
+            successTick.style.display = "block";
+
+            setTimeout(() => {
+                successTick.style.display = "none";
+                window.location.reload();
+            }, 1200);
+        });
+    });
+
+});
+</script>
 
 </body>
 </html>
