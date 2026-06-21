@@ -4,6 +4,13 @@
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
 </div>
 
+<style>
+    /* Ensure overlay is ALWAYS flex, even when hidden */
+    #viewer-overlay {
+        display: flex;
+    }
+</style>
+
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
     <tr>
         <th>Image</th>
@@ -95,9 +102,10 @@
 
 <!-- POPUP VIEWER -->
 <div id="viewer-overlay"
-     style="display:none; position:fixed; inset:0;
+     style="visibility:hidden; opacity:0; position:fixed; inset:0;
             background:rgba(0,0,0,0.85); z-index:9999;
-            flex-direction:column; justify-content:center; align-items:center;">
+            flex-direction:column; justify-content:center; align-items:center;
+            transition:opacity 0.2s;">
 
     <img id="viewer-img" 
          style="max-width:90%; max-height:70%; transition:0.3s;">
@@ -128,12 +136,14 @@ function openViewer(path) {
     viewerRotation = 0;
     img.style.transform = "rotate(0deg)";
 
-    overlay.style.display = "flex";
+    overlay.style.visibility = "visible";
+    overlay.style.opacity = "1";
 }
 
 function closeViewer() {
     const overlay = document.getElementById("viewer-overlay");
-    overlay.style.display = "none";
+    overlay.style.opacity = "0";
+    setTimeout(() => overlay.style.visibility = "hidden", 200);
 }
 
 function rotateViewer() {
