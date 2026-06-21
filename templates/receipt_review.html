@@ -169,6 +169,7 @@
 </div>
 
 
+
 <script>
 let viewerRotation = 0;
 
@@ -196,6 +197,9 @@ function rotateViewer() {
     img.style.transform = `rotate(${viewerRotation}deg)`;
 }
 
+/* -----------------------------
+   ACCOUNT
+------------------------------ */
 function setAccount(id, value) {
     fetch("/set_receipt_account", {
         method: "POST",
@@ -204,4 +208,82 @@ function setAccount(id, value) {
     });
 }
 
+/* -----------------------------
+   INVOICE DATE
+------------------------------ */
+function setInvoiceDate(id, value) {
+    fetch("/set_receipt_invoice_date", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, invoice_date: value })
+    });
+}
+
+/* -----------------------------
+   PAID DATE
+------------------------------ */
+function setPaidDate(id, value) {
+    fetch("/set_receipt_paid_date", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, paid_date: value })
+    });
+}
+
+/* -----------------------------
+   CATEGORY
+------------------------------ */
+function setCategory(id, value) {
+    fetch("/set_receipt_category", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, category: value })
+    })
+    .then(() => location.reload());
+}
+
+/* -----------------------------
+   SUBFOLDER
+------------------------------ */
+function setSubfolder(id, value) {
+    fetch("/set_receipt_subfolder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, subfolder: value })
+    });
+}
+
+/* -----------------------------
+   REVIEWED (auto fade-out)
+------------------------------ */
+function markReviewed(id, checkbox) {
+    fetch("/mark_receipt_reviewed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, reviewed: checkbox.checked })
+    })
+    .then(() => {
+        if (checkbox.checked) {
+            const row = checkbox.closest("tr");
+            row.style.transition = "opacity 0.4s ease";
+            row.style.opacity = "0";
+            setTimeout(() => row.remove(), 400);
+        }
+    });
+}
+
+/* -----------------------------
+   DELETE RECEIPT
+------------------------------ */
+function deleteReceipt(id) {
+    if (!confirm("Delete this receipt?")) return;
+
+    fetch("/delete_receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id })
+    })
+    .then(() => location.reload());
+}
 </script>
+

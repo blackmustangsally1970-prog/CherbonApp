@@ -2049,42 +2049,38 @@ def create_app():
 
         return f"User '{username}' created with role '{role}'"
 
-    @app.route("/delete_receipt/<int:receipt_id>", methods=["POST"])
-    def delete_receipt(receipt_id):
-        from app import db, Receipt
-        import os
+    @app.route("/delete_receipt", methods=["POST"])
+    @login_required
+    def delete_receipt():
+        data = request.get_json()
+        receipt_id = data.get("id")
 
         r = Receipt.query.get(receipt_id)
         if not r:
             return {"status": "error", "message": "Receipt not found"}, 404
 
-        # Build full file path
         file_path = os.path.join("static", r.image_path)
-
-        # Delete file if it exists
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        # Delete DB entry
         db.session.delete(r)
         db.session.commit()
 
         return {"status": "success"}
 
-
     @app.route("/set_receipt_account", methods=["POST"])
+    @login_required
     def set_receipt_account():
         data = request.get_json()
-        rid = data.get("id")
-        account = data.get("account")
+        r = Receipt.query.get(data["id"])
 
-        db = get_db()
-        db.execute("UPDATE receipts SET account = ? WHERE id = ?", (account, rid))
-        db.commit()
+        if not r:
+            return {"status": "error"}, 404
 
-        return "OK"
+        r.account = data["account"]
+        db.session.commit()
 
-
+        return {"status": "success"}
 
     @app.route("/set_receipt_category", methods=["POST"])
     @login_required
@@ -2098,7 +2094,7 @@ def create_app():
         old_path = os.path.join("static", r.image_path)
         r.category = data["category"]
 
-        # Only move if subfolder already chosen
+        # Move file only if subfolder already chosen
         if r.subfolder:
             new_dir = os.path.join("static", "receipts", r.category, r.subfolder)
             os.makedirs(new_dir, exist_ok=True)
@@ -2106,11 +2102,9 @@ def create_app():
             new_path = os.path.join(new_dir, os.path.basename(r.image_path))
             shutil.move(old_path, new_path)
 
-            # Update DB path
             r.image_path = os.path.relpath(new_path, "static")
 
         db.session.commit()
-
         return {"status": "success", "category": r.category}
 
     @app.route("/set_receipt_subfolder", methods=["POST"])
@@ -2119,10 +2113,13 @@ def create_app():
         data = request.get_json()
         r = Receipt.query.get(data["id"])
 
+        if not r:
+            return {"status": "error"}, 404
+
         old_path = os.path.join("static", r.image_path)
 
-        # Update subfolder
-        r.subfolder = data["folder"]
+        # Correct key name from JS
+        r.subfolder = data["subfolder"]
 
         # Build new directory
         new_dir = os.path.join("static", "receipts", r.category, r.subfolder)
@@ -2145,6 +2142,7 @@ def create_app():
         fy = request.args.get("fy")
         category = request.args.get("category")
         subfolder = request.args.get("subfolder")
+        account = request.args.get("account")
 
         # Base query: only show receipts that are fully processed
         q = Receipt.query.filter(
@@ -2155,7 +2153,7 @@ def create_app():
             Receipt.category != "",
             Receipt.subfolder.isnot(None),
             Receipt.subfolder != "",
-            Receipt.paid_date.isnot(None)   # NEW: must have paid date
+            Receipt.paid_date.isnot(None)
         )
 
         # Apply filters
@@ -2168,10 +2166,13 @@ def create_app():
         if subfolder:
             q = q.filter(Receipt.subfolder == subfolder)
 
+        if account:
+            q = q.filter(Receipt.account == account)
+
         # Order by PAID DATE (correct for accounting)
         receipts = q.order_by(Receipt.paid_date.desc()).all()
 
-        # Build FY list dynamically from DB (only valid FYs)
+        # Build FY list dynamically
         fy_list = sorted({
             r.fy for r in Receipt.query.filter(
                 Receipt.fy.isnot(None),
@@ -2186,20 +2187,29 @@ def create_app():
             "equestrian": sorted(os.listdir(os.path.join(BASE, "equestrian")))
         }
 
+        # Build dynamic account list
+        account_list = sorted({
+            r.account for r in Receipt.query.filter(
+                Receipt.account.isnot(None),
+                Receipt.account != ""
+            ).all()
+        })
+
         return render_template(
             "receipt_recall.html",
             receipts=receipts,
             fy_list=fy_list,
             subfolders=SUBFOLDERS,
+            account_list=account_list,
             selected_fy=fy,
             selected_category=category,
-            selected_subfolder=subfolder
+            selected_subfolder=subfolder,
+            selected_account=account
         )
 
-
-    @app.route("/set_invoice_date", methods=["POST"])
+    @app.route("/set_receipt_invoice_date", methods=["POST"])
     @login_required
-    def set_invoice_date():
+    def set_receipt_invoice_date():
         data = request.get_json()
         r = Receipt.query.get(data["id"])
 
@@ -2211,9 +2221,10 @@ def create_app():
 
         return {"status": "success"}
 
-    @app.route("/set_paid_date", methods=["POST"])
+
+    @app.route("/set_receipt_paid_date", methods=["POST"])
     @login_required
-    def set_paid_date():
+    def set_receipt_paid_date():
         data = request.get_json()
         r = Receipt.query.get(data["id"])
 
@@ -2230,6 +2241,8 @@ def create_app():
 
         return {"status": "success", "fy": r.fy}
 
+
+
     @app.route("/mark_receipt_reviewed", methods=["POST"])
     @login_required
     def mark_receipt_reviewed():
@@ -2243,7 +2256,6 @@ def create_app():
         db.session.commit()
 
         return {"status": "success"}
-
 
     @app.route("/upload_receipt", methods=["GET", "POST"])
     @login_required
@@ -2348,7 +2360,7 @@ def create_app():
             (Receipt.reviewed == False) |
             (Receipt.category == None) |
             (Receipt.subfolder == None) |
-            (Receipt.paid_date == None)  # NEW: must have paid date before leaving review
+            (Receipt.paid_date == None)  # Must have paid date before leaving review
         ).order_by(Receipt.created_at.desc()).all()
 
         # Convert timestamps to Brisbane time
