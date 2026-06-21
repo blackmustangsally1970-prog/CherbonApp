@@ -5,11 +5,26 @@
 </div>
 
 <style>
-    /* Ensure overlay is ALWAYS flex, even when hidden */
-    #viewer-overlay {
-        display: flex;
-    }
+#viewer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+
+    /* ALWAYS a flex container */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    /* Hidden by default */
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
 </style>
+
+
 
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
     <tr>
