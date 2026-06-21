@@ -31,7 +31,7 @@ class Receipt(db.Model):
     fy = db.Column(db.String(20))
     invoice_date = db.Column(db.Date, nullable=True)
     paid_date = db.Column(db.Date, nullable=True)
-    account = db.Column(db.String(50)
+    account = db.Column(db.String(50))
 
 
 class SmsLog(db.Model):
