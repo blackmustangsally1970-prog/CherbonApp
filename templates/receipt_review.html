@@ -5,102 +5,112 @@
 </div>
 
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
-<tr>
-    <th>Image</th>
-    <th>Notes</th>
-    <th>Invoice Date</th>
-    <th>Paid Date</th>
-    <th>Reviewed</th>
-    <th>Category</th>
-    <th>Subfolder</th>
-    <th>Actions</th>
-</tr>
+    <tr>
+        <th>Image</th>
+        <th>Notes</th>
+        <th>Invoice Date</th>
+        <th>Paid Date</th>
+        <th>Reviewed</th>
+        <th>Category</th>
+        <th>Subfolder</th>
+        <th>Actions</th>
+    </tr>
 
-{% for r in receipts %}
-<tr>
+    {% for r in receipts %}
+    <tr>
 
-    <!-- IMAGE WITH POPUP VIEWER -->
-    <td>
-        <img src="/static/{{ r.image_path }}"
-             onclick="openViewer('/static/{{ r.image_path }}')"
-             style="width:120px; border:1px solid #ccc; cursor:pointer;">
-    </td>
+        <!-- IMAGE WITH POPUP VIEWER -->
+        <td>
+            <img src="/static/{{ r.image_path }}"
+                 onclick="openViewer('/static/{{ r.image_path }}')"
+                 style="width:120px; border:1px solid #ccc; cursor:pointer;">
+        </td>
 
-    <td style="white-space:pre-wrap;">{{ r.notes }}</td>
+        <!-- NOTES -->
+        <td style="white-space:pre-wrap;">
+            {{ r.notes }}
+        </td>
 
-    <!-- INVOICE DATE -->
-    <td>
-        <input type="date"
-               value="{{ r.invoice_date if r.invoice_date }}"
-               onchange="setInvoiceDate({{ r.id }}, this.value)">
-    </td>
+        <!-- INVOICE DATE -->
+        <td>
+            <input type="date"
+                   value="{{ r.invoice_date if r.invoice_date }}"
+                   onchange="setInvoiceDate({{ r.id }}, this.value)">
+        </td>
 
-    <!-- PAID DATE -->
-    <td>
-        <input type="date"
-               value="{{ r.paid_date if r.paid_date }}"
-               onchange="setPaidDate({{ r.id }}, this.value)">
-    </td>
+        <!-- PAID DATE -->
+        <td>
+            <input type="date"
+                   value="{{ r.paid_date if r.paid_date }}"
+                   onchange="setPaidDate({{ r.id }}, this.value)">
+        </td>
 
-    <!-- REVIEWED -->
-    <td>
-        <input type="checkbox"
-               onchange="markReviewed({{ r.id }}, this)"
-               {% if r.reviewed %}checked{% endif %}>
-    </td>
+        <!-- REVIEWED -->
+        <td>
+            <input type="checkbox"
+                   onchange="markReviewed({{ r.id }}, this)"
+                   {% if r.reviewed %}checked{% endif %}>
+        </td>
 
-    <!-- CATEGORY -->
-    <td>
-        <select onchange="setCategory({{ r.id }}, this.value)">
-            <option value="">-- choose --</option>
-            <option value="weddings" {% if r.category == 'weddings' %}selected{% endif %}>Weddings</option>
-            <option value="equestrian" {% if r.category == 'equestrian' %}selected{% endif %}>Equestrian</option>
-        </select>
-    </td>
-
-    <!-- SUBFOLDER -->
-    <td>
-        {% if r.category %}
-            <select onchange="setSubfolder({{ r.id }}, this.value)">
+        <!-- CATEGORY -->
+        <td>
+            <select onchange="setCategory({{ r.id }}, this.value)">
                 <option value="">-- choose --</option>
-
-                {% for f in subfolders[r.category] %}
-                    <option value="{{ f }}" {% if r.subfolder == f %}selected{% endif %}>
-                        {{ f }}
-                    </option>
-                {% endfor %}
-
-                <option value="new">+ Create new</option>
+                <option value="weddings"   {% if r.category == 'weddings' %}selected{% endif %}>Weddings</option>
+                <option value="equestrian" {% if r.category == 'equestrian' %}selected{% endif %}>Equestrian</option>
             </select>
-        {% else %}
-            <span style="color:#888;">Select category first</span>
-        {% endif %}
-    </td>
+        </td>
 
-    <td>
-        <button onclick="deleteReceipt({{ r.id }})"
-                style="background:#b30000; color:white; padding:6px 10px; border:none; border-radius:4px; cursor:pointer;">
-            Delete
-        </button>
-    </td>
+        <!-- SUBFOLDER -->
+        <td>
+            {% if r.category %}
+                <select onchange="setSubfolder({{ r.id }}, this.value)">
+                    <option value="">-- choose --</option>
 
-</tr>
-{% endfor %}
+                    {% for f in subfolders[r.category] %}
+                        <option value="{{ f }}" {% if r.subfolder == f %}selected{% endif %}>
+                            {{ f }}
+                        </option>
+                    {% endfor %}
+
+                    <option value="new">+ Create new</option>
+                </select>
+            {% else %}
+                <span style="color:#888;">Select category first</span>
+            {% endif %}
+        </td>
+
+        <!-- ACTIONS -->
+        <td>
+            <button onclick="deleteReceipt({{ r.id }})"
+                    style="background:#b30000; color:white; padding:6px 10px; border:none; border-radius:4px; cursor:pointer;">
+                Delete
+            </button>
+        </td>
+
+    </tr>
+    {% endfor %}
 </table>
 
-<!-- POPUP VIEWER -->
-<div id="viewer-overlay" 
-     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; 
-            align-items:center; flex-direction:column;">
 
-    <img id="viewer-img" style="max-width:90%; max-height:80%; transition:0.3s;">
+<!-- POPUP VIEWER -->
+<div id="viewer-overlay"
+     style="display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.85); z-index:9999;
+            flex-direction:column; justify-content:center; align-items:center;">
+
+    <img id="viewer-img" 
+         style="max-width:90%; max-height:70%; transition:0.3s;">
 
     <div style="margin-top:20px; display:flex; gap:12px;">
-        <button onclick="rotateViewer()" 
-                style="padding:10px 16px; font-size:16px;">Rotate</button>
+        <button type="button"
+                onclick="rotateViewer()"
+                style="padding:10px 16px; font-size:16px;">
+            Rotate
+        </button>
 
-        <button onclick="closeViewer()" 
+        <button type="button"
+                onclick="closeViewer()"
                 style="padding:10px 16px; font-size:16px; background:#b30000; color:white;">
             Close
         </button>
@@ -108,7 +118,6 @@
 </div>
 
 <script>
-/* POPUP VIEWER LOGIC */
 let viewerRotation = 0;
 
 function openViewer(path) {
@@ -123,7 +132,8 @@ function openViewer(path) {
 }
 
 function closeViewer() {
-    document.getElementById("viewer-overlay").style.display = "none";
+    const overlay = document.getElementById("viewer-overlay");
+    overlay.style.display = "none";
 }
 
 function rotateViewer() {
