@@ -172,14 +172,22 @@
 
 <script>
 let viewerRotation = 0;
+let viewerZoom = 1;
 
+/* -----------------------------
+   IMAGE VIEWER
+------------------------------ */
 function openViewer(path) {
     const overlay = document.getElementById("viewer-overlay");
     const img = document.getElementById("viewer-img");
 
     img.src = path;
+
+    // Reset zoom + rotation
     viewerRotation = 0;
-    img.style.transform = "rotate(0deg)";
+    viewerZoom = 1;
+
+    img.style.transform = "rotate(0deg) scale(1)";
 
     overlay.style.visibility = "visible";
     overlay.style.opacity = "1";
@@ -194,8 +202,31 @@ function closeViewer() {
 function rotateViewer() {
     const img = document.getElementById("viewer-img");
     viewerRotation = (viewerRotation + 90) % 360;
-    img.style.transform = `rotate(${viewerRotation}deg)`;
+    img.style.transform = `rotate(${viewerRotation}deg) scale(${viewerZoom})`;
 }
+
+/* -----------------------------
+   ZOOM (mouse wheel)
+------------------------------ */
+document.getElementById("viewer-img").addEventListener("wheel", function (e) {
+    e.preventDefault();
+
+    if (e.deltaY < 0) {
+        viewerZoom += 0.1; // zoom in
+    } else {
+        viewerZoom = Math.max(0.2, viewerZoom - 0.1); // zoom out
+    }
+
+    this.style.transform = `rotate(${viewerRotation}deg) scale(${viewerZoom})`;
+});
+
+/* -----------------------------
+   ZOOM (double-click / double-tap)
+------------------------------ */
+document.getElementById("viewer-img").addEventListener("dblclick", function () {
+    viewerZoom = viewerZoom === 1 ? 2 : 1;
+    this.style.transform = `rotate(${viewerRotation}deg) scale(${viewerZoom})`;
+});
 
 /* -----------------------------
    ACCOUNT
@@ -243,14 +274,27 @@ function setCategory(id, value) {
 }
 
 /* -----------------------------
-   SUBFOLDER
+   SUBFOLDER (with NEW folder support)
 ------------------------------ */
 function setSubfolder(id, value) {
+
+    if (value === "new") {
+        const name = prompt("Enter new folder name:");
+
+        if (!name) {
+            alert("Folder name required");
+            return;
+        }
+
+        value = name;
+    }
+
     fetch("/set_receipt_subfolder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: id, subfolder: value })
-    });
+    })
+    .then(() => location.reload());
 }
 
 /* -----------------------------
@@ -286,4 +330,3 @@ function deleteReceipt(id) {
     .then(() => location.reload());
 }
 </script>
-
