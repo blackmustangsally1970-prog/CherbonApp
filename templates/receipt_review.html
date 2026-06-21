@@ -4,6 +4,13 @@
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
 </div>
 
+<style>
+/* Rotation classes */
+.rotate-90 { transform: rotate(90deg); }
+.rotate-180 { transform: rotate(180deg); }
+.rotate-270 { transform: rotate(270deg); }
+</style>
+
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
 <tr>
     <th>Image</th>
@@ -19,9 +26,19 @@
 {% for r in receipts %}
 <tr>
     <td>
-        <a href="/static/{{ r.image_path }}" target="_blank">
-            <img src="/static/{{ r.image_path }}" style="width:120px; border:1px solid #ccc;">
-        </a>
+        <div style="display:flex; flex-direction:column; align-items:center;">
+            <a href="/static/{{ r.image_path }}" target="_blank">
+                <img id="img-{{ r.id }}"
+                     src="/static/{{ r.image_path }}"
+                     style="width:120px; border:1px solid #ccc; transition:0.3s;">
+            </a>
+
+            <button type="button"
+                    onclick="rotateImage({{ r.id }})"
+                    style="margin-top:6px; padding:4px 8px; font-size:12px;">
+                Rotate
+            </button>
+        </div>
     </td>
 
     <td style="white-space:pre-wrap;">{{ r.notes }}</td>
@@ -86,87 +103,100 @@
 </table>
 
 <script>
-    function markReviewed(id, checkbox) {
-        fetch("/mark_receipt_reviewed", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id, reviewed: checkbox.checked })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === "success") {
-                const row = checkbox.closest("tr");
-                row.style.transition = "opacity 0.4s ease";
-                row.style.opacity = "0";
-                setTimeout(() => row.remove(), 400);
-            }
-        });
-    }
+/* ROTATE BUTTON LOGIC */
+function rotateImage(id) {
+    const img = document.getElementById("img-" + id);
 
-    function setInvoiceDate(id, date) {
-        fetch("/set_invoice_date", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id, invoice_date: date })
-        });
-    }
+    // Track rotation on the element
+    let current = img.getAttribute("data-rot") || "0";
+    current = (parseInt(current) + 90) % 360;
+    img.setAttribute("data-rot", current);
 
-    function setPaidDate(id, date) {
-        fetch("/set_paid_date", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id, paid_date: date })
-        });
-    }
+    img.style.transform = `rotate(${current}deg)`;
+}
 
-    function setCategory(id, category) {
-        fetch("/set_receipt_category", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id, category: category })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === "success") {
-                location.reload();
-            }
-        });
-    }
-
-    function setSubfolder(id, folder) {
-        if (folder === "new") {
-            folder = prompt("Enter new subfolder name:");
-            if (!folder) return;
+/* EXISTING FUNCTIONS BELOW */
+function markReviewed(id, checkbox) {
+    fetch("/mark_receipt_reviewed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, reviewed: checkbox.checked })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            const row = checkbox.closest("tr");
+            row.style.transition = "opacity 0.4s ease";
+            row.style.opacity = "0";
+            setTimeout(() => row.remove(), 400);
         }
+    });
+}
 
-        fetch("/set_receipt_subfolder", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id, folder: folder })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === "success") {
-                location.reload();
-            }
-        });
+function setInvoiceDate(id, date) {
+    fetch("/set_invoice_date", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, invoice_date: date })
+    });
+}
+
+function setPaidDate(id, date) {
+    fetch("/set_paid_date", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, paid_date: date })
+    });
+}
+
+function setCategory(id, category) {
+    fetch("/set_receipt_category", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, category: category })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            location.reload();
+        }
+    });
+}
+
+function setSubfolder(id, folder) {
+    if (folder === "new") {
+        folder = prompt("Enter new subfolder name:");
+        if (!folder) return;
     }
 
-    function deleteReceipt(id) {
-        if (!confirm("Are you sure you want to delete this receipt?")) return;
+    fetch("/set_receipt_subfolder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, folder: folder })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            location.reload();
+        }
+    });
+}
 
-        fetch(`/delete_receipt/${id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === "success") {
-                location.reload();
-            } else {
-                alert("Error deleting receipt.");
-            }
-        });
-    }
+function deleteReceipt(id) {
+    if (!confirm("Are you sure you want to delete this receipt?")) return;
+
+    fetch(`/delete_receipt/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            location.reload();
+        } else {
+            alert("Error deleting receipt.");
+        }
+    });
+}
 </script>
