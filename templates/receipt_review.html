@@ -1,4 +1,4 @@
-<h2>Review</h2>
+<h2>Receipt Review</h2>
 
 <div style="margin-bottom: 20px; display:flex; gap:12px;">
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
@@ -10,7 +10,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.85);
-    z-index: 2147483647; /* nuclear z-index */
+    z-index: 2147483647;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -19,6 +19,18 @@
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.2s ease;
+
+    overflow: hidden; /* <<< CRITICAL FIX */
+}
+
+/* IMAGE CONTAINER — prevents layout collapse */
+#viewer-img-container {
+    max-height: 70vh;
+    max-width: 90vw;
+    overflow: hidden; /* <<< CRITICAL FIX */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* POPUP IMAGE */
@@ -27,6 +39,7 @@
     max-width: 90vw;
     object-fit: contain;
     transition: transform 0.3s ease;
+    transform-origin: center center; /* <<< CRITICAL FIX */
 }
 </style>
 
@@ -123,7 +136,9 @@
 <!-- POPUP VIEWER -->
 <div id="viewer-overlay">
 
-    <img id="viewer-img">
+    <div id="viewer-img-container">
+        <img id="viewer-img">
+    </div>
 
     <div style="margin-top:20px; display:flex; gap:12px;">
         <button type="button"
