@@ -2487,7 +2487,7 @@ def create_app():
                 total=parsed.get("total"),
                 gst=parsed.get("gst"),
                 subtotal=parsed.get("subtotal"),
-                invoice_date=parsed.get("date")
+                invoice_date=parse_any_date(parsed.get("date"))
             )
 
             db.session.add(receipt)
@@ -2508,7 +2508,6 @@ def create_app():
             return redirect(url_for("upload_receipt"))
 
         return render_template("upload_receipt.html")
-
 
     @app.route("/upload_receipt_file", methods=["GET", "POST"])
     def upload_receipt_file():
@@ -2540,7 +2539,7 @@ def create_app():
                 total=parsed.get("total"),
                 gst=parsed.get("gst"),
                 subtotal=parsed.get("subtotal"),
-                invoice_date=parsed.get("date")
+                invoice_date=parse_any_date(parsed.get("date"))
             )
 
             db.session.add(r)
@@ -2561,6 +2560,7 @@ def create_app():
             return redirect(url_for("upload_receipt_file"))
 
         return render_template("upload_receipt_file.html")
+
 
 
     @app.route("/receipt_review")
