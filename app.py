@@ -157,10 +157,11 @@ def get_static_teacher_time():
 
 
 def extract_text(path):
-    # PDF SUPPORT
+    poppler_path = "/usr/bin"  # location of pdfinfo and pdftoppm
+
     if path.lower().endswith(".pdf"):
-        pages = convert_from_path(path)
-        img = pages[0]  # first page only
+        pages = convert_from_path(path, poppler_path=poppler_path)
+        img = pages[0]
     else:
         img = Image.open(path)
 
