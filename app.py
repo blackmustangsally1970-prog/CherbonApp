@@ -189,6 +189,37 @@ def extract_text(path):
     return text
 
 
+
+def parse_any_date(d):
+    if not d:
+        return None
+
+    d = d.strip()
+
+    # All formats we want to support
+    formats = [
+        "%d/%m/%Y",  # 18/06/2026
+        "%d/%m/%y",  # 18/06/26
+        "%Y-%m-%d",  # 2026-06-18
+        "%d-%m-%Y",  # 18-06-2026
+        "%d-%m-%y",  # 18-06-26
+        "%d %b %Y",  # 18 Jun 2026
+        "%d %B %Y",  # 18 June 2026
+        "%Y/%m/%d",  # 2026/06/18
+        "%m/%d/%Y",  # 06/18/2026 (rare but possible)
+        "%m/%d/%y",  # 06/18/26
+    ]
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(d, fmt).date()
+        except:
+            pass
+
+    # If nothing matched, return None instead of exploding
+    return None
+
+
 def parse_receipt(text):
     data = {}
 
@@ -2387,7 +2418,7 @@ def create_app():
         if not r:
             return {"status": "error", "msg": "Not found"}, 404
 
-        r.invoice_date = datetime.strptime(data["invoice_date"], "%Y-%m-%d").date()
+        r.invoice_date = parse_any_date(data["invoice_date"])
         db.session.commit()
 
         return {"status": "success"}
@@ -2402,7 +2433,7 @@ def create_app():
         if not r:
             return {"status": "error", "msg": "Not found"}, 404
 
-        paid = datetime.strptime(data["paid_date"], "%Y-%m-%d").date()
+        paid = parse_any_date(data["paid_date"])
         r.paid_date = paid
 
         # Auto‑calculate FY from paid date
@@ -2411,7 +2442,6 @@ def create_app():
         db.session.commit()
 
         return {"status": "success", "fy": r.fy}
-
 
 
     @app.route("/mark_receipt_reviewed", methods=["POST"])
