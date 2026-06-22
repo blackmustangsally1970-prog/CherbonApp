@@ -29,10 +29,17 @@ class Receipt(db.Model):
     category = db.Column(db.String(50))
     subfolder = db.Column(db.String(100))
     fy = db.Column(db.String(20))
+
+    # OCR fields
+    invoice_number = db.Column(db.String(50), nullable=True)
+    abn = db.Column(db.String(20), nullable=True)
+    total = db.Column(db.String(20), nullable=True)
+    gst = db.Column(db.String(20), nullable=True)
+    subtotal = db.Column(db.String(20), nullable=True)
+
     invoice_date = db.Column(db.Date, nullable=True)
     paid_date = db.Column(db.Date, nullable=True)
     account = db.Column(db.String(50))
-
 
 class SmsLog(db.Model):
     __tablename__ = "sms_log"

@@ -20,14 +20,14 @@
     opacity: 0;
     transition: opacity 0.2s ease;
 
-    overflow: hidden; /* <<< CRITICAL FIX */
+    overflow: hidden;
 }
 
-/* IMAGE CONTAINER — prevents layout collapse */
+/* IMAGE CONTAINER */
 #viewer-img-container {
     max-height: 70vh;
     max-width: 90vw;
-    overflow: hidden; /* <<< CRITICAL FIX */
+    overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -39,7 +39,19 @@
     max-width: 90vw;
     object-fit: contain;
     transition: transform 0.3s ease;
-    transform-origin: center center; /* <<< CRITICAL FIX */
+    transform-origin: center center;
+}
+
+/* OCR BOX */
+.ocr-box {
+    background:#f7f7f7;
+    padding:6px;
+    border-radius:4px;
+    font-size:13px;
+    line-height:1.3;
+}
+.ocr-box div {
+    margin-bottom:2px;
 }
 </style>
 
@@ -49,6 +61,7 @@
         <th>Image</th>
         <th>Account</th>
         <th>Notes</th>
+        <th>OCR</th> <!-- NEW COLUMN -->
         <th>Invoice Date</th>
         <th>Paid Date</th>
         <th>Reviewed</th>
@@ -77,10 +90,34 @@
             </select>
         </td>
 
-
         <!-- NOTES -->
         <td style="white-space:pre-wrap;">
             {{ r.notes }}
+        </td>
+
+        <!-- OCR FIELDS -->
+        <td>
+            <div class="ocr-box">
+                {% if r.invoice_number %}
+                    <div><strong>Inv #:</strong> {{ r.invoice_number }}</div>
+                {% endif %}
+
+                {% if r.abn %}
+                    <div><strong>ABN:</strong> {{ r.abn }}</div>
+                {% endif %}
+
+                {% if r.total %}
+                    <div><strong>Total:</strong> ${{ r.total }}</div>
+                {% endif %}
+
+                {% if r.gst %}
+                    <div><strong>GST:</strong> ${{ r.gst }}</div>
+                {% endif %}
+
+                {% if r.subtotal %}
+                    <div><strong>Subtotal:</strong> ${{ r.subtotal }}</div>
+                {% endif %}
+            </div>
         </td>
 
         <!-- INVOICE DATE -->
@@ -169,21 +206,17 @@
 </div>
 
 
-
 <script>
 let viewerRotation = 0;
 let viewerZoom = 1;
 
-/* -----------------------------
-   IMAGE VIEWER
------------------------------- */
+/* IMAGE VIEWER */
 function openViewer(path) {
     const overlay = document.getElementById("viewer-overlay");
     const img = document.getElementById("viewer-img");
 
     img.src = path;
 
-    // Reset zoom + rotation
     viewerRotation = 0;
     viewerZoom = 1;
 
@@ -205,32 +238,26 @@ function rotateViewer() {
     img.style.transform = `rotate(${viewerRotation}deg) scale(${viewerZoom})`;
 }
 
-/* -----------------------------
-   ZOOM (mouse wheel)
------------------------------- */
+/* ZOOM (mouse wheel) */
 document.getElementById("viewer-img").addEventListener("wheel", function (e) {
     e.preventDefault();
 
     if (e.deltaY < 0) {
-        viewerZoom += 0.1; // zoom in
+        viewerZoom += 0.1;
     } else {
-        viewerZoom = Math.max(0.2, viewerZoom - 0.1); // zoom out
+        viewerZoom = Math.max(0.2, viewerZoom - 0.1);
     }
 
     this.style.transform = `rotate(${viewerRotation}deg) scale(${viewerZoom})`;
 });
 
-/* -----------------------------
-   ZOOM (double-click / double-tap)
------------------------------- */
+/* ZOOM (double-click) */
 document.getElementById("viewer-img").addEventListener("dblclick", function () {
     viewerZoom = viewerZoom === 1 ? 2 : 1;
     this.style.transform = `rotate(${viewerRotation}deg) scale(${viewerZoom})`;
 });
 
-/* -----------------------------
-   ACCOUNT
------------------------------- */
+/* ACCOUNT */
 function setAccount(id, value) {
     fetch("/set_receipt_account", {
         method: "POST",
@@ -239,9 +266,7 @@ function setAccount(id, value) {
     });
 }
 
-/* -----------------------------
-   INVOICE DATE
------------------------------- */
+/* INVOICE DATE */
 function setInvoiceDate(id, value) {
     fetch("/set_receipt_invoice_date", {
         method: "POST",
@@ -250,9 +275,7 @@ function setInvoiceDate(id, value) {
     });
 }
 
-/* -----------------------------
-   PAID DATE
------------------------------- */
+/* PAID DATE */
 function setPaidDate(id, value) {
     fetch("/set_receipt_paid_date", {
         method: "POST",
@@ -261,9 +284,7 @@ function setPaidDate(id, value) {
     });
 }
 
-/* -----------------------------
-   CATEGORY
------------------------------- */
+/* CATEGORY */
 function setCategory(id, value) {
     fetch("/set_receipt_category", {
         method: "POST",
@@ -273,9 +294,7 @@ function setCategory(id, value) {
     .then(() => location.reload());
 }
 
-/* -----------------------------
-   SUBFOLDER (with NEW folder support)
------------------------------- */
+/* SUBFOLDER */
 function setSubfolder(id, value) {
 
     if (value === "new") {
@@ -297,9 +316,7 @@ function setSubfolder(id, value) {
     .then(() => location.reload());
 }
 
-/* -----------------------------
-   REVIEWED (auto fade-out)
------------------------------- */
+/* REVIEWED */
 function markReviewed(id, checkbox) {
     fetch("/mark_receipt_reviewed", {
         method: "POST",
@@ -316,9 +333,7 @@ function markReviewed(id, checkbox) {
     });
 }
 
-/* -----------------------------
-   DELETE RECEIPT
------------------------------- */
+/* DELETE RECEIPT */
 function deleteReceipt(id) {
     if (!confirm("Delete this receipt?")) return;
 

@@ -57,7 +57,6 @@ from models import (
     EmployeeHours
 )
 
-
 # Core libs
 import os
 import io
@@ -82,6 +81,11 @@ from markupsafe import Markup, escape
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
 from sqlalchemy import extract
+import pytesseract
+from PIL import Image
+
+# Tell pytesseract where the binary is
+pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
 
 # Third‑party libs
 import requests
@@ -148,6 +152,49 @@ def get_static_teacher_time():
         TeacherTime.weekday,
         TeacherTime.time
     ).all()
+
+
+def extract_text(image_path):
+    img = Image.open(image_path)
+    text = pytesseract.image_to_string(img)
+    return text
+
+
+def parse_receipt(text):
+    data = {}
+
+    # TOTAL
+    total_match = re.search(r"(TOTAL|AMOUNT DUE|AMOUNT)\s*[:\-]?\s*\$?(\d+\.\d{2})", text, re.I)
+    if total_match:
+        data["total"] = total_match.group(2)
+
+    # GST
+    gst_match = re.search(r"(GST|TAX)\s*[:\-]?\s*\$?(\d+\.\d{2})", text, re.I)
+    if gst_match:
+        data["gst"] = gst_match.group(2)
+
+    # SUBTOTAL
+    sub_match = re.search(r"(SUBTOTAL|SUB TOTAL)\s*[:\-]?\s*\$?(\d+\.\d{2})", text, re.I)
+    if sub_match:
+        data["subtotal"] = sub_match.group(2)
+
+    # INVOICE NUMBER
+    inv_match = re.search(r"(INV|INVOICE|INVOICE NO|INVOICE NUMBER)\s*[:\-]?\s*([A-Z0-9\-]+)", text, re.I)
+    if inv_match:
+        data["invoice_number"] = inv_match.group(2)
+
+    # ABN
+    abn_match = re.search(r"ABN[:\s]*([0-9 ]{11,14})", text, re.I)
+    if abn_match:
+        data["abn"] = abn_match.group(1).replace(" ", "")
+
+    # DATE
+    date_match = re.search(r"(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})", text)
+    if date_match:
+        data["date"] = date_match.group(1)
+
+    return data
+
 
 
 def calculate_fy_from_paid(date):
@@ -2258,95 +2305,80 @@ def create_app():
         return {"status": "success"}
 
     @app.route("/upload_receipt", methods=["GET", "POST"])
-    @login_required
     def upload_receipt():
         if request.method == "POST":
-            file = request.files.get("photo")
-            notes = request.form.get("notes", "")
-            category = request.form.get("category")
-            account = request.form.get("account")
-
-            if not file:
-                return "No file", 400
-
+            file = request.files["photo"]
             filename = secure_filename(file.filename)
 
-            incoming_dir = os.path.join("static", "receipts", "_incoming")
-            os.makedirs(incoming_dir, exist_ok=True)
-
-            save_path = os.path.join(incoming_dir, filename)
+            # Save uploaded image
+            save_path = os.path.join("static/receipts/raw", filename)
             file.save(save_path)
 
-            from datetime import datetime
-            def calculate_fy(date):
-                year = date.year
-                if date.month >= 7:
-                    return f"{year}-{year+1}"
-                else:
-                    return f"{year-1}-{year}"
+            # --- OCR PROCESSING ---
+            text = extract_text(save_path)
+            parsed = parse_receipt(text)
+            # -----------------------
 
-            now = datetime.utcnow()
-            fy = calculate_fy(now)
+            receipt = Receipt(
+                staff_id=current_user.id,
+                image_path=f"receipts/raw/{filename}",
+                notes=request.form.get("notes", ""),
+                category=request.form.get("category"),
+                account=request.form.get("account"),
 
-            r = Receipt(
-                staff_id=current_user.user_id,
-                image_path=os.path.relpath(save_path, "static"),
-                notes=notes,
-                fy=fy,
-                created_at=now,
-                category=category,
-                account=account
+                # Auto‑filled OCR fields
+                invoice_number=parsed.get("invoice_number"),
+                abn=parsed.get("abn"),
+                total=parsed.get("total"),
+                gst=parsed.get("gst"),
+                subtotal=parsed.get("subtotal"),
+                invoice_date=parsed.get("date")
             )
-            db.session.add(r)
+
+            db.session.add(receipt)
             db.session.commit()
 
+            flash("Receipt uploaded and OCR processed.", "success")
             return redirect(url_for("upload_receipt"))
 
         return render_template("upload_receipt.html")
 
     @app.route("/upload_receipt_file", methods=["GET", "POST"])
-    @login_required
     def upload_receipt_file():
         if request.method == "POST":
             file = request.files.get("file")
             notes = request.form.get("notes", "")
-            category = request.form.get("category")
-            account = request.form.get("account")
 
             if not file:
                 return "No file", 400
 
             filename = secure_filename(file.filename)
-
-            incoming_dir = os.path.join("static", "receipts", "_incoming")
-            os.makedirs(incoming_dir, exist_ok=True)
-
-            save_path = os.path.join(incoming_dir, filename)
+            save_path = os.path.join("static/receipts/raw", filename)
             file.save(save_path)
 
-            from datetime import datetime
-            def calculate_fy(date):
-                year = date.year
-                if date.month >= 7:
-                    return f"{year}-{year+1}"
-                else:
-                    return f"{year-1}-{year}"
-
-            now = datetime.utcnow()
-            fy = calculate_fy(now)
+            # --- OCR PROCESSING ---
+            text = extract_text(save_path)
+            parsed = parse_receipt(text)
+            # -----------------------
 
             r = Receipt(
                 staff_id=current_user.user_id,
-                image_path=os.path.relpath(save_path, "static"),
+                image_path=f"receipts/raw/{filename}",
                 notes=notes,
-                fy=fy,
-                created_at=now,
-                category=category,
-                account=account
+
+                # Auto‑filled OCR fields
+                invoice_number=parsed.get("invoice_number"),
+                abn=parsed.get("abn"),
+                total=parsed.get("total"),
+                gst=parsed.get("gst"),
+                subtotal=parsed.get("subtotal"),
+                invoice_date=parsed.get("date")
             )
+
             db.session.add(r)
             db.session.commit()
 
+            flash("File uploaded and OCR processed.", "success")
             return redirect(url_for("upload_receipt_file"))
 
         return render_template("upload_receipt_file.html")
