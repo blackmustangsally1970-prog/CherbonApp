@@ -74,21 +74,27 @@
         <th>Company</th>
         <th>Inv #</th>
         <th>ABN</th>
-        <th>Total</th>
-        <th>GST</th>
         <th>Subtotal</th>
-        <th>Invoice Date</th>
+        <th>GST</th>
+        <th>Total</th>
+        <th>Inv Date</th>
     </tr>
 
     {% for r in receipts %}
     <tr>
 
         <!-- POPUP -->
-        <td>
-            <img src="/static/{{ r.thumbnail_path or r.image_path }}"
-                 style="width:80px; cursor:pointer; border:1px solid #ccc;"
-                 onclick="openImagePopup('/static/receipts/{{ r.category }}/{{ r.subfolder }}/{{ r.image_filename }}')">
-        </td>
+<td>
+    {% if r.image_path.endswith('.pdf') %}
+        <img src="/static/{{ r.thumbnail_path }}"
+             style="width:80px; cursor:pointer; border:1px solid #ccc;"
+             onclick="window.open('/static/{{ r.image_path }}', '_blank')">
+    {% else %}
+        <img src="/static/{{ r.thumbnail_path or r.image_path }}"
+             style="width:80px; cursor:pointer; border:1px solid #ccc;"
+             onclick="openImagePopup('/static/{{ r.image_path }}')">
+    {% endif %}
+</td>
 
         <td>{{ r.staff.name }}</td>
         <td style="white-space:pre-wrap;">{{ r.notes }}</td>
