@@ -192,52 +192,64 @@ def extract_text(path):
 def parse_receipt(text):
     data = {}
 
-    # Normalize text for easier matching
-    clean = text.replace(" ", "").lower()
+    # Work line-by-line instead of smashing everything together
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
 
-    # --- SUBTOTAL ---
-    sub_match = re.search(r"(subtotal|subtotal|subtotal\$|subtotal:)\s*\$?(\d+\.\d{2})", clean, re.I)
-    if not sub_match:
-        sub_match = re.search(r"subtotal\$(\d+\.\d{2})", clean)
-    if sub_match:
-        data["subtotal"] = sub_match.group(2) if sub_match.lastindex == 2 else sub_match.group(1)
+    subtotal = None
+    gst = None
+    total = None
 
-    # --- GST ---
-    gst_match = re.search(r"(gsttotal|gst|tax)\s*\$?(\d+\.\d{2})", clean, re.I)
-    if not gst_match:
-        # Handle "GST 10%" on one line, number on next line
-        gst_match = re.search(r"gst10%.*?(\d+\.\d{2})", clean)
-    if gst_match:
-        data["gst"] = gst_match.group(2) if gst_match.lastindex == 2 else gst_match.group(1)
+    for line in lines:
+        low = line.lower()
 
-    # --- TOTAL ---
-    total_match = re.search(r"(invoicetotal|total|amountdue)\s*\$?(\d+\.\d{2})", clean, re.I)
-    if total_match:
-        data["total"] = total_match.group(2)
+        # SUBTOTAL / SUB TOTAL / SUB TOTAL $
+        if "sub total" in low or "subtotal" in low:
+            m = re.search(r"\$?\s*(\d+\.\d{2})", line)
+            if m:
+                subtotal = m.group(1)
 
-    # --- INVOICE NUMBER ---
-    inv_match = re.search(r"(invoice|inv|invoiceno|invoicenumber)[^\dA-Z]*([A-Z0-9\-]+)", text, re.I)
+        # GST / GST TOTAL / TAX
+        elif "gst" in low or "tax" in low:
+            m = re.search(r"\$?\s*(\d+\.\d{2})", line)
+            if m:
+                gst = m.group(1)
+
+        # INVOICE TOTAL / AMOUNT DUE / TOTAL (but NOT subtotal/gst total)
+        elif ("invoice total" in low or "amount due" in low or low.startswith("total")):
+            m = re.search(r"\$?\s*(\d+\.\d{2})", line)
+            if m:
+                total = m.group(1)
+
+    if subtotal:
+        data["subtotal"] = subtotal
+    if gst:
+        data["gst"] = gst
+    if total:
+        data["total"] = total
+
+    # INVOICE NUMBER
+    inv_match = re.search(r"(invoice|inv|invoice no|invoice number)[^\dA-Z]*([A-Z0-9\-]+)", text, re.I)
     if inv_match:
         data["invoice_number"] = inv_match.group(2)
 
-    # --- ABN ---
-    abn_match = re.search(r"abn[:\s]*([0-9 ]{11,14})", text, re.I)
+    # ABN
+    abn_match = re.search(r"ABN[:\s]*([0-9 ]{11,14})", text, re.I)
     if abn_match:
         data["abn"] = abn_match.group(1).replace(" ", "")
 
-    # --- DATE ---
+    # DATE
     date_match = re.search(r"(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})", text)
     if date_match:
         data["date"] = date_match.group(1)
 
-    # --- FALLBACK MATH ---
+    # FALLBACK MATH
     if "subtotal" in data and "gst" in data and "total" not in data:
-        total = float(data["subtotal"]) + float(data["gst"])
-        data["total"] = f"{total:.2f}"
+        t = float(data["subtotal"]) + float(data["gst"])
+        data["total"] = f"{t:.2f}"
 
-    if "total" in data and "gst" not in data and "subtotal" in data:
-        gst = float(data["total"]) - float(data["subtotal"])
-        data["gst"] = f"{gst:.2f}"
+    if "total" in data and "subtotal" not in data and "gst" in data:
+        s = float(data["total"]) - float(data["gst"])
+        data["subtotal"] = f"{s:.2f}"
 
     return data
 
