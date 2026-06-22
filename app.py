@@ -156,6 +156,19 @@ def get_static_teacher_time():
     ).all()
 
 
+def create_thumbnail(input_path, output_path):
+    # PDF → JPG
+    if input_path.lower().endswith(".pdf"):
+        pages = convert_from_path(input_path, poppler_path="/usr/bin")
+        img = pages[0]
+    else:
+        img = Image.open(input_path)
+
+    # Resize to max 800px width
+    img.thumbnail((800, 800))
+    img.save(output_path, "JPEG", quality=85)
+
+
 def extract_text(path):
     poppler_path = "/usr/bin"  # location of pdfinfo and pdftoppm
 
@@ -2360,7 +2373,7 @@ def create_app():
             file = request.files["photo"]
             filename = secure_filename(file.filename)
 
-            # Save uploaded image
+            # Save uploaded image/PDF
             save_path = os.path.join("static/receipts/raw", filename)
             file.save(save_path)
 
@@ -2388,10 +2401,22 @@ def create_app():
             db.session.add(receipt)
             db.session.commit()
 
-            flash("Receipt uploaded and OCR processed.", "success")
+            # --- THUMBNAIL GENERATION ---
+            thumb_dir = os.path.join("static/receipts/thumbnails")
+            os.makedirs(thumb_dir, exist_ok=True)
+
+            thumb_path = os.path.join(thumb_dir, f"{receipt.id}.jpg")
+            create_thumbnail(save_path, thumb_path)
+
+            receipt.thumbnail_path = f"receipts/thumbnails/{receipt.id}.jpg"
+            db.session.commit()
+            # ----------------------------
+
+            flash("Receipt uploaded, OCR processed, thumbnail created.", "success")
             return redirect(url_for("upload_receipt"))
 
         return render_template("upload_receipt.html")
+
 
     @app.route("/upload_receipt_file", methods=["GET", "POST"])
     def upload_receipt_file():
@@ -2428,7 +2453,18 @@ def create_app():
             db.session.add(r)
             db.session.commit()
 
-            flash("File uploaded and OCR processed.", "success")
+            # --- THUMBNAIL GENERATION ---
+            thumb_dir = os.path.join("static/receipts/thumbnails")
+            os.makedirs(thumb_dir, exist_ok=True)
+
+            thumb_path = os.path.join(thumb_dir, f"{r.id}.jpg")
+            create_thumbnail(save_path, thumb_path)
+
+            r.thumbnail_path = f"receipts/thumbnails/{r.id}.jpg"
+            db.session.commit()
+            # ----------------------------
+
+            flash("File uploaded, OCR processed, thumbnail created.", "success")
             return redirect(url_for("upload_receipt_file"))
 
         return render_template("upload_receipt_file.html")

@@ -75,8 +75,8 @@
 
         <!-- IMAGE -->
         <td>
-            <img src="/static/{{ r.image_path }}"
-                 onclick="openViewer('/static/{{ r.image_path }}')"
+            <img src="/static/{{ r.thumbnail_path }}"
+                 onclick="openViewer('/static/{{ r.thumbnail_path }}')"
                  style="width:120px; border:1px solid #ccc; cursor:pointer;">
         </td>
 
@@ -96,29 +96,46 @@
         </td>
 
         <!-- OCR FIELDS -->
-        <td>
-            <div class="ocr-box">
-                {% if r.invoice_number %}
-                    <div><strong>Inv #:</strong> {{ r.invoice_number }}</div>
-                {% endif %}
+<td>
+    <div class="ocr-box">
 
-                {% if r.abn %}
-                    <div><strong>ABN:</strong> {{ r.abn }}</div>
-                {% endif %}
+        <div>
+            <strong>Inv #:</strong>
+            <input type="text" value="{{ r.invoice_number or '' }}"
+                   onchange="setInvoiceNumber({{ r.id }}, this.value)"
+                   style="width:90px;">
+        </div>
 
-                {% if r.total %}
-                    <div><strong>Total:</strong> ${{ r.total }}</div>
-                {% endif %}
+        <div>
+            <strong>ABN:</strong>
+            <input type="text" value="{{ r.abn or '' }}"
+                   onchange="setAbn({{ r.id }}, this.value)"
+                   style="width:110px;">
+        </div>
 
-                {% if r.gst %}
-                    <div><strong>GST:</strong> ${{ r.gst }}</div>
-                {% endif %}
+        <div>
+            <strong>Total:</strong>
+            <input type="text" value="{{ r.total or '' }}"
+                   onchange="setTotal({{ r.id }}, this.value)"
+                   style="width:70px;">
+        </div>
 
-                {% if r.subtotal %}
-                    <div><strong>Subtotal:</strong> ${{ r.subtotal }}</div>
-                {% endif %}
-            </div>
-        </td>
+        <div>
+            <strong>GST:</strong>
+            <input type="text" value="{{ r.gst or '' }}"
+                   onchange="setGst({{ r.id }}, this.value)"
+                   style="width:70px;">
+        </div>
+
+        <div>
+            <strong>Subtotal:</strong>
+            <input type="text" value="{{ r.subtotal or '' }}"
+                   onchange="setSubtotal({{ r.id }}, this.value)"
+                   style="width:70px;">
+        </div>
+
+    </div>
+</td>
 
         <!-- INVOICE DATE -->
         <td>
@@ -344,4 +361,48 @@ function deleteReceipt(id) {
     })
     .then(() => location.reload());
 }
+
+
+function setTotal(id, value) {
+    fetch("/set_receipt_total", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, total: value })
+    });
+}
+
+function setGst(id, value) {
+    fetch("/set_receipt_gst", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, gst: value })
+    });
+}
+
+function setSubtotal(id, value) {
+    fetch("/set_receipt_subtotal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, subtotal: value })
+    });
+}
+
+function setInvoiceNumber(id, value) {
+    fetch("/set_receipt_invoice_number", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, invoice_number: value })
+    });
+}
+
+function setAbn(id, value) {
+    fetch("/set_receipt_abn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, abn: value })
+    });
+}
+
+
+
 </script>
