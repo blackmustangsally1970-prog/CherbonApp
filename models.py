@@ -41,8 +41,7 @@ class Receipt(db.Model):
     paid_date = db.Column(db.Date, nullable=True)
     account = db.Column(db.String(50))
     thumbnail_path = db.Column(db.String(255))
-
-
+    company = db.Column(db.String(120))
 
 class SmsLog(db.Model):
     __tablename__ = "sms_log"
