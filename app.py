@@ -77,6 +77,8 @@ from functools import lru_cache, wraps
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
+from pdf2image import convert_from_path
+
 from markupsafe import Markup, escape
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
@@ -154,8 +156,14 @@ def get_static_teacher_time():
     ).all()
 
 
-def extract_text(image_path):
-    img = Image.open(image_path)
+def extract_text(path):
+    # PDF SUPPORT
+    if path.lower().endswith(".pdf"):
+        pages = convert_from_path(path)
+        img = pages[0]  # first page only
+    else:
+        img = Image.open(path)
+
     text = pytesseract.image_to_string(img)
     return text
 
@@ -2128,6 +2136,47 @@ def create_app():
         db.session.commit()
 
         return {"status": "success"}
+
+    @app.route("/set_receipt_total", methods=["POST"])
+    def set_receipt_total():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+        r.total = data["total"]
+        db.session.commit()
+        return "OK"
+
+    @app.route("/set_receipt_gst", methods=["POST"])
+    def set_receipt_gst():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+        r.gst = data["gst"]
+        db.session.commit()
+        return "OK"
+
+    @app.route("/set_receipt_subtotal", methods=["POST"])
+    def set_receipt_subtotal():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+        r.subtotal = data["subtotal"]
+        db.session.commit()
+        return "OK"
+
+    @app.route("/set_receipt_invoice_number", methods=["POST"])
+    def set_receipt_invoice_number():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+        r.invoice_number = data["invoice_number"]
+        db.session.commit()
+        return "OK"
+
+    @app.route("/set_receipt_abn", methods=["POST"])
+    def set_receipt_abn():
+        data = request.get_json()
+        r = Receipt.query.get(data["id"])
+        r.abn = data["abn"]
+        db.session.commit()
+        return "OK"
+
 
     @app.route("/set_receipt_category", methods=["POST"])
     @login_required
