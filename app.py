@@ -182,7 +182,8 @@ def extract_text(path):
 
     # DEBUG PRINT
     print("\n\n===== OCR RAW TEXT =====\n")
-    print(text)
+    with open("/home/ec2-user/ocr_dump.txt", "w") as f:
+        f.write(text)
     print("\n===== END OCR RAW TEXT =====\n")
 
     return text
