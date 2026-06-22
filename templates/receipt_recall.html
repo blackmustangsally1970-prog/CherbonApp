@@ -35,7 +35,7 @@
         {% endif %}
     </select>
 
-    <!-- ACCOUNT FILTER (FIXED + CORRECT) -->
+    <!-- ACCOUNT FILTER -->
     <label style="margin-left:20px;">Account:</label>
     <select name="account" onchange="this.form.submit()">
         <option value="">-- all --</option>
@@ -49,6 +49,16 @@
 
 </form>
 
+<style>
+    .ocr-box div {
+        margin-bottom: 4px;
+    }
+    .ocr-box strong {
+        display: inline-block;
+        width: 100px;
+    }
+</style>
+
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse;">
     <tr>
         <th>Image</th>
@@ -59,14 +69,25 @@
         <th>Category</th>
         <th>Subfolder</th>
         <th>Account</th>
+
+        <!-- NEW OCR FIELDS -->
+        <th>Company</th>
+        <th>Inv #</th>
+        <th>ABN</th>
+        <th>Total</th>
+        <th>GST</th>
+        <th>Subtotal</th>
+        <th>Invoice Date</th>
     </tr>
 
     {% for r in receipts %}
     <tr>
+
+        <!-- THUMBNAIL WITH POPUP -->
         <td>
-            <a href="/static/{{ r.image_path }}" target="_blank">
-                <img src="/static/{{ r.image_path }}" style="width:120px; border:1px solid #ccc;">
-            </a>
+            <img src="/static/{{ r.thumbnail_path or r.image_path }}"
+                 style="width:80px; cursor:pointer; border:1px solid #ccc;"
+                 onclick="openImagePopup('/static/{{ r.image_path }}')">
         </td>
 
         <td>{{ r.staff.name }}</td>
@@ -76,6 +97,39 @@
         <td>{{ r.category }}</td>
         <td>{{ r.subfolder }}</td>
         <td>{{ r.account }}</td>
+
+        <!-- READ-ONLY OCR FIELDS -->
+        <td>{{ r.company }}</td>
+        <td>{{ r.invoice_number }}</td>
+        <td>{{ r.abn }}</td>
+        <td>${{ "%.2f"|format(r.total) if r.total else "" }}</td>
+        <td>${{ "%.2f"|format(r.gst) if r.gst else "" }}</td>
+        <td>${{ "%.2f"|format(r.subtotal) if r.subtotal else "" }}</td>
+        <td>{{ r.invoice_date }}</td>
+
     </tr>
     {% endfor %}
 </table>
+
+<!-- POPUP VIEWER -->
+<div id="imagePopup" style="
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.85); justify-content:center; align-items:center;
+">
+    <img id="popupImage" style="max-width:90vw; max-height:90vh; border:3px solid white;">
+    <span onclick="closeImagePopup()" style="
+        position:absolute; top:20px; right:30px; font-size:40px; color:white; cursor:pointer;
+    ">&times;</span>
+</div>
+
+<script>
+function openImagePopup(src) {
+    const popup = document.getElementById("imagePopup");
+    const popupImg = document.getElementById("popupImage");
+    popupImg.src = src;
+    popup.style.display = "flex";
+}
+function closeImagePopup() {
+    document.getElementById("imagePopup").style.display = "none";
+}
+</script>
