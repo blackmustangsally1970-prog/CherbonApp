@@ -87,7 +87,7 @@
         <td>
             <img src="/static/{{ r.thumbnail_path or r.image_path }}"
                  style="width:80px; cursor:pointer; border:1px solid #ccc;"
-                 onclick="openImagePopup('/static/{{ r.image_path }}')">
+                 onclick="openImagePopup('/static/receipts/{{ r.category }}/{{ r.subfolder }}/{{ r.image_filename }}')">
         </td>
 
         <td>{{ r.staff.name }}</td>
@@ -103,13 +103,12 @@
         <td>{{ r.invoice_number }}</td>
         <td>{{ r.abn }}</td>
         <td>
-            {% if r.total %}
-                ${{ "%.2f"|format(r.total|float) }}
+            {% if r.subtotal %}
+                ${{ "%.2f"|format(r.subtotal|float) }}
             {% else %}
                 —
             {% endif %}
         </td>
-
         <td>
             {% if r.gst %}
                 ${{ "%.2f"|format(r.gst|float) }}
@@ -117,10 +116,9 @@
                 —
             {% endif %}
         </td>
-
         <td>
-            {% if r.subtotal %}
-                ${{ "%.2f"|format(r.subtotal|float) }}
+            {% if r.total %}
+                ${{ "%.2f"|format(r.total|float) }}
             {% else %}
                 —
             {% endif %}
