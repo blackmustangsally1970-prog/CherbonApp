@@ -102,9 +102,29 @@
         <td>{{ r.company }}</td>
         <td>{{ r.invoice_number }}</td>
         <td>{{ r.abn }}</td>
-        <td>${{ "%.2f"|format(r.total) if r.total else "" }}</td>
-        <td>${{ "%.2f"|format(r.gst) if r.gst else "" }}</td>
-        <td>${{ "%.2f"|format(r.subtotal) if r.subtotal else "" }}</td>
+        <td>
+            {% if r.total %}
+                ${{ "%.2f"|format(r.total|float) }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+
+        <td>
+            {% if r.gst %}
+                ${{ "%.2f"|format(r.gst|float) }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+
+        <td>
+            {% if r.subtotal %}
+                ${{ "%.2f"|format(r.subtotal|float) }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
         <td>{{ r.invoice_date }}</td>
 
     </tr>
