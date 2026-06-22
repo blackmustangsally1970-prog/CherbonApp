@@ -242,6 +242,17 @@ def parse_receipt(text):
     if date_match:
         data["date"] = date_match.group(1)
 
+    # --- COMPANY NAME DETECTION ---
+    if "alsco" in text.lower():
+        data["company"] = "Alsco"
+
+    # --- INVOICE NUMBER ---
+    # Look for patterns like ISAL1147697, INV12345, etc.
+    inv_match = re.search(r"\b([A-Z]{2,5}\d{4,10})\b", text)
+    if inv_match:
+        data["invoice_number"] = inv_match.group(1)
+
+
     # FALLBACK MATH
     if "subtotal" in data and "gst" in data and "total" not in data:
         t = float(data["subtotal"]) + float(data["gst"])
