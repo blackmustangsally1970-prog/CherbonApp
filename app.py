@@ -2451,6 +2451,7 @@ def create_app():
                 account=request.form.get("account"),
 
                 # Auto‑filled OCR fields
+                company=parsed.get("company"),
                 invoice_number=parsed.get("invoice_number"),
                 abn=parsed.get("abn"),
                 total=parsed.get("total"),
@@ -2503,6 +2504,7 @@ def create_app():
                 notes=notes,
 
                 # Auto‑filled OCR fields
+                company=parsed.get("company"),
                 invoice_number=parsed.get("invoice_number"),
                 abn=parsed.get("abn"),
                 total=parsed.get("total"),
