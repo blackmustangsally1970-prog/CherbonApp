@@ -100,6 +100,13 @@
     <div class="ocr-box">
 
         <div>
+            <strong>Company:</strong>
+            <input type="text" value="{{ r.company or '' }}"
+                   onchange="setCompany({{ r.id }}, this.value)"
+                   style="width:140px;">
+        </div>
+
+        <div>
             <strong>Inv #:</strong>
             <input type="text" value="{{ r.invoice_number or '' }}"
                    onchange="setInvoiceNumber({{ r.id }}, this.value)"
@@ -403,6 +410,13 @@ function setAbn(id, value) {
     });
 }
 
+function setCompany(id, value) {
+    fetch(`/set_company/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ company: value })
+    });
+}
 
 
 </script>

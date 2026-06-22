@@ -2198,6 +2198,20 @@ def create_app():
 
         return {"status": "success"}
 
+
+    @app.route("/set_company/<int:receipt_id>", methods=["POST"])
+    def set_company(receipt_id):
+        data = request.get_json()
+        company = data.get("company", "")
+
+        receipt = Receipt.query.get(receipt_id)
+        if receipt:
+            receipt.company = company
+            db.session.commit()
+
+        return "OK", 200
+
+
     @app.route("/set_receipt_total", methods=["POST"])
     def set_receipt_total():
         data = request.get_json()
