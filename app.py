@@ -170,7 +170,7 @@ def create_thumbnail(input_path, output_path):
 
 
 def extract_text(path):
-    poppler_path = "/usr/bin"  # location of pdfinfo and pdftoppm
+    poppler_path = "/usr/bin"
 
     if path.lower().endswith(".pdf"):
         pages = convert_from_path(path, poppler_path=poppler_path)
@@ -179,6 +179,12 @@ def extract_text(path):
         img = Image.open(path)
 
     text = pytesseract.image_to_string(img)
+
+    # DEBUG PRINT
+    print("\n\n===== OCR RAW TEXT =====\n")
+    print(text)
+    print("\n===== END OCR RAW TEXT =====\n")
+
     return text
 
 
