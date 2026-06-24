@@ -9359,6 +9359,36 @@ Cherbon Waters Admin
 
         return render_template("admin_edit_hours.html", emp=emp, row=row)
 
+
+    @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
+    def admin_edit_hours_post(row_id):
+        row = EmployeeHours.query.get_or_404(row_id)
+
+        day = row.date
+
+        def merge(dt_date, time_str):
+            if not time_str:
+                return None
+            hour, minute = map(int, time_str.split(":"))
+            return datetime(dt_date.year, dt_date.month, dt_date.day, hour, minute)
+
+        sign_in_str = request.form.get("sign_in", "")
+        break_start_str = request.form.get("break_start", "")
+        break_end_str = request.form.get("break_end", "")
+        sign_out_str = request.form.get("sign_out", "")
+
+        row.sign_in = merge(day, sign_in_str)
+        row.break_start = merge(day, break_start_str)
+        row.break_end = merge(day, break_end_str)
+        row.sign_out = merge(day, sign_out_str)
+
+        row.corrected = True
+        row.corrected_at = datetime.now()
+
+        db.session.commit()
+
+        return redirect(f"/admin/employeehours/day/{day}/{row.employee_id}")
+
     @app.route("/admin/employees/<int:emp_id>/reset_pin", methods=["POST"])
     def admin_reset_pin(emp_id):
         emp = Employee.query.get_or_404(emp_id)
@@ -9818,39 +9848,6 @@ Cherbon Waters Admin
         )
 
 
-    @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
-    def admin_edit_hours(row_id):
-        row = EmployeeHours.query.get_or_404(row_id)
-
-        # The date is stored in the row already
-        day = row.date
-
-        # Helper: merge date + time string
-        def merge(dt_date, time_str):
-            if not time_str:
-                return None
-            hour, minute = map(int, time_str.split(":"))
-            return datetime(dt_date.year, dt_date.month, dt_date.day, hour, minute)
-
-        # Read times from form
-        sign_in_str = request.form.get("sign_in", "")
-        break_start_str = request.form.get("break_start", "")
-        break_end_str = request.form.get("break_end", "")
-        sign_out_str = request.form.get("sign_out", "")
-
-        # Merge into full datetimes
-        row.sign_in = merge(day, sign_in_str)
-        row.break_start = merge(day, break_start_str)
-        row.break_end = merge(day, break_end_str)
-        row.sign_out = merge(day, sign_out_str)
-
-        # Mark corrected
-        row.corrected = True
-        row.corrected_at = datetime.now()
-
-        db.session.commit()
-
-        return redirect(f"/admin/employeehours/day/{day}/{row.employee_id}")
 
     @app.route("/employeehours/action/<action>/<date>", methods=["POST"])
     def employee_action(action, date):
