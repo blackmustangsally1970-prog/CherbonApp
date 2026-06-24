@@ -91,6 +91,21 @@
         .week-nav-btn:hover {
             background:#ccc;
         }
+
+        /* ⭐ EDIT BUTTON */
+        .edit-small-btn {
+            padding:6px 12px;
+            background:#2a7ae2;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:16px;
+        }
+
+        .edit-small-btn:hover {
+            background:#1f5fb4;
+        }
     </style>
 </head>
 
@@ -157,6 +172,7 @@
             <th>Day Total</th>
             <th>Running Total</th>
             <th>Finish Submitted</th>
+            <th>Edit</th> <!-- ⭐ NEW COLUMN -->
         </tr>
 
         {% for d in item.week_rows %}
@@ -195,6 +211,14 @@
                     {% if submitted %}
                         {{ submitted.strftime("%a %d/%m %I:%M %p") }}
                     {% endif %}
+                </td>
+
+                <!-- ⭐ EDIT BUTTON -->
+                <td>
+                    <button class="edit-small-btn"
+                        onclick="window.location.href='/admin/employeehours/day/{{ d.date.strftime('%Y-%m-%d') }}/{{ item.emp.id }}'">
+                        Edit
+                    </button>
                 </td>
 
             </tr>

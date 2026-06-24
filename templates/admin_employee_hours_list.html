@@ -65,15 +65,49 @@
 
 <h2>Hours for {{ emp.full_name }}</h2>
 
+
+<form method="GET" action="/admin/employeehours/day" style="margin-bottom:25px;">
+    <input type="hidden" name="emp_id" value="{{ emp.id }}">
+
+    <label style="font-size:18px; font-weight:bold;">Jump to Date</label>
+    <input type="date" name="date" required
+           style="padding:12px; font-size:18px; border-radius:8px; border:1px solid #ccc;">
+
+    <button class="edit-btn" style="margin-top:10px; width:200px;">
+        Go
+    </button>
+</form>
+
+<div style="margin-bottom:25px; display:flex; gap:15px; align-items:center;">
+
+    <button class="edit-btn"
+            onclick="window.location.href='/admin/employees/{{ emp.id }}/hours?week={{ current_week - 1 }}'">
+        ← Previous Week
+    </button>
+
+    <div style="font-size:22px; font-weight:bold;">
+        Week {{ current_week }}
+    </div>
+
+    <button class="edit-btn"
+            onclick="window.location.href='/admin/employees/{{ emp.id }}/hours?week={{ current_week + 1 }}'">
+        Next Week →
+    </button>
+
+</div>
+
+
+
 {% for r in rows %}
     <div class="entry">
         <div class="date">
             {{ r.date.strftime('%A %d %B %Y') }}
         </div>
 
+        <!-- ⭐ NEW: Edit Day button -->
         <button class="edit-btn"
-                onclick="window.location.href='/admin/employeehours/day/{{ r.date }}/{{ emp.id }}'">
-            Edit
+                onclick="window.location.href='/admin/employeehours/day/{{ r.date.strftime('%Y-%m-%d') }}/{{ emp.id }}'">
+            Edit Day
         </button>
     </div>
 {% endfor %}

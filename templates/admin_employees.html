@@ -13,8 +13,6 @@
     Employee Menu
 </button>
 
-
-
     <h2 class="mb-4">Employees</h2>
 
     <a href="{{ url_for('admin_add_employee') }}" class="btn btn-primary mb-3">
@@ -57,26 +55,34 @@
                 </td>
 
                 <td>
+
+                    <!-- ⭐ NEW BUTTON: Manage Hours -->
+                    <a href="/admin/employees/{{ emp.id }}/hours"
+                       class="btn btn-sm btn-secondary mb-1">
+                        Manage Hours
+                    </a>
+
                     <a href="{{ url_for('admin_edit_employee', emp_id=emp.id) }}"
-                       class="btn btn-sm btn-outline-primary">
+                       class="btn btn-sm btn-outline-primary mb-1">
                         Edit
                     </a>
 
-<form action="{{ url_for('admin_reset_pin', emp_id=emp.id) }}"
-      method="POST" style="display:inline;"
-      onsubmit="return confirm('Send new login code to {{ emp.phone }}?');">
-    <button class="btn btn-sm btn-warning">
-        Reset PIN
-    </button>
-</form>
+                    <form action="{{ url_for('admin_reset_pin', emp_id=emp.id) }}"
+                          method="POST" style="display:inline;"
+                          onsubmit="return confirm('Send new login code to {{ emp.phone }}?');">
+                        <button class="btn btn-sm btn-warning mb-1">
+                            Reset PIN
+                        </button>
+                    </form>
 
                     <form action="{{ url_for('admin_delete_employee', emp_id=emp.id) }}"
                           method="POST" style="display:inline;"
                           onsubmit="return confirm('Deactivate this employee?');">
-                        <button class="btn btn-sm btn-danger">
+                        <button class="btn btn-sm btn-danger mb-1">
                             Deactivate
                         </button>
                     </form>
+
                 </td>
             </tr>
             {% endfor %}

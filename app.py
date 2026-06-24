@@ -9318,15 +9318,36 @@ Cherbon Waters Admin
 
     @app.route("/admin/employees/<int:emp_id>/hours")
     def admin_employee_hours_list(emp_id):
-        emp = Employee.query.get(emp_id)
-        if not emp:
-            return "Employee not found", 404
+        emp = Employee.query.get_or_404(emp_id)
 
-        rows = EmployeeHours.query.filter_by(employee_id=emp_id).order_by(
-            EmployeeHours.date.desc()
-        ).all()
+        # Determine which week to show
+        today = date.today()
+        current_week = int(request.args.get("week", 0))
 
-        return render_template("admin_employee_hours_list.html", emp=emp, rows=rows)
+        # If no week provided → default to current week
+        if current_week == 0:
+            current_week = today.isocalendar().week
+
+        # Compute Monday of that ISO week
+        year = today.year
+        start_of_week = date.fromisocalendar(year, current_week, 1)
+        end_of_week = start_of_week + timedelta(days=6)
+
+        # Load rows for this week
+        rows = EmployeeHours.query.filter(
+            EmployeeHours.employee_id == emp_id,
+            EmployeeHours.date >= start_of_week,
+            EmployeeHours.date <= end_of_week
+        ).order_by(EmployeeHours.date.asc()).all()
+
+        return render_template(
+            "admin_employee_hours_list.html",
+            emp=emp,
+            rows=rows,
+            current_week=current_week,
+            start_of_week=start_of_week,
+            end_of_week=end_of_week
+        )
 
     @app.route("/admin/employees/hours/<int:row_id>/edit")
     def admin_edit_hours(row_id):
@@ -10256,6 +10277,33 @@ Cherbon Waters Admin
     @app.route("/employees")
     def employees_home():
         return render_template("employees_home.html")
+
+    @app.route("/admin/employeehours/day")
+    def admin_day_redirect():
+        emp_id = request.args.get("emp_id")
+        date = request.args.get("date")
+        return redirect(f"/admin/employeehours/day/{date}/{emp_id}")
+
+
+    @app.route("/admin/employees/hours/create_missing", methods=["POST"])
+    def admin_create_missing_day():
+        emp_id = int(request.form["emp_id"])
+        date_str = request.form["date"]
+
+        try:
+            d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except:
+            return "Invalid date", 400
+
+        # Check if row already exists
+        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
+        if not row:
+            row = EmployeeHours(employee_id=emp_id, date=d)
+            db.session.add(row)
+            db.session.commit()
+
+        return redirect(f"/admin/employeehours/day/{d}/{emp_id}")
+
 
 
     @app.route("/mark_cancelled", methods=["POST"])
