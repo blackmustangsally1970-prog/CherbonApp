@@ -9819,29 +9819,38 @@ Cherbon Waters Admin
 
 
     @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
-    def admin_edit_hours_save(row_id):
-        row = EmployeeHours.query.get(row_id)
-        if not row:
-            return "Not found", 404
+    def admin_edit_hours(row_id):
+        row = EmployeeHours.query.get_or_404(row_id)
 
-        from datetime import datetime
+        # The date is stored in the row already
+        day = row.date
 
-        def parse_or_none(val):
-            return datetime.fromisoformat(val) if val else None
+        # Helper: merge date + time string
+        def merge(dt_date, time_str):
+            if not time_str:
+                return None
+            hour, minute = map(int, time_str.split(":"))
+            return datetime(dt_date.year, dt_date.month, dt_date.day, hour, minute)
 
-        row.sign_in = parse_or_none(request.form.get("sign_in"))
-        row.break_start = parse_or_none(request.form.get("break_start"))
-        row.break_end = parse_or_none(request.form.get("break_end"))
-        row.sign_out = parse_or_none(request.form.get("sign_out"))
+        # Read times from form
+        sign_in_str = request.form.get("sign_in", "")
+        break_start_str = request.form.get("break_start", "")
+        break_end_str = request.form.get("break_end", "")
+        sign_out_str = request.form.get("sign_out", "")
 
-        # Mark as corrected by admin
+        # Merge into full datetimes
+        row.sign_in = merge(day, sign_in_str)
+        row.break_start = merge(day, break_start_str)
+        row.break_end = merge(day, break_end_str)
+        row.sign_out = merge(day, sign_out_str)
+
+        # Mark corrected
         row.corrected = True
         row.corrected_at = datetime.now()
-        row.corrected_by = "admin"
 
         db.session.commit()
 
-        return redirect(f"/admin/employees/{row.employee_id}/hours")
+        return redirect(f"/admin/employeehours/day/{day}/{row.employee_id}")
 
     @app.route("/employeehours/action/<action>/<date>", methods=["POST"])
     def employee_action(action, date):
@@ -10174,10 +10183,29 @@ Cherbon Waters Admin
 
         emp = Employee.query.get_or_404(emp_id)
 
+        # Load row for that date
         row = EmployeeHours.query.filter_by(
             employee_id=emp_id,
             date=selected_date
         ).first()
+
+        # ⭐ If no row exists → create one automatically
+        if not row:
+            row = EmployeeHours(employee_id=emp_id, date=selected_date)
+            db.session.add(row)
+            db.session.commit()
+
+        # ⭐ Strip timezone so <input type="time"> works
+        def clean_time(dt):
+            if not dt:
+                return None
+            dt = dt.replace(tzinfo=None)
+            return dt
+
+        row.sign_in = clean_time(row.sign_in)
+        row.break_start = clean_time(row.break_start)
+        row.break_end = clean_time(row.break_end)
+        row.sign_out = clean_time(row.sign_out)
 
         return render_template(
             "admin_override_day.html",

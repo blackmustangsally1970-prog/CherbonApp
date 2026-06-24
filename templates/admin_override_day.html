@@ -93,20 +93,20 @@
     <form method="POST" action="/admin/employees/hours/{{ row.id }}/edit">
 
         <label>Start Work</label>
-        <input type="datetime-local" name="sign_in"
-               value="{{ row.sign_in.isoformat() if row.sign_in else '' }}">
+        <input type="time" name="sign_in"
+               value="{{ row.sign_in.strftime('%H:%M') if row.sign_in else '' }}">
 
         <label>Break Start</label>
-        <input type="datetime-local" name="break_start"
-               value="{{ row.break_start.isoformat() if row.break_start else '' }}">
+        <input type="time" name="break_start"
+               value="{{ row.break_start.strftime('%H:%M') if row.break_start else '' }}">
 
         <label>Break End</label>
-        <input type="datetime-local" name="break_end"
-               value="{{ row.break_end.isoformat() if row.break_end else '' }}">
+        <input type="time" name="break_end"
+               value="{{ row.break_end.strftime('%H:%M') if row.break_end else '' }}">
 
         <label>Finish Work</label>
-        <input type="datetime-local" name="sign_out"
-               value="{{ row.sign_out.isoformat() if row.sign_out else '' }}">
+        <input type="time" name="sign_out"
+               value="{{ row.sign_out.strftime('%H:%M') if row.sign_out else '' }}">
 
         <button class="btn" type="submit">Save Changes</button>
     </form>
@@ -124,8 +124,8 @@
 
 </div>
 
-<button class="back-btn" onclick="window.location.href='/admin/employees/{{ emp.id }}/hours'">
-    Back
+<button class="back-btn" onclick="window.location.href='/admin/weekly_summary'">
+    Back to Weekly Summary
 </button>
 
 </body>
