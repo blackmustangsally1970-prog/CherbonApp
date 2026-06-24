@@ -10172,11 +10172,17 @@ Cherbon Waters Admin
         except:
             return "Invalid date", 400
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        emp = Employee.query.get_or_404(emp_id)
+
+        row = EmployeeHours.query.filter_by(
+            employee_id=emp_id,
+            date=selected_date
+        ).first()
 
         return render_template(
             "admin_override_day.html",
             date=selected_date,
+            emp=emp,
             emp_id=emp_id,
             row=row
         )
