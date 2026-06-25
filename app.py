@@ -10574,8 +10574,8 @@ Cherbon Waters Admin
     @login_required
     def wedding_task_admin(wedding_id):
 
-        # Only managers/coordinators should access this
-        if current_user.role not in ['manager', 'coordinator']:
+        # Allow admin, manager, coordinator
+        if current_user.role not in ['admin', 'manager', 'coordinator']:
             return "Access denied", 403
 
         tasks = WeddingTask.query.filter_by(wedding_id=wedding_id).order_by(WeddingTask.id).all()
