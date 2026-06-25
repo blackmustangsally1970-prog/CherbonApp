@@ -10637,6 +10637,11 @@ Cherbon Waters Admin
 
         return redirect(f'/wedding/{wedding_id}/task_admin')
 
+    @app.route('/weddings_menu')
+    @login_required
+    def weddings_menu():
+        return render_template('weddings_menu.html', user=current_user)
+
 
     @app.route('/client_view')
     def client_view():

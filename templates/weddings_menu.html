@@ -1,0 +1,30 @@
+<h2>Wedding Menu</h2>
+
+<p>Select a wedding tool:</p>
+
+<ul style="line-height: 2; font-size: 18px;">
+
+    <li>
+        <a href="{{ url_for('wedding_tasks', wedding_id=1) }}">📝 Wedding Tasks</a>
+    </li>
+
+    {% if user.role in ['manager', 'coordinator'] %}
+    <li>
+        <a href="{{ url_for('wedding_task_admin', wedding_id=1) }}">💍 Wedding Task Admin</a>
+    </li>
+    {% endif %}
+
+    <!-- Future items -->
+    <li>
+        <span style="color:#888;">📋 Wedding Staffing (coming soon)</span>
+    </li>
+
+    <li>
+        <span style="color:#888;">📸 Wedding Photos (coming soon)</span>
+    </li>
+
+    <li>
+        <span style="color:#888;">📂 Wedding History / Recall (coming soon)</span>
+    </li>
+
+</ul>
