@@ -1,0 +1,47 @@
+<h2>Wedding Task Admin</h2>
+
+<h3>Add New Task</h3>
+
+<form action="/add_task" method="POST" style="margin-bottom: 20px;">
+    <input type="hidden" name="wedding_id" value="{{ wedding_id }}">
+
+    <label>Task Name:</label><br>
+    <input type="text" name="task_name" required style="width: 300px;"><br><br>
+
+    <label>Task Type:</label><br>
+    <select name="task_type">
+        <option value="staff">Staff Task</option>
+        <option value="coordinator">Coordinator Task</option>
+    </select><br><br>
+
+    <button type="submit">Add Task</button>
+</form>
+
+<hr>
+
+<h3>Existing Tasks</h3>
+
+<table border="1" cellpadding="6" cellspacing="0">
+    <tr>
+        <th>ID</th>
+        <th>Task Name</th>
+        <th>Type</th>
+        <th>Delete</th>
+    </tr>
+
+    {% for task in tasks %}
+    <tr>
+        <td>{{ task.id }}</td>
+        <td>{{ task.task_name }}</td>
+        <td>{{ task.task_type }}</td>
+        <td>
+            <form action="/delete_task" method="POST" style="display:inline;">
+                <input type="hidden" name="task_id" value="{{ task.id }}">
+                <input type="hidden" name="wedding_id" value="{{ wedding_id }}">
+                <button type="submit" style="color:red;">X</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+

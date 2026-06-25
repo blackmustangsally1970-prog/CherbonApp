@@ -159,18 +159,17 @@
     <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
   </li>
 
-<li>
-  <a href="{{ url_for('add_client_page') }}" class="menu-btn">➕ Add New Client</a>
-</li>
+  <li>
+    <a href="{{ url_for('add_client_page') }}" class="menu-btn">➕ Add New Client</a>
+  </li>
 
-<li>
+  <li>
     <a href="{{ url_for('enquiries_home') }}" class="menu-btn">📨 Enquiries</a>
-</li>
+  </li>
 
   <li>
     <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
   </li>
-
 
   <li>
     <a href="{{ url_for('gift_vouchers') }}" class="menu-btn">🎁 Gift Vouchers</a>
@@ -180,16 +179,17 @@
     <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
   </li>
 
-  <!-- ⭐ NEW BUTTON -->
-
-
-<!--
+  <!-- ⭐ WEDDING TASKS -->
+  {% if current_user.role in ['manager', 'coordinator'] %}
+  <li>
+      <a href="{{ url_for('wedding_task_admin', wedding_id=1) }}" class="menu-btn">💍 Wedding Task Admin</a>
+  </li>
+  {% endif %}
 
   <li>
-    <a href="{{ url_for('pending_lessons') }}" class="menu-btn">⏳ Lessons Pending</a>
+      <a href="{{ url_for('wedding_tasks', wedding_id=1) }}" class="menu-btn">📝 Wedding Tasks</a>
   </li>
-
--->
+  <!-- ⭐ END WEDDING TASKS -->
 
   <li>
     <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
@@ -204,49 +204,38 @@
   </li>
 
   <li>
-
-<a href="{{ url_for('employees_home') }}" class="menu-btn">
-    🧑‍🤝‍🧑 Employees
-</a>
+    <a href="{{ url_for('employees_home') }}" class="menu-btn">🧑‍🤝‍🧑 Employees</a>
   </li>
 
-
-<li>
-    <a href="{{ url_for('courses_menu') }}" class="menu-btn">Courses</a>
-</li>
-
-<!--
   <li>
-    <a href="{{ url_for('summaries_page') }}" class="menu-btn">📊 Summaries</a>
+    <a href="{{ url_for('courses_menu') }}" class="menu-btn">Courses</a>
   </li>
 
--->
   <li>
     <a href="{{ url_for('daily_summary') }}" class="menu-btn">📊Daily Summaries</a>
   </li>
 
-<li class="has-submenu">
-    <a class="menu-btn submenu-toggle">🧾 Receipts</a>
+  <li class="has-submenu">
+      <a class="menu-btn submenu-toggle">🧾 Receipts</a>
 
-    <ul class="submenu">
-        <li>
-            <a href="{{ url_for('upload_receipt') }}" class="submenu-btn">📸 Take Picture</a>
-        </li>
+      <ul class="submenu">
+          <li>
+              <a href="{{ url_for('upload_receipt') }}" class="submenu-btn">📸 Take Picture</a>
+          </li>
 
-        <li>
-            <a href="{{ url_for('upload_receipt_file') }}" class="submenu-btn">📁 Upload File</a>
-        </li>
+          <li>
+              <a href="{{ url_for('upload_receipt_file') }}" class="submenu-btn">📁 Upload File</a>
+          </li>
 
-        <li>
-            <a href="{{ url_for('receipt_review') }}" class="submenu-btn">👀 Review Receipts</a>
-        </li>
+          <li>
+              <a href="{{ url_for('receipt_review') }}" class="submenu-btn">👀 Review Receipts</a>
+          </li>
 
-        <li>
-            <a href="{{ url_for('receipt_recall') }}" class="submenu-btn">📂 Recall / Archive</a>
-        </li>
-    </ul>
-</li>
-
+          <li>
+              <a href="{{ url_for('receipt_recall') }}" class="submenu-btn">📂 Recall / Archive</a>
+          </li>
+      </ul>
+  </li>
 
 </ul>
 

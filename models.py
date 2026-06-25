@@ -16,6 +16,23 @@ class DailyEvent(db.Model):
     )
 
 
+class WeddingTask(db.Model):
+    __tablename__ = 'wedding_tasks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    wedding_id = db.Column(db.Integer, nullable=False)
+    task_name = db.Column(db.Text, nullable=False)
+    task_type = db.Column(db.String(20), nullable=False)  # 'coordinator' or 'staff'
+    assigned_to = db.Column(db.Integer)  # employee_id or None
+    is_done = db.Column(db.Boolean, default=False)
+
+    done_by = db.Column(db.Integer)      # employee_id
+    done_by_name = db.Column(db.Text)
+    done_at = db.Column(db.DateTime)
+
+    updated_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
 class Receipt(db.Model):
     __tablename__ = "receipt"
 

@@ -10523,6 +10523,120 @@ Cherbon Waters Admin
     def enquiries_home():
         return render_template('enquiries_home.html')
 
+
+    @app.route('/wedding/<int:wedding_id>/tasks')
+    @login_required
+    def wedding_tasks(wedding_id):
+
+        # Staff only see staff tasks
+        if current_user.role == 'staff':
+            tasks = WeddingTask.query.filter_by(
+                wedding_id=wedding_id,
+                task_type='staff'
+            ).order_by(WeddingTask.id).all()
+
+        # Coordinators + managers see everything
+        else:
+            tasks = WeddingTask.query.filter_by(
+                wedding_id=wedding_id
+            ).order_by(WeddingTask.id).all()
+
+        return render_template(
+            'wedding_tasks.html',
+            tasks=tasks,
+            user=current_user
+        )
+
+    @app.route('/update_task', methods=['POST'])
+    @login_required
+    def update_task():
+        task_id = request.form['task_id']
+        is_done = request.form['is_done'] == 'true'
+
+        task = WeddingTask.query.get(task_id)
+
+        if is_done:
+            task.is_done = True
+            task.done_by = current_user.id
+            task.done_by_name = current_user.full_name
+            task.done_at = datetime.utcnow()
+        else:
+            task.is_done = False
+            task.done_by = None
+            task.done_by_name = None
+            task.done_at = None
+
+        db.session.commit()
+        return "OK"
+
+    @app.route('/wedding/<int:wedding_id>/task_admin')
+    @login_required
+    def wedding_task_admin(wedding_id):
+
+        # Only managers/coordinators should access this
+        if current_user.role not in ['manager', 'coordinator']:
+            return "Access denied", 403
+
+        tasks = WeddingTask.query.filter_by(wedding_id=wedding_id).order_by(WeddingTask.id).all()
+
+        return render_template(
+            'wedding_task_admin.html',
+            tasks=tasks,
+            wedding_id=wedding_id
+        )
+
+    @app.route('/add_task', methods=['POST'])
+    @login_required
+    def add_task():
+        wedding_id = request.form['wedding_id']
+        task_name = request.form['task_name']
+        task_type = request.form['task_type']
+
+        # Create new task
+        new_task = WeddingTask(
+            wedding_id = wedding_id,
+            task_name = task_name,
+            task_type = task_type,
+            is_done = False
+        )
+
+        db.session.add(new_task)
+        db.session.commit()
+
+        return redirect(f'/wedding/{wedding_id}/task_admin')
+
+    @app.route('/delete_task', methods=['POST'])
+    @login_required
+    def delete_task():
+        task_id = request.form['task_id']
+        wedding_id = request.form['wedding_id']
+
+        task = WeddingTask.query.get(task_id)
+
+        if task:
+            db.session.delete(task)
+            db.session.commit()
+
+        return redirect(f'/wedding/{wedding_id}/task_admin')
+
+    @app.route('/edit_task', methods=['POST'])
+    @login_required
+    def edit_task():
+        task_id = request.form['task_id']
+        wedding_id = request.form['wedding_id']
+        task_name = request.form['task_name']
+        task_type = request.form['task_type']
+
+        task = WeddingTask.query.get(task_id)
+
+        if task:
+            task.task_name = task_name
+            task.task_type = task_type
+            db.session.commit()
+
+        return redirect(f'/wedding/{wedding_id}/task_admin')
+
+
     @app.route('/client_view')
     def client_view():
         client_id = request.args.get('client', type=int) or request.args.get('client_filter', type=int)
