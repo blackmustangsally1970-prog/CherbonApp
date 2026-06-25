@@ -52,6 +52,7 @@ from models import (
     WeddingAssignment,
     WeddingStaff,
     WeddingStaffUnavailability,
+    WeddingTask,
     WeeklyEvent,
     Employee,
     EmployeeHours
