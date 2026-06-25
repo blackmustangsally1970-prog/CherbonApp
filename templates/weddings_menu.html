@@ -8,12 +8,11 @@
         <a href="{{ url_for('wedding_tasks', wedding_id=1) }}">📝 Wedding Tasks</a>
     </li>
 
-    {% if current_user.role in ['manager', 'coordinator'] %}
-
-    <li>
-        <a href="{{ url_for('wedding_task_admin', wedding_id=1) }}">💍 Wedding Task Admin</a>
-    </li>
-    {% endif %}
+{% if current_user.role in ['admin', 'manager', 'coordinator'] %}
+<li>
+    <a href="{{ url_for('wedding_task_admin', wedding_id=1) }}">💍 Wedding Task Admin</a>
+</li>
+{% endif %}
 
     <li>
         <span style="color:#888;">📋 Wedding Staffing (coming soon)</span>
