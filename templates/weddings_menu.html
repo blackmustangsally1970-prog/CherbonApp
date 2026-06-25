@@ -9,6 +9,7 @@
     </li>
 
     {% if current_user.role in ['manager', 'coordinator'] %}
+
     <li>
         <a href="{{ url_for('wedding_task_admin', wedding_id=1) }}">💍 Wedding Task Admin</a>
     </li>
