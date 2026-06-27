@@ -5647,7 +5647,8 @@ def create_app():
                 unique_hash=payload_hash,
                 received_at=submission_dt,
                 jotform_id=submission_id,
-                display_names=display_names
+                display_names=display_names,
+                universal_disclaimer=max_in_submission
             )
 
             try:
