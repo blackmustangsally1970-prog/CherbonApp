@@ -31,6 +31,7 @@ class WeddingTask(db.Model):
     done_at = db.Column(db.DateTime)
 
     updated_at = db.Column(db.DateTime, server_default=db.func.now())
+    sequence_number = db.Column(db.Integer, default=0)
 
 
 class Receipt(db.Model):

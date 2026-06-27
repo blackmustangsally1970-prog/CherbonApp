@@ -5526,6 +5526,7 @@ def create_app():
             url = (
                 f"https://api.jotform.com/form/{FORM_ID}/submissions"
                 f"?apiKey={API_KEY}&offset={offset}&limit={limit}"
+                f"&filter[id][gt]={current_max_disclaimer}"
             )
             r = requests.get(url)
             if r.status_code != 200:
