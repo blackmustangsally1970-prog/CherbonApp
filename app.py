@@ -5929,7 +5929,7 @@ def create_app():
             return {"success": False, "error": str(e)}
 
 
-    @app.route('/notifications/<int:webhook_id>', methods=['POST'])
+    @app.route('/notifications/<int:webhook_id>', methods=['GET', 'POST'])
     def finalize_notification(webhook_id):
         row = db.session.query(IncomingSubmission).get_or_404(webhook_id)
 
