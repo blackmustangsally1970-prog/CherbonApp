@@ -1,173 +1,112 @@
-<!doctype html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Resolve Conflict</title>
+    <!doctype html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Resolve Conflict</title>
 
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        h1 { margin-bottom: 20px; }
+        <style>
+            body { font-family: sans-serif; padding: 20px; }
+            h1 { margin-bottom: 20px; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }
 
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            text-align: left;
-        }
+            th, td {
+                padding: 10px;
+                border-bottom: 1px solid #ccc;
+                text-align: left;
+            }
 
-        .section-title {
-            font-size: 1.2em;
-            margin-top: 30px;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
+            .section-title {
+                font-size: 1.2em;
+                margin-top: 30px;
+                margin-bottom: 10px;
+                font-weight: bold;
+            }
 
-        .button {
-            padding: 8px 14px;
-            background: #0645AD;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-right: 6px;
-            border: none;
-            cursor: pointer;
-        }
+            .button {
+                padding: 8px 14px;
+                background: #0645AD;
+                color: white;
+                border-radius: 4px;
+                margin-right: 6px;
+                border: none;
+                cursor: pointer;
+            }
 
-        .button:hover {
-            background: #003f8a;
-        }
+            .button:hover {
+                background: #003f8a;
+            }
 
-        .danger {
-            background: #b30000;
-        }
+            .danger {
+                background: #b30000;
+            }
 
-        .danger:hover {
-            background: #7a0000;
-        }
+            .danger:hover {
+                background: #7a0000;
+            }
 
-        .match-block {
-            border: 1px solid #ccc;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 6px;
-        }
-    </style>
-</head>
-<body>
+            .match-block {
+                border: 1px solid #ccc;
+                padding: 12px;
+                margin-bottom: 12px;
+                border-radius: 6px;
+            }
+        </style>
+    </head>
+    <body>
 
-<h1>Resolve Rider Conflict</h1>
+        <h1>Resolve Rider Conflict</h1>
 
-<p>
-    Submission ID: <strong>{{ submission.id }}</strong><br>
-    Rider Index: <strong>{{ rider_index }}</strong>
-</p>
+        <p>
+            Submission ID: <strong>{{ submission.id }}</strong><br>
+            Rider Index: <strong>{{ rider_index }}</strong>
+        </p>
 
-<div class="section-title">Incoming Rider</div>
+        <div class="section-title">Incoming Rider</div>
 
-<table>
-    <tr>
-        <th>Name</th>
-        <td>{{ rider.name }}</td>
-    </tr>
+        <table>
+            <tr><th>Name</th><td>{{ rider.name }}</td></tr>
+            <tr><th>Age</th><td>{{ rider.age }}</td></tr>
+            <tr><th>Email</th><td>{{ email }}</td></tr>
+            <tr><th>Mobile</th><td>{{ mobile }}</td></tr>
+            <tr><th>Guardian</th><td>{{ guardian }}</td></tr>
+            <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
+            <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
+            <tr><th>Disclaimer</th><td>{{ disclaimer }}</td></tr>
+        </table>
 
-    <tr><th>Age</th><td>{{ rider.age }}</td></tr>
-    <tr><th>Email</th><td>{{ email }}</td></tr>
-    <tr><th>Mobile</th><td>{{ mobile }}</td></tr>
-    <tr><th>Guardian</th><td>{{ guardian }}</td></tr>
-    <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
-    <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
-    <tr><th>Disclaimer</th><td>{{ disclaimer }}</td></tr>
-</table>
+        <div class="section-title">Matching Existing Clients</div>
 
-<div class="section-title">Matching Existing Clients</div>
+        {% if matches %}
+            {% for m in matches %}
+                <div class="match-block">
+                    <strong>{{ m.full_name }}</strong><br>
 
-{% if matches %}
-    {% for m in matches %}
-        <div class="match-block">
-            <strong>{{ m.full_name }}</strong><br>
+                    {% if invite_mode %}
+                        Height: {{ m.height_cm }}<br>
+                        Weight: {{ m.weight_kg }}<br><br>
+                    {% else %}
+                        Age: {{ m.age }}<br>
+                        Email: {{ m.email_primary }}<br>
+                        Mobile: {{ m.mobile }}<br>
+                        Guardian: {{ m.guardian_name }}<br>
+                        Disclaimer: {{ m.disclaimer }}<br>
 
-            {% if invite_mode %}
-                Height: {{ m.height_cm }}<br>
-                Weight: {{ m.weight_kg }}<br><br>
-{% else %}
-    Age: {{ m.age }}<br>
-    Email: {{ m.email_primary }}<br>
-    Mobile: {{ m.mobile }}<br>
-    Guardian: {{ m.guardian_name }}<br>
-    Disclaimer: {{ m.disclaimer }}<br>
+                        Last Lesson:
+                        {% if m.last_lesson_date %}
+                            {{ m.last_lesson_date.strftime('%d %b %Y') }}
+                        {% else %}
+                            None recorded
+                        {% endif %}
+                        <br><br>
+                    {% endif %}
 
-    Last Lesson:
-    {% if m.last_lesson_date %}
-        {{ m.last_lesson_date.strftime('%d %b %Y') }}
-    {% else %}
-        None recorded
-    {% endif %}
-    <!-- DEBUG: Last lesson raw = {{ m.last_lesson_date }} -->
-    <br><br>
-{% endif %}
-
-
-            <!-- USE EXISTING -->
-            <form method="post"
-                  action="{{ url_for('finalize_conflict',
-                                     submission_id=submission.id,
-                                     rider_index=rider_index) }}"
-                  style="display:inline;">
-                <input type="hidden" name="client_id" value="{{ m.client_id }}">
-                <button class="button" name="choice" value="use_existing">
-                    ✔ Use This Client
-                </button>
-            </form>
-
-            {% if not invite_mode %}
-            <!-- OVERWRITE -->
-            <form method="post"
-                  action="{{ url_for('finalize_conflict',
-                                     submission_id=submission.id,
-                                     rider_index=rider_index) }}"
-                  style="display:inline;">
-                <input type="hidden" name="client_id" value="{{ m.client_id }}">
-                <button class="button danger" name="choice" value="overwrite">
-                    ⚠ Overwrite This Client
-                </button>
-            </form>
-            {% endif %}
-        </div>
-    {% endfor %}
-{% else %}
-    <p>No existing clients matched — this should not happen if you reached this page.</p>
-{% endif %}
-
-<div class="section-title">Or Create New</div>
-
-<!-- CREATE NEW -->
-<form method="post"
-      action="{{ url_for('finalize_conflict',
-                         submission_id=submission.id,
-                         rider_index=rider_index) }}">
-    <button class="button" name="choice" value="new">
-        ➕ Create New Client
-    </button>
-
-    <button class="button" name="choice" value="new_same_name">
-        ➕ Create New (Same Name)
-    </button>
-</form>
-
-<!-- IGNORE -->
-<form method="post"
-      action="{{ url_for('finalize_conflict',
-                         submission_id=submission.id,
-                         rider_index=rider_index) }}">
-    <button type="submit" name="choice" value="ignore" class="button danger">
-        Ignore this submission (do not append)
-    </button>
-</form>
-
-</body>
-</html>
+                    <!-- USE EXISTING -->
+                    <form method="post"
+                          action="{{ url_for('finalize_conflict',
+                                             submission_id=submission.id,
+                                             rider_index=rider_index) }}"
