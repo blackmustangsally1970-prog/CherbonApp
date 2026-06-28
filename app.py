@@ -9671,156 +9671,157 @@ Cherbon Waters Admin
 
 
     @app.route("/admin/weekly_summary")
-    def admin_weekly_summary():
-        today = date.today()
+        def admin_weekly_summary():
+            today = date.today()
 
-        # -----------------------------
-        # READ PARAMS
-        # -----------------------------
-        fy_param = request.args.get("fy", None)
-        week_param = request.args.get("week", None)
+            # -----------------------------
+            # READ PARAMS
+            # -----------------------------
+            fy_param = request.args.get("fy", None)
+            week_param = request.args.get("week", None)
 
-        # -----------------------------
-        # DETERMINE FY (initial)
-        # -----------------------------
-        if fy_param:
-            fy = int(fy_param)
-        else:
-            # Monday determines FY
-            monday = today if today.weekday() == 0 else today - timedelta(days=today.weekday())
-            fy = monday.year if monday >= date(monday.year, 7, 1) else monday.year - 1
-
-        # -----------------------------
-        # BUILD WEEKS USING INITIAL FY
-        # -----------------------------
-        weeks = build_fy_weeks(fy)
-
-        # -----------------------------
-        # DETERMINE WEEK NUMBER
-        # -----------------------------
-        if week_param:
-            week_num = int(week_param)
-        else:
-            # Auto-select current week
-            effective_day = today - timedelta(days=1) if today.weekday() == 0 else today
-
-            first_start = weeks[0]["start"]
-            last_end = weeks[-1]["end"]
-
-            if effective_day < first_start:
-                week_num = weeks[0]["week_number"]
-            elif effective_day > last_end:
-                week_num = weeks[-1]["week_number"]
+            # -----------------------------
+            # DETERMINE FY (initial)
+            # -----------------------------
+            if fy_param:
+                fy = int(fy_param)
             else:
-                for w in weeks:
-                    if w["start"] <= effective_day <= w["end"]:
-                        week_num = w["week_number"]
-                        break
+                # Monday determines FY
+                monday = today if today.weekday() == 0 else today - timedelta(days=today.weekday())
+                fy = monday.year if monday >= date(monday.year, 7, 1) else monday.year - 1
 
-        # Clamp week number
-        if week_num < 1:
-            week_num = 1
-        if week_num > len(weeks):
-            week_num = len(weeks)
+            # -----------------------------
+            # BUILD WEEKS USING INITIAL FY
+            # -----------------------------
+            weeks = build_fy_weeks(fy)
 
-        # -----------------------------
-        # GET START OF WEEK
-        # -----------------------------
-        selected = weeks[week_num - 1]
-        start_of_week = selected["start"]
-        end_of_week = selected["end"]
+            # -----------------------------
+            # DETERMINE WEEK NUMBER
+            # -----------------------------
+            if week_param:
+                week_num = int(week_param)
+            else:
+                # Auto-select current week
+                effective_day = today - timedelta(days=1) if today.weekday() == 0 else today
 
-        # -----------------------------
-        # ACE FIX — FINAL PAYROLL FY
-        # -----------------------------
-        def get_payroll_fy(monday):
-            fy_start = date(monday.year, 7, 1)
-            return monday.year if monday >= fy_start else monday.year - 1
+                first_start = weeks[0]["start"]
+                last_end = weeks[-1]["end"]
 
-        payroll_fy = get_payroll_fy(start_of_week)
-
-        # FINAL FY
-        fy = payroll_fy
-
-        # -----------------------------
-        # REBUILD WEEKS USING FINAL FY
-        # -----------------------------
-        weeks = build_fy_weeks(fy)
-
-        # Clamp week again (FY changed)
-        if week_num > len(weeks):
-            week_num = len(weeks)
-
-        selected = weeks[week_num - 1]
-        start_of_week = selected["start"]
-        end_of_week = selected["end"]
-
-        # -----------------------------
-        # FY DROPDOWN
-        # -----------------------------
-        fy_years = [
-            fy - 1,
-            fy,
-            fy + 1
-        ]
-
-        # -----------------------------
-        # BUILD WEEKLY SUMMARY
-        # -----------------------------
-        employees = Employee.query.order_by(Employee.full_name.asc()).all()
-        summary = []
-
-        for emp in employees:
-            week_rows = []
-            running_total = timedelta()
-
-            for i in range(7):
-                day = start_of_week + timedelta(days=i)
-
-                row = EmployeeHours.query.filter_by(
-                    employee_id=emp.id,
-                    date=day
-                ).first()
-
-                if row:
-                    work = timedelta()
-                    if row.sign_in and row.sign_out:
-                        work = row.sign_out - row.sign_in
-
-                    brk = timedelta()
-                    if row.break_start and row.break_end:
-                        brk = row.break_end - row.break_start
-
-                    net = work - brk
-                    running_total += net
+                if effective_day < first_start:
+                    week_num = weeks[0]["week_number"]
+                elif effective_day > last_end:
+                    week_num = weeks[-1]["week_number"]
                 else:
-                    work = brk = net = None
+                    for w in weeks:
+                        if w["start"] <= effective_day <= w["end"]:
+                            week_num = w["week_number"]
+                            break
 
-                week_rows.append({
-                    "date": day,
-                    "row": row,
-                    "work": work,
-                    "break": brk,
-                    "net": net,
-                    "running_total": running_total
+            # Clamp week number
+            if week_num < 1:
+                week_num = 1
+            if week_num > len(weeks):
+                week_num = len(weeks)
+
+            # -----------------------------
+            # GET START OF WEEK
+            # -----------------------------
+            selected = weeks[week_num - 1]
+            start_of_week = selected["start"]
+            end_of_week = selected["end"]
+
+            # -----------------------------
+            # ACE FIX — FINAL PAYROLL FY
+            # -----------------------------
+            def get_payroll_fy(monday):
+                fy_start = date(monday.year, 7, 1)
+                return monday.year if monday >= fy_start else monday.year - 1
+
+            payroll_fy = get_payroll_fy(start_of_week)
+
+            # ⭐ ONLY override FY if user DID NOT select one
+            if not fy_param:
+                fy = payroll_fy
+
+            # -----------------------------
+            # REBUILD WEEKS USING FINAL FY
+            # -----------------------------
+            weeks = build_fy_weeks(fy)
+
+            # Clamp week again (FY changed)
+            if week_num > len(weeks):
+                week_num = len(weeks)
+
+            selected = weeks[week_num - 1]
+            start_of_week = selected["start"]
+            end_of_week = selected["end"]
+
+            # -----------------------------
+            # FY DROPDOWN
+            # -----------------------------
+            fy_years = [
+                fy - 1,
+                fy,
+                fy + 1
+            ]
+
+            # -----------------------------
+            # BUILD WEEKLY SUMMARY
+            # -----------------------------
+            employees = Employee.query.order_by(Employee.full_name.asc()).all()
+            summary = []
+
+            for emp in employees:
+                week_rows = []
+                running_total = timedelta()
+
+                for i in range(7):
+                    day = start_of_week + timedelta(days=i)
+
+                    row = EmployeeHours.query.filter_by(
+                        employee_id=emp.id,
+                        date=day
+                    ).first()
+
+                    if row:
+                        work = timedelta()
+                        if row.sign_in and row.sign_out:
+                            work = row.sign_out - row.sign_in
+
+                        brk = timedelta()
+                        if row.break_start and row.break_end:
+                            brk = row.break_end - row.break_start
+
+                        net = work - brk
+                        running_total += net
+                    else:
+                        work = brk = net = None
+
+                    week_rows.append({
+                        "date": day,
+                        "row": row,
+                        "work": work,
+                        "break": brk,
+                        "net": net,
+                        "running_total": running_total
+                    })
+
+                summary.append({
+                    "emp": emp,
+                    "week_rows": week_rows,
+                    "week_total": running_total
                 })
 
-            summary.append({
-                "emp": emp,
-                "week_rows": week_rows,
-                "week_total": running_total
-            })
-
-        return render_template(
-            "admin_weekly_summary.html",
-            summary=summary,
-            weeks=weeks,
-            fy=fy,
-            fy_years=fy_years,
-            selected_week=week_num,
-            start_of_week=start_of_week,
-            end_of_week=end_of_week
-        )
+            return render_template(
+                "admin_weekly_summary.html",
+                summary=summary,
+                weeks=weeks,
+                fy=fy,
+                fy_years=fy_years,
+                selected_week=week_num,
+                start_of_week=start_of_week,
+                end_of_week=end_of_week
+            )
 
     @app.route("/employeehours/summary")
     def employee_weekly_summary():
