@@ -9667,20 +9667,24 @@ Cherbon Waters Admin
     def admin_weekly_summary():
         today = date.today()
 
-        # AU FY default: FY starts 1 July → 30 June
-        default_fy = today.year if today.month >= 7 else today.year - 1
-        fy = int(request.args.get("fy", default_fy))
-
+        # -----------------------------
+        # BUILD FY WEEKS (existing logic)
+        # -----------------------------
+        fy = int(request.args.get("fy", 0))
         week_num = int(request.args.get("week", 0))
 
-        # Build FY weeks
+        # If FY not provided, determine FY based on payroll rules (Ace fix)
+        if fy == 0:
+            # Monday determines FY
+            monday = today if today.weekday() == 0 else today - timedelta(days=today.weekday())
+            fy = monday.year if monday >= date(monday.year, 7, 1) else monday.year - 1
+
         weeks = build_fy_weeks(fy)
 
-        # Default to current FY + correct week (Monday shows previous week)
+        # -----------------------------
+        # DEFAULT WEEK SELECTION
+        # -----------------------------
         if week_num == 0:
-            today = date.today()
-
-            # Monday should show the week just completed
             effective_day = today - timedelta(days=1) if today.weekday() == 0 else today
 
             first_start = weeks[0]["start"]
@@ -9696,7 +9700,7 @@ Cherbon Waters Admin
                         week_num = w["week_number"]
                         break
 
-        # Clamp week_num inside valid range (AFTER default logic)
+        # Clamp week number
         if week_num < 1:
             week_num = 1
         if week_num > len(weeks):
@@ -9706,8 +9710,32 @@ Cherbon Waters Admin
         start_of_week = selected["start"]
         end_of_week = selected["end"]
 
-        employees = Employee.query.order_by(Employee.full_name.asc()).all()
+        # -----------------------------
+        # ACE FIX — CORRECT PAYROLL FY LOGIC
+        # -----------------------------
+        def get_payroll_fy(monday):
+            """Determine payroll FY based on the Monday of the week."""
+            fy_start = date(monday.year, 7, 1)
+            if monday >= fy_start:
+                return monday.year
+            else:
+                return monday.year - 1
 
+        payroll_fy = get_payroll_fy(start_of_week)
+
+        # Dropdown: previous, current, next FY
+        fy_years = [
+            payroll_fy - 1,
+            payroll_fy,
+            payroll_fy + 1
+        ]
+
+        fy = payroll_fy
+
+        # -----------------------------
+        # BUILD WEEKLY SUMMARY
+        # -----------------------------
+        employees = Employee.query.order_by(Employee.full_name.asc()).all()
         summary = []
 
         for emp in employees:
@@ -9752,12 +9780,8 @@ Cherbon Waters Admin
             })
 
         # -----------------------------
-        # DYNAMIC FY LIST (2025 → current FY)
+        # RENDER TEMPLATE
         # -----------------------------
-        start_fy = 2025
-        current_fy = today.year if today.month >= 7 else today.year - 1
-        fy_years = list(range(start_fy, current_fy + 1))
-
         return render_template(
             "admin_weekly_summary.html",
             summary=summary,
