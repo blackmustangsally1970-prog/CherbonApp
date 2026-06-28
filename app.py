@@ -524,20 +524,31 @@ def fy_week1_monday(year):
     return fy_start - timedelta(days=fy_start.weekday())
 
 def build_fy_weeks(year):
-    week1 = fy_week1_monday(year)
-    fy_end = date(year + 1, 6, 30)
+    """
+    Build payroll FY weeks.
+    FY starts on the Monday of the week that contains 1 July.
+    Weeks run Monday → Sunday.
+    """
+
+    # 1 July of the FY
+    fy_start_date = date(year, 7, 1)
+
+    # Find the Monday of that week
+    start_of_fy = fy_start_date - timedelta(days=fy_start_date.weekday())
+
+    # Next FY's 1 July
+    next_fy_start_date = date(year + 1, 7, 1)
+
+    # Monday of next FY's first week
+    next_fy_monday = next_fy_start_date - timedelta(days=next_fy_start_date.weekday())
 
     weeks = []
     wk = 1
-    current = week1
+    current = start_of_fy
 
-    while True:
+    while current < next_fy_monday:
         start = current
         end = current + timedelta(days=6)
-
-        # If the next week would cross into July, STOP
-        if end > fy_end:
-            break
 
         weeks.append({
             "week_number": wk,
@@ -9668,10 +9679,14 @@ Cherbon Waters Admin
         today = date.today()
 
         # -----------------------------
-        # DETERMINE FY FIRST (Ace fix)
+        # READ PARAMS
         # -----------------------------
         fy_param = request.args.get("fy", None)
+        week_param = request.args.get("week", None)
 
+        # -----------------------------
+        # DETERMINE FY (initial)
+        # -----------------------------
         if fy_param:
             fy = int(fy_param)
         else:
@@ -9680,16 +9695,17 @@ Cherbon Waters Admin
             fy = monday.year if monday >= date(monday.year, 7, 1) else monday.year - 1
 
         # -----------------------------
-        # NOW BUILD FY WEEKS (correct FY)
+        # BUILD WEEKS USING INITIAL FY
         # -----------------------------
         weeks = build_fy_weeks(fy)
 
         # -----------------------------
-        # WEEK SELECTION
+        # DETERMINE WEEK NUMBER
         # -----------------------------
-        week_num = int(request.args.get("week", 0))
-
-        if week_num == 0:
+        if week_param:
+            week_num = int(week_param)
+        else:
+            # Auto-select current week
             effective_day = today - timedelta(days=1) if today.weekday() == 0 else today
 
             first_start = weeks[0]["start"]
@@ -9705,8 +9721,37 @@ Cherbon Waters Admin
                         week_num = w["week_number"]
                         break
 
+        # Clamp week number
         if week_num < 1:
             week_num = 1
+        if week_num > len(weeks):
+            week_num = len(weeks)
+
+        # -----------------------------
+        # GET START OF WEEK
+        # -----------------------------
+        selected = weeks[week_num - 1]
+        start_of_week = selected["start"]
+        end_of_week = selected["end"]
+
+        # -----------------------------
+        # ACE FIX — FINAL PAYROLL FY
+        # -----------------------------
+        def get_payroll_fy(monday):
+            fy_start = date(monday.year, 7, 1)
+            return monday.year if monday >= fy_start else monday.year - 1
+
+        payroll_fy = get_payroll_fy(start_of_week)
+
+        # FINAL FY
+        fy = payroll_fy
+
+        # -----------------------------
+        # REBUILD WEEKS USING FINAL FY
+        # -----------------------------
+        weeks = build_fy_weeks(fy)
+
+        # Clamp week again (FY changed)
         if week_num > len(weeks):
             week_num = len(weeks)
 
@@ -9715,21 +9760,13 @@ Cherbon Waters Admin
         end_of_week = selected["end"]
 
         # -----------------------------
-        # ACE FIX — PAYROLL FY LOGIC
+        # FY DROPDOWN
         # -----------------------------
-        def get_payroll_fy(monday):
-            fy_start = date(monday.year, 7, 1)
-            return monday.year if monday >= fy_start else monday.year - 1
-
-        payroll_fy = get_payroll_fy(start_of_week)
-
         fy_years = [
-            payroll_fy - 1,
-            payroll_fy,
-            payroll_fy + 1
+            fy - 1,
+            fy,
+            fy + 1
         ]
-
-        fy = payroll_fy
 
         # -----------------------------
         # BUILD WEEKLY SUMMARY
