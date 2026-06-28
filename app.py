@@ -15,7 +15,6 @@ from datetime import timedelta
 from werkzeug.utils import secure_filename
 from datetime import datetime
 
-
 # Database + Models
 from extensions import db
 from models import (
@@ -5676,6 +5675,13 @@ def create_app():
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['GET'])
     def resolve_conflict(submission_id, rider_index):
+        # Ensure safe_int exists
+        def safe_int(x):
+            try:
+                return int(x)
+            except:
+                return None
+
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
         # Always parse fresh
@@ -5688,7 +5694,7 @@ def create_app():
         all_riders = parsed["riders"]
         rider = all_riders[rider_index - 1]
 
-        # Submission-level fields (Option A)
+        # Submission-level fields
         guardian = parsed.get("guardian")
         email = parsed.get("email")
         mobile = parsed.get("mobile")
@@ -5697,7 +5703,7 @@ def create_app():
         # Raw match tuples from parser
         raw_matches = rider.get("matches", [])
 
-        # ⭐ BULLETPROOF MATCH PARSER (fixes your NEXT PAGE 500)
+        # ⭐ BULLETPROOF MATCH PARSER (prevents next-page 500)
         match_dicts = []
         for m in raw_matches:
             # Skip garbage / malformed match tuples
