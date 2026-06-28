@@ -5761,7 +5761,7 @@ def create_app():
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
-        # Local safe_int so this route NEVER crashes
+        # Local safe helpers so NOTHING is missing
         def safe_int(x):
             try:
                 return int(x)
@@ -5779,8 +5779,8 @@ def create_app():
         def clean_name(x):
             return x.strip() if isinstance(x, str) else None
 
-        choice = request.form.get("choice")
-        client_id = request.form.get("client_id")
+        choice = request.form.get("choice", "").strip().lower()
+        client_id = safe_int(request.form.get("client_id"))
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
@@ -5804,7 +5804,6 @@ def create_app():
 
         # Store universal disclaimer
         row.universal_disclaimer = disclaimer
-        db.session.commit()
 
         height_cm = safe_int(rider.get("height_cm"))
         weight_kg = safe_int(rider.get("weight_kg"))
@@ -5815,14 +5814,14 @@ def create_app():
         # Load clients fresh
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
-        existing = clients_by_id.get(safe_int(client_id)) if client_id else None
+        existing = clients_by_id.get(client_id)
 
         # IGNORE
         if choice == "ignore":
             pass
 
         # USE EXISTING
-        elif choice == "use_existing" and existing:
+        elif choice.startswith("use_existing") and existing:
             existing.full_name = name
             existing.guardian_name = guardian
             existing.age = age
@@ -5835,7 +5834,7 @@ def create_app():
             existing.jotform_submission_id = jotform_id
 
         # OVERWRITE EXISTING
-        elif choice == "overwrite" and existing:
+        elif choice.startswith("overwrite") and existing:
             existing.full_name = name
             existing.guardian_name = guardian
             existing.age = age
@@ -5890,9 +5889,10 @@ def create_app():
             )
             db.session.add(new_client)
 
+        # Commit ALL changes once
         db.session.commit()
 
-        # After resolving THIS rider → process ALL riders normally
+        # ALWAYS redirect — NO MATTER WHAT
         return redirect(url_for(
             'finalize_notification',
             webhook_id=submission_id
