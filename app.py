@@ -9814,7 +9814,15 @@ Cherbon Waters Admin
 
         return render_template(
             "admin_weekly_summary.html",
-            summary
+            summary=summary,
+            weeks=weeks,
+            fy=fy,
+            fy_years=fy_years,
+            selected_week=week_num,
+            start_of_week=start_of_week,
+            end_of_week=end_of_week
+        )
+
     @app.route("/employeehours/summary")
     def employee_weekly_summary():
         emp_id = session.get("employee_id")
