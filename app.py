@@ -5675,16 +5675,18 @@ def create_app():
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['GET'])
     def resolve_conflict(submission_id, rider_index):
-        # Ensure safe_int exists
+
+        # Local safe_int so this route NEVER crashes again
         def safe_int(x):
             try:
                 return int(x)
             except:
                 return None
 
+        # Load submission
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-        # Always parse fresh
+        # Always re-parse the payload fresh
         parsed = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id,
@@ -5692,6 +5694,11 @@ def create_app():
         )
 
         all_riders = parsed["riders"]
+
+        # Rider index is 1-based
+        if rider_index < 1 or rider_index > len(all_riders):
+            abort(404)
+
         rider = all_riders[rider_index - 1]
 
         # Submission-level fields
@@ -5703,7 +5710,7 @@ def create_app():
         # Raw match tuples from parser
         raw_matches = rider.get("matches", [])
 
-        # ⭐ BULLETPROOF MATCH PARSER (prevents next-page 500)
+        # ⭐ Bulletproof match parser
         match_dicts = []
         for m in raw_matches:
             # Skip garbage / malformed match tuples
@@ -5713,14 +5720,15 @@ def create_app():
                 continue
 
             match_dicts.append({
-                "client_id": m[0],
+                "client_id": safe_int(m[0]),
                 "full_name": m[1],
                 "mobile": m[2] if len(m) > 2 else None,
                 "email": m[3] if len(m) > 3 else None,
                 "jotform_submission_id": m[4] if len(m) > 4 else None
             })
 
-        match_ids = [m["client_id"] for m in match_dicts]
+        # Extract IDs safely
+        match_ids = [m["client_id"] for m in match_dicts if m["client_id"]]
 
         matches = []
         if match_ids:
@@ -5736,6 +5744,7 @@ def create_app():
             )
             m.last_lesson_date = last.lesson_date if last else None
 
+        # Render conflict page
         return render_template(
             'conflict_resolution.html',
             submission=row,
@@ -5752,6 +5761,24 @@ def create_app():
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
+        # Local safe_int so this route NEVER crashes
+        def safe_int(x):
+            try:
+                return int(x)
+            except:
+                return None
+
+        def safe_text(x):
+            return x.strip() if isinstance(x, str) else None
+
+        def clean_mobile(x):
+            if not x:
+                return None
+            return ''.join(filter(str.isdigit, x))
+
+        def clean_name(x):
+            return x.strip() if isinstance(x, str) else None
+
         choice = request.form.get("choice")
         client_id = request.form.get("client_id")
 
@@ -5767,7 +5794,7 @@ def create_app():
         all_riders = parsed["riders"]
         rider = all_riders[rider_index - 1]
 
-        # Extract fields (submission-level, Option A)
+        # Extract fields
         name = clean_name(rider.get("name"))
         age = safe_int(rider.get("age"))
         guardian = safe_text(parsed.get("guardian"))
@@ -5788,11 +5815,11 @@ def create_app():
         # Load clients fresh
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
-        existing = clients_by_id.get(int(client_id)) if client_id else None
+        existing = clients_by_id.get(safe_int(client_id)) if client_id else None
 
         # IGNORE
         if choice == "ignore":
-            db.session.commit()
+            pass
 
         # USE EXISTING
         elif choice == "use_existing" and existing:
@@ -5806,7 +5833,6 @@ def create_app():
             existing.notes = notes
             existing.disclaimer = disclaimer
             existing.jotform_submission_id = jotform_id
-            db.session.commit()
 
         # OVERWRITE EXISTING
         elif choice == "overwrite" and existing:
@@ -5820,7 +5846,6 @@ def create_app():
             existing.notes = notes
             existing.disclaimer = disclaimer
             existing.jotform_submission_id = jotform_id
-            db.session.commit()
 
         # CREATE NEW
         elif choice == "new":
@@ -5838,7 +5863,6 @@ def create_app():
                 jotform_submission_id=jotform_id
             )
             db.session.add(new_client)
-            db.session.commit()
 
         # CREATE NEW SAME NAME
         elif choice == "new_same_name":
@@ -5865,7 +5889,8 @@ def create_app():
                 jotform_submission_id=jotform_id
             )
             db.session.add(new_client)
-            db.session.commit()
+
+        db.session.commit()
 
         # After resolving THIS rider → process ALL riders normally
         return redirect(url_for(
