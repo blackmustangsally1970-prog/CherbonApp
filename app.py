@@ -524,22 +524,18 @@ def fy_week1_monday(year):
     return fy_start - timedelta(days=fy_start.weekday())
 
 def build_fy_weeks(year):
-    """
-    Build payroll FY weeks.
-    FY starts on the Monday of the week that contains 1 July.
-    Weeks run Monday → Sunday.
-    """
+    from datetime import date, timedelta
 
     # 1 July of the FY
     fy_start_date = date(year, 7, 1)
 
-    # Find the Monday of that week
+    # Monday of the week containing 1 July
     start_of_fy = fy_start_date - timedelta(days=fy_start_date.weekday())
 
-    # Next FY's 1 July
+    # 1 July of next FY
     next_fy_start_date = date(year + 1, 7, 1)
 
-    # Monday of next FY's first week
+    # Monday of the week containing next FY's 1 July
     next_fy_monday = next_fy_start_date - timedelta(days=next_fy_start_date.weekday())
 
     weeks = []
