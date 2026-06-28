@@ -5688,11 +5688,18 @@ def create_app():
         all_riders = parsed["riders"]
         rider = all_riders[rider_index - 1]
 
-        # Convert match tuples → dicts
+        # Submission-level fields (Option A)
+        guardian = parsed.get("guardian")
+        email = parsed.get("email")
+        mobile = parsed.get("mobile")
+        disclaimer = parsed.get("disclaimer")
+
+        # Match tuples: (client_id, full_name, mobile, email, jotform_submission_id)
         raw_matches = rider.get("matches", [])
+
         match_dicts = [
             {
-                "id": m[0],
+                "client_id": m[0],
                 "full_name": m[1],
                 "mobile": m[2],
                 "email": m[3],
@@ -5701,12 +5708,11 @@ def create_app():
             for m in raw_matches
         ]
 
-        match_ids = [m["id"] for m in match_dicts]
+        match_ids = [m["client_id"] for m in match_dicts]
 
-        # Load actual clients
         matches = []
         if match_ids:
-            matches = Client.query.filter(Client.id.in_(match_ids)).all()
+            matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
 
         # Attach last lesson date
         for m in matches:
@@ -5723,7 +5729,11 @@ def create_app():
             submission=row,
             rider=rider,
             matches=matches,
-            rider_index=rider_index
+            rider_index=rider_index,
+            guardian=guardian,
+            email=email,
+            mobile=mobile,
+            disclaimer=disclaimer
         )
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
@@ -5744,12 +5754,12 @@ def create_app():
         all_riders = parsed["riders"]
         rider = all_riders[rider_index - 1]
 
-        # Extract fields
+        # Extract fields (submission-level, Option A)
         name = clean_name(rider.get("name"))
         age = safe_int(rider.get("age"))
-        guardian = safe_text(rider.get("guardian"))
-        mobile = clean_mobile(rider.get("mobile"))
-        email = safe_text(rider.get("email"))
+        guardian = safe_text(parsed.get("guardian"))
+        mobile = clean_mobile(parsed.get("mobile"))
+        email = safe_text(parsed.get("email"))
         disclaimer = safe_int(parsed.get("disclaimer"))
 
         # Store universal disclaimer
@@ -5764,7 +5774,7 @@ def create_app():
 
         # Load clients fresh
         all_clients = db.session.query(Client).all()
-        clients_by_id = {c.id: c for c in all_clients}
+        clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(int(client_id)) if client_id else None
 
         # IGNORE
@@ -5904,9 +5914,9 @@ def create_app():
             db.session.commit()
             return redirect(url_for('notifications'))
 
-        # PHASE 2 — Preload all clients once
+        # PHASE 2 — Preload all clients once (FIXED: use client_id)
         all_clients = db.session.query(Client).all()
-        clients_by_id = {c.id: c for c in all_clients}
+        clients_by_id = {c.client_id: c for c in all_clients}
 
         jotform_id = str(row.form_id)
 
@@ -5978,7 +5988,7 @@ def create_app():
                 log_submission_link("CREATE_NEW_SAME_NAME", new_client, jotform_id)
                 continue
 
-            # USE EXISTING CLIENT
+            # USE EXISTING CLIENT (FIXED: use client_id)
             if choice and choice.startswith("existing_"):
                 existing_id = int(choice.replace("existing_", ""))
                 client = clients_by_id.get(existing_id)
@@ -5996,7 +6006,7 @@ def create_app():
                     log_submission_link("USE_EXISTING", client, jotform_id)
                 continue
 
-            # OVERWRITE EXISTING CLIENT
+            # OVERWRITE EXISTING CLIENT (FIXED: use client_id)
             if choice and choice.startswith("overwrite_"):
                 existing_id = int(choice.replace("overwrite_", ""))
                 client = clients_by_id.get(existing_id)
@@ -6024,6 +6034,7 @@ def create_app():
 
         return redirect(url_for('notifications'))
 
+
     @app.route('/notifications/process_all')
     def process_all_pending():
         from datetime import datetime
@@ -6043,7 +6054,8 @@ def create_app():
         # -----------------------------------------
         parsed = parse_jotform_payload(
             next_row.raw_payload,
-            forced_submission_id=next_row.id
+            forced_submission_id=next_row.id,
+            mode="full"
         )
 
         riders = parsed["riders"]
@@ -6060,15 +6072,6 @@ def create_app():
             next_row.processed_at = datetime.utcnow()
             db.session.commit()
             return redirect(url_for('process_all_pending'))
-
-        # -----------------------------------------
-        # PHASE 3: Preload clients ONCE
-        # -----------------------------------------
-        all_clients = db.session.query(Client).all()
-        clients_by_name = {
-            normalise_full_name(c.full_name): c
-            for c in all_clients
-        }
 
         # -----------------------------------------
         # PHASE 3: Conflict detection (fast)
