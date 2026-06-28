@@ -110,3 +110,57 @@
                           action="{{ url_for('finalize_conflict',
                                              submission_id=submission.id,
                                              rider_index=rider_index) }}"
+                          style="display:inline;">
+                        <input type="hidden" name="client_id" value="{{ m.client_id }}">
+                        <button type="submit" class="button" name="choice" value="use_existing">
+                            ✔ Use This Client
+                        </button>
+                    </form>
+
+                    {% if not invite_mode %}
+                    <!-- OVERWRITE -->
+                    <form method="post"
+                          action="{{ url_for('finalize_conflict',
+                                             submission_id=submission.id,
+                                             rider_index=rider_index) }}"
+                          style="display:inline;">
+                        <input type="hidden" name="client_id" value="{{ m.client_id }}">
+                        <button type="submit" class="button danger" name="choice" value="overwrite">
+                            ⚠ Overwrite This Client
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No existing clients matched — this should not happen if you reached this page.</p>
+        {% endif %}
+
+        <div class="section-title">Or Create New</div>
+
+        <!-- CREATE NEW -->
+        <form method="post"
+              action="{{ url_for('finalize_conflict',
+                                 submission_id=submission.id,
+                                 rider_index=rider_index) }}">
+            <button type="submit" class="button" name="choice" value="new">
+                ➕ Create New Client
+            </button>
+
+            <button type="submit" class="button" name="choice" value="new_same_name">
+                ➕ Create New (Same Name)
+            </button>
+        </form>
+
+        <!-- IGNORE -->
+        <form method="post"
+              action="{{ url_for('finalize_conflict',
+                                 submission_id=submission.id,
+                                 rider_index=rider_index) }}">
+            <button type="submit" name="choice" value="ignore" class="button danger">
+                Ignore this submission (do not append)
+            </button>
+        </form>
+
+    </body>
+    </html>
