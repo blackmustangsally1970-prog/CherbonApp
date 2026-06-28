@@ -231,7 +231,9 @@
 <script>
 function toggleTable(id) {
     const tbl = document.getElementById(id);
-    tbl.style.display = (tbl.style.display === "none" || tbl.style.display === "") ? "block" : "none";
+    tbl.style.display = (tbl.style.display === "none" || tbl.style.display === "") 
+        ? "block" 
+        : "none";
 }
 
 function changeWeek(offset) {
@@ -244,7 +246,10 @@ function changeWeek(offset) {
     if (next > max) next = max;
 
     weekSelect.value = next;
-    weekSelect.form.submit();
+
+    // ⭐ PRESERVE FY WHEN SUBMITTING
+    const fySelect = document.querySelector('select[name="fy"]');
+    fySelect.form.submit();
 }
 </script>
 
