@@ -5761,7 +5761,7 @@ def create_app():
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
-        # Local safe helpers so NOTHING is missing
+        # Local helpers
         def safe_int(x):
             try:
                 return int(x)
@@ -5779,7 +5779,8 @@ def create_app():
         def clean_name(x):
             return x.strip() if isinstance(x, str) else None
 
-        choice = request.form.get("choice", "").strip().lower()
+        # Normalize choice
+        choice = (request.form.get("choice") or "").strip().lower()
         client_id = safe_int(request.form.get("client_id"))
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
@@ -5889,7 +5890,7 @@ def create_app():
             )
             db.session.add(new_client)
 
-        # Commit ALL changes once
+        # Commit once
         db.session.commit()
 
         # ALWAYS redirect — NO MATTER WHAT
