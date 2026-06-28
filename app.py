@@ -5694,19 +5694,25 @@ def create_app():
         mobile = parsed.get("mobile")
         disclaimer = parsed.get("disclaimer")
 
-        # Match tuples: (client_id, full_name, mobile, email, jotform_submission_id)
+        # Raw match tuples from parser
         raw_matches = rider.get("matches", [])
 
-        match_dicts = [
-            {
+        # ⭐ BULLETPROOF MATCH PARSER (fixes your NEXT PAGE 500)
+        match_dicts = []
+        for m in raw_matches:
+            # Skip garbage / malformed match tuples
+            if not isinstance(m, (list, tuple)):
+                continue
+            if len(m) < 2:
+                continue
+
+            match_dicts.append({
                 "client_id": m[0],
                 "full_name": m[1],
-                "mobile": m[2],
-                "email": m[3],
-                "jotform_submission_id": m[4]
-            }
-            for m in raw_matches
-        ]
+                "mobile": m[2] if len(m) > 2 else None,
+                "email": m[3] if len(m) > 3 else None,
+                "jotform_submission_id": m[4] if len(m) > 4 else None
+            })
 
         match_ids = [m["client_id"] for m in match_dicts]
 
@@ -5735,6 +5741,7 @@ def create_app():
             mobile=mobile,
             disclaimer=disclaimer
         )
+
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
