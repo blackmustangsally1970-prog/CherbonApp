@@ -5761,7 +5761,6 @@ def create_app():
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
-        # Local helpers
         def safe_int(x):
             try:
                 return int(x)
@@ -5779,13 +5778,11 @@ def create_app():
         def clean_name(x):
             return x.strip() if isinstance(x, str) else None
 
-        # Normalize choice
         choice = (request.form.get("choice") or "").strip().lower()
         client_id = safe_int(request.form.get("client_id"))
 
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-        # Parse fresh
         parsed = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id,
@@ -5795,7 +5792,6 @@ def create_app():
         all_riders = parsed["riders"]
         rider = all_riders[rider_index - 1]
 
-        # Extract fields
         name = clean_name(rider.get("name"))
         age = safe_int(rider.get("age"))
         guardian = safe_text(parsed.get("guardian"))
@@ -5803,7 +5799,6 @@ def create_app():
         email = safe_text(parsed.get("email"))
         disclaimer = safe_int(parsed.get("disclaimer"))
 
-        # Store universal disclaimer
         row.universal_disclaimer = disclaimer
 
         height_cm = safe_int(rider.get("height_cm"))
@@ -5812,16 +5807,13 @@ def create_app():
 
         jotform_id = str(row.form_id)
 
-        # Load clients fresh
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(client_id)
 
-        # IGNORE
         if choice == "ignore":
             pass
 
-        # USE EXISTING
         elif choice.startswith("use_existing") and existing:
             existing.full_name = name
             existing.guardian_name = guardian
@@ -5834,7 +5826,6 @@ def create_app():
             existing.disclaimer = disclaimer
             existing.jotform_submission_id = jotform_id
 
-        # OVERWRITE EXISTING
         elif choice.startswith("overwrite") and existing:
             existing.full_name = name
             existing.guardian_name = guardian
@@ -5847,7 +5838,6 @@ def create_app():
             existing.disclaimer = disclaimer
             existing.jotform_submission_id = jotform_id
 
-        # CREATE NEW
         elif choice == "new":
             new_client = Client(
                 full_name=name,
@@ -5864,7 +5854,6 @@ def create_app():
             )
             db.session.add(new_client)
 
-        # CREATE NEW SAME NAME
         elif choice == "new_same_name":
             base = name
             counter = 2
@@ -5890,10 +5879,8 @@ def create_app():
             )
             db.session.add(new_client)
 
-        # Commit once
         db.session.commit()
 
-        # ALWAYS redirect — NO MATTER WHAT
         return redirect(url_for(
             'finalize_notification',
             webhook_id=submission_id
