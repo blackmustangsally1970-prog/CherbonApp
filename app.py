@@ -188,6 +188,14 @@ def extract_text(path):
 
     return text
 
+def generate_unique_client_name(base_name):
+    counter = 2
+    while True:
+        candidate = f"{base_name} ({counter})"
+        exists = db.session.query(Client).filter_by(full_name=candidate).first()
+        if not exists:
+            return candidate
+        counter += 1
 
 
 def parse_any_date(d):
@@ -5799,7 +5807,9 @@ def create_app():
         all_riders = parsed["riders"]
         rider = all_riders[rider_index - 1]
 
-        name = clean_name(rider.get("name"))
+        raw_name = clean_name(rider.get("name"))
+        name = smart_proper_name(raw_name)
+
         age = safe_int(rider.get("age"))
         guardian = safe_text(parsed.get("guardian"))
         mobile = clean_mobile(parsed.get("mobile"))
@@ -5862,17 +5872,9 @@ def create_app():
             db.session.add(new_client)
 
         elif choice == "new_same_name":
-            base = name
-            counter = 2
-            while True:
-                candidate = f"{base} ({counter})"
-                exists = db.session.query(Client).filter_by(full_name=candidate).first()
-                if not exists:
-                    break
-                counter += 1
-
+            final_name = generate_unique_client_name(name)
             new_client = Client(
-                full_name=candidate,
+                full_name=final_name,
                 guardian_name=guardian,
                 age=age,
                 mobile=mobile,
@@ -5886,7 +5888,6 @@ def create_app():
             )
             db.session.add(new_client)
 
-        # *** ACTUAL FIX, BUILT IN ***
         parsed["riders"][rider_index - 1]["matches"] = []
         import json
         row.raw_payload = json.dumps(parsed)
@@ -5897,7 +5898,6 @@ def create_app():
             'finalize_notification',
             webhook_id=submission_id
         ))
-
 
     @app.route("/pricing_setup")
     def pricing_setup():
@@ -5972,7 +5972,8 @@ def create_app():
             choice = request.form.get(f"client_choice_{i}")
 
             # Extract fields
-            name = request.form.get(f"name_{i}") or rider.get("name") or "Unknown"
+            raw_name = request.form.get(f"name_{i}") or rider.get("name") or "Unknown"
+            name = smart_proper_name(clean_name(raw_name)) 
             age = request.form.get(f"age_{i}") or rider.get("age")
             guardian = request.form.get(f"guardian_{i}") or rider.get("guardian")
 
@@ -6071,7 +6072,6 @@ def create_app():
         db.session.commit()
 
         return redirect(url_for('notifications'))
-
 
     @app.route('/notifications/process_all')
     def process_all_pending():
@@ -9674,34 +9674,41 @@ Cherbon Waters Admin
     def admin_weekly_summary():
         today = date.today()
 
+        # -----------------------------
+        # FY + WEEK DETECTION (FIXED)
+        # -----------------------------
         fy_param = request.args.get("fy", None)
         week_param = request.args.get("week", None)
 
-        if fy_param:
-            fy = int(fy_param)
-        else:
-            monday = today if today.weekday() == 0 else today - timedelta(days=today.weekday())
-            fy = monday.year if monday >= date(monday.year, 7, 1) else monday.year - 1
+        # Determine Monday of current week
+        monday = today - timedelta(days=today.weekday())
+        week_end = monday + timedelta(days=6)
 
+        # FY of the current week (default FY)
+        current_fy = week_end.year if week_end >= date(week_end.year, 7, 1) else week_end.year - 1
+
+        # Use selected FY if provided
+        fy = int(fy_param) if fy_param else current_fy
+
+        # Build weeks for selected FY
         weeks = build_fy_weeks(fy)
 
+        # Determine default week inside selected FY
         if week_param:
             week_num = int(week_param)
         else:
-            effective_day = today - timedelta(days=1) if today.weekday() == 0 else today
-            first_start = weeks[0]["start"]
-            last_end = weeks[-1]["end"]
+            found = False
+            for w in weeks:
+                if w["start"] <= today <= w["end"]:
+                    week_num = w["week_number"]
+                    found = True
+                    break
 
-            if effective_day < first_start:
-                week_num = weeks[0]["week_number"]
-            elif effective_day > last_end:
-                week_num = weeks[-1]["week_number"]
-            else:
-                for w in weeks:
-                    if w["start"] <= effective_day <= w["end"]:
-                        week_num = w["week_number"]
-                        break
+            # If today is outside this FY → default to WK1
+            if not found:
+                week_num = 1
 
+        # Clamp week number
         if week_num < 1:
             week_num = 1
         if week_num > len(weeks):
@@ -9711,29 +9718,12 @@ Cherbon Waters Admin
         start_of_week = selected["start"]
         end_of_week = selected["end"]
 
-        def get_payroll_fy(monday):
-            week_end = monday + timedelta(days=6)
-            if week_end >= date(monday.year, 7, 1):
-                return monday.year
-            else:
-                return monday.year - 1
-
-        payroll_fy = get_payroll_fy(start_of_week)
-
-        if not fy_param:
-            fy = payroll_fy
-
-        weeks = build_fy_weeks(fy)
-
-        if week_num > len(weeks):
-            week_num = len(weeks)
-
-        selected = weeks[week_num - 1]
-        start_of_week = selected["start"]
-        end_of_week = selected["end"]
-
+        # FY list for dropdown
         fy_years = [fy - 1, fy, fy + 1]
 
+        # -----------------------------
+        # EMPLOYEE WEEKLY SUMMARY
+        # -----------------------------
         employees = Employee.query.order_by(Employee.full_name.asc()).all()
         summary = []
 
@@ -9746,9 +9736,19 @@ Cherbon Waters Admin
                 row = EmployeeHours.query.filter_by(employee_id=emp.id, date=day).first()
 
                 if row:
+                    # -----------------------------
+                    # MIDNIGHT ROLLOVER FIX
+                    # -----------------------------
                     work = timedelta()
                     if row.sign_in and row.sign_out:
-                        work = row.sign_out - row.sign_in
+                        sign_in = row.sign_in
+                        sign_out = row.sign_out
+
+                        # If sign_out is past midnight → add 24 hours
+                        if sign_out < sign_in:
+                            sign_out = sign_out + timedelta(days=1)
+
+                        work = sign_out - sign_in
 
                     brk = timedelta()
                     if row.break_start and row.break_end:
@@ -9784,7 +9784,6 @@ Cherbon Waters Admin
             start_of_week=start_of_week,
             end_of_week=end_of_week
         )
-
 
     @app.route("/employeehours/summary")
     def employee_weekly_summary():
