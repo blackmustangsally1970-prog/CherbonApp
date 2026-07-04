@@ -10985,7 +10985,8 @@ Cherbon Waters Admin
     @app.route('/weddings_menu')
     @login_required
     def weddings_menu():
-        return render_template('weddings_menu.html', user=current_user)
+        weddings = Wedding.query.order_by(Wedding.date.asc()).all()
+        return render_template('weddings_menu.html', weddings=weddings, user=current_user)
 
 
     @app.route('/client_view')
