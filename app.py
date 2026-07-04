@@ -5932,7 +5932,6 @@ def create_app():
     def finalize_notification(webhook_id):
         row = db.session.query(IncomingSubmission).get_or_404(webhook_id)
 
-        # PHASE 1 — Parse riders ONCE (FULL MODE)
         parsed = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id,
@@ -5940,11 +5939,8 @@ def create_app():
         )
 
         all_riders = parsed["riders"]
-
-        # Filter out incomplete riders
         valid_riders = [r for r in all_riders if not r.get("incomplete")]
 
-        # If all riders incomplete → ignore submission
         if not valid_riders:
             row.processed = True
             row.ignored = True
@@ -5952,41 +5948,30 @@ def create_app():
             db.session.commit()
             return redirect(url_for('notifications'))
 
-        # PHASE 2 — Preload all clients once (FIXED: use client_id)
+        # Submission-level fields (ALWAYS correct)
+        guardian   = parsed.get("guardian")
+        mobile     = clean_mobile(parsed.get("mobile"))
+        email      = parsed.get("email")
+        disclaimer = safe_int(parsed.get("disclaimer"))
+
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
 
         jotform_id = str(row.form_id)
 
-        # PHASE 3 — Determine disclaimer number
-        if row.universal_disclaimer:
-            disclaimer = row.universal_disclaimer
-        else:
-            try:
-                disclaimer = int(valid_riders[0].get("disclaimer"))
-            except:
-                disclaimer = None
-
-        # PHASE 4 — Process each rider
         for i, rider in enumerate(valid_riders, start=1):
             choice = request.form.get(f"client_choice_{i}")
 
-            # Extract fields
             raw_name = request.form.get(f"name_{i}") or rider.get("name") or "Unknown"
-            name = smart_proper_name(clean_name(raw_name)) 
+            name = smart_proper_name(clean_name(raw_name))
+
             age = request.form.get(f"age_{i}") or rider.get("age")
-            guardian = request.form.get(f"guardian_{i}") or rider.get("guardian")
-
-            raw_mobile = request.form.get(f"mobile_{i}") or rider.get("mobile")
-            mobile = clean_mobile(raw_mobile) if raw_mobile else None
-
-            email = request.form.get(f"email_{i}") or rider.get("email")
 
             height_cm = extract_number(request.form.get(f"height_{i}") or rider.get("height_cm"))
             weight_kg = extract_number(request.form.get(f"weight_{i}") or rider.get("weight_kg"))
             notes = request.form.get(f"notes_{i}") or rider.get("notes") or ""
 
-            # CREATE NEW CLIENT
+            # NEW CLIENT
             if choice == "new":
                 new_client = Client(
                     full_name=name,
@@ -6003,10 +5988,9 @@ def create_app():
                 )
                 db.session.add(new_client)
                 db.session.flush()
-                log_submission_link("CREATE_NEW", new_client, jotform_id)
                 continue
 
-            # CREATE NEW CLIENT (SAME NAME)
+            # NEW SAME NAME
             if choice == "new_same_name":
                 final_name = generate_unique_client_name(name)
                 new_client = Client(
@@ -6024,10 +6008,9 @@ def create_app():
                 )
                 db.session.add(new_client)
                 db.session.flush()
-                log_submission_link("CREATE_NEW_SAME_NAME", new_client, jotform_id)
                 continue
 
-            # USE EXISTING CLIENT (FIXED: use client_id)
+            # USE EXISTING
             if choice and choice.startswith("existing_"):
                 existing_id = int(choice.replace("existing_", ""))
                 client = clients_by_id.get(existing_id)
@@ -6037,15 +6020,14 @@ def create_app():
                     client.age = age
                     client.mobile = mobile
                     client.email_primary = email
+                    client.disclaimer = disclaimer
                     client.height_cm = height_cm
                     client.weight_kg = weight_kg
                     client.notes = notes
-                    client.disclaimer = disclaimer
                     client.jotform_submission_id = jotform_id
-                    log_submission_link("USE_EXISTING", client, jotform_id)
                 continue
 
-            # OVERWRITE EXISTING CLIENT (FIXED: use client_id)
+            # OVERWRITE EXISTING
             if choice and choice.startswith("overwrite_"):
                 existing_id = int(choice.replace("overwrite_", ""))
                 client = clients_by_id.get(existing_id)
@@ -6060,20 +6042,12 @@ def create_app():
                     client.weight_kg = weight_kg
                     client.notes = notes
                     client.jotform_submission_id = jotform_id
-                    log_submission_link("OVERWRITE_EXISTING", client, jotform_id)
                 continue
-
-        # PHASE 5 — Mark submission processed
-        safe_names = [r.get("name") for r in valid_riders if r.get("name")]
-        log_disclaimer_processed(safe_names)
 
         row.processed = True
         row.processed_at = datetime.utcnow()
         db.session.commit()
 
-        # ============================================================
-        # PHASE 6 — Jump to next unprocessed submission (old behaviour)
-        # ============================================================
         next_row = IncomingSubmission.query.filter_by(
             processed=False,
             ignored=False
@@ -6082,11 +6056,7 @@ def create_app():
         if next_row:
             return redirect(url_for('finalize_notification', webhook_id=next_row.id))
 
-        # If none left, return to notifications list
         return redirect(url_for('notifications'))
-
-
-
 
     @app.route('/notifications/process_all')
     def process_all_pending():
