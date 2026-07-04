@@ -8,15 +8,15 @@
     <li>
         <strong>{{ w.couple_name }}</strong> — {{ w.date }}
 
-        <!-- Coordinator + Staff: Wedding Tasks -->
-        {% if current_user.role in ['coordinator', 'staff'] %}
-            <a href="{{ url_for('wedding_tasks', wedding_id=w.id) }}">📝 Wedding Tasks</a>
-        {% endif %}
+<!-- Coordinator + Staff: Wedding Tasks -->
+{% if current_user.role in ['coordinator', 'staff'] %}
+    <a href="{{ url_for('wedding_tasks', wedding_id=w.id) }}">📝 Wedding Tasks</a>
+{% endif %}
 
-        <!-- Manager/Admin: Admin Task Entry -->
-        {% if current_user.role in ['admin', 'manager'] %}
-            <a href="{{ url_for('admin_wedding_tasks', wedding_id=w.id) }}">💍 Manage Tasks</a>
-        {% endif %}
+<!-- Admin / Management / Manager: Admin Task Entry -->
+{% if current_user.role in ['admin', 'management', 'manager'] %}
+    <a href="{{ url_for('admin_wedding_tasks', wedding_id=w.id) }}">💍 Manage Tasks</a>
+{% endif %}
     </li>
     {% endfor %}
 
