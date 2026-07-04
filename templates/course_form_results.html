@@ -606,6 +606,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(() => {
             const el = document.querySelector(`[onchange*="${id}"][onchange*="${field}"]`);
             if (el) {
+                el.value = value;  // ⭐ update UI immediately
                 el.style.backgroundColor = "#d4ffd4";
                 setTimeout(() => el.style.backgroundColor = "", 400);
             }

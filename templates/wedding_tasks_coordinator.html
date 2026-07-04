@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Coordinator Wedding Tasks</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+
+        .task-box {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #fafafa;
+        }
+
+        /* ⭐ NEW: Overdue styling */
+        .task-box.overdue {
+            border-color: #b30000;
+            background: #fff5f5;
+        }
+
+        .task-header {
+            font-size: 1.2em;
+            margin-bottom: 6px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-right: 6px;
+        }
+
+        .required { background: #d9534f; color: white; }
+        .shared { background: #0275d8; color: white; }
+        .done { background: #5cb85c; color: white; }
+        .inprogress { background: #f0ad4e; color: white; }
+
+        /* ⭐ NEW: Overdue badge */
+        .overdue-badge { background: #b30000; color: white; }
+
+        .notes {
+            margin-top: 8px;
+            font-style: italic;
+            color: #555;
+        }
+
+        .staff {
+            margin-top: 8px;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            margin-top: 20px;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #5cb85c;
+            width: {{ completion_percentage }}%;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Coordinator Dashboard</h1>
+
+<p><strong>Wedding:</strong> {{ wedding.couple_name }}</p>
+<p><strong>Date:</strong> {{ wedding.date }}</p>
+
+<!-- ⭐ Coordinator Notes Panel -->
+<h2>Coordinator Notes</h2>
+<div id="coordinator-notes-box">
+    {{ wedding.coordinator_notes }}
+</div>
+
+<form method="POST" action="{{ url_for('update_coordinator_notes', wedding_id=wedding.id) }}">
+    <textarea name="notes" style="width:100%;height:80px;">{{ wedding.coordinator_notes }}</textarea>
+    <button style="margin-top:10px;">Save Notes</button>
+</form>
+
+<hr>
+
+<h2>Who’s Working Now</h2>
+<div id="active-tasks-box">
+    <em>No one is currently working on any tasks.</em>
+</div>
+
+<hr>
+
+<div class="progress-bar">
+    <div class="progress-fill"></div>
+</div>
+<p><strong>Completion:</strong> <span id="completion-text">{{ completion_percentage }}%</span></p>
+
+<hr>
+
+{% for t in tasks %}
+    <div class="task-box {% if t.deadline and t.deadline < now %}overdue{% endif %}" id="task-{{ t.id }}">
+
+        <div class="task-header">{{ t.task_name }}</div>
+
+        <div class="status-area">
+            {% if t.is_done %}
+                <span class="badge done">Done</span>
+            {% elif t.in_progress_by %}
+                <span class="badge inprogress">In Progress</span>
+            {% endif %}
+        </div>
+
+        <!-- ⭐ Overdue badge -->
+        {% if t.deadline and t.deadline < now %}
+            <span class="badge overdue-badge">Overdue</span>
+        {% endif %}
+
+        {% if t.required %}
+            <span class="badge required">Required</span>
+        {% endif %}
+
+        {% if t.shared %}
+            <span class="badge shared">Shared</span>
+        {% endif %}
+
+        {% if t.notes %}
+            <div class="notes">Notes: {{ t.notes }}</div>
+        {% endif %}
+
+        <div class="staff">
+            Assigned:
+            {% if t.assigned_to_name %}
+                {{ t.assigned_to_name }}
+            {% else %}
+                <em>Unassigned</em>
+            {% endif %}
+        </div>
+
+        {% if t.is_done %}
+            <div class="staff">
+                Completed by: {{ t.done_by_name }} at {{ t.done_at }}
+            </div>
+        {% endif %}
+
+        {% if t.in_progress_by_name %}
+            <div class="staff">
+                In progress by: {{ t.in_progress_by_name }}
+            </div>
+        {% endif %}
+
+    </div>
+{% endfor %}
+
+<script>
+    function refreshCoordinatorTasks() {
+        fetch("/api/coordinator_tasks/{{ wedding.id }}")
+            .then(r => r.json())
+            .then(data => {
+                let doneCount = 0;
+
+                data.forEach(t => {
+                    const box = document.getElementById("task-" + t.id);
+                    if (!box) return;
+
+                    const statusArea = box.querySelector(".status-area");
+
+                    if (t.is_done) {
+                        statusArea.innerHTML = '<span class="badge done">Done</span>';
+                        doneCount++;
+                    } else if (t.in_progress_by) {
+                        statusArea.innerHTML = '<span class="badge inprogress">In Progress</span>';
+                    } else {
+                        statusArea.innerHTML = '';
+                    }
+
+                    // ⭐ LIVE overdue styling
+                    const overdue = (t.deadline && new Date(t.deadline) < new Date());
+
+                    if (overdue) {
+                        box.classList.add("overdue");
+
+                        if (!box.querySelector(".overdue-badge")) {
+                            box.insertAdjacentHTML(
+                                "afterbegin",
+                                '<span class="badge overdue-badge">Overdue</span>'
+                            );
+                        }
+                    } else {
+                        box.classList.remove("overdue");
+
+                        const badge = box.querySelector(".overdue-badge");
+                        if (badge) badge.remove();
+                    }
+                });
+
+                const total = data.length;
+                const pct = total > 0 ? Math.floor((doneCount / total) * 100) : 0;
+
+                const bar = document.querySelector(".progress-fill");
+                const pctText = document.getElementById("completion-text");
+
+                if (bar) bar.style.width = pct + "%";
+                if (pctText) pctText.innerText = pct + "%";
+            });
+    }
+
+    function refreshActiveTasks() {
+        fetch("/api/coordinator_active/{{ wedding.id }}")
+            .then(r => r.json())
+            .then(data => {
+                const box = document.getElementById("active-tasks-box");
+
+                if (data.length === 0) {
+                    box.innerHTML = "<em>No one is currently working on any tasks.</em>";
+                    return;
+                }
+
+                let html = "";
+                data.forEach(t => {
+                    html += `
+                        <div style="margin-bottom: 8px;">
+                            <strong>${t.staff_name}</strong> is working on 
+                            <strong>${t.task_name}</strong>
+                            ${t.started_at ? " (since " + t.started_at + ")" : ""}
+                        </div>
+                    `;
+                });
+
+                box.innerHTML = html;
+            });
+    }
+
+    function refreshCoordinatorNotes() {
+        fetch("/api/wedding_notes/{{ wedding.id }}")
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById("coordinator-notes-box").innerText = data.notes;
+            });
+    }
+
+    setInterval(refreshCoordinatorTasks, 5000);
+    setInterval(refreshActiveTasks, 5000);
+    setInterval(refreshCoordinatorNotes, 5000);
+</script>
+
+</body>
+</html>

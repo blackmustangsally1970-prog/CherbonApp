@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>My Wedding Tasks</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+
+        .task-box {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #fafafa;
+        }
+
+        .task-header {
+            font-size: 1.2em;
+            margin-bottom: 6px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-right: 6px;
+        }
+
+        .required { background: #d9534f; color: white; }
+        .shared { background: #0275d8; color: white; }
+        .done { background: #5cb85c; color: white; }
+        .inprogress { background: #f0ad4e; color: white; }
+
+        .notes {
+            margin-top: 8px;
+            font-style: italic;
+            color: #555;
+        }
+
+        .actions {
+            margin-top: 12px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .btn-start { background: #f0ad4e; color: white; }
+        .btn-done { background: #5cb85c; color: white; }
+    </style>
+</head>
+<body>
+
+<h1>My Tasks</h1>
+
+<p><strong>Wedding:</strong> {{ wedding.couple_name }}</p>
+<p><strong>Date:</strong> {{ wedding.date }}</p>
+
+<hr>
+
+{% for t in tasks %}
+    <div class="task-box" id="task-{{ t.id }}">
+
+        <div class="task-header">{{ t.task_name }}</div>
+
+        <div class="status-area">
+            {% if t.is_done %}
+                <span class="badge done">Done</span>
+            {% elif t.in_progress_by %}
+                <span class="badge inprogress">In Progress</span>
+            {% endif %}
+        </div>
+
+        {% if t.required %}
+            <span class="badge required">Required</span>
+        {% endif %}
+
+        {% if t.shared %}
+            <span class="badge shared">Shared</span>
+        {% endif %}
+
+        {% if t.notes %}
+            <div class="notes">Notes: {{ t.notes }}</div>
+        {% endif %}
+
+        {% if t.shared and t.in_progress_by_name and not t.is_done %}
+            <div class="notes">
+                Someone else is working on this: {{ t.in_progress_by_name }}
+            </div>
+        {% endif %}
+
+        <div class="actions">
+            {% if not t.is_done %}
+                {% if not t.in_progress_by %}
+                    <form method="POST" action="{{ url_for('staff_task_start', task_id=t.id) }}">
+                        <button class="btn btn-start">Start Task</button>
+                    </form>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('staff_task_done', task_id=t.id) }}">
+                    <button class="btn btn-done">Mark Done</button>
+                </form>
+            {% endif %}
+        </div>
+
+    </div>
+{% endfor %}
+
+<script>
+    function refreshTasks() {
+        fetch("/api/staff_tasks/{{ wedding.id }}/{{ employee.id }}")
+            .then(r => r.json())
+            .then(data => {
+                data.forEach(t => {
+                    const box = document.getElementById("task-" + t.id);
+                    if (!box) return;
+
+                    const statusArea = box.querySelector(".status-area");
+
+                    if (t.is_done) {
+                        statusArea.innerHTML = '<span class="badge done">Done</span>';
+                    } else if (t.in_progress_by) {
+                        statusArea.innerHTML = '<span class="badge inprogress">In Progress</span>';
+                    } else {
+                        statusArea.innerHTML = '';
+                    }
+                });
+            });
+    }
+
+    // Refresh every 5 seconds
+    setInterval(refreshTasks, 5000);
+</script>
+
+</body>
+</html>

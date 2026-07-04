@@ -6071,7 +6071,22 @@ def create_app():
         row.processed_at = datetime.utcnow()
         db.session.commit()
 
+        # ============================================================
+        # PHASE 6 — Jump to next unprocessed submission (old behaviour)
+        # ============================================================
+        next_row = IncomingSubmission.query.filter_by(
+            processed=False,
+            ignored=False
+        ).order_by(IncomingSubmission.id.asc()).first()
+
+        if next_row:
+            return redirect(url_for('finalize_notification', webhook_id=next_row.id))
+
+        # If none left, return to notifications list
         return redirect(url_for('notifications'))
+
+
+
 
     @app.route('/notifications/process_all')
     def process_all_pending():
@@ -8991,13 +9006,344 @@ Cherbon Waters Admin
 
         return jsonify({"status": "ok"})
 
+
+    @app.route('/weddings/<int:wedding_id>/staff/<int:employee_id>')
+    def wedding_staff_dashboard(wedding_id, employee_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+        employee = Employee.query.get_or_404(employee_id)
+
+        # Load only tasks assigned to this staff member
+        tasks = WeddingTask.query.filter_by(
+            wedding_id=wedding.id,
+            assigned_to=employee.id
+        ).order_by(WeddingTask.order.asc()).all()
+
+        processed_tasks = []
+        done_count = 0
+
+        for t in tasks:
+            # Done by name
+            done_by_name = None
+            if t.done_by:
+                emp = Employee.query.get(t.done_by)
+                if emp:
+                    done_by_name = emp.full_name
+
+            # In-progress name
+            in_progress_name = None
+            if t.in_progress_by:
+                emp = Employee.query.get(t.in_progress_by)
+                if emp:
+                    in_progress_name = emp.full_name
+
+            if t.is_done:
+                done_count += 1
+
+            processed_tasks.append({
+                "id": t.id,
+                "task_name": t.task_name,
+                "required": t.required,
+                "shared": t.shared,
+                "notes": t.notes,
+                "is_done": t.is_done,
+                "done_by_name": done_by_name,
+                "done_at": t.done_at,
+                "in_progress_by": t.in_progress_by,
+                "in_progress_by_name": in_progress_name
+            })
+
+        # Personal completion percentage
+        total = len(tasks)
+        completion_percentage = int((done_count / total) * 100) if total > 0 else 0
+
+        return render_template(
+            'wedding_tasks_staff.html',
+            wedding=wedding,
+            employee=employee,
+            tasks=processed_tasks,
+            completion_percentage=completion_percentage
+        )
+
+
+    @app.route('/task/<int:task_id>/start', methods=['POST'])
+    def staff_task_start(task_id):
+        task = WeddingTask.query.get_or_404(task_id)
+
+        # Mark task as in progress
+        task.in_progress_by = current_user.id  # or employee_id from session
+        db.session.commit()
+
+        return redirect(request.referrer)
+
+    @app.route('/task/<int:task_id>/done', methods=['POST'])
+    def staff_task_done(task_id):
+        task = WeddingTask.query.get_or_404(task_id)
+
+        task.is_done = True
+        task.done_by = current_user.id  # or employee_id from session
+        task.done_at = datetime.now()
+
+        # Clear in-progress flag
+        task.in_progress_by = None
+
+        db.session.commit()
+
+        return redirect(request.referrer)
+
+
+    @app.route('/api/coordinator_tasks/<int:wedding_id>')
+    def api_coordinator_tasks(wedding_id):
+        tasks = WeddingTask.query.filter_by(wedding_id=wedding_id).all()
+        now = datetime.now()
+
+        # Sort overdue first, then by order
+        tasks.sort(key=lambda t: (
+            0 if (t.deadline and t.deadline < now) else 1,
+            t.order
+        ))
+
+        out = []
+        for t in tasks:
+            out.append({
+                "id": t.id,
+                "task_name": t.task_name,
+                "required": t.required,
+                "shared": t.shared,
+                "notes": t.notes,
+                "category": t.category,
+                "order": t.order,
+
+                # Assignment
+                "assigned_to": t.assigned_to,
+                "assigned_to_name": t.assigned_to_name,
+
+                # Completion
+                "is_done": t.is_done,
+                "done_by": t.done_by,
+                "done_by_name": t.done_by_name,
+                "done_at": t.done_at.strftime("%H:%M") if t.done_at else None,
+
+                # In-progress
+                "in_progress_by": t.in_progress_by,
+                "in_progress_by_name": t.in_progress_by_name,
+
+                # Deadline
+                "deadline": t.deadline.isoformat() if t.deadline else None
+            })
+
+        return jsonify(out)
+
+    @app.route('/api/coordinator_active/<int:wedding_id>')
+    def api_coordinator_active(wedding_id):
+        tasks = WeddingTask.query.filter_by(
+            wedding_id=wedding_id
+        ).filter(
+            WeddingTask.in_progress_by.isnot(None)
+        ).order_by(WeddingTask.order.asc()).all()
+
+        out = []
+        for t in tasks:
+            emp = Employee.query.get(t.in_progress_by)
+            out.append({
+                "task_id": t.id,
+                "task_name": t.task_name,
+                "staff_name": emp.full_name if emp else "Unknown",
+                "started_at": t.in_progress_at.strftime("%H:%M") if t.in_progress_at else None
+            })
+
+        return jsonify(out)
+
+    @app.route('/admin/wedding/<int:wedding_id>/tasks')
+    def admin_wedding_tasks(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+        tasks = WeddingTask.query.filter_by(wedding_id=wedding_id).order_by(WeddingTask.order.asc()).all()
+        return render_template("admin_wedding_tasks.html", wedding=wedding, tasks=tasks)
+
+
+    @app.route('/admin/wedding/<int:wedding_id>/tasks/add', methods=['POST'])
+    def admin_add_task(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        t = WeddingTask(
+            wedding_id=wedding_id,
+            task_name=request.form.get("task_name"),
+            category=request.form.get("category"),
+            required=("required" in request.form),
+            shared=("shared" in request.form),
+            notes=request.form.get("notes"),
+            deadline=datetime.fromisoformat(request.form.get("deadline")) if request.form.get("deadline") else None,
+            order=0  # default, coordinator can reorder later
+        )
+
+        db.session.add(t)
+        db.session.commit()
+
+        return redirect(url_for("admin_wedding_tasks", wedding_id=wedding_id))
+
+    @app.route('/admin/wedding/<int:wedding_id>/tasks/reorder', methods=['POST'])
+    def admin_reorder_tasks(wedding_id):
+        data = request.get_json()
+
+        for item in data:
+            task = WeddingTask.query.get(item['id'])
+            task.order = item['order']
+
+        db.session.commit()
+        return jsonify({"status": "ok"})
+
+    @app.route('/admin/task/<int:task_id>/edit', methods=['GET', 'POST'])
+    def admin_edit_task(task_id):
+        task = WeddingTask.query.get_or_404(task_id)
+
+        if request.method == "POST":
+            task.task_name = request.form.get("task_name")
+            task.category = request.form.get("category")
+            task.required = ("required" in request.form)
+            task.shared = ("shared" in request.form)
+            task.notes = request.form.get("notes")
+            task.deadline = datetime.fromisoformat(request.form.get("deadline")) if request.form.get("deadline") else None
+
+            db.session.commit()
+            return redirect(url_for("admin_wedding_tasks", wedding_id=task.wedding_id))
+
+        return render_template("admin_edit_task.html", task=task)
+
+
+    @app.route('/admin/task/<int:task_id>/delete')
+    def admin_delete_task(task_id):
+        task = WeddingTask.query.get_or_404(task_id)
+        wedding_id = task.wedding_id
+
+        db.session.delete(task)
+        db.session.commit()
+
+        return redirect(url_for("admin_wedding_tasks", wedding_id=wedding_id))
+
+
+    @app.route('/api/staff_tasks/<int:wedding_id>/<int:employee_id>')
+    def api_staff_tasks(wedding_id, employee_id):
+        tasks = WeddingTask.query.filter_by(wedding_id=wedding_id).all()
+        now = datetime.now()
+
+        # Filter tasks visible to this staff member
+        visible = []
+        for t in tasks:
+            if t.assigned_to == employee_id:
+                visible.append(t)
+            elif t.shared:
+                visible.append(t)
+
+        # Sort overdue first, then by order
+        visible.sort(key=lambda t: (
+            0 if (t.deadline and t.deadline < now) else 1,
+            t.order
+        ))
+
+        out = []
+        for t in visible:
+            out.append({
+                "id": t.id,
+                "task_name": t.task_name,
+                "required": t.required,
+                "shared": t.shared,
+                "notes": t.notes,
+                "category": t.category,
+                "order": t.order,
+
+                # Assignment
+                "assigned_to": t.assigned_to,
+                "assigned_to_name": t.assigned_to_name,
+
+                # Completion
+                "is_done": t.is_done,
+                "done_by": t.done_by,
+                "done_by_name": t.done_by_name,
+                "done_at": t.done_at.strftime("%H:%M") if t.done_at else None,
+
+                # In-progress
+                "in_progress_by": t.in_progress_by,
+                "in_progress_by_name": t.in_progress_by_name,
+
+                # Deadline
+                "deadline": t.deadline.isoformat() if t.deadline else None
+            })
+
+        return jsonify(out)
+
+
+    @app.route('/weddings/<int:wedding_id>/coordinator')
+    def wedding_coordinator_dashboard(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        # Load all tasks for this wedding
+        tasks = WeddingTask.query.filter_by(wedding_id=wedding.id).order_by(
+            WeddingTask.order.asc()
+        ).all()
+
+        processed_tasks = []
+        done_count = 0
+
+        for t in tasks:
+            # Assigned staff name
+            assigned_name = None
+            if t.assigned_to:
+                emp = Employee.query.get(t.assigned_to)
+                if emp:
+                    assigned_name = emp.full_name
+
+            # Done by name
+            done_by_name = None
+            if t.done_by:
+                emp = Employee.query.get(t.done_by)
+                if emp:
+                    done_by_name = emp.full_name
+
+            # In-progress name
+            in_progress_name = None
+            if t.in_progress_by:
+                emp = Employee.query.get(t.in_progress_by)
+                if emp:
+                    in_progress_name = emp.full_name
+
+            if t.is_done:
+                done_count += 1
+
+            processed_tasks.append({
+                "task_name": t.task_name,
+                "required": t.required,
+                "shared": t.shared,
+                "notes": t.notes,
+                "is_done": t.is_done,
+                "assigned_to_name": assigned_name,
+                "done_by_name": done_by_name,
+                "done_at": t.done_at,
+                "in_progress_by_name": in_progress_name
+            })
+
+        # Completion percentage
+        total = len(tasks)
+        completion_percentage = int((done_count / total) * 100) if total > 0 else 0
+
+        return render_template(
+            'wedding_tasks_coordinator.html',
+            wedding=wedding,
+            tasks=processed_tasks,
+            completion_percentage=completion_percentage
+        )
+
+
     @app.route('/weddings/staffing')
     def wedding_staffing():
         weddings = Wedding.query.order_by(Wedding.date.asc()).all()
 
         wedding_rows = []
         for w in weddings:
-            staff_names = [a.staff.name for a in w.assignments]
+            # NEW: load staff names from Employee table
+            staff_ids = (w.staff_ids or "").split(",")
+            staff_names = [
+                Employee.query.get(int(sid)).full_name
+                for sid in staff_ids if sid
+            ]
 
             wedding_rows.append({
                 "id": w.id,
@@ -9019,15 +9365,19 @@ Cherbon Waters Admin
 
     @app.route('/staff/unavailability', methods=['GET', 'POST'])
     def manage_unavailability():
-        staff_list = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
+        # REAL EMPLOYEES — wedding staff only
+        staff_list = Employee.query.filter(
+            Employee.active == True,
+            Employee.categories.contains("wedding_staff")
+        ).order_by(Employee.full_name.asc()).all()
 
         if request.method == 'POST':
-            staff_id = int(request.form['staff_id'])
+            employee_id = int(request.form['staff_id'])
             date = request.form['date']
             reason = request.form.get('reason', '')
 
-            entry = WeddingStaffUnavailability(
-                staff_id=staff_id,
+            entry = EmployeeUnavailability(
+                employee_id=employee_id,
                 date=date,
                 reason=reason
             )
@@ -9036,8 +9386,8 @@ Cherbon Waters Admin
 
             return redirect(url_for('manage_unavailability'))
 
-        all_unavailability = WeddingStaffUnavailability.query.order_by(
-            WeddingStaffUnavailability.date.asc()
+        all_unavailability = EmployeeUnavailability.query.order_by(
+            EmployeeUnavailability.date.asc()
         ).all()
 
         return render_template(
@@ -9048,39 +9398,36 @@ Cherbon Waters Admin
 
     @app.route('/staff/unavailability/delete/<int:id>')
     def delete_unavailability(id):
-        entry = WeddingStaffUnavailability.query.get_or_404(id)
+        entry = EmployeeUnavailability.query.get_or_404(id)
         db.session.delete(entry)
         db.session.commit()
         return redirect(url_for('manage_unavailability'))
 
-
-
     @app.route('/weddings/staffing/<int:wedding_id>', methods=['GET', 'POST'])
     def edit_wedding_staffing(wedding_id):
         wedding = Wedding.query.get_or_404(wedding_id)
-        staff_list = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
+
+        staff_list = Employee.query.filter(
+            Employee.active == True,
+            Employee.categories.contains("wedding_staff")
+        ).order_by(Employee.full_name.asc()).all()
 
         if request.method == 'POST':
             raw_ids = request.form.get('staff_ids', '')
             selected_ids = [int(x) for x in raw_ids.split(',') if x.strip()]
 
-            WeddingAssignment.query.filter_by(wedding_id=wedding.id).delete()
-
-            for sid in selected_ids:
-                db.session.add(WeddingAssignment(
-                    wedding_id=wedding.id,
-                    staff_id=sid
-                ))
+            wedding.staff_ids = ",".join([str(x) for x in selected_ids])
 
             db.session.commit()
             return redirect(url_for('wedding_staffing'))
 
-        assigned_ids = [a.staff_id for a in wedding.assignments]
+        assigned_ids = [
+            int(x) for x in (wedding.staff_ids or "").split(",") if x
+        ]
 
-        # NEW: load unavailable staff for this wedding date
         unavailable_ids = {
-            u.staff_id
-            for u in WeddingStaffUnavailability.query.filter_by(date=wedding.date).all()
+            u.employee_id
+            for u in EmployeeUnavailability.query.filter_by(date=wedding.date).all()
         }
 
         return render_template(
@@ -9091,29 +9438,19 @@ Cherbon Waters Admin
             unavailable_ids=unavailable_ids
         )
 
-    @app.route('/weddings/staff/manage', methods=['GET', 'POST'])
+    @app.route('/weddings/staff/manage')
     def manage_wedding_staff():
-        if request.method == 'POST':
-            name = request.form.get('name', '').strip()
-            if name:
-                db.session.add(WeddingStaff(name=name))
-                db.session.commit()
-            return redirect(url_for('manage_wedding_staff'))
-
-        staff = WeddingStaff.query.order_by(WeddingStaff.name.asc()).all()
+        # REAL EMPLOYEES — only those marked as wedding staff
+        staff = Employee.query.filter(
+            Employee.active == True,
+            Employee.categories.contains("wedding_staff")
+        ).order_by(Employee.full_name.asc()).all()
 
         return render_template(
             'manage_wedding_staff.html',
             staff=staff
         )
-    @app.route('/weddings/staff/delete/<int:staff_id>')
-    def delete_wedding_staff(staff_id):
-        staff = WeddingStaff.query.get_or_404(staff_id)
 
-        db.session.delete(staff)
-        db.session.commit()
-
-        return redirect(url_for('manage_wedding_staff'))
 
     @app.route('/weddings/edit/<int:wedding_id>', methods=['GET', 'POST'])
     def edit_wedding(wedding_id):
@@ -9272,54 +9609,54 @@ Cherbon Waters Admin
         )
 
 
-    @app.route("/admin/employees/new", methods=["POST"])
-    def create_employee():
-        name = request.form.get("full_name")
-        if not name:
-            return "Missing name", 400
+        @app.route("/admin/employees/new", methods=["POST"])
+        def create_employee():
+            name = request.form.get("full_name")
+            if not name:
+                return "Missing name", 400
 
-        import secrets
-        setup_code = "CW-" + secrets.token_hex(3).upper()
+            import secrets
+            setup_code = "CW-" + secrets.token_hex(3).upper()
 
-        emp = Employee(full_name=name, setup_code=setup_code)
-        db.session.add(emp)
-        db.session.commit()
+            emp = Employee(full_name=name, setup_code=setup_code)
+            db.session.add(emp)
+            db.session.commit()
 
-        return {"status": "ok", "setup_code": setup_code}
+            return {"status": "ok", "setup_code": setup_code}
 
 
-    @app.route("/admin/employees/<int:emp_id>/hours")
-    def admin_employee_hours_list(emp_id):
-        emp = Employee.query.get_or_404(emp_id)
+        @app.route("/admin/employees/<int:emp_id>/hours")
+        def admin_employee_hours_list(emp_id):
+            emp = Employee.query.get_or_404(emp_id)
 
-        # Determine which week to show
-        today = date.today()
-        current_week = int(request.args.get("week", 0))
+            # Determine which week to show
+            today = date.today()
+            current_week = int(request.args.get("week", 0))
 
-        # If no week provided → default to current week
-        if current_week == 0:
-            current_week = today.isocalendar().week
+            # If no week provided → default to current week
+            if current_week == 0:
+                current_week = today.isocalendar().week
 
-        # Compute Monday of that ISO week
-        year = today.year
-        start_of_week = date.fromisocalendar(year, current_week, 1)
-        end_of_week = start_of_week + timedelta(days=6)
+            # Compute Monday of that ISO week
+            year = today.year
+            start_of_week = date.fromisocalendar(year, current_week, 1)
+            end_of_week = start_of_week + timedelta(days=6)
 
-        # Load rows for this week
-        rows = EmployeeHours.query.filter(
-            EmployeeHours.employee_id == emp_id,
-            EmployeeHours.date >= start_of_week,
-            EmployeeHours.date <= end_of_week
-        ).order_by(EmployeeHours.date.asc()).all()
+            # Load rows for this week
+            rows = EmployeeHours.query.filter(
+                EmployeeHours.employee_id == emp_id,
+                EmployeeHours.date >= start_of_week,
+                EmployeeHours.date <= end_of_week
+            ).order_by(EmployeeHours.date.asc()).all()
 
-        return render_template(
-            "admin_employee_hours_list.html",
-            emp=emp,
-            rows=rows,
-            current_week=current_week,
-            start_of_week=start_of_week,
-            end_of_week=end_of_week
-        )
+            return render_template(
+                "admin_employee_hours_list.html",
+                emp=emp,
+                rows=rows,
+                current_week=current_week,
+                start_of_week=start_of_week,
+                end_of_week=end_of_week
+            )
 
     @app.route("/admin/employees/hours/<int:row_id>/edit")
     def admin_edit_hours(row_id):
@@ -10315,6 +10652,34 @@ Cherbon Waters Admin
             db.session.commit()
 
         return redirect(f"/admin/employeehours/day/{d}/{emp_id}")
+
+
+
+    @app.route("/wedding_tasks/<int:task_id>/done", methods=["POST"])
+    def wedding_task_done(task_id):
+        if "employee_id" not in session:
+            return "Not logged in", 403
+
+        staff_id = session["employee_id"]
+        staff_name = session.get("full_name", "Unknown")
+
+        task = WeddingTasks.query.get_or_404(task_id)
+
+        # Only allow if assigned or shared
+        if task.assigned_to != staff_id and not task.shared:
+            return "Forbidden", 403
+
+        task.is_done = True
+        task.done_by = staff_id
+        task.done_by_name = staff_name
+        task.done_at = datetime.utcnow()
+
+        db.session.commit()
+        return "OK"
+
+
+
+
 
 
 

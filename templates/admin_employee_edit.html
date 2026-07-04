@@ -42,6 +42,43 @@
                            value="{{ emp.role or '' }}">
                 </div>
 
+<div class="mb-3">
+    <label class="form-label">Categories</label>
+
+    <select name="categories" class="form-select" multiple size="5">
+        <option value="wedding_staff"
+            {% if emp.categories and 'wedding_staff' in emp.categories %}selected{% endif %}>
+            Wedding Staff
+        </option>
+
+        <option value="wedding_coordinator"
+            {% if emp.categories and 'wedding_coordinator' in emp.categories %}selected{% endif %}>
+            Wedding Coordinator
+        </option>
+
+        <option value="equestrian_teacher"
+            {% if emp.categories and 'equestrian_teacher' in emp.categories %}selected{% endif %}>
+            Equestrian Teacher
+        </option>
+
+        <option value="equestrian_strapper"
+            {% if emp.categories and 'equestrian_strapper' in emp.categories %}selected{% endif %}>
+            Equestrian Strapper
+        </option>
+
+        <option value="admin"
+            {% if emp.categories and 'admin' in emp.categories %}selected{% endif %}>
+            Admin
+        </option>
+    </select>
+
+    <small class="text-muted">
+        Hold CTRL to select multiple categories.
+    </small>
+</div>
+
+
+
                 <div class="form-check mb-3">
                     <input class="form-check-input"
                            type="checkbox"

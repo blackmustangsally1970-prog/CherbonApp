@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Edit Task</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+        input[type=text], textarea, input[type=datetime-local] {
+            width: 100%;
+            padding: 6px;
+            margin-top: 4px;
+        }
+        .btn {
+            padding: 8px 14px;
+            background: #0275d8;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-cancel {
+            background: #6c757d;
+        }
+        .field {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Edit Task</h1>
+
+    <p><strong>Wedding:</strong> {{ task.wedding.couple_name }}</p>
+    <p><strong>Date:</strong> {{ task.wedding.date }}</p>
+
+    <hr>
+
+    <form method="POST">
+
+        <div class="field">
+            <label>Task Name:</label>
+            <input type="text" name="task_name" value="{{ task.task_name }}" required>
+        </div>
+
+        <div class="field">
+            <label>Category:</label>
+            <input type="text" name="category" value="{{ task.category }}">
+        </div>
+
+        <div class="field">
+            <label>Required?</label><br>
+            <input type="checkbox" name="required" {% if task.required %}checked{% endif %}>
+        </div>
+
+        <div class="field">
+            <label>Shared?</label><br>
+            <input type="checkbox" name="shared" {% if task.shared %}checked{% endif %}>
+        </div>
+
+        <div class="field">
+            <label>Deadline:</label>
+            <input type="datetime-local" name="deadline"
+                   value="{{ task.deadline.strftime('%Y-%m-%dT%H:%M') if task.deadline else '' }}">
+        </div>
+
+        <div class="field">
+            <label>Notes:</label>
+            <textarea name="notes">{{ task.notes }}</textarea>
+        </div>
+
+        <button class="btn">Save Changes</button>
+        <a class="btn btn-cancel" href="{{ url_for('admin_wedding_tasks', wedding_id=task.wedding_id) }}">Cancel</a>
+
+    </form>
+
+</body>
+</html>

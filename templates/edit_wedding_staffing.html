@@ -97,7 +97,7 @@
                          {% if s.id in unavailable_ids %}unavailable{% endif %}"
                          data-id="{{ s.id }}"
                          title="{% if s.id in unavailable_ids %}Unavailable{% endif %}">
-                        {{ s.name }}
+                        {{ s.full_name }}
                     </div>
                 {% endif %}
             {% endfor %}
@@ -112,7 +112,7 @@
                          {% if s.id in unavailable_ids %}unavailable{% endif %}"
                          data-id="{{ s.id }}"
                          title="{% if s.id in unavailable_ids %}Unavailable{% endif %}">
-                        {{ s.name }}
+                        {{ s.full_name }}
                     </div>
                 {% endif %}
             {% endfor %}

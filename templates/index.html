@@ -179,17 +179,17 @@
     <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
   </li>
 
-  <!-- ⭐ WEDDING TASKS -->
-  {% if current_user.role in ['manager', 'coordinator'] %}
-  <li>
-      <a href="{{ url_for('wedding_task_admin', wedding_id=1) }}" class="menu-btn">💍 Wedding Task Admin</a>
-  </li>
-  {% endif %}
-
+<!-- ⭐ WEDDING TASKS -->
+{% if current_user.role == 'manager' %}
 <li>
     <a href="{{ url_for('weddings_menu') }}" class="menu-btn">💒 Weddings</a>
 </li>
-  <!-- ⭐ END WEDDING TASKS -->
+{% elif current_user.role == 'coordinator' %}
+<li>
+    <a href="{{ url_for('weddings_menu') }}" class="menu-btn">💒 Weddings</a>
+</li>
+{% endif %}
+<!-- ⭐ END WEDDING TASKS -->
 
   <li>
     <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>

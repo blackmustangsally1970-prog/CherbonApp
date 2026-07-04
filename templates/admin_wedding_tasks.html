@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Admin — Wedding Tasks</title>
+
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 8px; border-bottom: 1px solid #ccc; }
+        input[type=text], textarea { width: 100%; }
+        .btn { padding: 6px 12px; background: #0275d8; color: white; border-radius: 4px; text-decoration: none; }
+        .btn-danger { background: #d9534f; }
+        tr.dragging { background: #f0f8ff; }
+    </style>
+
+    <!-- ⭐ Drag & Drop Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+
+<h1>Admin — Wedding Tasks</h1>
+
+<p><strong>Wedding:</strong> {{ wedding.couple_name }}</p>
+<p><strong>Date:</strong> {{ wedding.date }}</p>
+
+<hr>
+
+<h2>Add New Task</h2>
+
+<form method="POST" action="{{ url_for('admin_add_task', wedding_id=wedding.id) }}">
+    <p>Task Name:<br>
+        <input type="text" name="task_name" required>
+    </p>
+
+    <p>Category:<br>
+        <input type="text" name="category" placeholder="setup / ceremony / reception / packdown">
+    </p>
+
+    <p>Required?<br>
+        <input type="checkbox" name="required" checked>
+    </p>
+
+    <p>Shared?<br>
+        <input type="checkbox" name="shared">
+    </p>
+
+    <p>Deadline:<br>
+        <input type="datetime-local" name="deadline">
+    </p>
+
+    <p>Notes:<br>
+        <textarea name="notes"></textarea>
+    </p>
+
+    <button class="btn">Add Task</button>
+</form>
+
+<hr>
+
+<h2>Existing Tasks (Drag to Reorder)</h2>
+
+<table id="task-table">
+    <tr>
+        <th>Task</th>
+        <th>Category</th>
+        <th>Required</th>
+        <th>Shared</th>
+        <th>Deadline</th>
+        <th>Assigned To</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for t in tasks %}
+    <tr data-id="{{ t.id }}">
+        <td>{{ t.task_name }}</td>
+        <td>{{ t.category }}</td>
+        <td>{{ 'Yes' if t.required else 'No' }}</td>
+        <td>{{ 'Yes' if t.shared else 'No' }}</td>
+        <td>{{ t.deadline }}</td>
+        <td>{{ t.assigned_to_name or 'Unassigned' }}</td>
+        <td>
+            <a class="btn" href="{{ url_for('admin_edit_task', task_id=t.id) }}">Edit</a>
+            <a class="btn btn-danger" href="{{ url_for('admin_delete_task', task_id=t.id) }}">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<script>
+    // ⭐ Enable drag & drop on admin task table
+    const table = document.getElementById('task-table');
+
+    Sortable.create(table, {
+        animation: 150,
+        handle: 'td',
+        draggable: 'tr[data-id]',
+        onEnd: function(evt) {
+            const rows = table.querySelectorAll('tr[data-id]');
+            const orderData = [];
+
+            rows.forEach((row, index) => {
+                orderData.push({
+                    id: row.dataset.id,
+                    order: index
+                });
+            });
+
+            // ⭐ Send new order to backend
+            fetch("/admin/wedding/{{ wedding.id }}/tasks/reorder", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(orderData)
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,18 +1,24 @@
 <h2>Wedding Menu</h2>
 
-<p>Select a wedding tool:</p>
+<p>Select a wedding:</p>
 
 <ul style="line-height: 2; font-size: 18px;">
 
+    {% for w in weddings %}
     <li>
-        <a href="{{ url_for('wedding_tasks', wedding_id=1) }}">📝 Wedding Tasks</a>
-    </li>
+        <strong>{{ w.couple_name }}</strong> — {{ w.date }}
 
-{% if current_user.role in ['admin', 'manager', 'coordinator'] %}
-<li>
-    <a href="{{ url_for('wedding_task_admin', wedding_id=1) }}">💍 Wedding Task Admin</a>
-</li>
-{% endif %}
+        <!-- Coordinator + Staff: Wedding Tasks -->
+        {% if current_user.role in ['coordinator', 'staff'] %}
+            <a href="{{ url_for('wedding_tasks', wedding_id=w.id) }}">📝 Wedding Tasks</a>
+        {% endif %}
+
+        <!-- Manager/Admin: Admin Task Entry -->
+        {% if current_user.role in ['admin', 'manager'] %}
+            <a href="{{ url_for('admin_wedding_tasks', wedding_id=w.id) }}">💍 Manage Tasks</a>
+        {% endif %}
+    </li>
+    {% endfor %}
 
     <li>
         <span style="color:#888;">📋 Wedding Staffing (coming soon)</span>

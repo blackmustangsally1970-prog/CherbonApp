@@ -21,17 +21,47 @@ class WeddingTask(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     wedding_id = db.Column(db.Integer, nullable=False)
+
+    # Core task info
     task_name = db.Column(db.Text, nullable=False)
     task_type = db.Column(db.String(20), nullable=False)  # 'coordinator' or 'staff'
-    assigned_to = db.Column(db.Integer)  # employee_id or None
-    is_done = db.Column(db.Boolean, default=False)
 
-    done_by = db.Column(db.Integer)      # employee_id
+    # Assignment
+    assigned_to = db.Column(db.Integer)          # employee_id or None
+    assigned_to_name = db.Column(db.Text)        # cached for speed
+
+    # Completion
+    is_done = db.Column(db.Boolean, default=False)
+    done_by = db.Column(db.Integer)              # employee_id
     done_by_name = db.Column(db.Text)
     done_at = db.Column(db.DateTime)
 
+    # In-progress tracking
+    in_progress_by = db.Column(db.Integer)       # employee_id
+    in_progress_by_name = db.Column(db.Text)
+    in_progress_at = db.Column(db.DateTime)      # timestamp when started
+
+    # Coordinator-specific
+    coordinator_id = db.Column(db.Integer)       # employee_id (optional)
+
+    # Flags
+    required = db.Column(db.Boolean, default=True)
+    shared = db.Column(db.Boolean, default=False)
+
+    # Categorisation
+    category = db.Column(db.String(50))          # 'setup', 'ceremony', 'reception', etc.
+
+    # Notes
+    notes = db.Column(db.Text)
+
+    # Deadlines (Option A)
+    deadline = db.Column(db.DateTime)
+
+    # Ordering (Option E)
+    order = db.Column(db.Integer, default=0)
+
+    # System fields
     updated_at = db.Column(db.DateTime, server_default=db.func.now())
-    sequence_number = db.Column(db.Integer, default=0)
 
 
 class Receipt(db.Model):
