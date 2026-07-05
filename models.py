@@ -486,14 +486,33 @@ class CourseReference(db.Model):
 
 
 class Wedding(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
-    notes = db.Column(db.Text)
-    category = db.Column(db.String(10), default='WR')
-    pax = db.Column(db.Integer)
-    time = db.Column(db.String(50))
-    service1 = db.Column(db.String(100))   # ← single editable 1st Service field
+    __tablename__ = 'weddings'
 
+    id = db.Column(db.Integer, primary_key=True)
+
+    bride_name = db.Column(db.String(120))
+    groom_name = db.Column(db.String(120))
+
+    wedding_date = db.Column(db.Date, nullable=False)
+
+    status = db.Column(db.String(50), default='active')
+
+    # Cancel fields
+    cancel_reason = db.Column(db.Text)
+    cancelled_at = db.Column(db.DateTime)
+
+    # Postpone fields
+    postpone_reason = db.Column(db.Text)
+    postponed_at = db.Column(db.DateTime)
+
+    # Archive fields
+    archive_reason = db.Column(db.Text)
+    archived_at = db.Column(db.DateTime)
+
+    # Optional notes
+    notes = db.Column(db.Text)
+
+    # Relationship to staff assignments
     assignments = db.relationship(
         'WeddingAssignment',
         backref='wedding',
