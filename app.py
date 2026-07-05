@@ -11401,6 +11401,36 @@ Cherbon Waters Admin
         tasks = WeddingTaskLibrary.query.order_by(WeddingTaskLibrary.default_order.asc()).all()
         return render_template('task_library.html', tasks=tasks)
 
+    @app.route('/admin/task_library/toggle/<int:task_id>')
+    def task_library_toggle(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        task.active = not task.active
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+
+
+    @app.route('/admin/task_library/<int:task_id>/activate')
+    def task_library_activate(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        task.active = True
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/<int:task_id>/deactivate')
+    def task_library_deactivate(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        task.active = False
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/<int:task_id>/delete')
+    def task_library_delete(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        db.session.delete(task)
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
     @app.route('/admin/task_library/add', methods=['GET', 'POST'])
     def task_library_add():
         if request.method == 'POST':
@@ -11429,28 +11459,6 @@ Cherbon Waters Admin
             return redirect(url_for('task_library'))
 
         return render_template('task_library_add.html')
-
-    @app.route('/admin/task_library/<int:task_id>/activate')
-    def task_library_activate(task_id):
-        task = WeddingTaskLibrary.query.get_or_404(task_id)
-        task.active = True
-        db.session.commit()
-        return redirect(url_for('task_library'))
-
-    @app.route('/admin/task_library/<int:task_id>/deactivate')
-    def task_library_deactivate(task_id):
-        task = WeddingTaskLibrary.query.get_or_404(task_id)
-        task.active = False
-        db.session.commit()
-        return redirect(url_for('task_library'))
-
-    @app.route('/admin/task_library/<int:task_id>/delete')
-    def task_library_delete(task_id):
-        task = WeddingTaskLibrary.query.get_or_404(task_id)
-        db.session.delete(task)
-        db.session.commit()
-        return redirect(url_for('task_library'))
-
 
 
     @app.route('/admin/wedding/add', methods=['GET', 'POST'])
@@ -11610,24 +11618,7 @@ Cherbon Waters Admin
         weddings = Wedding.query.order_by(Wedding.date.asc()).all()
         return render_template('weddings_menu.html', weddings=weddings, user=current_user)
 
-    @app.route('/admin/task_library')
-    def task_library():
-        tasks = WeddingTaskLibrary.query.order_by(
-            WeddingTaskLibrary.default_order.asc()
-        ).all()
 
-        return render_template(
-            'task_library.html',
-            tasks=tasks
-        )
-
-
-    @app.route('/admin/task_library/toggle/<int:task_id>')
-    def task_library_toggle(task_id):
-        task = WeddingTaskLibrary.query.get_or_404(task_id)
-        task.active = not task.active
-        db.session.commit()
-        return redirect(url_for('task_library'))
 
     @app.route('/admin/task_library/move/<int:task_id>/<string:direction>')
     def task_library_move(task_id, direction):
@@ -11643,21 +11634,6 @@ Cherbon Waters Admin
 
         db.session.commit()
         return redirect(url_for('task_library'))
-
-    @app.route('/admin/task_library/edit/<int:task_id>', methods=['POST'])
-    def task_library_edit(task_id):
-        task = WeddingTaskLibrary.query.get_or_404(task_id)
-
-        task.task_name = request.form.get('task_name')
-        task.task_type = request.form.get('task_type')
-        task.default_notes = request.form.get('default_notes')
-        task.default_required = bool(request.form.get('default_required'))
-        task.default_shared = bool(request.form.get('default_shared'))
-        task.default_category = request.form.get('default_category')
-
-        db.session.commit()
-        return redirect(url_for('task_library'))
-
 
     @app.route('/client_view')
     def client_view():
