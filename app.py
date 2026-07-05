@@ -11469,34 +11469,6 @@ Cherbon Waters Admin
 
         return render_template('task_library_edit.html', task=task)
 
-    @app.route('/admin/task_library/add', methods=['GET', 'POST'])
-    def task_library_add():
-        if request.method == 'POST':
-            task_name = request.form.get('task_name')
-            task_type = request.form.get('task_type')
-            default_category = request.form.get('default_category')
-            default_order = int(request.form.get('default_order') or 0)
-            default_required = bool(request.form.get('default_required'))
-            default_shared = bool(request.form.get('default_shared'))
-            default_notes = request.form.get('default_notes')
-
-            new_task = WeddingTaskLibrary(
-                task_name=task_name,
-                task_type=task_type,
-                default_category=default_category,
-                default_order=default_order,
-                default_required=default_required,
-                default_shared=default_shared,
-                default_notes=default_notes,
-                active=True
-            )
-
-            db.session.add(new_task)
-            db.session.commit()
-
-            return redirect(url_for('task_library'))
-
-        return render_template('task_library_add.html')
 
 
 
