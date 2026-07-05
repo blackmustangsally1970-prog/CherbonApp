@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Master Wedding List</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container" style="margin-top:30px;">
+
+    <h2>Master Wedding List</h2>
+
+    <div style="margin-bottom:20px;">
+        <a href="/admin/wedding/add" class="btn btn-primary btn-sm">Add Wedding</a>
+    </div>
+
+    <!-- FILTER TABS -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#active">Active</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#postponed">Postponed</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#cancelled">Cancelled</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#archived">Archived</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" style="margin-top:20px;">
+
+        <!-- ACTIVE -->
+        <div class="tab-pane fade show active" id="active">
+            <h4>Active Weddings</h4>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Bride</th>
+                        <th>Groom</th>
+                        <th>Status</th>
+                        <th style="width:200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in weddings_active %}
+                    <tr>
+                        <td>{{ w.wedding_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ w.bride_name }}</td>
+                        <td>{{ w.groom_name }}</td>
+                        <td><span class="badge bg-primary">Active</span></td>
+                        <td>
+                            <a href="/admin/wedding/{{ w.id }}" class="btn btn-sm btn-info">View</a>
+                            <a href="/admin/wedding/{{ w.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="/admin/wedding/{{ w.id }}/cancel" class="btn btn-sm btn-danger">Cancel</a>
+                            <a href="/admin/wedding/{{ w.id }}/postpone" class="btn btn-sm btn-warning">Postpone</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- POSTPONED -->
+        <div class="tab-pane fade" id="postponed">
+            <h4>Postponed Weddings</h4>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Bride</th>
+                        <th>Groom</th>
+                        <th>Status</th>
+                        <th style="width:200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in weddings_postponed %}
+                    <tr>
+                        <td>{{ w.wedding_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ w.bride_name }}</td>
+                        <td>{{ w.groom_name }}</td>
+                        <td><span class="badge bg-warning">Postponed</span></td>
+                        <td>
+                            <a href="/admin/wedding/{{ w.id }}" class="btn btn-sm btn-info">View</a>
+                            <a href="/admin/wedding/{{ w.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="/admin/wedding/{{ w.id }}/restore" class="btn btn-sm btn-success">Restore</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CANCELLED -->
+        <div class="tab-pane fade" id="cancelled">
+            <h4>Cancelled Weddings</h4>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Bride</th>
+                        <th>Groom</th>
+                        <th>Status</th>
+                        <th style="width:200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in weddings_cancelled %}
+                    <tr>
+                        <td>{{ w.wedding_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ w.bride_name }}</td>
+                        <td>{{ w.groom_name }}</td>
+                        <td><span class="badge bg-danger">Cancelled</span></td>
+                        <td>
+                            <a href="/admin/wedding/{{ w.id }}" class="btn btn-sm btn-info">View</a>
+                            <a href="/admin/wedding/{{ w.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="/admin/wedding/{{ w.id }}/restore" class="btn btn-sm btn-success">Restore</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ARCHIVED -->
+        <div class="tab-pane fade" id="archived">
+            <h4>Archived Weddings</h4>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Bride</th>
+                        <th>Groom</th>
+                        <th>Status</th>
+                        <th style="width:200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in weddings_archived %}
+                    <tr>
+                        <td>{{ w.wedding_date.strftime('%d %b %Y') }}</td>
+                        <td>{{ w.bride_name }}</td>
+                        <td>{{ w.groom_name }}</td>
+                        <td><span class="badge bg-dark">Archived</span></td>
+                        <td>
+                            <a href="/admin/wedding/{{ w.id }}" class="btn btn-sm btn-info">View</a>
+                            <a href="/admin/wedding/{{ w.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="/admin/wedding/{{ w.id }}/restore" class="btn btn-sm btn-success">Restore</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

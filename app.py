@@ -49,9 +49,12 @@ from models import (
     Users,
     Wedding,
     WeddingAssignment,
+    WeddingDetailLibrary,
     WeddingStaff,
     WeddingStaffUnavailability,
     WeddingTask,
+    WeddingTaskLibrary,
+    WeddingTemplateField,
     WeeklyEvent,
     Employee,
     EmployeeHours
@@ -1253,6 +1256,23 @@ def build_lesson_from_payload(l, client_id, client_name=""):
         payment     = payment,
     )
 
+def get_current_employee():
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
+    return Employee.query.filter_by(user_id=user_id).first()
+
+def get_employee_role(employee):
+    if not employee:
+        return 'guest'
+
+    if employee.role == 'admin':
+        return 'admin'
+
+    if employee.role == 'coordinator':
+        return 'coordinator'
+
+    return 'staff'
 
 
 def handle_existing_client(data):
@@ -10623,6 +10643,27 @@ Cherbon Waters Admin
 
         return redirect(f"/admin/employeehours/day/{d}/{emp_id}")
 
+    @app.route('/admin/wedding_staff/<int:staff_id>/edit', methods=['GET', 'POST'])
+    def wedding_staff_edit(staff_id):
+        staff = WeddingStaff.query.get_or_404(staff_id)
+
+        if request.method == 'POST':
+            staff.employee_id = request.form.get('employee_id')
+            staff.role = request.form.get('role')
+
+            db.session.commit()
+
+            return redirect(url_for('wedding_details_hub', wedding_id=staff.wedding_id))
+
+        # GET request → show edit form
+        employees = Employee.query.order_by(Employee.full_name.asc()).all()
+
+        return render_template(
+            'wedding_staff_edit.html',
+            staff=staff,
+            employees=employees
+        )
+
 
 
     @app.route("/wedding_tasks/<int:task_id>/done", methods=["POST"])
@@ -10839,6 +10880,223 @@ Cherbon Waters Admin
     def enquiries_home():
         return render_template('enquiries_home.html')
 
+    @app.route('/admin/wedding_template')
+    def wedding_template():
+        fields = WeddingTemplateField.query.order_by(
+            WeddingTemplateField.field_order.asc()
+        ).all()
+
+        return render_template(
+            'wedding_template.html',
+            fields=fields
+        )
+
+    @app.route('/admin/wedding/<int:wedding_id>')
+    def wedding_details_hub(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        # -----------------------------------------
+        # GET CURRENT EMPLOYEE + ROLE
+        # -----------------------------------------
+        employee = get_current_employee()
+        role = get_employee_role(employee)
+
+        # -----------------------------------------
+        # ROLE-BASED DETAIL FILTERING
+        # -----------------------------------------
+        if role == 'admin':
+            details = WeddingDetail.query.filter_by(
+                wedding_id=wedding_id
+            ).order_by(WeddingDetail.order.asc()).all()
+
+        elif role == 'coordinator':
+            details = WeddingDetail.query.filter(
+                WeddingDetail.wedding_id == wedding_id,
+                WeddingDetail.coordinator_visible == True
+            ).order_by(WeddingDetail.order.asc()).all()
+
+        else:  # staff
+            details = WeddingDetail.query.filter(
+                WeddingDetail.wedding_id == wedding_id,
+                WeddingDetail.staff_visible == True
+            ).order_by(WeddingDetail.order.asc()).all()
+
+        # -----------------------------------------
+        # ROLE-BASED TASK FILTERING
+        # -----------------------------------------
+        if role == 'admin':
+            tasks = WeddingTask.query.filter_by(
+                wedding_id=wedding_id
+            ).order_by(WeddingTask.order.asc()).all()
+
+        elif role == 'coordinator':
+            tasks = WeddingTask.query.filter(
+                WeddingTask.wedding_id == wedding_id,
+                WeddingTask.task_type.in_(['admin', 'coordinator'])
+            ).order_by(WeddingTask.order.asc()).all()
+
+        else:  # staff
+            tasks = WeddingTask.query.filter(
+                WeddingTask.wedding_id == wedding_id,
+                WeddingTask.task_type == 'staff'
+            ).order_by(WeddingTask.order.asc()).all()
+
+        # -----------------------------------------
+        # STAFF LIST (always admin-only)
+        # -----------------------------------------
+        staff = WeddingStaff.query.filter_by(
+            wedding_id=wedding_id
+        ).all()
+
+        # -----------------------------------------
+        # EMPLOYEES LIST (admin-only)
+        # -----------------------------------------
+        employees = Employee.query.order_by(Employee.full_name.asc()).all()
+
+        return render_template(
+            'wedding_details_hub.html',
+            wedding=wedding,
+            details=details,
+            tasks=tasks,
+            staff=staff,
+            employees=employees,
+            role=role
+        )
+
+    @app.route('/admin/wedding_detail/<int:detail_id>/update', methods=['POST'])
+    def wedding_detail_update(detail_id):
+        detail = WeddingDetail.query.get_or_404(detail_id)
+
+        # Checkbox handling
+        if detail.field_type == 'checkbox':
+            value = 'on' if request.form.get('value') else 'off'
+        else:
+            value = request.form.get('value')
+
+        detail.value = value
+        db.session.commit()
+
+        return redirect(url_for('wedding_details_hub', wedding_id=detail.wedding_id))
+
+    @app.route('/admin/wedding_task/<int:task_id>/update', methods=['POST'])
+    def wedding_task_update(task_id):
+        task = WeddingTask.query.get_or_404(task_id)
+
+        task.task_name = request.form.get('task_name')
+        task.notes = request.form.get('notes')
+
+        # Assigned staff
+        assigned_id = request.form.get('assigned_to')
+        if assigned_id:
+            task.assigned_to = int(assigned_id)
+        else:
+            task.assigned_to = None
+
+        # Required flag
+        task.required = True if request.form.get('required') else False
+
+        # Shared flag
+        task.shared = True if request.form.get('shared') else False
+
+        # Order
+        new_order = request.form.get('order')
+        if new_order:
+            task.order = int(new_order)
+
+        db.session.commit()
+
+        return redirect(url_for('wedding_details_hub', wedding_id=task.wedding_id))
+
+    @app.route('/admin/wedding_task/<int:task_id>/toggle')
+    def wedding_task_toggle(task_id):
+        task = WeddingTask.query.get_or_404(task_id)
+
+        # Flip completion state
+        task.completed = not task.completed
+
+        # If completed, set done_by + done_at
+        if task.completed:
+            task.done_by = current_user.id
+            task.done_at = datetime.utcnow()
+        else:
+            task.done_by = None
+            task.done_at = None
+
+        db.session.commit()
+
+        return redirect(url_for('wedding_details_hub', wedding_id=task.wedding_id))
+
+
+    @app.route('/admin/wedding_template/add', methods=['POST'])
+    def wedding_template_add():
+        name = request.form.get('field_name')
+        field_type = request.form.get('field_type')
+        category = request.form.get('category')
+        required = bool(request.form.get('required'))
+        staff_visible = bool(request.form.get('staff_visible'))
+        coordinator_visible = bool(request.form.get('coordinator_visible'))
+        default_value = request.form.get('default_value')
+
+        max_order = db.session.query(
+            db.func.max(WeddingTemplateField.field_order)
+        ).scalar() or 0
+
+        new_field = WeddingTemplateField(
+            field_name=name,
+            field_type=field_type,
+            category=category,
+            required=required,
+            staff_visible=staff_visible,
+            coordinator_visible=coordinator_visible,
+            default_value=default_value,
+            field_order=max_order + 1,
+            active=True
+        )
+
+        db.session.add(new_field)
+        db.session.commit()
+
+        return redirect(url_for('wedding_template'))
+
+
+    @app.route('/admin/wedding_template/toggle/<int:field_id>')
+    def wedding_template_toggle(field_id):
+        field = WeddingTemplateField.query.get_or_404(field_id)
+        field.active = not field.active
+        db.session.commit()
+        return redirect(url_for('wedding_template'))
+
+    @app.route('/admin/wedding_template/move/<int:field_id>/<string:direction>')
+    def wedding_template_move(field_id, direction):
+        field = WeddingTemplateField.query.get_or_404(field_id)
+
+        if direction == 'up':
+            field.field_order -= 1
+        elif direction == 'down':
+            field.field_order += 1
+
+        if field.field_order < 0:
+            field.field_order = 0
+
+        db.session.commit()
+        return redirect(url_for('wedding_template'))
+
+    @app.route('/admin/wedding_template/edit/<int:field_id>', methods=['POST'])
+    def wedding_template_edit(field_id):
+        field = WeddingTemplateField.query.get_or_404(field_id)
+
+        field.field_name = request.form.get('field_name')
+        field.field_type = request.form.get('field_type')
+        field.category = request.form.get('category')
+        field.required = bool(request.form.get('required'))
+        field.staff_visible = bool(request.form.get('staff_visible'))
+        field.coordinator_visible = bool(request.form.get('coordinator_visible'))
+        field.default_value = request.form.get('default_value')
+
+        db.session.commit()
+        return redirect(url_for('wedding_template'))
+
+
 
     @app.route('/wedding/<int:wedding_id>/tasks')
     @login_required
@@ -10921,19 +11179,32 @@ Cherbon Waters Admin
 
         return redirect(f'/wedding/{wedding_id}/task_admin')
 
-    @app.route('/delete_task', methods=['POST'])
-    @login_required
-    def delete_task():
-        task_id = request.form['task_id']
-        wedding_id = request.form['wedding_id']
+    @app.route('/admin/wedding/<int:wedding_id>/staff/add', methods=['POST'])
+    def wedding_staff_add(wedding_id):
+        employee_id = request.form.get('employee_id')
+        role = request.form.get('role')
 
-        task = WeddingTask.query.get(task_id)
+        new_staff = WeddingStaff(
+            wedding_id=wedding_id,
+            employee_id=employee_id,
+            role=role
+        )
 
-        if task:
-            db.session.delete(task)
-            db.session.commit()
+        db.session.add(new_staff)
+        db.session.commit()
 
-        return redirect(f'/wedding/{wedding_id}/task_admin')
+        return redirect(url_for('wedding_details_hub', wedding_id=wedding_id))
+
+
+    @app.route('/admin/wedding_task/<int:task_id>/delete')
+    def wedding_task_delete(task_id):
+        task = WeddingTask.query.get_or_404(task_id)
+        wedding_id = task.wedding_id
+
+        db.session.delete(task)
+        db.session.commit()
+
+        return redirect(url_for('wedding_details_hub', wedding_id=wedding_id))
 
     @app.route('/edit_task', methods=['POST'])
     @login_required
@@ -10952,11 +11223,515 @@ Cherbon Waters Admin
 
         return redirect(f'/wedding/{wedding_id}/task_admin')
 
+    @app.route('/admin/wedding_staff/<int:staff_id>/remove')
+    def wedding_staff_remove(staff_id):
+        staff = WeddingStaff.query.get_or_404(staff_id)
+        wedding_id = staff.wedding_id
+
+        db.session.delete(staff)
+        db.session.commit()
+
+        return redirect(url_for('wedding_details_hub', wedding_id=wedding_id))
+
+    @app.route('/admin/wedding/<int:wedding_id>/cancel', methods=['GET', 'POST'])
+    def wedding_cancel(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        if request.method == 'POST':
+            wedding.status = 'cancelled'
+            wedding.cancel_reason = request.form.get('cancel_reason')
+            wedding.cancelled_at = datetime.utcnow()
+
+            db.session.commit()
+
+            return redirect(url_for('wedding_details_hub', wedding_id=wedding_id))
+
+        return render_template(
+            'wedding_cancel.html',
+            wedding=wedding
+        )
+
+
+    @app.route('/admin/wedding/<int:wedding_id>/postpone', methods=['GET', 'POST'])
+    def wedding_postpone(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        if request.method == 'POST':
+            new_date = request.form.get('new_date')
+
+            # Update wedding status + date
+            wedding.status = 'postponed'
+            wedding.postpone_reason = request.form.get('postpone_reason')
+            wedding.postponed_at = datetime.utcnow()
+
+            # Save new date if provided
+            if new_date:
+                wedding.wedding_date = datetime.strptime(new_date, '%Y-%m-%d')
+
+            db.session.commit()
+
+            return redirect(url_for('wedding_details_hub', wedding_id=wedding_id))
+
+        return render_template(
+            'wedding_postpone.html',
+            wedding=wedding
+        )
+
+    @app.route('/admin/wedding/<int:wedding_id>/archive', methods=['GET', 'POST'])
+    def wedding_archive(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        if request.method == 'POST':
+            wedding.status = 'archived'
+            wedding.archived_at = datetime.utcnow()
+            wedding.archive_reason = request.form.get('archive_reason')
+
+            db.session.commit()
+
+            return redirect(url_for('wedding_details_hub', wedding_id=wedding_id))
+
+        return render_template(
+            'wedding_archive.html',
+            wedding=wedding
+        )
+
+    @app.route('/admin/wedding/<int:wedding_id>/restore')
+    def wedding_restore(wedding_id):
+        wedding = Wedding.query.get_or_404(wedding_id)
+
+        # Restore wedding to active state
+        wedding.status = 'active'
+
+        # Clear status metadata
+        wedding.cancel_reason = None
+        wedding.cancelled_at = None
+        wedding.postpone_reason = None
+        wedding.postponed_at = None
+        wedding.archive_reason = None
+        wedding.archived_at = None
+
+        db.session.commit()
+
+        return redirect(url_for('wedding_details_hub', wedding_id=wedding_id))
+
+    @app.route('/admin/weddings')
+    def master_wedding_list():
+        weddings_active = Wedding.query.filter_by(status='active').order_by(Wedding.wedding_date.asc()).all()
+        weddings_postponed = Wedding.query.filter_by(status='postponed').order_by(Wedding.wedding_date.asc()).all()
+        weddings_cancelled = Wedding.query.filter_by(status='cancelled').order_by(Wedding.wedding_date.asc()).all()
+        weddings_archived = Wedding.query.filter_by(status='archived').order_by(Wedding.wedding_date.asc()).all()
+
+        return render_template(
+            'master_wedding_list.html',
+            weddings_active=weddings_active,
+            weddings_postponed=weddings_postponed,
+            weddings_cancelled=weddings_cancelled,
+            weddings_archived=weddings_archived
+        )
+
+
+    @app.route('/admin/wedding/add', methods=['GET', 'POST'])
+    def wedding_add():
+        if request.method == 'POST':
+            bride_name = request.form.get('bride_name')
+            groom_name = request.form.get('groom_name')
+            wedding_date = request.form.get('wedding_date')
+
+            new_wedding = Wedding(
+                bride_name=bride_name,
+                groom_name=groom_name,
+                wedding_date=datetime.strptime(wedding_date, '%Y-%m-%d'),
+                status='active'
+            )
+
+            db.session.add(new_wedding)
+            db.session.commit()
+
+            # -----------------------------------------
+            # BASIC AUTO-POPULATE WEDDING DETAILS
+            # -----------------------------------------
+
+            basic_fields = [
+                # Ceremony
+                ('ceremony', 'Ceremony Location', 'text', ''),
+                ('ceremony', 'Celebrant', 'text', ''),
+                ('ceremony', 'Ceremony Start Time', 'text', ''),
+
+                # Reception
+                ('reception', 'Reception Location', 'text', ''),
+                ('reception', 'Reception Start Time', 'text', ''),
+                ('reception', 'Guest Count', 'number', ''),
+
+                # Menu
+                ('menu', 'Entrée', 'textarea', ''),
+                ('menu', 'Main', 'textarea', ''),
+                ('menu', 'Dessert', 'textarea', ''),
+
+                # Setup
+                ('setup', 'Table Layout', 'textarea', ''),
+                ('setup', 'Decor Notes', 'textarea', ''),
+                ('setup', 'Audio/Visual Requirements', 'textarea', ''),
+
+                # Timeline
+                ('timeline', 'Arrival Time', 'text', ''),
+                ('timeline', 'Speeches Time', 'text', ''),
+                ('timeline', 'Cake Cutting Time', 'text', ''),
+            ]
+
+            for category, field_name, field_type, default_value in basic_fields:
+                detail = WeddingDetail(
+                    wedding_id=new_wedding.id,
+                    category=category,
+                    field_name=field_name,
+                    field_type=field_type,
+                    value=default_value,
+                    coordinator_visible=True,
+                    staff_visible=True
+                )
+                db.session.add(detail)
+
+            db.session.commit()
+
+            return redirect(url_for('wedding_details_hub', wedding_id=new_wedding.id))
+
+        return render_template('wedding_add.html')
+
+    @app.route('/admin/task_library')
+    def task_library():
+        tasks = WeddingTaskLibrary.query.order_by(WeddingTaskLibrary.default_order.asc()).all()
+        return render_template('task_library.html', tasks=tasks)
+
+    @app.route('/admin/task_library/add', methods=['GET', 'POST'])
+    def task_library_add():
+        if request.method == 'POST':
+            task_name = request.form.get('task_name')
+            task_type = request.form.get('task_type')
+            default_category = request.form.get('default_category')
+            default_order = int(request.form.get('default_order') or 0)
+            default_required = bool(request.form.get('default_required'))
+            default_shared = bool(request.form.get('default_shared'))
+            default_notes = request.form.get('default_notes')
+
+            new_task = WeddingTaskLibrary(
+                task_name=task_name,
+                task_type=task_type,
+                default_category=default_category,
+                default_order=default_order,
+                default_required=default_required,
+                default_shared=default_shared,
+                default_notes=default_notes,
+                active=True
+            )
+
+            db.session.add(new_task)
+            db.session.commit()
+
+            return redirect(url_for('task_library'))
+
+        return render_template('task_library_add.html')
+
+    @app.route('/admin/task_library/<int:task_id>/activate')
+    def task_library_activate(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        task.active = True
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/<int:task_id>/deactivate')
+    def task_library_deactivate(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        task.active = False
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/<int:task_id>/delete')
+    def task_library_delete(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        db.session.delete(task)
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/<int:task_id>/edit', methods=['GET', 'POST'])
+    def task_library_edit(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+
+        if request.method == 'POST':
+            task.task_name = request.form.get('task_name')
+            task.task_type = request.form.get('task_type')
+            task.default_category = request.form.get('default_category')
+            task.default_order = int(request.form.get('default_order') or 0)
+            task.default_required = bool(request.form.get('default_required'))
+            task.default_shared = bool(request.form.get('default_shared'))
+            task.default_notes = request.form.get('default_notes')
+
+            db.session.commit()
+            return redirect(url_for('task_library'))
+
+        return render_template('task_library_edit.html', task=task)
+
+    @app.route('/admin/task_library/add', methods=['GET', 'POST'])
+    def task_library_add():
+        if request.method == 'POST':
+            task_name = request.form.get('task_name')
+            task_type = request.form.get('task_type')
+            default_category = request.form.get('default_category')
+            default_order = int(request.form.get('default_order') or 0)
+            default_required = bool(request.form.get('default_required'))
+            default_shared = bool(request.form.get('default_shared'))
+            default_notes = request.form.get('default_notes')
+
+            new_task = WeddingTaskLibrary(
+                task_name=task_name,
+                task_type=task_type,
+                default_category=default_category,
+                default_order=default_order,
+                default_required=default_required,
+                default_shared=default_shared,
+                default_notes=default_notes,
+                active=True
+            )
+
+            db.session.add(new_task)
+            db.session.commit()
+
+            return redirect(url_for('task_library'))
+
+        return render_template('task_library_add.html')
+
+
+
+    @app.route('/admin/wedding/add', methods=['GET', 'POST'])
+    def wedding_add():
+        if request.method == 'POST':
+            bride_name = request.form.get('bride_name')
+            groom_name = request.form.get('groom_name')
+            wedding_date = request.form.get('wedding_date')
+
+            new_wedding = Wedding(
+                bride_name=bride_name,
+                groom_name=groom_name,
+                wedding_date=datetime.strptime(wedding_date, '%Y-%m-%d'),
+                status='active'
+            )
+
+            db.session.add(new_wedding)
+            db.session.commit()
+
+            # -----------------------------------------
+            # STEP 10: FULL AUTO-POPULATE DETAILS FROM LIBRARY
+            # -----------------------------------------
+
+            library_details = WeddingDetailLibrary.query.filter_by(active=True).order_by(
+                WeddingDetailLibrary.category.asc(),
+                WeddingDetailLibrary.default_order.asc()
+            ).all()
+
+            for lib in library_details:
+                detail = WeddingDetail(
+                    wedding_id=new_wedding.id,
+                    category=lib.category,
+                    field_name=lib.field_name,
+                    field_type=lib.field_type,
+                    value=lib.default_value,
+                    coordinator_visible=lib.coordinator_visible,
+                    staff_visible=lib.staff_visible,
+                    notes=lib.default_notes,
+                    order=lib.default_order
+                )
+                db.session.add(detail)
+
+            # -----------------------------------------
+            # STEP 8: FULL AUTO-POPULATE TASKS FROM LIBRARY
+            # -----------------------------------------
+
+            library_tasks = WeddingTaskLibrary.query.filter_by(active=True).order_by(
+                WeddingTaskLibrary.default_order.asc()
+            ).all()
+
+            for lib in library_tasks:
+                task = WeddingTask(
+                    wedding_id=new_wedding.id,
+                    order=lib.default_order,
+                    task_name=lib.task_name,
+                    task_type=lib.task_type,
+                    assigned_to=None,
+                    assigned_to_name=None,
+                    is_done=False,
+                    done_by=None,
+                    done_by_name=None,
+                    done_at=None,
+                    in_progress_by=None,
+                    in_progress_by_name=None,
+                    in_progress_at=None,
+                    coordinator_id=None,
+                    required=lib.default_required,
+                    shared=lib.default_shared,
+                    category=lib.default_category,
+                    notes=lib.default_notes,
+                    deadline=None
+                )
+                db.session.add(task)
+
+            db.session.commit()
+
+            return redirect(url_for('wedding_details_hub', wedding_id=new_wedding.id))
+
+        return render_template('wedding_add.html')
+
+    @app.route('/admin/details_library/<int:detail_id>/activate')
+    def details_library_activate(detail_id):
+        detail = WeddingDetailLibrary.query.get_or_404(detail_id)
+        detail.active = True
+        db.session.commit()
+        return redirect(url_for('details_library'))
+
+    @app.route('/admin/details_library/<int:detail_id>/deactivate')
+    def details_library_deactivate(detail_id):
+        detail = WeddingDetailLibrary.query.get_or_404(detail_id)
+        detail.active = False
+        db.session.commit()
+        return redirect(url_for('details_library'))
+
+    @app.route('/admin/details_library/add', methods=['GET', 'POST'])
+    def details_library_add():
+        if request.method == 'POST':
+            category = request.form.get('category')
+            field_name = request.form.get('field_name')
+            field_type = request.form.get('field_type')
+            default_value = request.form.get('default_value')
+            coordinator_visible = bool(request.form.get('coordinator_visible'))
+            staff_visible = bool(request.form.get('staff_visible'))
+            default_order = int(request.form.get('default_order') or 0)
+            default_notes = request.form.get('default_notes')
+
+            new_detail = WeddingDetailLibrary(
+                category=category,
+                field_name=field_name,
+                field_type=field_type,
+                default_value=default_value,
+                coordinator_visible=coordinator_visible,
+                staff_visible=staff_visible,
+                default_order=default_order,
+                default_notes=default_notes,
+                active=True
+            )
+
+            db.session.add(new_detail)
+            db.session.commit()
+
+            return redirect(url_for('details_library'))
+
+        return render_template('details_library_add.html')
+
+    @app.route('/admin/details_library/<int:detail_id>/edit', methods=['GET', 'POST'])
+    def details_library_edit(detail_id):
+        detail = WeddingDetailLibrary.query.get_or_404(detail_id)
+
+        if request.method == 'POST':
+            detail.category = request.form.get('category')
+            detail.field_name = request.form.get('field_name')
+            detail.field_type = request.form.get('field_type')
+            detail.default_value = request.form.get('default_value')
+            detail.coordinator_visible = bool(request.form.get('coordinator_visible'))
+            detail.staff_visible = bool(request.form.get('staff_visible'))
+            detail.default_order = int(request.form.get('default_order') or 0)
+            detail.default_notes = request.form.get('default_notes')
+
+            db.session.commit()
+            return redirect(url_for('details_library'))
+
+        return render_template('details_library_edit.html', detail=detail)
+
+
+    @app.route('/admin/details_library/<int:detail_id>/delete')
+    def details_library_delete(detail_id):
+        detail = WeddingDetailLibrary.query.get_or_404(detail_id)
+        db.session.delete(detail)
+        db.session.commit()
+        return redirect(url_for('details_library'))
+
+
     @app.route('/weddings_menu')
     @login_required
     def weddings_menu():
         weddings = Wedding.query.order_by(Wedding.date.asc()).all()
         return render_template('weddings_menu.html', weddings=weddings, user=current_user)
+
+    @app.route('/admin/task_library')
+    def task_library():
+        tasks = WeddingTaskLibrary.query.order_by(
+            WeddingTaskLibrary.default_order.asc()
+        ).all()
+
+        return render_template(
+            'task_library.html',
+            tasks=tasks
+        )
+
+    @app.route('/admin/task_library/add', methods=['POST'])
+    def task_library_add():
+        name = request.form.get('task_name')
+        task_type = request.form.get('task_type')  # 'coordinator' or 'staff'
+        notes = request.form.get('default_notes')
+        required = bool(request.form.get('default_required'))
+        shared = bool(request.form.get('default_shared'))
+        category = request.form.get('default_category')
+
+        max_order = db.session.query(
+            db.func.max(WeddingTaskLibrary.default_order)
+        ).scalar() or 0
+
+        new_task = WeddingTaskLibrary(
+            task_name=name,
+            task_type=task_type,
+            default_notes=notes,
+            default_required=required,
+            default_shared=shared,
+            default_category=category,
+            default_order=max_order + 1,
+            active=True
+        )
+
+        db.session.add(new_task)
+        db.session.commit()
+
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/toggle/<int:task_id>')
+    def task_library_toggle(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+        task.active = not task.active
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/move/<int:task_id>/<string:direction>')
+    def task_library_move(task_id, direction):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+
+        if direction == 'up':
+            task.default_order -= 1
+        elif direction == 'down':
+            task.default_order += 1
+
+        if task.default_order < 0:
+            task.default_order = 0
+
+        db.session.commit()
+        return redirect(url_for('task_library'))
+
+    @app.route('/admin/task_library/edit/<int:task_id>', methods=['POST'])
+    def task_library_edit(task_id):
+        task = WeddingTaskLibrary.query.get_or_404(task_id)
+
+        task.task_name = request.form.get('task_name')
+        task.task_type = request.form.get('task_type')
+        task.default_notes = request.form.get('default_notes')
+        task.default_required = bool(request.form.get('default_required'))
+        task.default_shared = bool(request.form.get('default_shared'))
+        task.default_category = request.form.get('default_category')
+
+        db.session.commit()
+        return redirect(url_for('task_library'))
 
 
     @app.route('/client_view')

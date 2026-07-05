@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Postpone Wedding</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container" style="margin-top:30px;">
+
+    <h3>Postpone Wedding</h3>
+    <p>Set a new date for {{ wedding.bride_name }} & {{ wedding.groom_name }}.</p>
+
+    <form action="/admin/wedding/{{ wedding.id }}/postpone" method="POST">
+
+        <div class="form-group">
+            <label>New Wedding Date</label>
+            <input type="date" name="new_date" class="form-control" required>
+        </div>
+
+        <div class="form-group" style="margin-top:10px;">
+            <label>Reason (optional)</label>
+            <textarea name="postpone_reason" class="form-control"></textarea>
+        </div>
+
+        <button class="btn btn-warning" style="margin-top:15px;">Confirm Postpone</button>
+        <a href="/admin/wedding/{{ wedding.id }}" class="btn btn-secondary" style="margin-top:15px;">Back</a>
+
+    </form>
+
+</div>
+
+</body>
+</html>

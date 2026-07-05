@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wedding Details Hub</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+    <div class="container" style="margin-top: 30px;">
+
+        <!-- Header -->
+        <h2>Wedding Details — {{ wedding.bride_name }} & {{ wedding.groom_name }}</h2>
+        <h5>{{ wedding.wedding_date.strftime('%d %b %Y') }}</h5>
+
+        <hr>
+
+<!-- STATUS + ACTIONS -->
+<div style="margin-bottom:20px;">
+    <span class="badge bg-primary" style="font-size:16px;">
+        {{ wedding.status|capitalize }}
+    </span>
+
+    <a href="/admin/wedding/{{ wedding.id }}/edit" class="btn btn-secondary btn-sm">Edit Wedding</a>
+
+    {% if wedding.status != 'active' %}
+        <a href="/admin/wedding/{{ wedding.id }}/restore" class="btn btn-success btn-sm">Restore</a>
+    {% endif %}
+
+    <a href="/admin/wedding/{{ wedding.id }}/cancel" class="btn btn-danger btn-sm">Cancel</a>
+    <a href="/admin/wedding/{{ wedding.id }}/postpone" class="btn btn-warning btn-sm">Postpone</a>
+    <a href="/admin/wedding/{{ wedding.id }}/archive" class="btn btn-dark btn-sm">Archive</a>
+</div>
+
+        <hr>
+
+        <!-- DETAILS SECTION -->
+        <h3>Wedding Details</h3>
+
+        {% set current_category = None %}
+
+        {% for d in details %}
+
+            {% if d.category != current_category %}
+                {% if current_category != None %}
+                    </div>
+                {% endif %}
+
+                <h4 style="margin-top:25px;">{{ d.category|capitalize }}</h4>
+                <div class="card" style="padding:20px; margin-bottom:20px;">
+                {% set current_category = d.category %}
+            {% endif %}
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label><strong>{{ d.field_name }}</strong></label>
+
+                {% if d.coordinator_visible %}
+                    <!-- Editable for admin/coordinator -->
+                    <form action="/admin/wedding_detail/{{ d.id }}/update" method="POST">
+                        {% if d.field_type == 'text' %}
+                            <input type="text" name="value" class="form-control" value="{{ d.value }}">
+                        {% elif d.field_type == 'textarea' %}
+                            <textarea name="value" class="form-control">{{ d.value }}</textarea>
+                        {% elif d.field_type == 'number' %}
+                            <input type="number" name="value" class="form-control" value="{{ d.value }}">
+                        {% elif d.field_type == 'checkbox' %}
+                            <input type="checkbox" name="value" {% if d.value == 'on' %}checked{% endif %}>
+                        {% else %}
+                            <input type="text" name="value" class="form-control" value="{{ d.value }}">
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:10px;">
+                            Save
+                        </button>
+                    </form>
+
+                {% else %}
+                    <!-- Staff read-only -->
+                    <p class="text-muted">{{ d.value }}</p>
+                {% endif %}
+            </div>
+
+        {% endfor %}
+
+        </div>
+
+        <hr>
+
+        <!-- TASKS SECTION -->
+        <h3>Wedding Tasks</h3>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th style="width:60px;">Order</th>
+                    <th>Task</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th style="width:200px;">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for t in tasks %}
+                <tr>
+                    <td>{{ t.order }}</td>
+                    <td>{{ t.task_name }}</td>
+
+                    <td>
+                        {% if t.assigned_staff %}
+                            {{ t.assigned_staff.full_name }}
+                        {% else %}
+                            <span class="text-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if t.completed %}
+                            <span class="badge bg-success">Done</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <a href="/admin/wedding_task/{{ t.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+                        <a href="/admin/wedding_task/{{ t.id }}/toggle" class="btn btn-sm btn-info">Toggle</a>
+                        <a href="/admin/wedding_task/{{ t.id }}/delete" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <hr>
+
+<hr>
+
+<!-- STAFF SECTION -->
+<h3>Assigned Staff</h3>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th style="width:200px;">Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for s in staff %}
+        <tr>
+            <td>{{ s.employee_name }}</td>
+            <td>{{ s.role }}</td>
+            <td>
+                <a href="/admin/wedding_staff/{{ s.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+                <a href="/admin/wedding_staff/{{ s.id }}/remove" class="btn btn-sm btn-danger">Remove</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ADD STAFF BUTTON -->
+<button class="btn btn-primary" onclick="document.getElementById('addStaffModal').style.display='block'">
+    Add Staff
+</button>
+
+<!-- ADD STAFF MODAL -->
+<div id="addStaffModal"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.6); padding-top:80px;">
+
+    <div class="card" style="width:500px; margin:auto; padding:20px;">
+
+        <h4>Add Staff</h4>
+
+        <form action="/admin/wedding/{{ wedding.id }}/staff/add" method="POST">
+
+            <div class="form-group">
+                <label>Select Employee</label>
+                <select name="employee_id" class="form-control" required>
+                    {% for e in employees %}
+                        <option value="{{ e.id }}">{{ e.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+                <label>Role</label>
+                <select name="role" class="form-control" required>
+                    <option value="Coordinator">Coordinator</option>
+                    <option value="Worker">Worker</option>
+                    <option value="Bar">Bar</option>
+                    <option value="Setup">Setup</option>
+                    <option value="Packdown">Packdown</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:15px;">
+                Add Staff
+            </button>
+
+            <button type="button" class="btn btn-secondary" style="margin-top:15px;"
+                    onclick="document.getElementById('addStaffModal').style.display='none'">
+                Cancel
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

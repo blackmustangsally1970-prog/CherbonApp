@@ -16,6 +16,50 @@ class DailyEvent(db.Model):
     )
 
 
+class WeddingTemplateField(db.Model):
+    __tablename__ = 'wedding_template_fields'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    field_name = db.Column(db.String(100), nullable=False)
+    field_type = db.Column(db.String(20), nullable=False)  # text, textarea, number, select, checkbox
+    category = db.Column(db.String(50))                    # ceremony, reception, menu, setup, timeline, notes
+    required = db.Column(db.Boolean, default=False)
+    staff_visible = db.Column(db.Boolean, default=False)
+    coordinator_visible = db.Column(db.Boolean, default=True)
+    default_value = db.Column(db.Text)
+    order = db.Column(db.Integer, default=0)
+    active = db.Column(db.Boolean, default=True)
+
+
+class WeddingDetailLibrary(db.Model):
+    __tablename__ = 'wedding_detail_library'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Core field info
+    category = db.Column(db.String(50), nullable=False)       # ceremony, reception, menu, setup, timeline, admin
+    field_name = db.Column(db.Text, nullable=False)
+    field_type = db.Column(db.String(20), nullable=False)     # text, textarea, number, dropdown, checkbox
+
+    # Defaults applied to every wedding
+    default_value = db.Column(db.Text)
+    coordinator_visible = db.Column(db.Boolean, default=True)
+    staff_visible = db.Column(db.Boolean, default=True)
+
+    # Ordering
+    default_order = db.Column(db.Integer, default=0)
+
+    # Notes
+    default_notes = db.Column(db.Text)
+
+    # Active flag (soft delete)
+    active = db.Column(db.Boolean, default=True)
+
+    updated_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
+
 class WeddingTask(db.Model):
     __tablename__ = 'wedding_tasks'
 
@@ -61,6 +105,29 @@ class WeddingTask(db.Model):
     order = db.Column(db.Integer, default=0)
 
     # System fields
+    updated_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
+class WeddingTaskLibrary(db.Model):
+    __tablename__ = 'wedding_task_library'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Core task info
+    task_name = db.Column(db.Text, nullable=False)
+    task_type = db.Column(db.String(20), nullable=False)  # 'admin', 'coordinator', or 'staff'
+
+    # Defaults applied to every wedding
+    default_required = db.Column(db.Boolean, default=True)
+    default_shared = db.Column(db.Boolean, default=False)
+    default_category = db.Column(db.String(50))
+    default_notes = db.Column(db.Text)
+
+    # Default ordering
+    default_order = db.Column(db.Integer, default=0)
+
+    # System flags
+    active = db.Column(db.Boolean, default=True)  # soft delete / hide
     updated_at = db.Column(db.DateTime, server_default=db.func.now())
 
 

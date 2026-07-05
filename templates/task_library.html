@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Master Task Library</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container" style="margin-top:30px;">
+
+    <h2>Master Task Library</h2>
+
+    <div style="margin-bottom:20px;">
+        <a href="/admin/task_library/add" class="btn btn-primary btn-sm">Add New Task</a>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th style="width:60px;">Order</th>
+                <th>Task Name</th>
+                <th style="width:120px;">Type</th>
+                <th style="width:120px;">Category</th>
+                <th style="width:100px;">Required</th>
+                <th style="width:100px;">Shared</th>
+                <th style="width:100px;">Active</th>
+                <th style="width:240px;">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for t in tasks %}
+            <tr>
+                <td>{{ t.default_order }}</td>
+                <td>{{ t.task_name }}</td>
+                <td>{{ t.task_type }}</td>
+                <td>{{ t.default_category }}</td>
+                <td>
+                    {% if t.default_required %}
+                        <span class="badge bg-success">Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if t.default_shared %}
+                        <span class="badge bg-info">Shared</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if t.active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    <a href="/admin/task_library/{{ t.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+
+                    {% if t.active %}
+                        <a href="/admin/task_library/{{ t.id }}/deactivate" class="btn btn-sm btn-warning">Deactivate</a>
+                    {% else %}
+                        <a href="/admin/task_library/{{ t.id }}/activate" class="btn btn-sm btn-success">Activate</a>
+                    {% endif %}
+
+                    <a href="/admin/task_library/{{ t.id }}/delete"
+                       class="btn btn-sm btn-danger"
+                       onclick="return confirm('Delete this task from the library?');">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+
+</div>
+
+</body>
+</html>
