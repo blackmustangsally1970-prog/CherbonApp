@@ -2073,7 +2073,6 @@ def create_app():
         week_starts = build_term_weeks(term)
         day_offset = get_day_offset(course.day_of_week)
 
-        # Load all approved riders for auto-detection
         approved = CourseFormSubmission.query.filter_by(status="approved").all()
 
         created = 0
@@ -2107,6 +2106,9 @@ def create_app():
                 if price is None:
                     continue
 
+            # ⭐ CRITICAL FIX: CAST TO FLOAT FOR LESSON MODEL
+            price = float(price)
+
             # Determine weeks
             if r.frequency == "W":
                 week_indexes = [0,1,2,3,4,5,6,7,8,9]
@@ -2128,7 +2130,7 @@ def create_app():
                     adjust=0,
                     carry_fwd=None,
                     payment=None,
-                    price_pl=price,      # ⭐ HYBRID PRICE
+                    price_pl=price,
                     attendance=None,
                     balance=None,
                     lesson_notes="",
@@ -2146,6 +2148,7 @@ def create_app():
 
         db.session.commit()
         return jsonify(success=True, created=created)
+
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
