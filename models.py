@@ -528,9 +528,11 @@ class WeddingStaff(db.Model):
 
 
 class WeddingAssignment(db.Model):
+    __tablename__ = 'wedding_assignments'
+
     id = db.Column(db.Integer, primary_key=True)
 
-    wedding_id = db.Column(db.Integer, db.ForeignKey('wedding.id'), nullable=False)
+    wedding_id = db.Column(db.Integer, db.ForeignKey('weddings.id'), nullable=False)
     staff_id = db.Column(db.Integer, db.ForeignKey('wedding_staff.id'), nullable=False)
 
 
