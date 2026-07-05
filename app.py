@@ -2775,24 +2775,28 @@ def create_app():
         if not row:
             return "Not found", 404
 
-        # HYBRID MODE: new allowed fields
+        # Allowed fields (expanded)
         allowed = [
-            "rider_name", "ftor", "horse_1", "cherbon_notes",
-            "frequency", "current_course", "status",
+            "rider_name", "ftor", "horse_1", "horse_2", "horse_3",
+            "cherbon_notes", "frequency", "start_week",
+            "current_course", "status",
             "price_override", "price_locked"
         ]
         if field not in allowed:
             return "Invalid field", 400
 
-        # -------------------------------
-        # NORMALISE TYPES FOR NEW FIELDS
-        # -------------------------------
+        # ---------------------------------------------------------
+        # BOOLEAN: price_locked
+        # ---------------------------------------------------------
         if field == "price_locked":
             row.price_locked = str(value).lower() in ("1", "true", "yes", "on")
             db.session.commit()
             db.session.refresh(row)
             return "OK", 200
 
+        # ---------------------------------------------------------
+        # DECIMAL: price_override
+        # ---------------------------------------------------------
         if field == "price_override":
             if value in ("", None):
                 row.price_override = None
@@ -2801,27 +2805,75 @@ def create_app():
                     row.price_override = Decimal(value)
                 except:
                     return "Invalid price override", 400
+
             db.session.commit()
             db.session.refresh(row)
             return "OK", 200
 
-        # -------------------------------
-        # NORMAL FIELD UPDATE
-        # -------------------------------
+        # ---------------------------------------------------------
+        # WEEK SELECTOR: start_week
+        # ---------------------------------------------------------
+        if field == "start_week":
+            row.start_week = value if value else None
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        # ---------------------------------------------------------
+        # HORSES
+        # ---------------------------------------------------------
+        if field in ("horse_1", "horse_2", "horse_3"):
+            setattr(row, field, value)
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        # ---------------------------------------------------------
+        # CHERBON NOTES
+        # ---------------------------------------------------------
+        if field == "cherbon_notes":
+            row.cherbon_notes = value
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        # ---------------------------------------------------------
+        # RIDER NAME
+        # ---------------------------------------------------------
+        if field == "rider_name":
+            row.rider_name = value
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        # ---------------------------------------------------------
+        # FREQUENCY (W/F)
+        # ---------------------------------------------------------
+        if field == "frequency":
+            row.frequency = value
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        # ---------------------------------------------------------
+        # FT/W
+        # ---------------------------------------------------------
+        if field == "ftor":
+            row.ftor = value
+            db.session.commit()
+            db.session.refresh(row)
+            return "OK", 200
+
+        # ---------------------------------------------------------
+        # NORMAL FIELD UPDATE (fallback)
+        # ---------------------------------------------------------
         setattr(row, field, value)
-
-        # horse_1 blank allowed
-        if field == "horse_1" and value.strip() == "":
-            db.session.commit()
-            db.session.refresh(row)
-            return "OK", 200
-
         db.session.commit()
         db.session.refresh(row)
 
-        # ============================================================
+        # ---------------------------------------------------------
         # STATUS CHANGE → RECALC ALL APPROVED (RESPECT LOCK)
-        # ============================================================
+        # ---------------------------------------------------------
         if field == "status":
             approved = CourseFormSubmission.query.filter_by(status="approved").all()
 
@@ -2849,9 +2901,9 @@ def create_app():
             db.session.commit()
             return "OK", 200
 
-        # ============================================================
+        # ---------------------------------------------------------
         # RECALC PRICE WHEN CORE FIELDS CHANGE (RESPECT LOCK)
-        # ============================================================
+        # ---------------------------------------------------------
         if field in ("rider_name", "ftor", "frequency", "current_course"):
             if not row.price_locked:
                 approved = CourseFormSubmission.query.filter_by(status="approved").all()

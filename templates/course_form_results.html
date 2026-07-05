@@ -473,6 +473,7 @@
 {% for r in riders %}
 <tr data-timeframe="{{ c.timerange }}" data-rider="{{ r.rider_name }}">
 
+    <!-- SELECT CHECKBOX -->
     <td class="sel-cell">
         <input type="checkbox"
                class="lesson-select"
@@ -480,9 +481,12 @@
                data-course="{{ c.course_code }}">
     </td>
 
+    <!-- RIDER NAME -->
     {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
     <td style="width:32ch; white-space:normal; word-break:break-word;">
         <input type="text"
+               data-id="{{ r.id }}"
+               data-field="rider_name"
                value="{{ r.rider_name }}"
                onchange="updateField({{ r.id }}, 'rider_name', this.value)"
                style="
@@ -494,8 +498,11 @@
                ">
     </td>
 
+    <!-- HORSE 1 -->
     <td style="width:12ch; white-space:nowrap;">
-        <select onchange="updateField({{ r.id }}, 'horse_1', this.value)">
+        <select data-id="{{ r.id }}"
+                data-field="horse_1"
+                onchange="updateField({{ r.id }}, 'horse_1', this.value)">
             <option value=""></option>
             {% for h in horses %}
                 <option value="{{ h.horse }}"
@@ -506,76 +513,113 @@
         </select>
     </td>
 
-    <td style="width:12ch; white-space:nowrap;">{{ r.horse_2 }}</td>
-    <td style="width:12ch; white-space:nowrap;">{{ r.horse_3 }}</td>
+    <!-- HORSE 2 -->
+    <td style="width:12ch; white-space:nowrap;">
+        <input type="text"
+               data-id="{{ r.id }}"
+               data-field="horse_2"
+               value="{{ r.horse_2 }}"
+               onchange="updateField({{ r.id }}, 'horse_2', this.value)"
+               style="width:10ch;">
+    </td>
 
+    <!-- HORSE 3 -->
+    <td style="width:12ch; white-space:nowrap;">
+        <input type="text"
+               data-id="{{ r.id }}"
+               data-field="horse_3"
+               value="{{ r.horse_3 }}"
+               onchange="updateField({{ r.id }}, 'horse_3', this.value)"
+               style="width:10ch;">
+    </td>
+
+    <!-- NOTES -->
     <td style="width:50ch; max-width:50ch; white-space:normal; word-break:break-word;">
         {{ r.notes }}
     </td>
 
+    <!-- CHERBON NOTES -->
     <td style="width:50ch; max-width:50ch; white-space:normal;">
         <textarea
+            data-id="{{ r.id }}"
+            data-field="cherbon_notes"
             style="width:100%; max-width:100%; box-sizing:border-box; height:3em; resize:vertical;"
             onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)"
         >{{ r.cherbon_notes or '' }}</textarea>
     </td>
 
+    <!-- FT/W -->
     <td style="width:6ch; white-space:nowrap;">
-        <select onchange="updateField({{ r.id }}, 'ftor', this.value)">
+        <select data-id="{{ r.id }}"
+                data-field="ftor"
+                onchange="updateField({{ r.id }}, 'ftor', this.value)">
             <option value="FT" {% if r.ftor == 'FT' %}selected{% endif %}>FT</option>
             <option value="W"  {% if r.ftor == 'W'  %}selected{% endif %}>W</option>
         </select>
     </td>
 
+    <!-- FREQUENCY -->
     <td style="width:6ch; white-space:nowrap;">
-        <select onchange="updateField({{ r.id }}, 'frequency', this.value)">
+        <select data-id="{{ r.id }}"
+                data-field="frequency"
+                onchange="updateField({{ r.id }}, 'frequency', this.value)">
             <option value="W" {% if r.frequency == 'W' %}selected{% endif %}>W</option>
             <option value="F" {% if r.frequency == 'F' %}selected{% endif %}>F</option>
         </select>
     </td>
 
+    <!-- WEEK (W1/W2) -->
     <td style="width:10ch; white-space:nowrap;">
-        <select onchange="updateField({{ r.id }}, 'start_week', this.value)">
+        <select data-id="{{ r.id }}"
+                data-field="start_week"
+                onchange="updateField({{ r.id }}, 'start_week', this.value)">
             <option value=""></option>
             <option value="W1" {% if r.start_week == 'W1' %}selected{% endif %}>W1</option>
             <option value="W2" {% if r.start_week == 'W2' %}selected{% endif %}>W2</option>
         </select>
     </td>
 
-<td style="width:14ch; white-space:nowrap;">
+    <!-- PRICE -->
+    <td style="width:14ch; white-space:nowrap;">
 
-    {% if r.price_locked %}
-        <!-- 🔒 LOCKED PRICE -->
-        <span class="price-lock">🔒 {{ r.price }}</span>
+        {% if r.price_locked %}
+            <span class="price-lock">🔒 {{ r.price }}</span>
 
-    {% elif r.price_override is not none %}
-        <!-- ✏️ OVERRIDE PRICE -->
-        <span class="price-override">✏️</span>
-        <input type="number"
-               step="0.01"
-               value="{{ r.price_override }}"
-               style="width:9ch;"
-               onchange="updateField({{ r.id }}, 'price_override', this.value)">
+        {% elif r.price_override is not none %}
+            <span class="price-override">✏️</span>
+            <input type="number"
+                   step="0.01"
+                   data-id="{{ r.id }}"
+                   data-field="price_override"
+                   value="{{ r.price_override }}"
+                   style="width:9ch;"
+                   onchange="updateField({{ r.id }}, 'price_override', this.value)">
 
-    {% else %}
-        <!-- 💰 AUTO PRICE -->
-        <span class="price-auto">💰</span>
-        <input type="number"
-               step="0.01"
-               value="{{ r.price }}"
-               style="width:9ch;"
-               onchange="updateField({{ r.id }}, 'price_override', this.value)">
-    {% endif %}
+        {% else %}
+            <span class="price-auto">💰</span>
+            <input type="number"
+                   step="0.01"
+                   data-id="{{ r.id }}"
+                   data-field="price_override"
+                   value="{{ r.price }}"
+                   style="width:9ch;"
+                   onchange="updateField({{ r.id }}, 'price_override', this.value)">
+        {% endif %}
 
-    <!-- LOCK CHECKBOX -->
-    <input type="checkbox"
-           title="Lock price"
-           {% if r.price_locked %}checked{% endif %}
-           onchange="updateField({{ r.id }}, 'price_locked', this.checked)">
-</td>
+        <input type="checkbox"
+               title="Lock price"
+               data-id="{{ r.id }}"
+               data-field="price_locked"
+               {% if r.price_locked %}checked{% endif %}
+               onchange="updateField({{ r.id }}, 'price_locked', this.checked)">
+    </td>
 
-    <td style="width:12ch; white-space:nowrap;">{{ r.status }}</td>
+    <!-- STATUS -->
+    <td style="width:12ch; white-space:nowrap;">
+        {{ r.status }}
+    </td>
 
+    <!-- ACTIONS -->
     <td style="width:50ch; white-space:normal;">
         <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
         <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
@@ -592,9 +636,9 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-    /* -----------------------------------------
-       UPDATE FIELD (inline edits)
-    ----------------------------------------- */
+    /* ============================================================
+       INLINE FIELD UPDATE (FIXED SELECTOR + RELIABLE SAVING)
+    ============================================================ */
     window.updateField = function(id, field, value) {
 
         fetch(`/update_course_field/${id}`, {
@@ -604,9 +648,10 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(r => r.text())
         .then(() => {
-            const el = document.querySelector(`[onchange*="${id}"][onchange*="${field}"]`);
+            const el = document.querySelector(
+                `[data-id="${id}"][data-field="${field}"]`
+            );
             if (el) {
-                el.value = value;  // ⭐ update UI immediately
                 el.style.backgroundColor = "#d4ffd4";
                 setTimeout(() => el.style.backgroundColor = "", 400);
             }
@@ -615,10 +660,11 @@ document.addEventListener("DOMContentLoaded", function() {
     };
 
 
-    /* -----------------------------------------
-       GENERATE LESSONS
-    ----------------------------------------- */
+    /* ============================================================
+       GENERATE LESSONS FOR SELECTED RIDERS
+    ============================================================ */
     window.generateLessons = function(course_code) {
+
         const ids = [...document.querySelectorAll(
             `.lesson-select[data-course="${course_code}"]:checked`
         )].map(cb => cb.dataset.id);
@@ -635,15 +681,18 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(r => r.json())
         .then(data => {
-            if (!data.success) alert("Error: " + data.error);
-            else alert("Lessons created successfully.");
+            if (!data.success) {
+                alert("Error: " + data.error);
+            } else {
+                alert(`Lessons created successfully: ${data.created}`);
+            }
         });
     };
 
 
-    /* -----------------------------------------
-       MISSING RIDERS MODAL OPEN/CLOSE
-    ----------------------------------------- */
+    /* ============================================================
+       MISSING RIDERS MODAL
+    ============================================================ */
     document.querySelectorAll(".missing-btn").forEach(btn => {
         btn.addEventListener("click", function() {
             const code = this.dataset.course;
@@ -665,9 +714,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 
-    /* -----------------------------------------
-       INDIVIDUAL SMS BUTTONS
-    ----------------------------------------- */
+    /* ============================================================
+       SMS BUTTONS
+    ============================================================ */
     document.querySelectorAll(".sms-btn").forEach(btn => {
         btn.addEventListener("click", function() {
             const number = this.dataset.number;
@@ -680,9 +729,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 
-    /* -----------------------------------------
+    /* ============================================================
        CANCELLED CHECKBOXES
-    ----------------------------------------- */
+    ============================================================ */
     document.querySelectorAll(".cancelled-checkbox").forEach(cb => {
         cb.addEventListener("change", function() {
             fetch("/mark_cancelled", {
@@ -698,9 +747,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 
-    /* -----------------------------------------
-       MARK CONTACTED CHECKBOXES
-    ----------------------------------------- */
+    /* ============================================================
+       CONTACTED CHECKBOXES
+    ============================================================ */
     document.querySelectorAll(".contacted-checkbox").forEach(cb => {
         cb.addEventListener("change", function() {
             fetch("/mark_contacted", {
@@ -716,48 +765,39 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 
-/* -----------------------------------------
-   MASTER SELECT CHECKBOX
------------------------------------------ */
-document.querySelectorAll(".master-select").forEach(master => {
-    master.addEventListener("change", function () {
-        const course = this.dataset.course;
-        const checked = this.checked;
+    /* ============================================================
+       MASTER SELECT (SELECT ALL RIDERS)
+    ============================================================ */
+    document.querySelectorAll(".master-select").forEach(master => {
+        master.addEventListener("change", function () {
+            const course = this.dataset.course;
+            const checked = this.checked;
 
-        document.querySelectorAll(
-            `.lesson-select[data-course="${course}"]`
-        ).forEach(cb => {
-            // Skip rows already marked "Added"
-            if (cb.closest(".sel-cell").textContent.trim() === "Added") return;
-
-            cb.checked = checked;
+            document.querySelectorAll(
+                `.lesson-select[data-course="${course}"]`
+            ).forEach(cb => {
+                if (cb.closest(".sel-cell").textContent.trim() === "Added") return;
+                cb.checked = checked;
+            });
         });
     });
-});
 
 
-
-    /* -----------------------------------------
-       CHECK LESSONS ADDED
-    ----------------------------------------- */
+    /* ============================================================
+       CHECK WHICH LESSONS WERE ADDED
+    ============================================================ */
     const btn = document.getElementById("checkLessonsBtn");
     if (btn) {
         btn.addEventListener("click", function () {
-
-            console.log("CHECK BUTTON CLICKED");
 
             const year = "{{ selected_year }}";
             const term = "{{ selected_term }}";
 
             const url = "/check_lessons_for_term?year=" + year + "&term=" + term;
 
-            console.log("FETCH URL:", url);
-
             fetch(url)
                 .then(r => r.json())
                 .then(data => {
-                    console.log("FETCH RETURNED", data);
-
                     if (!data.success) return;
 
                     const added = data.added;
@@ -781,26 +821,23 @@ document.querySelectorAll(".master-select").forEach(master => {
         });
     }
 
-});  /* END DOMContentLoaded */
-</script>
 
-<script>
-$(document).ready(function() {
-    $('select').select2();
-});
-</script>
+    /* ============================================================
+       SELECT2 INITIALISATION
+    ============================================================ */
+    if (window.$) {
+        $('select').select2();
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
+    /* ============================================================
+       CONFETTI TRIGGER
+    ============================================================ */
     const total = {{ total_nominations|int }};
     const last = parseInt(localStorage.getItem("last_total_nominations") || "0");
 
-    // Trigger fireworks ONLY when crossing the threshold
     if (total >= 190 && last < 190) {
 
-        // First big burst
         confetti({
             particleCount: 200,
             spread: 120,
@@ -808,7 +845,6 @@ document.addEventListener("DOMContentLoaded", function() {
             origin: { y: 0.6 }
         });
 
-        // A few follow-up bursts
         let count = 0;
         const interval = setInterval(() => {
             confetti({
@@ -822,22 +858,21 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 800);
     }
 
-    // Update stored value
     localStorage.setItem("last_total_nominations", total);
-});
-</script>
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
+
+    /* ============================================================
+       COURSE GRID TOGGLE
+    ============================================================ */
     document.querySelectorAll(".toggle-header").forEach(header => {
         header.addEventListener("click", function() {
             const targetId = this.getAttribute("data-target");
             const grid = document.getElementById(targetId);
-
             grid.classList.toggle("open");
         });
     });
-});
+
+});  /* END DOMContentLoaded */
 </script>
 
 
