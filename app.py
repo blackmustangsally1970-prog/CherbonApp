@@ -11668,34 +11668,6 @@ Cherbon Waters Admin
             tasks=tasks
         )
 
-    @app.route('/admin/task_library/add', methods=['POST'])
-    def task_library_add():
-        name = request.form.get('task_name')
-        task_type = request.form.get('task_type')  # 'coordinator' or 'staff'
-        notes = request.form.get('default_notes')
-        required = bool(request.form.get('default_required'))
-        shared = bool(request.form.get('default_shared'))
-        category = request.form.get('default_category')
-
-        max_order = db.session.query(
-            db.func.max(WeddingTaskLibrary.default_order)
-        ).scalar() or 0
-
-        new_task = WeddingTaskLibrary(
-            task_name=name,
-            task_type=task_type,
-            default_notes=notes,
-            default_required=required,
-            default_shared=shared,
-            default_category=category,
-            default_order=max_order + 1,
-            active=True
-        )
-
-        db.session.add(new_task)
-        db.session.commit()
-
-        return redirect(url_for('task_library'))
 
     @app.route('/admin/task_library/toggle/<int:task_id>')
     def task_library_toggle(task_id):
