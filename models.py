@@ -486,7 +486,7 @@ class CourseReference(db.Model):
 
 
 class Wedding(db.Model):
-    __tablename__ = 'weddings'
+    __tablename__ = 'wedding'
 
     id = db.Column(db.Integer, primary_key=True)
 
