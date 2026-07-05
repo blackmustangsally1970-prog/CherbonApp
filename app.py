@@ -11451,25 +11451,6 @@ Cherbon Waters Admin
         db.session.commit()
         return redirect(url_for('task_library'))
 
-    @app.route('/admin/task_library/<int:task_id>/edit', methods=['GET', 'POST'])
-    def task_library_edit(task_id):
-        task = WeddingTaskLibrary.query.get_or_404(task_id)
-
-        if request.method == 'POST':
-            task.task_name = request.form.get('task_name')
-            task.task_type = request.form.get('task_type')
-            task.default_category = request.form.get('default_category')
-            task.default_order = int(request.form.get('default_order') or 0)
-            task.default_required = bool(request.form.get('default_required'))
-            task.default_shared = bool(request.form.get('default_shared'))
-            task.default_notes = request.form.get('default_notes')
-
-            db.session.commit()
-            return redirect(url_for('task_library'))
-
-        return render_template('task_library_edit.html', task=task)
-
-
 
 
     @app.route('/admin/wedding/add', methods=['GET', 'POST'])
