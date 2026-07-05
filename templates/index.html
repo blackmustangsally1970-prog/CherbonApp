@@ -181,11 +181,10 @@
 
 <!-- ⭐ WEDDING TASKS -->
 {% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
-<li>
-    <a href="{{ url_for('weddings_menu') }}" class="menu-btn">💒 Weddings</a>
-</li>
+<a href="{{ url_for('master_wedding_list') }}" class="menu-btn">💒 Weddings</a>
 {% endif %}
-<!-- ⭐ END WEDDING TASKS -->
+<!-- ⭐ END WEDDING TASKS -->  
+
   <li>
     <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
   </li>
