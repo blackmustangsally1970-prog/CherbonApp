@@ -2780,6 +2780,8 @@ def create_app():
         year = request.args.get('year', type=int)
         term = request.args.get('term', type=int)
 
+        print("LOAD_RIDERS CALL:", course_code, "year", year, "term", term)
+
         base_q = CourseFormSubmission.query.filter(
             and_(
                 CourseFormSubmission.term_year == year,
@@ -2792,6 +2794,8 @@ def create_app():
             CourseFormSubmission.status == "approved",
             CourseFormSubmission.current_course == course_code
         ).order_by(CourseFormSubmission.id.desc()).all()
+
+        print("LOAD_RIDERS APPROVED COUNT:", len(approved_submissions))
 
         horses = Horse.query.order_by(Horse.horse).all()
         client_names = Client.query.all()
