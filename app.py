@@ -2073,7 +2073,12 @@ def create_app():
         week_starts = build_term_weeks(term)
         day_offset = get_day_offset(course.day_of_week)
 
-        approved = CourseFormSubmission.query.filter_by(status="approved").all()
+        approved = CourseFormSubmission.query.filter_by(
+            status="approved",
+            current_course=row.current_course,
+            term_year=row.term_year,
+            term_number=row.term_number
+        ).all()
 
         created = 0
 
@@ -2805,7 +2810,13 @@ def create_app():
                 row.price_override = None
 
                 if not row.price_locked:
-                    approved = CourseFormSubmission.query.filter_by(status="approved").all()
+                    approved = CourseFormSubmission.query.filter_by(
+                        status="approved",
+                        current_course=row.current_course,
+                        term_year=row.term_year,
+                        term_number=row.term_number
+                    ).all()
+
                     course = CourseReference.query.filter_by(course_code=row.current_course).first()
 
                     if course:
@@ -2895,7 +2906,12 @@ def create_app():
         # STATUS CHANGE → RECALC ALL APPROVED (RESPECT LOCK)
         # ---------------------------------------------------------
         if field == "status":
-            approved = CourseFormSubmission.query.filter_by(status="approved").all()
+            approved = CourseFormSubmission.query.filter_by(
+                status="approved",
+                current_course=row.current_course,
+                term_year=row.term_year,
+                term_number=row.term_number
+            ).all()
 
             for r in approved:
                 if r.price_locked:
@@ -2926,7 +2942,12 @@ def create_app():
         # ---------------------------------------------------------
         if field in ("rider_name", "ftor", "frequency", "current_course"):
             if not row.price_locked:
-                approved = CourseFormSubmission.query.filter_by(status="approved").all()
+                approved = CourseFormSubmission.query.filter_by(
+                    status="approved",
+                    current_course=row.current_course,
+                    term_year=row.term_year,
+                    term_number=row.term_number
+                ).all()
 
                 course = CourseReference.query.filter_by(
                     course_code=row.current_course
@@ -2961,7 +2982,12 @@ def create_app():
         db.session.commit()
 
         # Recalculate pricing for ALL approved riders (respect lock)
-        approved = CourseFormSubmission.query.filter_by(status="approved").all()
+        approved = CourseFormSubmission.query.filter_by(
+            status="approved",
+            current_course=r.current_course,
+            term_year=r.term_year,
+            term_number=r.term_number
+        ).all()
 
         for sub in approved:
             if sub.price_locked:
@@ -3059,12 +3085,13 @@ def create_app():
         print("Loaded horses in", time.time() - t0); t0 = time.time()
 
         # ---- YEARS ----
-        years = sorted({
-            s.term_year
-            for s in CourseFormSubmission.query
-            .filter(CourseFormSubmission.term_year.isnot(None))
-            .all()
-        })
+        years = [
+            y for (y,) in db.session.query(CourseFormSubmission.term_year)
+                .filter(CourseFormSubmission.term_year.isnot(None))
+                .distinct()
+                .order_by(CourseFormSubmission.term_year)
+                .all()
+        ]
         print("Loaded years in", time.time() - t0); t0 = time.time()
 
         year = request.args.get('year', type=int)
@@ -3072,16 +3099,16 @@ def create_app():
             year = years[-1]
 
         # ---- TERMS ----
-        terms = sorted({
-            s.term_number
-            for s in CourseFormSubmission.query
-            .filter(
-                and_(
+        terms = [
+            t for (t,) in db.session.query(CourseFormSubmission.term_number)
+                .filter(
                     CourseFormSubmission.term_year == year,
                     CourseFormSubmission.term_number.isnot(None)
                 )
-            ).all()
-        })
+                .distinct()
+                .order_by(CourseFormSubmission.term_number)
+                .all()
+        ]
         print("Loaded terms in", time.time() - t0); t0 = time.time()
 
         term = request.args.get('term', type=int)
@@ -3097,21 +3124,12 @@ def create_app():
             )
         )
 
-        # ---- UNPROCESSED ----
-        unprocessed_submissions = (
-            base_q.filter(CourseFormSubmission.status == "unprocessed")
-            .order_by(CourseFormSubmission.id.desc())
-            .all()
-        )
-        print("Loaded unprocessed in", time.time() - t0); t0 = time.time()
+        all_subs = base_q.order_by(CourseFormSubmission.id.desc()).all()
 
-        # ---- APPROVED ----
-        approved_submissions = (
-            base_q.filter(CourseFormSubmission.status == "approved")
-            .order_by(CourseFormSubmission.id.desc())
-            .all()
-        )
-        print("Loaded approved in", time.time() - t0); t0 = time.time()
+        unprocessed_submissions = [s for s in all_subs if s.status == "unprocessed"]
+        approved_submissions   = [s for s in all_subs if s.status == "approved"]
+
+        print("Loaded submissions in", time.time() - t0); t0 = time.time()
 
         # ---- COURSES ----
         courses = CourseReference.query.order_by(
@@ -3145,8 +3163,11 @@ def create_app():
             CourseFormSubmission.term_number == prev_term,
             CourseFormSubmission.ignore_jotform.is_(False),
             CourseFormSubmission.cancelled.is_(False)
+        ).with_entities(
+            CourseFormSubmission.rider_name,
+            CourseFormSubmission.current_course,
+            CourseFormSubmission.original_course
         ).all()
-        print("Loaded last term riders in", time.time() - t0); t0 = time.time()
 
         this_term_names = {s.rider_name for s in approved_submissions}
 
