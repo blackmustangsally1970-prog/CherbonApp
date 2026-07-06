@@ -2775,10 +2775,37 @@ def create_app():
 
     @app.route('/load_riders/<course_code>')
     def load_riders(course_code):
-        riders = riders_by_course.get(course_code, [])
+        from sqlalchemy import and_
+
+        year = request.args.get('year', type=int)
+        term = request.args.get('term', type=int)
+
+        # ---- BASE QUERY (same as main route) ----
+        base_q = CourseFormSubmission.query.filter(
+            and_(
+                CourseFormSubmission.term_year == year,
+                CourseFormSubmission.term_number == term,
+                CourseFormSubmission.ignore_jotform.is_(False)
+            )
+        )
+
+        # ---- APPROVED SUBMISSIONS FOR THIS COURSE ----
+        approved_submissions = base_q.filter(
+            CourseFormSubmission.status == "approved",
+            CourseFormSubmission.current_course == course_code
+        ).order_by(CourseFormSubmission.id.desc()).all()
+
+        # ---- HORSES (same as main route) ----
+        horses = Horse.query.order_by(Horse.horse).all()
+
+        # ---- CLIENT LOOKUP (same as main route) ----
+        client_names = Client.query.all()
+        client_lookup = {c.full_name: c for c in client_names}
+
+        # ---- RENDER PARTIAL ----
         return render_template(
             "partials/rider_table.html",
-            riders=riders,
+            riders=approved_submissions,
             horses=horses,
             client_lookup=client_lookup,
             course_code=course_code

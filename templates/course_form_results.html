@@ -672,13 +672,15 @@ function loadRiders(gridId) {
     const grid = document.getElementById(gridId);
     const courseCode = gridId.replace("grid-", "");
 
-    fetch(`/load_riders/${courseCode}`)
+    const year = "{{ selected_year }}";
+    const term = "{{ selected_term }}";
+
+    fetch(`/load_riders/${courseCode}?year=${year}&term=${term}`)
         .then(r => r.text())
         .then(html => {
             grid.innerHTML = html;
             grid.dataset.loaded = "1";
 
-            // Re-init Select2 for newly inserted selects
             if (window.$) {
                 $(grid).find("select").select2();
             }
