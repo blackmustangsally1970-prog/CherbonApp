@@ -317,10 +317,7 @@
 {% for c in sorted_courses %}
     {% if c.active %}
 
-        {% set riders = approved_submissions
-            | selectattr("current_course", "equalto", c.course_code)
-            | list
-        %}
+{% set riders = riders_by_course.get(c.course_code, []) %}
         {% set approved_count = riders | length %}
 
 <h3 class="course-header toggle-header"

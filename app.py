@@ -3127,7 +3127,16 @@ def create_app():
         all_subs = base_q.order_by(CourseFormSubmission.id.desc()).all()
 
         unprocessed_submissions = [s for s in all_subs if s.status == "unprocessed"]
-        approved_submissions   = [s for s in all_subs if s.status == "approved"]
+        approved_submissions = CourseFormSubmission.query.filter(
+            # ... your filters ...
+        ).all()
+
+        from collections import defaultdict
+
+        riders_by_course = defaultdict(list)
+        for r in approved_submissions:
+            riders_by_course[r.current_course].append(r)
+
 
         print("Loaded submissions in", time.time() - t0); t0 = time.time()
 
@@ -3201,6 +3210,7 @@ def create_app():
             terms=terms,
             unprocessed_submissions=unprocessed_submissions,
             approved_submissions=approved_submissions,
+            riders_by_course=riders_by_course,
             total_nominations=total_nominations,
             courses=courses,
             course_lookup=course_lookup,
@@ -3226,24 +3236,24 @@ def create_app():
         if not term:
             return jsonify(success=False, error="Term not found")
 
-        lessons = Lesson.query.filter(
+        # FAST: only fetch the columns we need
+        rows = db.session.query(
+            Lesson.time_frame,
+            Lesson.client
+        ).filter(
             Lesson.lesson_date >= term.start_date,
             Lesson.lesson_date <= term.end_date
         ).all()
 
-        # Build a map: "time_frame|rider_name" → True
         added_map = {}
-        for l in lessons:
-            rider = (l.client or "").strip()
-            tf = (l.time_frame or "").strip()
+        for tf, rider in rows:
+            tf = (tf or "").strip()
+            rider = (rider or "").strip()
 
-            if rider and tf:
-                key = f"{tf}|{rider}"
-                added_map[key] = True
+            if tf and rider:
+                added_map[f"{tf}|{rider}"] = True
 
         return jsonify(success=True, added=added_map)
-
-
 
     @app.route('/update_course_submission/<int:id>', methods=['POST'])
     def update_course_submission(id):
