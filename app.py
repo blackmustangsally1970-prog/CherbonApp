@@ -2777,13 +2777,9 @@ def create_app():
     def load_riders(course_code):
         from sqlalchemy import and_
 
-        # YEAR + TERM from JS
         year = request.args.get('year', type=int)
         term = request.args.get('term', type=int)
-        
-        print("LOAD_RIDERS:", course_code, "year", year, "term", term)
 
-        # ---- BASE QUERY (IDENTICAL TO MAIN ROUTE) ----
         base_q = CourseFormSubmission.query.filter(
             and_(
                 CourseFormSubmission.term_year == year,
@@ -2792,20 +2788,15 @@ def create_app():
             )
         )
 
-        # ---- APPROVED SUBMISSIONS FOR THIS COURSE ----
         approved_submissions = base_q.filter(
             CourseFormSubmission.status == "approved",
             CourseFormSubmission.current_course == course_code
         ).order_by(CourseFormSubmission.id.desc()).all()
 
-        # ---- HORSES (same as main route) ----
         horses = Horse.query.order_by(Horse.horse).all()
-
-        # ---- CLIENT LOOKUP (same as main route) ----
         client_names = Client.query.all()
         client_lookup = {c.full_name: c for c in client_names}
 
-        # ---- RENDER PARTIAL ----
         return render_template(
             "partials/rider_table.html",
             riders=approved_submissions,
