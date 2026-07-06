@@ -2777,10 +2777,11 @@ def create_app():
     def load_riders(course_code):
         from sqlalchemy import and_
 
+        # YEAR + TERM from JS
         year = request.args.get('year', type=int)
         term = request.args.get('term', type=int)
 
-        # ---- BASE QUERY (same as main route) ----
+        # ---- BASE QUERY (IDENTICAL TO MAIN ROUTE) ----
         base_q = CourseFormSubmission.query.filter(
             and_(
                 CourseFormSubmission.term_year == year,
