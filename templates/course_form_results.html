@@ -300,24 +300,10 @@
 <div id="approved-table-container">
 <h2 style="margin-top:40px;">Approved Riders by Course</h2>
 
-{% set day_order = {
-    'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4,
-    'Thursday': 5, 'Friday': 6, 'Saturday': 7
-} %}
-
-{% for c in courses %}
-    {% set _ = c.__setattr__('day_sort', day_order[c.day_of_week]) %}
-{% endfor %}
-
-{% set sorted_courses = courses
-    | sort(attribute='timerange')
-    | sort(attribute='day_sort')
-%}
-
 {% for c in sorted_courses %}
     {% if c.active %}
 
-{% set riders = riders_by_course.get(c.course_code, []) %}
+        {% set riders = riders_by_course.get(c.course_code, []) %}
         {% set approved_count = riders | length %}
 
 <h3 class="course-header toggle-header"
@@ -433,6 +419,7 @@
             </div>
         </div>
         {% endif %}
+{#
 <div class="course-grid" id="grid-{{ c.course_code }}">
 
     <table>
@@ -629,6 +616,8 @@
         </tbody>
     </table>
 </div>
+
+#}
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {

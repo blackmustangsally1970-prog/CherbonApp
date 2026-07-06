@@ -3140,12 +3140,34 @@ def create_app():
 
         print("Loaded submissions in", time.time() - t0); t0 = time.time()
 
+
         # ---- COURSES ----
         courses = CourseReference.query.order_by(
             CourseReference.day_of_week,
             CourseReference.timerange
         ).all()
         print("Loaded courses in", time.time() - t0); t0 = time.time()
+
+        # ---- SORT COURSES (Step 4A) ----
+        day_order = {
+            'Sunday': 1,
+            'Monday': 2,
+            'Tuesday': 3,
+            'Wednesday': 4,
+            'Thursday': 5,
+            'Friday': 6,
+            'Saturday': 7
+        }
+
+        sorted_courses = sorted(
+            courses,
+            key=lambda c: (
+                day_order.get(c.day_of_week, 99),
+                c.timerange or "",
+                c.course_name or "",
+                c.course_code or ""
+            )
+        )
 
         course_lookup = {c.course_code: c for c in courses}
 
@@ -3212,7 +3234,7 @@ def create_app():
             approved_submissions=approved_submissions,
             riders_by_course=riders_by_course,
             total_nominations=total_nominations,
-            courses=courses,
+            sorted_courses=sorted_courses,
             course_lookup=course_lookup,
             missing_by_course=missing_by_course,
             submissions_map=submissions_map,
