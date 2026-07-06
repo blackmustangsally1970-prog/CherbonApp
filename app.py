@@ -2780,6 +2780,8 @@ def create_app():
         # YEAR + TERM from JS
         year = request.args.get('year', type=int)
         term = request.args.get('term', type=int)
+        
+        print("LOAD_RIDERS:", course_code, "year", year, "term", term)
 
         # ---- BASE QUERY (IDENTICAL TO MAIN ROUTE) ----
         base_q = CourseFormSubmission.query.filter(
