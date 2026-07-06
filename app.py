@@ -2798,14 +2798,31 @@ def create_app():
             return "OK", 200
 
         # ---------------------------------------------------------
-        # DECIMAL: price_override
+        # DECIMAL: price_override (FULLY FIXED)
         # ---------------------------------------------------------
         if field == "price_override":
             if value in ("", None):
                 row.price_override = None
+
+                if not row.price_locked:
+                    approved = CourseFormSubmission.query.filter_by(status="approved").all()
+                    course = CourseReference.query.filter_by(course_code=row.current_course).first()
+
+                    if course:
+                        new_price = calculate_price(
+                            group_priv=course.group_priv,
+                            ftor=row.ftor,
+                            frequency=row.frequency,
+                            rider_name=row.rider_name,
+                            approved_submissions=approved
+                        )
+                        row.price = new_price
+
             else:
                 try:
-                    row.price_override = Decimal(value)
+                    override_val = Decimal(value)
+                    row.price_override = override_val
+                    row.price = override_val      # ⭐ CRITICAL FIX
                 except:
                     return "Invalid price override", 400
 
@@ -3739,16 +3756,27 @@ def create_app():
             db.session.commit()
             return redirect(url_for('notifications'))
 
-        # Conflict detection — FIRST rider with matches
+        # ---------------------------------------------------------
+        # CONFLICT DETECTION — DO NOT RETURN EARLY
+        # ---------------------------------------------------------
+        conflict_index = None
+
         for i, rider in enumerate(valid_riders, start=1):
             if rider.get("matches") and len(rider["matches"]) >= 1:
-                return redirect(url_for(
-                    'resolve_conflict',
-                    submission_id=submission.id,
-                    rider_index=i
-                ))
+                conflict_index = i
+                break
 
-        # No conflicts — show normal processing page
+        # If conflict found → redirect AFTER full parse
+        if conflict_index:
+            return redirect(url_for(
+                'resolve_conflict',
+                submission_id=submission.id,
+                rider_index=conflict_index
+            ))
+
+        # ---------------------------------------------------------
+        # NO CONFLICT → NORMAL PROCESSING PAGE
+        # ---------------------------------------------------------
         return render_template(
             'process_notification.html',
             submission=submission,
@@ -5765,18 +5793,10 @@ def create_app():
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['GET'])
     def resolve_conflict(submission_id, rider_index):
-
-        # Local safe_int so this route NEVER crashes again
-        def safe_int(x):
-            try:
-                return int(x)
-            except:
-                return None
-
         # Load submission
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
-        # Always re-parse the payload fresh
+        # Parse full payload (includes updated matches if conflict was already resolved once)
         parsed = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id,
@@ -5792,65 +5812,41 @@ def create_app():
         rider = all_riders[rider_index - 1]
 
         # Submission-level fields
-        guardian = parsed.get("guardian")
-        email = parsed.get("email")
-        mobile = parsed.get("mobile")
+        guardian   = parsed.get("guardian")
+        mobile     = parsed.get("mobile")
+        email      = parsed.get("email")
         disclaimer = parsed.get("disclaimer")
 
-        # Raw match tuples from parser
-        raw_matches = rider.get("matches", [])
+        # Matches for this rider
+        matches = rider.get("matches", [])
 
-        # ⭐ Bulletproof match parser
-        match_dicts = []
-        for m in raw_matches:
-            # Skip garbage / malformed match tuples
-            if not isinstance(m, (list, tuple)):
-                continue
-            if len(m) < 2:
-                continue
-
-            match_dicts.append({
-                "client_id": safe_int(m[0]),
-                "full_name": m[1],
-                "mobile": m[2] if len(m) > 2 else None,
-                "email": m[3] if len(m) > 3 else None,
-                "jotform_submission_id": m[4] if len(m) > 4 else None
-            })
-
-        # Extract IDs safely
-        match_ids = [m["client_id"] for m in match_dicts if m["client_id"]]
-
-        matches = []
-        if match_ids:
-            matches = Client.query.filter(Client.client_id.in_(match_ids)).all()
-
-        # Attach last lesson date
+        # Convert match tuples into objects for template
+        match_objects = []
         for m in matches:
-            last = (
-                Lesson.query
-                .filter_by(client=m.full_name)
-                .order_by(Lesson.lesson_date.desc())
-                .first()
-            )
-            m.last_lesson_date = last.lesson_date if last else None
+            client_id, full_name, mobile_m, email_m, jot_id = m
+            client = db.session.query(Client).get(client_id)
+            if client:
+                match_objects.append(client)
 
         # Render conflict page
         return render_template(
-            'conflict_resolution.html',
+            'resolve_conflict.html',
             submission=row,
-            rider=rider,
-            matches=matches,
             rider_index=rider_index,
+            rider=rider,
             guardian=guardian,
-            email=email,
             mobile=mobile,
-            disclaimer=disclaimer
+            email=email,
+            disclaimer=disclaimer,
+            matches=match_objects,
+            invite_mode=False  # or True if you use invite mode
         )
 
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
+        # Safe helpers
         def safe_int(x):
             try:
                 return int(x)
@@ -5868,11 +5864,14 @@ def create_app():
         def clean_name(x):
             return x.strip() if isinstance(x, str) else None
 
+        # Choice from conflict form
         choice = (request.form.get("choice") or "").strip().lower()
         client_id = safe_int(request.form.get("client_id"))
 
+        # Load submission
         row = db.session.query(IncomingSubmission).get_or_404(submission_id)
 
+        # Parse full payload fresh
         parsed = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id,
@@ -5880,33 +5879,46 @@ def create_app():
         )
 
         all_riders = parsed["riders"]
+
+        # Rider index is 1-based
+        if rider_index < 1 or rider_index > len(all_riders):
+            abort(404)
+
         rider = all_riders[rider_index - 1]
 
+        # Submission-level fields
+        guardian   = safe_text(parsed.get("guardian"))
+        mobile     = clean_mobile(parsed.get("mobile"))
+        email      = safe_text(parsed.get("email"))
+        disclaimer = safe_int(parsed.get("disclaimer"))
+
+        # Apply disclaimer at submission level
+        row.universal_disclaimer = disclaimer
+
+        # Rider fields
         raw_name = clean_name(rider.get("name"))
         name = smart_proper_name(raw_name)
 
         age = safe_int(rider.get("age"))
-        guardian = safe_text(parsed.get("guardian"))
-        mobile = clean_mobile(parsed.get("mobile"))
-        email = safe_text(parsed.get("email"))
-        disclaimer = safe_int(parsed.get("disclaimer"))
-
-        row.universal_disclaimer = disclaimer
-
         height_cm = safe_int(rider.get("height_cm"))
         weight_kg = safe_int(rider.get("weight_kg"))
         notes = safe_text(rider.get("notes"))
 
         jotform_id = str(row.form_id)
 
+        # Load clients
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
         existing = clients_by_id.get(client_id)
 
+        # ---------------------------------------------------------
+        # APPLY USER CHOICE TO THE CONFLICT RIDER ONLY
+        # ---------------------------------------------------------
+
         if choice == "ignore":
             pass
 
-        elif choice.startswith("use_existing") and existing:
+        elif choice == "use_existing" and existing:
             existing.full_name = name
             existing.guardian_name = guardian
             existing.age = age
@@ -5918,7 +5930,7 @@ def create_app():
             existing.disclaimer = disclaimer
             existing.jotform_submission_id = jotform_id
 
-        elif choice.startswith("overwrite") and existing:
+        elif choice == "overwrite" and existing:
             existing.full_name = name
             existing.guardian_name = guardian
             existing.age = age
@@ -5963,12 +5975,20 @@ def create_app():
             )
             db.session.add(new_client)
 
+        # ---------------------------------------------------------
+        # CLEAR MATCHES FOR THIS RIDER ONLY
+        # ---------------------------------------------------------
         parsed["riders"][rider_index - 1]["matches"] = []
+
+        # Save updated payload
         import json
         row.raw_payload = json.dumps(parsed)
 
         db.session.commit()
 
+        # ---------------------------------------------------------
+        # HAND OFF TO FINALIZE_NOTIFICATION (process ALL riders)
+        # ---------------------------------------------------------
         return redirect(url_for(
             'finalize_notification',
             webhook_id=submission_id
@@ -6007,6 +6027,7 @@ def create_app():
     def finalize_notification(webhook_id):
         row = db.session.query(IncomingSubmission).get_or_404(webhook_id)
 
+        # Parse full payload (post-conflict payload if conflict was resolved)
         parsed = parse_jotform_payload(
             row.raw_payload,
             forced_submission_id=row.id,
@@ -6016,6 +6037,7 @@ def create_app():
         all_riders = parsed["riders"]
         valid_riders = [r for r in all_riders if not r.get("incomplete")]
 
+        # If no valid riders → ignore
         if not valid_riders:
             row.processed = True
             row.ignored = True
@@ -6029,25 +6051,62 @@ def create_app():
         email      = parsed.get("email")
         disclaimer = safe_int(parsed.get("disclaimer"))
 
+        jotform_id = str(row.form_id)
+
+        # Load all clients once
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
 
-        jotform_id = str(row.form_id)
+        # Detect if this POST came from conflict resolution
+        conflict_choice = request.form.get("choice")
+        conflict_client_id = request.form.get("client_id")
+        conflict_client_id = int(conflict_client_id) if conflict_client_id else None
 
-        for i, rider in enumerate(valid_riders, start=1):
-            choice = request.form.get(f"client_choice_{i}")
+        # If conflict POST exists → update ONLY that rider
+        if conflict_choice:
+            # rider_index was passed in the URL
+            rider_index = int(request.view_args.get("webhook_id", 0))
+            # NO — rider_index is NOT webhook_id. Fix:
+            rider_index = int(request.view_args.get("rider_index", 1))
 
-            raw_name = request.form.get(f"name_{i}") or rider.get("name") or "Unknown"
-            name = smart_proper_name(clean_name(raw_name))
+            conflict_rider = valid_riders[rider_index - 1]
 
-            age = request.form.get(f"age_{i}") or rider.get("age")
+            name = smart_proper_name(conflict_rider.get("name"))
+            age = safe_int(conflict_rider.get("age"))
+            height_cm = safe_int(conflict_rider.get("height_cm"))
+            weight_kg = safe_int(conflict_rider.get("weight_kg"))
+            notes = safe_text(conflict_rider.get("notes"))
 
-            height_cm = extract_number(request.form.get(f"height_{i}") or rider.get("height_cm"))
-            weight_kg = extract_number(request.form.get(f"weight_{i}") or rider.get("weight_kg"))
-            notes = request.form.get(f"notes_{i}") or rider.get("notes") or ""
+            existing = clients_by_id.get(conflict_client_id)
 
-            # NEW CLIENT
-            if choice == "new":
+            if conflict_choice == "ignore":
+                pass
+
+            elif conflict_choice == "use_existing" and existing:
+                existing.full_name = name
+                existing.guardian_name = guardian
+                existing.age = age
+                existing.mobile = mobile
+                existing.email_primary = email
+                existing.height_cm = height_cm
+                existing.weight_kg = weight_kg
+                existing.notes = notes
+                existing.disclaimer = disclaimer
+                existing.jotform_submission_id = jotform_id
+
+            elif conflict_choice == "overwrite" and existing:
+                existing.full_name = name
+                existing.guardian_name = guardian
+                existing.age = age
+                existing.mobile = mobile
+                existing.email_primary = email
+                existing.height_cm = height_cm
+                existing.weight_kg = weight_kg
+                existing.notes = notes
+                existing.disclaimer = disclaimer
+                existing.jotform_submission_id = jotform_id
+
+            elif conflict_choice == "new":
                 new_client = Client(
                     full_name=name,
                     guardian_name=guardian,
@@ -6062,11 +6121,8 @@ def create_app():
                     jotform_submission_id=jotform_id
                 )
                 db.session.add(new_client)
-                db.session.flush()
-                continue
 
-            # NEW SAME NAME
-            if choice == "new_same_name":
+            elif conflict_choice == "new_same_name":
                 final_name = generate_unique_client_name(name)
                 new_client = Client(
                     full_name=final_name,
@@ -6082,12 +6138,21 @@ def create_app():
                     jotform_submission_id=jotform_id
                 )
                 db.session.add(new_client)
-                db.session.flush()
-                continue
 
-            # USE EXISTING
-            if choice and choice.startswith("existing_"):
-                existing_id = int(choice.replace("existing_", ""))
+        # ---------------------------------------------------------
+        # PROCESS ALL RIDERS (NON-CONFLICT RIDERS INCLUDED)
+        # ---------------------------------------------------------
+        for rider in valid_riders:
+            name = smart_proper_name(rider["name"])
+            age = safe_int(rider.get("age"))
+            height_cm = safe_int(rider.get("height_cm"))
+            weight_kg = safe_int(rider.get("weight_kg"))
+            notes = safe_text(rider.get("notes"))
+
+            # If rider already matched → update existing
+            matches = rider.get("matches", [])
+            if matches:
+                existing_id = matches[0][0]
                 client = clients_by_id.get(existing_id)
                 if client:
                     client.full_name = name
@@ -6095,34 +6160,36 @@ def create_app():
                     client.age = age
                     client.mobile = mobile
                     client.email_primary = email
-                    client.disclaimer = disclaimer
                     client.height_cm = height_cm
                     client.weight_kg = weight_kg
                     client.notes = notes
-                    client.jotform_submission_id = jotform_id
-                continue
-
-            # OVERWRITE EXISTING
-            if choice and choice.startswith("overwrite_"):
-                existing_id = int(choice.replace("overwrite_", ""))
-                client = clients_by_id.get(existing_id)
-                if client:
-                    client.full_name = name
-                    client.guardian_name = guardian
-                    client.age = age
-                    client.mobile = mobile
-                    client.email_primary = email
                     client.disclaimer = disclaimer
-                    client.height_cm = height_cm
-                    client.weight_kg = weight_kg
-                    client.notes = notes
                     client.jotform_submission_id = jotform_id
                 continue
 
+            # Otherwise create new
+            new_client = Client(
+                full_name=name,
+                guardian_name=guardian,
+                age=age,
+                mobile=mobile,
+                email_primary=email,
+                disclaimer=disclaimer,
+                height_cm=height_cm,
+                weight_kg=weight_kg,
+                notes=notes,
+                jotform_submission_id=jotform_id
+            )
+            db.session.add(new_client)
+
+        # ---------------------------------------------------------
+        # MARK SUBMISSION AS PROCESSED
+        # ---------------------------------------------------------
         row.processed = True
         row.processed_at = datetime.utcnow()
         db.session.commit()
 
+        # Move to next submission
         next_row = IncomingSubmission.query.filter_by(
             processed=False,
             ignored=False
