@@ -2773,6 +2773,18 @@ def create_app():
         ))
 
 
+    @app.route('/load_riders/<course_code>')
+    def load_riders(course_code):
+        riders = riders_by_course.get(course_code, [])
+        return render_template(
+            "partials/rider_table.html",
+            riders=riders,
+            horses=horses,
+            client_lookup=client_lookup,
+            course_code=course_code
+        )
+
+
     @app.route('/update_course_field/<int:id>', methods=['POST'])
     def update_course_field(id):
         data = request.get_json()
@@ -3164,7 +3176,7 @@ def create_app():
             key=lambda c: (
                 day_order.get(c.day_of_week, 99),
                 c.timerange or "",
-                c.course_name or "",
+                c.display_label or "",
                 c.course_code or ""
             )
         )
