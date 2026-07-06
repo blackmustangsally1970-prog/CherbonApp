@@ -482,7 +482,7 @@
     </td>
 
     <!-- RIDER NAME -->
-    {% set match = client_names | selectattr("full_name", "equalto", r.rider_name) | list %}
+    {% set match = client_lookup.get(r.rider_name) %}
     <td style="width:32ch; white-space:normal; word-break:break-word;">
         <input type="text"
                data-id="{{ r.id }}"
@@ -491,7 +491,7 @@
                onchange="updateField({{ r.id }}, 'rider_name', this.value)"
                style="
                    width:30ch;
-                   {% if match|length == 0 %}
+                   {% if not match %}
                        color:red;
                        font-weight:bold;
                    {% endif %}

@@ -3185,6 +3185,7 @@ def create_app():
 
         # ---- CLIENTS ----
         client_names = Client.query.all()
+        client_lookup = {c.full_name: c for c in client_names}
         print("Loaded clients in", time.time() - t0); t0 = time.time()
 
         total_nominations = len(unprocessed_submissions) + len(approved_submissions)
@@ -3207,6 +3208,7 @@ def create_app():
             submissions_map=submissions_map,
             current_course_map=current_course_map,
             client_names=client_names,
+            client_lookup=client_lookup,
             horses=horses
         )
 
