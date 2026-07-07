@@ -232,20 +232,30 @@ function smsSelectedRiders(courseCode) {
     .then(data => alert(data.message));
 }
 
-// Toggle all lesson-select checkboxes
-document.querySelector('.master-select-lessons')?.addEventListener('change', function() {
-    const checked = this.checked;
-    document.querySelectorAll('.lesson-select').forEach(cb => {
-        cb.checked = checked;
-    });
-});
+document.addEventListener("DOMContentLoaded", function() {
 
-// Toggle all sms-select checkboxes
-document.querySelector('.master-select-sms')?.addEventListener('change', function() {
-    const checked = this.checked;
-    document.querySelectorAll('.sms-select').forEach(cb => {
-        cb.checked = checked;
-    });
+    // Toggle all lesson-select checkboxes
+    const masterLessons = document.querySelector('.master-select-lessons');
+    if (masterLessons) {
+        masterLessons.addEventListener('change', function() {
+            const checked = this.checked;
+            document.querySelectorAll('.lesson-select').forEach(cb => {
+                cb.checked = checked;
+            });
+        });
+    }
+
+    // Toggle all sms-select checkboxes
+    const masterSMS = document.querySelector('.master-select-sms');
+    if (masterSMS) {
+        masterSMS.addEventListener('change', function() {
+            const checked = this.checked;
+            document.querySelectorAll('.sms-select').forEach(cb => {
+                cb.checked = checked;
+            });
+        });
+    }
+
 });
 
 
