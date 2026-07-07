@@ -427,12 +427,12 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
 
     /* ============================================================
        INLINE FIELD UPDATE
     ============================================================ */
-    window.updateField = function(id, field, value) {
+    window.updateField = function (id, field, value) {
         fetch(`/update_course_field/${id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -455,7 +455,7 @@ document.addEventListener("DOMContentLoaded", function() {
     /* ============================================================
        GENERATE LESSONS FOR SELECTED RIDERS
     ============================================================ */
-    window.generateLessons = function(course_code) {
+    window.generateLessons = function (course_code) {
         const ids = [...document.querySelectorAll(
             `.lesson-select[data-course="${course_code}"]:checked`
         )].map(cb => cb.dataset.id);
@@ -477,7 +477,8 @@ document.addEventListener("DOMContentLoaded", function() {
             } else {
                 alert(`Lessons created successfully: ${data.created}`);
             }
-        });
+        })
+        .catch(err => alert("Generate failed: " + err));
     };
 
 
@@ -485,22 +486,24 @@ document.addEventListener("DOMContentLoaded", function() {
        MISSING RIDERS MODAL
     ============================================================ */
     document.querySelectorAll(".missing-btn").forEach(btn => {
-        btn.addEventListener("click", function(e) {
+        btn.addEventListener("click", function (e) {
             e.stopPropagation();
             const code = this.dataset.course;
-            document.getElementById("missing-modal-" + code).style.display = "block";
+            const modal = document.getElementById("missing-modal-" + code);
+            if (modal) modal.style.display = "block";
         });
     });
 
     document.querySelectorAll(".close").forEach(btn => {
-        btn.addEventListener("click", function(e) {
+        btn.addEventListener("click", function (e) {
             e.stopPropagation();
             const code = this.dataset.course;
-            document.getElementById("missing-modal-" + code).style.display = "none";
+            const modal = document.getElementById("missing-modal-" + code);
+            if (modal) modal.style.display = "none";
         });
     });
 
-    window.addEventListener("click", function(e) {
+    window.addEventListener("click", function (e) {
         document.querySelectorAll(".missing-modal").forEach(modal => {
             if (e.target === modal) modal.style.display = "none";
         });
@@ -511,7 +514,7 @@ document.addEventListener("DOMContentLoaded", function() {
        SMS BUTTONS
     ============================================================ */
     document.querySelectorAll(".sms-btn").forEach(btn => {
-        btn.addEventListener("click", function(e) {
+        btn.addEventListener("click", function (e) {
             e.stopPropagation();
             const number = this.dataset.number;
             const name = this.dataset.name;
@@ -527,7 +530,7 @@ document.addEventListener("DOMContentLoaded", function() {
        CANCELLED CHECKBOXES
     ============================================================ */
     document.querySelectorAll(".cancelled-checkbox").forEach(cb => {
-        cb.addEventListener("change", function(e) {
+        cb.addEventListener("change", function (e) {
             e.stopPropagation();
             fetch("/mark_cancelled", {
                 method: "POST",
@@ -537,7 +540,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     name: this.dataset.name,
                     cancelled: this.checked
                 })
-            });
+            }).catch(err => console.log("mark_cancelled error", err));
         });
     });
 
@@ -546,7 +549,7 @@ document.addEventListener("DOMContentLoaded", function() {
        CONTACTED CHECKBOXES
     ============================================================ */
     document.querySelectorAll(".contacted-checkbox").forEach(cb => {
-        cb.addEventListener("change", function(e) {
+        cb.addEventListener("change", function (e) {
             e.stopPropagation();
             fetch("/mark_contacted", {
                 method: "POST",
@@ -556,7 +559,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     name: this.dataset.name,
                     contacted: this.checked
                 })
-            });
+            }).catch(err => console.log("mark_contacted error", err));
         });
     });
 
@@ -565,7 +568,7 @@ document.addEventListener("DOMContentLoaded", function() {
        MASTER SELECT (SELECT ALL RIDERS)
     ============================================================ */
     document.querySelectorAll(".master-select").forEach(master => {
-        master.addEventListener("change", function(e) {
+        master.addEventListener("change", function (e) {
             e.stopPropagation();
             const course = this.dataset.course;
             const checked = this.checked;
@@ -573,7 +576,8 @@ document.addEventListener("DOMContentLoaded", function() {
             document.querySelectorAll(
                 `.lesson-select[data-course="${course}"]`
             ).forEach(cb => {
-                if (cb.closest(".sel-cell").textContent.trim() === "Added") return;
+                const cell = cb.closest(".sel-cell");
+                if (cell && cell.textContent.trim() === "Added") return;
                 cb.checked = checked;
             });
         });
@@ -583,9 +587,9 @@ document.addEventListener("DOMContentLoaded", function() {
     /* ============================================================
        CHECK WHICH LESSONS WERE ADDED
     ============================================================ */
-    const btn = document.getElementById("checkLessonsBtn");
-    if (btn) {
-        btn.addEventListener("click", function(e) {
+    const checkBtn = document.getElementById("checkLessonsBtn");
+    if (checkBtn) {
+        checkBtn.addEventListener("click", function (e) {
             e.stopPropagation();
 
             const year = "{{ selected_year }}";
@@ -603,7 +607,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     document.querySelectorAll("tr[data-timeframe]").forEach(row => {
                         const tf = row.getAttribute("data-timeframe");
                         const rider = row.getAttribute("data-rider");
-
                         const key = tf + "|" + rider;
 
                         if (added[key]) {
@@ -615,7 +618,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                     });
                 })
-                .catch(err => console.log("FETCH ERROR", err));
+                .catch(err => console.log("check_lessons error", err));
         });
     }
 
@@ -661,14 +664,12 @@ document.addEventListener("DOMContentLoaded", function() {
     /* ============================================================
        COURSE GRID TOGGLE + LAZY LOAD
     ============================================================ */
-    document.querySelectorAll(".toggle-header, .toggle-header *").forEach(el => {
-        el.addEventListener("click", function(e) {
+    document.querySelectorAll(".toggle-header").forEach(header => {
+        header.addEventListener("click", function (e) {
             e.stopPropagation();
-            const header = this.closest(".toggle-header");
-            if (!header) return;
 
-            const targetId = header.getAttribute("data-target");
-            console.log("HEADER CLICKED:", targetId);
+            const targetId = this.getAttribute("data-target");
+            if (!targetId) return;
 
             const grid = document.getElementById(targetId);
             if (!grid) return;
@@ -699,11 +700,12 @@ document.addEventListener("DOMContentLoaded", function() {
                     $(grid).find("select").select2();
                 }
             })
-            .catch(err => console.log("LOAD RIDERS ERROR", err));
+            .catch(err => console.log("load_riders error", err));
     }
 
-});  /* END DOMContentLoaded */
+});
 </script>
+
 
 
 </body>
