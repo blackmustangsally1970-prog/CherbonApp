@@ -7,6 +7,7 @@ from flask import (
 from flask_login import LoginManager, current_user
 from flask_login import login_user
 from decimal import Decimal
+from playwright.async_api import async_playwright
 
 
 from collections import defaultdict
@@ -5969,9 +5970,8 @@ def create_app():
 
 
     @app.route('/generate_course_pdfs/<course_code>')
-    def generate_course_pdfs(course_code):
+    async def generate_course_pdfs(course_code):
         from datetime import timedelta
-        import pdfkit
 
         # Load course
         course = Course.query.filter_by(course_code=course_code).first_or_404()
@@ -6012,25 +6012,32 @@ def create_app():
         else:
             last_date = first_date + timedelta(weeks=weeks - 2)
 
-        # ⭐ STEP 7 — Generate one PDF per rider with rider-specific HTML
+        # Generate one PDF per rider using Playwright (async)
         generated = []
 
-        for r in riders:
-            html = render_template(
-                "rider_pdf_template.html",
-                course=course,
-                rider=r,
-                first_date=first_date.strftime("%d %b %Y"),
-                last_date=last_date.strftime("%d %b %Y")
-            )
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
 
-            rider_pdf_path = f"static/pdfs/{course_code}_{r.client_id}.pdf"
-            pdfkit.from_string(html, rider_pdf_path)
-            generated.append(rider_pdf_path)
+            for r in riders:
+                html = render_template(
+                    "rider_pdf_template.html",
+                    course=course,
+                    rider=r,
+                    first_date=first_date.strftime("%d %b %Y"),
+                    last_date=last_date.strftime("%d %b %Y")
+                )
+
+                page = await browser.new_page()
+                await page.set_content(html)
+
+                rider_pdf_path = f"static/pdfs/{course_code}_{r.client_id}.pdf"
+                await page.pdf(path=rider_pdf_path)
+
+                generated.append(rider_pdf_path)
+
+            await browser.close()
 
         return {"generated": generated}
-
-
 
     @app.route('/sms/course/<course_code>', methods=['POST'])
     def sms_course_riders(course_code):
