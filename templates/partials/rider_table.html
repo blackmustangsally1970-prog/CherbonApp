@@ -1,12 +1,21 @@
 <table>
     <thead class="orange-header">
         <tr>
-            <th style="width:4ch;">
-                <input type="checkbox"
-                       class="master-select"
-                       data-course="{{ course_code }}"
-                       title="Select all">
-            </th>
+<th style="width:8ch; white-space:nowrap;">
+
+    <!-- Master for lesson-select -->
+    <input type="checkbox"
+           class="master-select-lessons"
+           data-course="{{ course_code }}"
+           title="Select all lessons"
+           style="margin-right:6px;">
+
+    <!-- Master for sms-select -->
+    <input type="checkbox"
+           class="master-select-sms"
+           data-course="{{ course_code }}"
+           title="Select all SMS">
+</th>
             <th style="width:14ch;">Rider</th>
             <th style="width:12ch;">Horse 1</th>
             <th style="width:12ch;">Horse 2</th>
@@ -222,5 +231,22 @@ function smsSelectedRiders(courseCode) {
     .then(r => r.json())
     .then(data => alert(data.message));
 }
+
+// Toggle all lesson-select checkboxes
+document.querySelector('.master-select-lessons')?.addEventListener('change', function() {
+    const checked = this.checked;
+    document.querySelectorAll('.lesson-select').forEach(cb => {
+        cb.checked = checked;
+    });
+});
+
+// Toggle all sms-select checkboxes
+document.querySelector('.master-select-sms')?.addEventListener('change', function() {
+    const checked = this.checked;
+    document.querySelectorAll('.sms-select').forEach(cb => {
+        cb.checked = checked;
+    });
+});
+
 
 </script>
