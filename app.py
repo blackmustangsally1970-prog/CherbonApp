@@ -5971,73 +5971,31 @@ def create_app():
 
     @app.route('/generate_course_pdfs/<course_code>')
     def generate_course_pdfs(course_code):
-        from playwright.sync_api import sync_playwright
-        from datetime import timedelta
+        import subprocess
+        import json
 
-        # Load course
-        course = Course.query.filter_by(course_code=course_code).first_or_404()
+        cmd = [
+            sys.executable,
+            "generate_course_pdfs_cli.py",
+            course_code
+        ]
 
-        # Load riders
-        riders = (
-            db.session.query(Client)
-            .join(CourseRider, CourseRider.client_id == Client.client_id)
-            .filter(CourseRider.course_code == course_code)
-            .all()
-        )
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+        except Exception as e:
+            return {"error": str(e)}, 500
 
-        # Load active term
-        term = Term.query.filter_by(active=True).first()
-        if not term:
-            return {"error": "No active term found"}, 400
+        if result.returncode != 0:
+            return {"error": result.stdout + result.stderr}, 500
 
-        term_start = term.start_date
-        weeks = term.weeks
-
-        # Day → weekday number
-        weekday_map = {
-            "Monday": 0, "Tuesday": 1, "Wednesday": 2,
-            "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6
-        }
-
-        # Compute first lesson
-        target_weekday = weekday_map[course.day_of_week]
-        first_date = term_start + timedelta(days=(target_weekday - term_start.weekday()) % 7)
-
-        # Fortnightly W2 starts one week later
-        if course.frequency == "F" and course.start_week == "W2":
-            first_date += timedelta(weeks=1)
-
-        # Compute last lesson
-        if course.frequency == "W":
-            last_date = first_date + timedelta(weeks=weeks - 1)
-        else:
-            last_date = first_date + timedelta(weeks=weeks - 2)
-
-        generated = []
-
-        # SYNC PLAYWRIGHT — NO ASYNC — NO WORKER CRASH
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-
-            for r in riders:
-                html = render_template(
-                    "rider_pdf_template.html",
-                    course=course,
-                    rider=r,
-                    first_date=first_date.strftime("%d %b %Y"),
-                    last_date=last_date.strftime("%d %b %Y")
-                )
-
-                page.set_content(html)
-
-                rider_pdf_path = f"static/pdfs/{course_code}_{r.client_id}.pdf"
-                page.pdf(path=rider_pdf_path)
-
-                generated.append(rider_pdf_path)
-
-            browser.close()
-
+        lines = result.stdout.strip().splitlines()
+        # first line "OK", rest are paths
+        generated = lines[1:]
         return {"generated": generated}
 
 
