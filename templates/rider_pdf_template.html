@@ -2,27 +2,37 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ course.course_code }} — {{ rider.first_name }} {{ rider.last_name }}</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        h2 { margin-bottom: 10px; }
-        p { margin: 4px 0; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        .label {
+            font-weight: bold;
+        }
     </style>
 </head>
+
 <body>
 
-<h2>{{ course.course_code }} — {{ rider.first_name }} {{ rider.last_name }}</h2>
+<div class="title">Rider Lesson Summary</div>
 
-<p><strong>Horse:</strong> {{ rider.horse_name }}</p>
-<p><strong>Frequency:</strong> {{ course.frequency }}</p>
-<p><strong>Start Week:</strong> {{ course.start_week }}</p>
-
-<p><strong>First Lesson:</strong> {{ first_date }}</p>
-<p><strong>Last Lesson:</strong> {{ last_date }}</p>
-
-<p><strong>Notes:</strong> {{ rider.notes }}</p>
-
-<p><strong>Price:</strong> ${{ rider.price }}</p>
+<div class="section">
+    <div><span class="label">Rider:</span> {{ rider.first_name }} {{ rider.last_name }}</div>
+    <div><span class="label">Course:</span> {{ course.course_code }}</div>
+    <div><span class="label">Day:</span> {{ course.day_of_week }}</div>
+    <div><span class="label">First Lesson:</span> {{ first_date }}</div>
+    <div><span class="label">Last Lesson:</span> {{ last_date }}</div>
+</div>
 
 </body>
 </html>
