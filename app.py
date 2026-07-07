@@ -2073,11 +2073,12 @@ def create_app():
         week_starts = build_term_weeks(term)
         day_offset = get_day_offset(course.day_of_week)
 
+        # ✔ FIXED: Term object uses .year and .number
         approved = CourseFormSubmission.query.filter_by(
             status="approved",
             current_course=course_code,
-            term_year=term.term_year,
-            term_number=term.term_number
+            term_year=term.year,
+            term_number=term.number
         ).all()
 
         created = 0
@@ -2087,12 +2088,14 @@ def create_app():
             if not r:
                 continue
 
+            # Frequency validation
             if r.frequency not in ("W", "F"):
                 continue
 
             if r.frequency == "F" and not r.start_week:
                 continue
 
+            # PRICE SELECTION
             if r.price_override is not None:
                 price = r.price_override
             elif r.price is not None:
@@ -2110,6 +2113,7 @@ def create_app():
 
             price = float(price)
 
+            # WEEK INDEXES
             if r.frequency == "W":
                 week_indexes = [0,1,2,3,4,5,6,7,8,9]
             else:
@@ -2121,6 +2125,7 @@ def create_app():
                 week_start = week_starts[wi]
                 lesson_date = week_start + timedelta(days=day_offset)
 
+                # ✔ Lessons table does NOT store term/year — correct
                 lesson = Lesson(
                     lesson_date=lesson_date,
                     time_frame=course.timerange,
