@@ -2842,6 +2842,12 @@ def create_app():
         # DECIMAL: price_override (FULLY FIXED)
         # ---------------------------------------------------------
         if field == "price_override":
+
+            # SANITISE VALUE
+            if value is not None:
+                value = str(value).strip()
+
+            # EMPTY OVERRIDE → CLEAR IT
             if value in ("", None):
                 row.price_override = None
 
@@ -2865,14 +2871,20 @@ def create_app():
                         )
                         row.price = new_price
 
-            else:
-                try:
-                    override_val = Decimal(value)
-                    row.price_override = override_val
-                    row.price = override_val      # ⭐ CRITICAL FIX
-                except:
-                    return "Invalid price override", 400
+                db.session.commit()
+                db.session.refresh(row)
+                return "OK", 200
 
+            # CONVERT SAFELY
+            try:
+                override_val = Decimal(value)
+            except Exception as e:
+                print("DEBUG PRICE OVERRIDE FAILED:", repr(value), e)
+                return "Invalid price override", 400
+
+            # SAVE OVERRIDE + PRICE
+            row.price_override = override_val
+            row.price = override_val
             db.session.commit()
             db.session.refresh(row)
             return "OK", 200
