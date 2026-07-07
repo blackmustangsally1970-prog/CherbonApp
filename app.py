@@ -5970,8 +5970,14 @@ def create_app():
 
 
     @app.route('/generate_course_pdfs/<course_code>')
-    async def generate_course_pdfs(course_code):
+    def generate_course_pdfs(course_code):
+        import asyncio
+        return asyncio.run(_generate_course_pdfs_async(course_code))
+
+
+    async def _generate_course_pdfs_async(course_code):
         from datetime import timedelta
+        from playwright.async_api import async_playwright
 
         # Load course
         course = Course.query.filter_by(course_code=course_code).first_or_404()
@@ -5987,7 +5993,7 @@ def create_app():
         # Load active term
         term = Term.query.filter_by(active=True).first()
         if not term:
-            return "No active term found", 400
+            return {"error": "No active term found"}, 400
 
         term_start = term.start_date
         weeks = term.weeks
@@ -6038,6 +6044,7 @@ def create_app():
             await browser.close()
 
         return {"generated": generated}
+
 
     @app.route('/sms/course/<course_code>', methods=['POST'])
     def sms_course_riders(course_code):
