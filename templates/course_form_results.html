@@ -198,7 +198,10 @@
         ↻ Refresh JotForm Submissions
     </a>
 
-    <button id="checkLessonsBtn" class="menu-btn">Check Lessons Added</button>
+<button id="checkLessonsBtn" class="menu-btn" data-course="{{ course_code }}">
+    Check Lessons Added
+</button>
+
 
 </div>
 
@@ -452,35 +455,49 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
 
-window.checkLessonsForTerm = function (course_code) {
-    fetch(`/check_lessons_for_term?course=${course_code}`)
-        .then(r => r.json())
-        .then(data => {
-            const rows = document.querySelectorAll(
-                `tr[data-timeframe="${course_code}"]`
-            );
+    /* ============================================================
+       CHECK LESSONS FOR TERM (UNIFIED + CORRECT)
+    ============================================================ */
+    window.checkLessonsForTerm = function (course_code) {
+        fetch(`/check_lessons_for_term?course=${course_code}`)
+            .then(r => r.json())
+            .then(data => {
 
-            rows.forEach(row => {
-                const rider = row.dataset.rider;
-                const key = `${course_code}|${rider}`;
-                const selCell = row.querySelector(".sel-cell");
+                const rows = document.querySelectorAll(
+                    `tr[data-timeframe="${course_code}"]`
+                );
 
-                if (data[key]) {
-                    selCell.innerHTML =
-                        `<span style="color:green;font-weight:bold;">Added</span>`;
-                } else {
-                    const id = row.querySelector(".lesson-select").dataset.id;
-                    selCell.innerHTML = `
-                        <input type="checkbox"
-                               class="lesson-select"
-                               data-id="${id}"
-                               data-course="${course_code}">
-                    `;
-                }
-            });
-        })
-        .catch(err => console.error("Check lessons failed:", err));
-};
+                rows.forEach(row => {
+                    const rider = row.dataset.rider;
+                    const key = `${course_code}|${rider}`;
+                    const selCell = row.querySelector(".sel-cell");
+
+                    if (!selCell) return;
+
+                    if (data[key]) {
+                        selCell.innerHTML =
+                            `<span style="color:green;font-weight:bold;">Added</span>`;
+                    } else {
+                        let id = null;
+
+                        const cb = row.querySelector(".lesson-select");
+                        if (cb) {
+                            id = cb.dataset.id;
+                        } else {
+                            id = row.dataset.id;
+                        }
+
+                        selCell.innerHTML = `
+                            <input type="checkbox"
+                                   class="lesson-select"
+                                   data-id="${id}"
+                                   data-course="${course_code}">
+                        `;
+                    }
+                });
+            })
+            .catch(err => console.error("Check lessons failed:", err));
+    };
 
 
     /* ============================================================
@@ -512,6 +529,18 @@ window.checkLessonsForTerm = function (course_code) {
         })
         .catch(err => alert("Generate failed: " + err));
     };
+
+
+    /* ============================================================
+       CHECK BUTTON (CORRECT VERSION)
+    ============================================================ */
+    const checkBtn = document.getElementById("checkLessonsBtn");
+    if (checkBtn) {
+        checkBtn.addEventListener("click", function () {
+            const course_code = this.dataset.course;
+            checkLessonsForTerm(course_code);
+        });
+    }
 
 
     /* ============================================================
@@ -614,45 +643,6 @@ window.checkLessonsForTerm = function (course_code) {
             });
         });
     });
-
-
-    /* ============================================================
-       CHECK WHICH LESSONS WERE ADDED
-    ============================================================ */
-    const checkBtn = document.getElementById("checkLessonsBtn");
-    if (checkBtn) {
-        checkBtn.addEventListener("click", function (e) {
-            e.stopPropagation();
-
-            const year = "{{ selected_year }}";
-            const term = "{{ selected_term }}";
-
-            const url = "/check_lessons_for_term?year=" + year + "&term=" + term;
-
-            fetch(url)
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.success) return;
-
-                    const added = data.added;
-
-                    document.querySelectorAll("tr[data-timeframe]").forEach(row => {
-                        const tf = row.getAttribute("data-timeframe");
-                        const rider = row.getAttribute("data-rider");
-                        const key = tf + "|" + rider;
-
-                        if (added[key]) {
-                            const selCell = row.querySelector(".sel-cell");
-                            if (selCell) {
-                                selCell.innerHTML =
-                                    "<span style='color:green; font-weight:bold;'>Added</span>";
-                            }
-                        }
-                    });
-                })
-                .catch(err => console.log("check_lessons error", err));
-        });
-    }
 
 
     /* ============================================================
