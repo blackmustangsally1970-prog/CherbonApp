@@ -6,6 +6,7 @@ from flask import (
 
 from flask_login import LoginManager, current_user
 from flask_login import login_user
+from decimal import Decimal
 
 
 from collections import defaultdict
