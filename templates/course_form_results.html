@@ -330,6 +330,16 @@
             {% endif %}
         </div>
 
+        <!-- NEW: SMS COURSE RIDERS BUTTON (inserted between the two) -->
+        <div style="flex:1; text-align:center;">
+            <button class="sms-btn"
+                    onclick="smsCourseRiders('{{ c.course_code }}')"
+                    style="background:#c7ffd1; padding:6px 10px; border-radius:6px;">
+                📩 SMS Course Riders
+            </button>
+        </div>
+
+
         <!-- RIGHT SIDE: ADD LESSONS BUTTON -->
         <div style="flex:1; text-align:right;">
             <button onclick="generateLessons('{{ c.course_code }}')"
@@ -730,8 +740,25 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 });
-</script>
 
+function smsCourseRiders(courseCode) {
+    if (!confirm("Send SMS with PDF link to all riders in " + courseCode + " ?")) {
+        return;
+    }
+
+    fetch("/sms/course/" + courseCode, {
+        method: "POST"
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert("SMS sent to " + data.sent + " riders in " + data.course);
+    })
+    .catch(err => {
+        console.error("SMS error:", err);
+        alert("SMS failed — check console.");
+    });
+}
+</script>
 
 
 </body>

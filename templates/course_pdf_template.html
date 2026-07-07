@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ course.course_code }} – Course PDF</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        h2 { margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
+        th { background: #f0f0f0; }
+    </style>
+</head>
+
+<body>
+
+<h2>
+    {{ course.day_of_week }} {{ course.timerange }}
+    — {{ course.display_label }}
+    ({{ course.course_code }})
+</h2>
+
+<p>
+    <strong>First Lesson:</strong> {{ first_date }}<br>
+    <strong>Last Lesson:</strong> {{ last_date }}
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Rider Name</th>
+            <th>FT/W</th>
+            <th>Frequency</th>
+            <th>Price</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for r in riders %}
+        {% set base = r.price_override or r.price %}
+        {% if r.ftor == 'FT' and r.frequency == 'W' %}
+            {% set final_price = base * 10 %}
+        {% elif r.ftor == 'FT' and r.frequency == 'F' %}
+            {% set final_price = base * 5 %}
+        {% else %}
+            {% set final_price = base %}
+        {% endif %}
+
+        <tr>
+            <td>{{ r.full_name }}</td>
+            <td>{{ r.ftor }}</td>
+            <td>{{ r.frequency }}</td>
+            <td>${{ "%.2f"|format(final_price) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

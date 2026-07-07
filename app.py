@@ -5951,6 +5951,120 @@ def create_app():
         )
 
 
+    @app.route('/generate_course_pdf/<course_code>')
+    def generate_course_pdf(course_code):
+        from datetime import timedelta
+
+        # Load course
+        course = Course.query.filter_by(course_code=course_code).first_or_404()
+
+        # Load riders
+        riders = (
+            db.session.query(Client)
+            .join(CourseRider, CourseRider.client_id == Client.client_id)
+            .filter(CourseRider.course_code == course_code)
+            .all()
+        )
+
+        # Load active term
+        term = Term.query.filter_by(active=True).first()
+        if not term:
+            return "No active term found", 400
+
+        term_start = term.start_date
+        weeks = term.weeks
+
+        # Day → weekday number
+        weekday_map = {
+            "Monday": 0, "Tuesday": 1, "Wednesday": 2,
+            "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6
+        }
+
+        # Compute first lesson
+        target_weekday = weekday_map[course.day_of_week]
+        first_date = term_start + timedelta(days=(target_weekday - term_start.weekday()) % 7)
+
+        # Fortnightly W2 starts one week later
+        if course.frequency == "F" and course.start_week == "W2":
+            first_date += timedelta(weeks=1)
+
+        # Compute last lesson
+        if course.frequency == "W":
+            last_date = first_date + timedelta(weeks=weeks - 1)
+        else:
+            last_date = first_date + timedelta(weeks=weeks - 2)
+
+        # Render PDF HTML
+        html = render_template(
+            "course_pdf_template.html",
+            course=course,
+            riders=riders,
+            first_date=first_date.strftime("%d %b %Y"),
+            last_date=last_date.strftime("%d %b %Y")
+        )
+
+        # Generate PDF
+        pdf_path = f"static/pdfs/{course_code}.pdf"
+
+        import pdfkit
+        pdfkit.from_string(html, pdf_path)
+
+        return f"PDF generated: {pdf_path}"
+
+
+    @app.route('/sms/course/<course_code>', methods=['POST'])
+    def sms_course_riders(course_code):
+        from clicksend_client import ClickSendClient  # your existing helper
+        import json
+
+        # 1. Load course
+        course = Course.query.filter_by(course_code=course_code).first_or_404()
+
+        # 2. Load riders enrolled in this course
+        riders = (
+            db.session.query(Client)
+            .join(CourseRider, CourseRider.client_id == Client.client_id)
+            .filter(CourseRider.course_code == course_code)
+            .all()
+        )
+
+        # 3. Build PDF link (static or dynamic)
+        pdf_link = f"https://cherbonapp.com/static/pdfs/{course_code}.pdf"
+
+        # 4. SMS template (160 chars)
+        def build_sms(name):
+            return (
+                f"Hi {name}, your Cherbon Waters course details are ready. "
+                f"PDF: {pdf_link} See you soon."
+            )
+
+        # 5. Send SMS to each rider
+        sent = 0
+        for r in riders:
+            mobile = r.mobile
+            if not mobile:
+                continue
+
+            message = build_sms(r.full_name)
+
+            try:
+                ClickSendClient().send_sms(
+                    to=mobile,
+                    message=message,
+                    sender_id=app.config["SMS_ADMIN_NUMBER"]
+                )
+                sent += 1
+            except Exception as e:
+                print("SMS ERROR:", e)
+
+        return json.dumps({
+            "status": "ok",
+            "sent": sent,
+            "course": course_code
+        })
+
+
+
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
@@ -6083,15 +6197,13 @@ def create_app():
             )
             db.session.add(new_client)
 
-        # ---------------------------------------------------------
-        # CLEAR MATCHES FOR THIS RIDER ONLY
-        # ---------------------------------------------------------
-        parsed["riders"][rider_index - 1]["matches"] = []
+        # CLEAR MATCHES FOR ALL RIDERS — conflict has been resolved
+        for r in parsed["riders"]:
+            r["matches"] = []
 
         # Save updated payload
         import json
         row.raw_payload = json.dumps(parsed)
-
         db.session.commit()
 
         # ---------------------------------------------------------
@@ -6165,87 +6277,6 @@ def create_app():
         all_clients = db.session.query(Client).all()
         clients_by_id = {c.client_id: c for c in all_clients}
 
-        # Detect if this POST came from conflict resolution
-        conflict_choice = request.form.get("choice")
-        conflict_client_id = request.form.get("client_id")
-        conflict_client_id = int(conflict_client_id) if conflict_client_id else None
-
-        # If conflict POST exists → update ONLY that rider
-        if conflict_choice:
-            # rider_index was passed in the URL
-            rider_index = int(request.view_args.get("webhook_id", 0))
-            # NO — rider_index is NOT webhook_id. Fix:
-            rider_index = int(request.view_args.get("rider_index", 1))
-
-            conflict_rider = valid_riders[rider_index - 1]
-
-            name = smart_proper_name(conflict_rider.get("name"))
-            age = safe_int(conflict_rider.get("age"))
-            height_cm = safe_int(conflict_rider.get("height_cm"))
-            weight_kg = safe_int(conflict_rider.get("weight_kg"))
-            notes = safe_text(conflict_rider.get("notes"))
-
-            existing = clients_by_id.get(conflict_client_id)
-
-            if conflict_choice == "ignore":
-                pass
-
-            elif conflict_choice == "use_existing" and existing:
-                existing.full_name = name
-                existing.guardian_name = guardian
-                existing.age = age
-                existing.mobile = mobile
-                existing.email_primary = email
-                existing.height_cm = height_cm
-                existing.weight_kg = weight_kg
-                existing.notes = notes
-                existing.disclaimer = disclaimer
-                existing.jotform_submission_id = jotform_id
-
-            elif conflict_choice == "overwrite" and existing:
-                existing.full_name = name
-                existing.guardian_name = guardian
-                existing.age = age
-                existing.mobile = mobile
-                existing.email_primary = email
-                existing.height_cm = height_cm
-                existing.weight_kg = weight_kg
-                existing.notes = notes
-                existing.disclaimer = disclaimer
-                existing.jotform_submission_id = jotform_id
-
-            elif conflict_choice == "new":
-                new_client = Client(
-                    full_name=name,
-                    guardian_name=guardian,
-                    age=age,
-                    mobile=mobile,
-                    email_primary=email,
-                    disclaimer=disclaimer,
-                    height_cm=height_cm,
-                    weight_kg=weight_kg,
-                    notes=notes,
-                    invoice_required=False,
-                    jotform_submission_id=jotform_id
-                )
-                db.session.add(new_client)
-
-            elif conflict_choice == "new_same_name":
-                final_name = generate_unique_client_name(name)
-                new_client = Client(
-                    full_name=final_name,
-                    guardian_name=guardian,
-                    age=age,
-                    mobile=mobile,
-                    email_primary=email,
-                    disclaimer=disclaimer,
-                    height_cm=height_cm,
-                    weight_kg=weight_kg,
-                    notes=notes,
-                    invoice_required=False,
-                    jotform_submission_id=jotform_id
-                )
-                db.session.add(new_client)
 
         # ---------------------------------------------------------
         # PROCESS ALL RIDERS (NON-CONFLICT RIDERS INCLUDED)
