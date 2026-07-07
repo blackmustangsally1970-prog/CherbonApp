@@ -6046,58 +6046,6 @@ def create_app():
         return {"generated": generated}
 
 
-    @app.route('/sms/course/<course_code>', methods=['POST'])
-    def sms_course_riders(course_code):
-        from clicksend_client import ClickSendClient  # your existing helper
-        import json
-
-        # 1. Load course
-        course = Course.query.filter_by(course_code=course_code).first_or_404()
-
-        # 2. Load riders enrolled in this course
-        riders = (
-            db.session.query(Client)
-            .join(CourseRider, CourseRider.client_id == Client.client_id)
-            .filter(CourseRider.course_code == course_code)
-            .all()
-        )
-
-        # 3. Build PDF link (static or dynamic)
-        pdf_link = f"https://cherbonapp.com/static/pdfs/{course_code}.pdf"
-
-        # 4. SMS template (160 chars)
-        def build_sms(name):
-            return (
-                f"Hi {name}, your Cherbon Waters course details are ready. "
-                f"PDF: {pdf_link} See you soon."
-            )
-
-        # 5. Send SMS to each rider
-        sent = 0
-        for r in riders:
-            mobile = r.mobile
-            if not mobile:
-                continue
-
-            message = build_sms(r.full_name)
-
-            try:
-                ClickSendClient().send_sms(
-                    to=mobile,
-                    message=message,
-                    sender_id=app.config["SMS_ADMIN_NUMBER"]
-                )
-                sent += 1
-            except Exception as e:
-                print("SMS ERROR:", e)
-
-        return json.dumps({
-            "status": "ok",
-            "sent": sent,
-            "course": course_code
-        })
-
-
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
