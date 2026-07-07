@@ -731,6 +731,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 grid.innerHTML = html;
                 grid.dataset.loaded = "1";
 
+                                              // ⭐ Attach master checkbox handlers AFTER HTML is inserted
+                                             attachMasterCheckboxHandlers(grid);
+
                 if (window.$) {
                     $(grid).find("select").select2();
                 }
@@ -757,6 +760,35 @@ function smsCourseRiders(courseCode) {
         alert("SMS failed — check console.");
     });
 }
+
+
+function attachMasterCheckboxHandlers(grid) {
+
+    // Lessons master checkbox
+    const masterLessons = grid.querySelector('.master-select-lessons');
+    if (masterLessons) {
+        masterLessons.addEventListener('change', function() {
+            const checked = this.checked;
+            grid.querySelectorAll('.lesson-select').forEach(cb => {
+                cb.checked = checked;
+            });
+        });
+    }
+
+    // SMS master checkbox
+    const masterSMS = grid.querySelector('.master-select-sms');
+    if (masterSMS) {
+        masterSMS.addEventListener('change', function() {
+            const checked = this.checked;
+            grid.querySelectorAll('.sms-select').forEach(cb => {
+                cb.checked = checked;
+            });
+        });
+    }
+}
+
+
+
 </script>
 
 
