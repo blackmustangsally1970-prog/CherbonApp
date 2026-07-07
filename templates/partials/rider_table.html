@@ -33,8 +33,7 @@
             {% for r in riders %}
             <tr data-timeframe="{{ r.current_course }}" data-rider="{{ r.rider_name }}">
 
-<!-- SELECT CHECKBOXES -->
-<td class="sel-cell">
+<td class="sel-cell" style="white-space:nowrap;">
 
     <!-- Existing checkbox (Add Riders to Lessons) -->
     {% if r.lesson_added %}
@@ -44,15 +43,15 @@
                class="lesson-select"
                data-id="{{ r.id }}"
                data-course="{{ course_code }}"
-               title="Add rider to lessons">
+               title="Add rider to lessons"
+               style="margin-right:6px;">
     {% endif %}
 
     <!-- NEW checkbox (SMS Selected Riders) -->
     <input type="checkbox"
            class="sms-select"
            data-client-id="{{ r.client_id }}"
-           title="Include in SMS send"
-           style="margin-left:6px;">
+           title="Include in SMS send">
 </td>
 
                 <!-- RIDER NAME -->
