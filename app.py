@@ -2075,9 +2075,9 @@ def create_app():
 
         approved = CourseFormSubmission.query.filter_by(
             status="approved",
-            current_course=row.current_course,
-            term_year=row.term_year,
-            term_number=row.term_number
+            current_course=course_code,
+            term_year=term.term_year,
+            term_number=term.term_number
         ).all()
 
         created = 0
@@ -2093,9 +2093,6 @@ def create_app():
             if r.frequency == "F" and not r.start_week:
                 continue
 
-            # ============================================================
-            # HYBRID MODE PRICE SELECTION
-            # ============================================================
             if r.price_override is not None:
                 price = r.price_override
             elif r.price is not None:
@@ -2111,10 +2108,8 @@ def create_app():
                 if price is None:
                     continue
 
-            # ⭐ CRITICAL FIX: CAST TO FLOAT FOR LESSON MODEL
             price = float(price)
 
-            # Determine weeks
             if r.frequency == "W":
                 week_indexes = [0,1,2,3,4,5,6,7,8,9]
             else:

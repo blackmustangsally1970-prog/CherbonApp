@@ -476,6 +476,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert("Error: " + data.error);
             } else {
                 alert(`Lessons created successfully: ${data.created}`);
+                checkLessonsForTerm(course_code);
             }
         })
         .catch(err => alert("Generate failed: " + err));
