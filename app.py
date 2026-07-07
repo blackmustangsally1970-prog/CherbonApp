@@ -5971,13 +5971,8 @@ def create_app():
 
     @app.route('/generate_course_pdfs/<course_code>')
     def generate_course_pdfs(course_code):
-        import asyncio
-        return asyncio.run(_generate_course_pdfs_async(course_code))
-
-
-    async def _generate_course_pdfs_async(course_code):
+        from playwright.sync_api import sync_playwright
         from datetime import timedelta
-        from playwright.async_api import async_playwright
 
         # Load course
         course = Course.query.filter_by(course_code=course_code).first_or_404()
@@ -6018,11 +6013,12 @@ def create_app():
         else:
             last_date = first_date + timedelta(weeks=weeks - 2)
 
-        # Generate one PDF per rider using Playwright (async)
         generated = []
 
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
+        # SYNC PLAYWRIGHT — NO ASYNC — NO WORKER CRASH
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
 
             for r in riders:
                 html = render_template(
@@ -6033,15 +6029,14 @@ def create_app():
                     last_date=last_date.strftime("%d %b %Y")
                 )
 
-                page = await browser.new_page()
-                await page.set_content(html)
+                page.set_content(html)
 
                 rider_pdf_path = f"static/pdfs/{course_code}_{r.client_id}.pdf"
-                await page.pdf(path=rider_pdf_path)
+                page.pdf(path=rider_pdf_path)
 
                 generated.append(rider_pdf_path)
 
-            await browser.close()
+            browser.close()
 
         return {"generated": generated}
 
