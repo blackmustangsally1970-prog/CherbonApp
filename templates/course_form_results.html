@@ -430,10 +430,9 @@
 document.addEventListener("DOMContentLoaded", function() {
 
     /* ============================================================
-       INLINE FIELD UPDATE (FIXED SELECTOR + RELIABLE SAVING)
+       INLINE FIELD UPDATE
     ============================================================ */
     window.updateField = function(id, field, value) {
-
         fetch(`/update_course_field/${id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -457,7 +456,6 @@ document.addEventListener("DOMContentLoaded", function() {
        GENERATE LESSONS FOR SELECTED RIDERS
     ============================================================ */
     window.generateLessons = function(course_code) {
-
         const ids = [...document.querySelectorAll(
             `.lesson-select[data-course="${course_code}"]:checked`
         )].map(cb => cb.dataset.id);
@@ -487,14 +485,16 @@ document.addEventListener("DOMContentLoaded", function() {
        MISSING RIDERS MODAL
     ============================================================ */
     document.querySelectorAll(".missing-btn").forEach(btn => {
-        btn.addEventListener("click", function() {
+        btn.addEventListener("click", function(e) {
+            e.stopPropagation();
             const code = this.dataset.course;
             document.getElementById("missing-modal-" + code).style.display = "block";
         });
     });
 
     document.querySelectorAll(".close").forEach(btn => {
-        btn.addEventListener("click", function() {
+        btn.addEventListener("click", function(e) {
+            e.stopPropagation();
             const code = this.dataset.course;
             document.getElementById("missing-modal-" + code).style.display = "none";
         });
@@ -511,7 +511,8 @@ document.addEventListener("DOMContentLoaded", function() {
        SMS BUTTONS
     ============================================================ */
     document.querySelectorAll(".sms-btn").forEach(btn => {
-        btn.addEventListener("click", function() {
+        btn.addEventListener("click", function(e) {
+            e.stopPropagation();
             const number = this.dataset.number;
             const name = this.dataset.name;
 
@@ -526,7 +527,8 @@ document.addEventListener("DOMContentLoaded", function() {
        CANCELLED CHECKBOXES
     ============================================================ */
     document.querySelectorAll(".cancelled-checkbox").forEach(cb => {
-        cb.addEventListener("change", function() {
+        cb.addEventListener("change", function(e) {
+            e.stopPropagation();
             fetch("/mark_cancelled", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -544,7 +546,8 @@ document.addEventListener("DOMContentLoaded", function() {
        CONTACTED CHECKBOXES
     ============================================================ */
     document.querySelectorAll(".contacted-checkbox").forEach(cb => {
-        cb.addEventListener("change", function() {
+        cb.addEventListener("change", function(e) {
+            e.stopPropagation();
             fetch("/mark_contacted", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -562,7 +565,8 @@ document.addEventListener("DOMContentLoaded", function() {
        MASTER SELECT (SELECT ALL RIDERS)
     ============================================================ */
     document.querySelectorAll(".master-select").forEach(master => {
-        master.addEventListener("change", function () {
+        master.addEventListener("change", function(e) {
+            e.stopPropagation();
             const course = this.dataset.course;
             const checked = this.checked;
 
@@ -581,7 +585,8 @@ document.addEventListener("DOMContentLoaded", function() {
     ============================================================ */
     const btn = document.getElementById("checkLessonsBtn");
     if (btn) {
-        btn.addEventListener("click", function () {
+        btn.addEventListener("click", function(e) {
+            e.stopPropagation();
 
             const year = "{{ selected_year }}";
             const term = "{{ selected_term }}";
@@ -630,7 +635,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const last = parseInt(localStorage.getItem("last_total_nominations") || "0");
 
     if (total >= 190 && last < 190) {
-
         confetti({
             particleCount: 200,
             spread: 120,
@@ -654,47 +658,52 @@ document.addEventListener("DOMContentLoaded", function() {
     localStorage.setItem("last_total_nominations", total);
 
 
-/* ============================================================
-   COURSE GRID TOGGLE + LAZY LOAD
-============================================================ */
-document.querySelectorAll(".toggle-header").forEach(header => {
-    header.addEventListener("click", function() {
-        const targetId = this.getAttribute("data-target");
-        console.log("HEADER CLICKED:", targetId);   // ⭐ ADD THIS
-        const grid = document.getElementById(targetId);
+    /* ============================================================
+       COURSE GRID TOGGLE + LAZY LOAD
+    ============================================================ */
+    document.querySelectorAll(".toggle-header, .toggle-header *").forEach(el => {
+        el.addEventListener("click", function(e) {
+            e.stopPropagation();
+            const header = this.closest(".toggle-header");
+            if (!header) return;
 
-        grid.classList.toggle("open");
+            const targetId = header.getAttribute("data-target");
+            console.log("HEADER CLICKED:", targetId);
 
-        if (grid.classList.contains("open") && !grid.dataset.loaded) {
-            loadRiders(targetId);
-        }
-    });
-});
+            const grid = document.getElementById(targetId);
+            if (!grid) return;
 
-function loadRiders(gridId) {
-    const grid = document.getElementById(gridId);
-    const courseCode = gridId.replace("grid-", "");
+            grid.classList.toggle("open");
 
-    const year = "{{ selected_year }}";
-    const term = "{{ selected_term }}";
-
-    fetch(`/load_riders/${courseCode}?year=${year}&term=${term}`)
-        .then(r => r.text())
-        .then(html => {
-            grid.innerHTML = html;
-            grid.dataset.loaded = "1";
-
-            if (window.$) {
-                $(grid).find("select").select2();
+            if (grid.classList.contains("open") && !grid.dataset.loaded) {
+                loadRiders(targetId);
             }
         });
-}
+    });
 
+    function loadRiders(gridId) {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+
+        const courseCode = gridId.replace("grid-", "");
+        const year = "{{ selected_year }}";
+        const term = "{{ selected_term }}";
+
+        fetch(`/load_riders/${courseCode}?year=${year}&term=${term}`)
+            .then(r => r.text())
+            .then(html => {
+                grid.innerHTML = html;
+                grid.dataset.loaded = "1";
+
+                if (window.$) {
+                    $(grid).find("select").select2();
+                }
+            })
+            .catch(err => console.log("LOAD RIDERS ERROR", err));
+    }
 
 });  /* END DOMContentLoaded */
 </script>
-
-
 
 
 </body>
