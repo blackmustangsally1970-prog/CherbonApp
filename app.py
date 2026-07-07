@@ -2815,6 +2815,10 @@ def create_app():
         field = data.get("field")
         value = data.get("value")
 
+        # ⭐ ADD THESE TWO LINES HERE
+        print("DEBUG FIELD RECEIVED:", repr(field))
+        print("DEBUG VALUE RECEIVED:", repr(value))
+
         row = CourseFormSubmission.query.get(id)
         if not row:
             return "Not found", 404
