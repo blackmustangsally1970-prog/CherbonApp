@@ -5968,9 +5968,10 @@ def create_app():
         )
 
 
-    @app.route('/generate_course_pdf/<course_code>')
-    def generate_course_pdf(course_code):
+    @app.route('/generate_course_pdfs/<course_code>')
+    def generate_course_pdfs(course_code):
         from datetime import timedelta
+        import pdfkit
 
         # Load course
         course = Course.query.filter_by(course_code=course_code).first_or_404()
@@ -6011,22 +6012,24 @@ def create_app():
         else:
             last_date = first_date + timedelta(weeks=weeks - 2)
 
-        # Render PDF HTML
-        html = render_template(
-            "course_pdf_template.html",
-            course=course,
-            riders=riders,
-            first_date=first_date.strftime("%d %b %Y"),
-            last_date=last_date.strftime("%d %b %Y")
-        )
+        # ⭐ STEP 7 — Generate one PDF per rider with rider-specific HTML
+        generated = []
 
-        # Generate PDF
-        pdf_path = f"static/pdfs/{course_code}.pdf"
+        for r in riders:
+            html = render_template(
+                "rider_pdf_template.html",
+                course=course,
+                rider=r,
+                first_date=first_date.strftime("%d %b %Y"),
+                last_date=last_date.strftime("%d %b %Y")
+            )
 
-        import pdfkit
-        pdfkit.from_string(html, pdf_path)
+            rider_pdf_path = f"static/pdfs/{course_code}_{r.client_id}.pdf"
+            pdfkit.from_string(html, rider_pdf_path)
+            generated.append(rider_pdf_path)
 
-        return f"PDF generated: {pdf_path}"
+        return {"generated": generated}
+
 
 
     @app.route('/sms/course/<course_code>', methods=['POST'])

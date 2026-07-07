@@ -202,6 +202,12 @@
     Check Lessons Added
 </button>
 
+<button class="pdf-btn"
+       onclick="generateCoursePDFs('{{ course_code }}')">
+    📄 Generate PDF
+</button>
+
+
 
 </div>
 
@@ -787,6 +793,17 @@ function attachMasterCheckboxHandlers(grid) {
     }
 }
 
+function generateCoursePDFs(courseCode) {
+    fetch(`/generate_course_pdfs/${courseCode}`)
+        .then(response => response.json())
+        .then(data => {
+            alert(`Generated ${data.generated.length} rider PDFs.`);
+        })
+        .catch(err => {
+            console.error("PDF generation error:", err);
+            alert("PDF generation failed.");
+        });
+}
 
 
 </script>

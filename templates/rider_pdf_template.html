@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ course.course_code }} — {{ rider.first_name }} {{ rider.last_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h2 { margin-bottom: 10px; }
+        p { margin: 4px 0; }
+    </style>
+</head>
+<body>
+
+<h2>{{ course.course_code }} — {{ rider.first_name }} {{ rider.last_name }}</h2>
+
+<p><strong>Horse:</strong> {{ rider.horse_name }}</p>
+<p><strong>Frequency:</strong> {{ course.frequency }}</p>
+<p><strong>Start Week:</strong> {{ course.start_week }}</p>
+
+<p><strong>First Lesson:</strong> {{ first_date }}</p>
+<p><strong>Last Lesson:</strong> {{ last_date }}</p>
+
+<p><strong>Notes:</strong> {{ rider.notes }}</p>
+
+<p><strong>Price:</strong> ${{ rider.price }}</p>
+
+</body>
+</html>
