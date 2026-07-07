@@ -2839,7 +2839,7 @@ def create_app():
             return "OK", 200
 
         # ---------------------------------------------------------
-        # DECIMAL: price_override (FULLY FIXED)
+        # DECIMAL: price_override
         # ---------------------------------------------------------
         if field == "price_override":
 
