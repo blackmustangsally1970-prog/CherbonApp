@@ -2073,12 +2073,12 @@ def create_app():
         week_starts = build_term_weeks(term)
         day_offset = get_day_offset(course.day_of_week)
 
-        # ✔ FIXED: Term object uses .year and .number
+        # ✔ CORRECT TERM FIELD NAMES
         approved = CourseFormSubmission.query.filter_by(
             status="approved",
             current_course=course_code,
             term_year=term.year,
-            term_number=term.number
+            term_number=term.term_number
         ).all()
 
         created = 0
@@ -2088,7 +2088,6 @@ def create_app():
             if not r:
                 continue
 
-            # Frequency validation
             if r.frequency not in ("W", "F"):
                 continue
 
