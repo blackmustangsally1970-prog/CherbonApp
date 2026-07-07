@@ -2876,6 +2876,7 @@ def create_app():
                 return "OK", 200
 
             # CONVERT SAFELY
+            print("PRICE OVERRIDE RAW VALUE:", repr(value))
             try:
                 override_val = Decimal(value)
             except Exception as e:
