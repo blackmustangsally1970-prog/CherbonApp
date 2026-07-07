@@ -3164,9 +3164,10 @@ def create_app():
         all_subs = base_q.order_by(CourseFormSubmission.id.desc()).all()
 
         unprocessed_submissions = [s for s in all_subs if s.status == "unprocessed"]
-        approved_submissions = CourseFormSubmission.query.filter(
-            # ... your filters ...
-        ).all()
+
+        approved_submissions = base_q.filter(
+            CourseFormSubmission.status == "approved"
+        ).order_by(CourseFormSubmission.id.desc()).all()
 
         from collections import defaultdict
 
@@ -3174,9 +3175,7 @@ def create_app():
         for r in approved_submissions:
             riders_by_course[r.current_course].append(r)
 
-
         print("Loaded submissions in", time.time() - t0); t0 = time.time()
-
 
         # ---- COURSES ----
         courses = CourseReference.query.order_by(
