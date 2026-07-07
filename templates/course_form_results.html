@@ -332,11 +332,10 @@
 
         <!-- NEW: SMS COURSE RIDERS BUTTON (inserted between the two) -->
         <div style="flex:1; text-align:center;">
-            <button class="sms-btn"
-                    onclick="smsCourseRiders('{{ c.course_code }}')"
-                    style="background:#c7ffd1; padding:6px 10px; border-radius:6px;">
-                📩 SMS Course Riders
-            </button>
+<button class="sms-btn"
+        onclick="smsSelectedRiders('{{ course_code }}')">
+    📩 SMS Selected Riders
+</button>
         </div>
 
 

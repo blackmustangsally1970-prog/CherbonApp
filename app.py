@@ -3125,6 +3125,23 @@ def create_app():
         )
 
 
+    @app.route('/sms_selected_riders/<course_code>', methods=['POST'])
+    def sms_selected_riders(course_code):
+        data = request.get_json()
+        rider_ids = data.get("riders", [])
+
+        riders = Client.query.filter(Client.client_id.in_(rider_ids)).all()
+
+        pdf_link = f"https://cherbonapp.click/static/pdfs/{course_code}.pdf"
+
+        sent = 0
+        for r in riders:
+            send_sms(r.mobile, f"Your course details are ready.\nPDF: {pdf_link}")
+            sent += 1
+
+        return jsonify({"message": f"SMS sent to {sent} rider(s)."})
+
+
     @app.route('/course_form_submissions')
     def course_form_submissions():
         import time

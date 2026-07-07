@@ -33,17 +33,27 @@
             {% for r in riders %}
             <tr data-timeframe="{{ r.current_course }}" data-rider="{{ r.rider_name }}">
 
-                <!-- SELECT CHECKBOX -->
-                <td class="sel-cell">
-                    {% if r.lesson_added %}
-                        <span style="color:green; font-weight:bold;">Added</span>
-                    {% else %}
-                        <input type="checkbox"
-                               class="lesson-select"
-                               data-id="{{ r.id }}"
-                               data-course="{{ course_code }}">
-                    {% endif %}
-                </td>
+<!-- SELECT CHECKBOXES -->
+<td class="sel-cell">
+
+    <!-- Existing checkbox (Add Riders to Lessons) -->
+    {% if r.lesson_added %}
+        <span style="color:green; font-weight:bold;">Added</span>
+    {% else %}
+        <input type="checkbox"
+               class="lesson-select"
+               data-id="{{ r.id }}"
+               data-course="{{ course_code }}"
+               title="Add rider to lessons">
+    {% endif %}
+
+    <!-- NEW checkbox (SMS Selected Riders) -->
+    <input type="checkbox"
+           class="sms-select"
+           data-client-id="{{ r.client_id }}"
+           title="Include in SMS send"
+           style="margin-left:6px;">
+</td>
 
                 <!-- RIDER NAME -->
                 {% set match = client_lookup.get(r.rider_name) %}
@@ -187,3 +197,31 @@
         {% endif %}
     </tbody>
 </table>
+
+<script>
+
+function smsSelectedRiders(courseCode) {
+    let selected = [];
+    document.querySelectorAll(".sms-select:checked").forEach(cb => {
+        selected.push(cb.dataset.clientId);
+    });
+
+    if (selected.length === 0) {
+        alert("No riders selected.");
+        return;
+    }
+
+    if (!confirm(`Send SMS to ${selected.length} selected rider(s)?`)) {
+        return;
+    }
+
+    fetch(`/sms_selected_riders/${courseCode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ riders: selected })
+    })
+    .then(r => r.json())
+    .then(data => alert(data.message));
+}
+
+</script>
