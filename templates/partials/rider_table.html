@@ -31,8 +31,7 @@
             </tr>
         {% else %}
             {% for r in riders %}
-            <tr data-timeframe="{{ c.timerange }}"
-                data-rider="{{ r.rider_name }}">
+            <tr data-timeframe="{{ r.current_course }}" data-rider="{{ r.rider_name }}">
 
                 <!-- SELECT CHECKBOX -->
                 <td class="sel-cell">
