@@ -150,16 +150,17 @@
                                value="{{ r.price_override }}"
                                style="width:9ch;"
                                onchange="updateField({{ r.id }}, 'price_override', this.value)">
-                    {% else %}
-                        <span class="price-auto">💰</span>
-                        <input type="number"
-                               step="0.01"
-                               data-id="{{ r.id }}"
-                               data-field="price_override"
-                               value="{{ r.price }}"
-                               style="width:9ch;"
-                               onchange="updateField({{ r.id }}, 'price_override', this.value)">
-                    {% endif %}
+{% else %}
+    <span class="price-auto">💰</span>
+    <input type="number"
+           step="0.01"
+           data-id="{{ r.id }}"
+           data-field="price_override"
+           value=""
+           placeholder="{{ r.price }}"
+           style="width:9ch;"
+           onchange="updateField({{ r.id }}, 'price_override', this.value)">
+{% endif %}
 
                     <input type="checkbox"
                            title="Lock price"
