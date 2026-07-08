@@ -50,7 +50,7 @@ def main():
         riders = CourseFormSubmission.query.filter_by(
             current_course=course_code,
             term_year=term.year,
-            term_number=term.number,
+            term_number=term.term_number,
             cancelled=False
         ).all()
 
