@@ -3826,7 +3826,8 @@ def create_app():
             "ndis_number",
             "ndis_code",
             "notes",
-            "notes2"
+            "notes2",
+            "disclaimer"
         }
 
         if field not in allowed:

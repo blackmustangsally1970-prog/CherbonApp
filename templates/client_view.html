@@ -370,7 +370,12 @@ input[type="number"] {
 
         <tr>
             <td><strong>Disclaimer:</strong></td>
-            <td>{{ client_obj.disclaimer }}</td>
+<td>
+    <input type="text" class="client-edit"
+           data-field="disclaimer"
+           data-id="{{ client_obj.client_id }}"
+           value="{{ client_obj.disclaimer or '' }}">
+</td>
 
             <td><strong>Email Primary:</strong></td>
             <td>
