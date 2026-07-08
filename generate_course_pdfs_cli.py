@@ -19,12 +19,31 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
     with app.app_context():
         from flask import render_template
 
-        # Rider name (already stored on submission)
+        # Rider name
         rider_name = submission.rider_name
 
+        # Course details
         course_display_label = course_ref.display_label
         course_day = course_ref.day_of_week
         course_time_range = course_ref.timerange
+
+        # Base price
+        base_price = submission.price or 0
+
+        # Payment calculation
+        # ftor = W (weekly payment) or FT (full term payment)
+        # frequency = W (weekly lessons) or F (fortnightly lessons)
+        if submission.ftor == "FT":
+            # Full term payment
+            if submission.frequency == "W":
+                calculated_price = base_price * 10
+            elif submission.frequency == "F":
+                calculated_price = base_price * 5
+            else:
+                calculated_price = base_price
+        else:
+            # Weekly payment
+            calculated_price = base_price
 
         return render_template(
             "rider_pdf_template.html",
@@ -34,7 +53,8 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
             course_time_range=course_time_range,
             first_lesson_date=first_date,
             last_lesson_date=last_date,
-            submission=submission
+            submission=submission,
+            calculated_price=calculated_price
         )
 
 

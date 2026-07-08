@@ -10,6 +10,11 @@
         .title {
             font-size: 24px;
             font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 18px;
+            font-weight: bold;
             margin-bottom: 20px;
         }
         .section {
@@ -19,12 +24,18 @@
         .label {
             font-weight: bold;
         }
+        .footer {
+            margin-top: 40px;
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
 
-<div class="title">Rider Lesson Summary</div>
+<div class="title">Cherbon Waters Equestrian Centre</div>
+<div class="subtitle">Term Course Information</div>
 
 <div class="section">
 
@@ -69,6 +80,37 @@
         {{ last_lesson_date }}
     </div>
 
+    <div>
+        <span class="label">Payment:</span>
+        {% if submission.ftor == 'W' %}
+            Weekly Payment
+        {% elif submission.ftor == 'FT' %}
+            Full Term Payment
+        {% else %}
+            Unknown
+        {% endif %}
+    </div>
+
+    <div>
+        <span class="label">Price:</span>
+        ${{ calculated_price }}
+    </div>
+
+</div>
+
+<div class="footer">
+    Please note - Lesson fees must be paid prior to riding
+</div>
+
+<div class="section" style="margin-top: 20px;">
+    <span class="label">Banking Details:</span><br>
+    Account Name: Cherbon Waters Equestrian Centre Pty Ltd<br>
+    BSB: 633000<br>
+    Account Number: 133629857
+</div>
+
+<div class="footer2">
+    Thank you for riding at Cherbon Waters
 </div>
 
 </body>
