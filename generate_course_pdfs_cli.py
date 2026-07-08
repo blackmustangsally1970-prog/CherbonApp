@@ -1,5 +1,6 @@
 import sys
 import os
+from datetime import timedelta
 
 # Ensure this directory is on the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -7,12 +8,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from app import create_app, get_active_term
 from models import db, CourseReference, CourseFormSubmission, Term
 from playwright.sync_api import sync_playwright
-
-
-def compute_first_last_lesson(term: Term):
-    first = term.start_date.strftime("%d/%m/%Y")
-    last = term.end_date.strftime("%d/%m/%Y")
-    return first, last
 
 
 def render_rider_html(app, submission, course_ref, first_date, last_date):
@@ -51,8 +46,8 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
             course_display_label=course_display_label,
             course_day=course_day,
             course_time_range=course_time_range,
-            first_lesson_date=first_date,
-            last_lesson_date=last_date,
+            first_lesson_date=first_date.strftime("%d/%m/%Y"),
+            last_lesson_date=last_date.strftime("%d/%m/%Y"),
             submission=submission,
             calculated_price=calculated_price
         )
@@ -76,14 +71,14 @@ def main():
 
         # Use the app's real term logic
         term = get_active_term()
-        first_date, last_date = compute_first_last_lesson(term)
 
+        # Only approved riders
         riders = CourseFormSubmission.query.filter(
-                CourseFormSubmission.current_course == course_code,
-                CourseFormSubmission.term_year == term.year,
-                CourseFormSubmission.term_number == term.term_number,
-                CourseFormSubmission.status == "approved",
-                CourseFormSubmission.cancelled == False
+            CourseFormSubmission.current_course == course_code,
+            CourseFormSubmission.term_year == term.year,
+            CourseFormSubmission.term_number == term.term_number,
+            CourseFormSubmission.status == "approved",
+            CourseFormSubmission.cancelled == False
         ).all()
 
     output_dir = "/home/ec2-user/CherbonApp/static/pdfs"
@@ -96,6 +91,16 @@ def main():
         page = browser.new_page()
 
         for submission in riders:
+
+            # Compute correct first lesson date
+            first_date = term.start_date
+            last_date = term.end_date
+
+            # Fortnightly riders starting in Week 2
+            if submission.frequency == "F":
+                if submission.start_week == "W2":
+                    first_date = term.start_date + timedelta(days=7)
+
             html = render_rider_html(app, submission, course_ref, first_date, last_date)
             page.set_content(html)
 
