@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app
-from models import db, Course, Rider, Term
+from models import db, CourseReference, CourseFormSubmission, Term
 from playwright.sync_api import sync_playwright
 
 
@@ -38,7 +38,7 @@ def main():
     app = create_app()
 
     with app.app_context():
-        course = Course.query.filter_by(course_code=course_code).first()
+        course = CourseReference.query.filter_by(course_code=course_code).first()
         if not course:
             print(f"ERROR: No course found for {course_code}", file=sys.stderr)
             sys.exit(1)
@@ -46,7 +46,12 @@ def main():
         term = Term.query.get(course.term_id)
         first_date, last_date = compute_first_last_lesson(term)
 
-        riders = Rider.query.filter_by(course_id=course.id).all()
+        riders = CourseFormSubmission.query.filter_by(
+            current_course=course_code,
+            term_year=term.year,
+            term_number=term.number,
+            cancelled=False
+        ).all()
 
     output_dir = "/home/ec2-user/CherbonApp/static/pdfs"
     os.makedirs(output_dir, exist_ok=True)
