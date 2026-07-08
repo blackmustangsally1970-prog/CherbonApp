@@ -29,7 +29,6 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
         # ftor = W (weekly payment) or FT (full term payment)
         # frequency = W (weekly lessons) or F (fortnightly lessons)
         if submission.ftor == "FT":
-            # Full term payment
             if submission.frequency == "W":
                 calculated_price = base_price * 10
             elif submission.frequency == "F":
@@ -37,7 +36,6 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
             else:
                 calculated_price = base_price
         else:
-            # Weekly payment
             calculated_price = base_price
 
         return render_template(
@@ -94,12 +92,20 @@ def main():
 
             # Compute correct first lesson date
             first_date = term.start_date
-            last_date = term.end_date
 
             # Fortnightly riders starting in Week 2
-            if submission.frequency == "F":
-                if submission.start_week == "W2":
-                    first_date = term.start_date + timedelta(days=7)
+            if submission.frequency == "F" and submission.start_week == "W2":
+                first_date = term.start_date + timedelta(days=7)
+
+            # Compute correct last lesson date
+            if submission.frequency == "W":
+                # Weekly = 10 lessons → +9 weeks
+                last_date = first_date + timedelta(weeks=9)
+            elif submission.frequency == "F":
+                # Fortnightly = 5 lessons → +8 weeks
+                last_date = first_date + timedelta(weeks=8)
+            else:
+                last_date = first_date
 
             html = render_rider_html(app, submission, course_ref, first_date, last_date)
             page.set_content(html)
