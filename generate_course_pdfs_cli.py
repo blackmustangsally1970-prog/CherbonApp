@@ -26,8 +26,6 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
         base_price = submission.price or 0
 
         # Payment calculation
-        # ftor = W (weekly payment) or FT (full term payment)
-        # frequency = W (weekly lessons) or F (fortnightly lessons)
         if submission.ftor == "FT":
             if submission.frequency == "W":
                 calculated_price = base_price * 10
@@ -67,7 +65,6 @@ def main():
             print(f"ERROR: No course found for {course_code}", file=sys.stderr)
             sys.exit(1)
 
-        # Use the app's real term logic
         term = get_active_term()
 
         # Only approved riders
@@ -84,26 +81,45 @@ def main():
 
     generated_paths = []
 
+    # Weekday mapping for course day names
+    weekday_map = {
+        "Monday": 0,
+        "Tuesday": 1,
+        "Wednesday": 2,
+        "Thursday": 3,
+        "Friday": 4,
+        "Saturday": 5,
+        "Sunday": 6
+    }
+
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
 
         for submission in riders:
 
-            # Compute correct first lesson date
-            first_date = term.start_date
+            # Determine course weekday number
+            course_day_name = course_ref.day_of_week
+            course_weekday = weekday_map.get(course_day_name, 0)
 
-            # Fortnightly riders starting in Week 2
+            # Term start weekday (should be Sunday = 6)
+            term_weekday = term.start_date.weekday()
+
+            # Offset from Sunday → actual course day
+            offset_days = (course_weekday - term_weekday) % 7
+
+            # First lesson date aligned to course day
+            first_date = term.start_date + timedelta(days=offset_days)
+
+            # Fortnightly W2 riders start one week later
             if submission.frequency == "F" and submission.start_week == "W2":
-                first_date = term.start_date + timedelta(days=7)
+                first_date = first_date + timedelta(weeks=1)
 
             # Compute correct last lesson date
             if submission.frequency == "W":
-                # Weekly = 10 lessons → +9 weeks
-                last_date = first_date + timedelta(weeks=9)
+                last_date = first_date + timedelta(weeks=9)  # 10 lessons
             elif submission.frequency == "F":
-                # Fortnightly = 5 lessons → +8 weeks
-                last_date = first_date + timedelta(weeks=8)
+                last_date = first_date + timedelta(weeks=8)  # 5 lessons
             else:
                 last_date = first_date
 
