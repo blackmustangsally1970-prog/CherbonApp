@@ -323,45 +323,42 @@
             ({{ approved_count }})
         </div>
 
-        <!-- CENTER: LAST TERM RIDERS BUTTON -->
-        <div style="flex:1; text-align:center;">
+        <!-- RIGHT SIDE: BUTTON BAR -->
+        <div style="display:flex; align-items:center; gap:12px;">
+
             {% set missing = missing_by_course.get(c.course_code, []) %}
             {% if missing %}
                 <button class="missing-btn"
                         data-course="{{ c.course_code }}"
-                        style="background:#ffcc00; padding:6px 10px; border-radius:6px;">
-                    Last Term Riders ({{ missing|length }})
+                        style="padding:6px 10px; border-radius:6px;">
+                    Last Term ({{ missing|length }})
                 </button>
             {% endif %}
-        </div>
 
-        <!-- NEW: SMS COURSE RIDERS BUTTON (inserted between the two) -->
-        <div style="flex:1; text-align:center;">
-<button class="sms-btn"
-        onclick="smsSelectedRiders('{{ c.course_code }}')">
+            <button class="sms-btn"
+                    onclick="smsSelectedRiders('{{ c.course_code }}')"
+                    style="padding:6px 10px; border-radius:6px;">
+                📩 SMS Selected
+            </button>
 
-    📩 SMS Selected Riders
-</button>
-        </div>
-
-
-        <!-- RIGHT SIDE: ADD LESSONS + GENERATE PDF BUTTONS -->
-        <div style="flex:1; text-align:right;">
             <button onclick="generateLessons('{{ c.course_code }}')"
-                    style="padding:6px 12px; border-radius:6px;">
-                ➕ Add Lessons for Selected Riders
+                    style="padding:6px 10px; border-radius:6px;">
+                ➕ Add Lessons
             </button>
 
             <button class="pdf-btn"
                     onclick="generateCoursePDFs('{{ c.course_code }}')"
-                    style="padding:6px 12px; border-radius:6px; margin-left:10px;">
-                📄 Generate PDF
+                    style="padding:6px 10px; border-radius:6px;">
+                📄 PDF
             </button>
+
         </div>
 
     </div>
-
 </h3>
+
+</div>
+
 
         <!-- ⭐ POPUP MODAL FOR THIS COURSE -->
         {% if missing %}
