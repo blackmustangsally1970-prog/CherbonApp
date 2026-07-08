@@ -1,0 +1,63 @@
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>PDF Browser</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            h1 { margin-bottom: 20px; }
+            h2 { margin-top: 40px; }
+            .pdf-item { margin: 6px 0; }
+            a { text-decoration: none; color: #0066cc; }
+            a:hover { text-decoration: underline; }
+        </style>
+    </head>
+    <body>
+
+        <h1>PDF Browser</h1>
+
+        {% if grouped %}
+            {% for course, items in grouped.items() %}
+                <h2>{{ course }}</h2>
+
+                {% for item in items %}
+                    <div class="pdf-item">
+                        <a href="{{ url_for('static', filename='pdfs/' ~ item.filename) }}" target="_blank">
+                            {{ item.filename }} — {{ item.rider }}
+                        </a>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        {% else %}
+            <p>No PDFs found.</p>
+        {% endif %}
+
+        <h2>Delete PDFs by Course</h2>
+
+        <ul>
+            {% for course in grouped.keys() %}
+                <li>
+                    <form action="/delete_pdfs/{{ course }}" method="POST" style="display:inline;">
+                        <button type="submit" onclick="return confirm('Delete all PDFs for {{ course }}?')">
+                            Delete {{ course }} PDFs
+                        </button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <h2>Delete PDFs by Term / Year</h2>
+
+        <form action="/delete_pdfs_term" method="POST">
+            <label>Year:</label>
+            <input type="number" name="term_year" required>
+
+            <label>Term:</label>
+            <input type="number" name="term_number" required>
+
+            <button type="submit" onclick="return confirm('Delete all PDFs for this term/year?')">
+                Delete Term PDFs
+            </button>
+        </form>
+
+    </body>
+    </html>

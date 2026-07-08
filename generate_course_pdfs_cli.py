@@ -18,10 +18,11 @@ def compute_first_last_lesson(term: Term):
 def render_rider_html(app, submission, course, first_date, last_date):
     with app.app_context():
         from flask import render_template
-        from models import Client  # ensure this import exists
+        from models import Client
+        from sqlalchemy import func
 
-        # Lookup the client using the submission's rider_name
-        client = Client.query.filter_by(full_name=submission.rider_name).first()
+        clean = submission.rider_name.strip().lower()
+        client = Client.query.filter(func.lower(Client.full_name) == clean).first()
 
         return render_template(
             "rider_pdf_template.html",
@@ -30,7 +31,6 @@ def render_rider_html(app, submission, course, first_date, last_date):
             first_date=first_date,
             last_date=last_date,
         )
-
 
 def main():
     if len(sys.argv) < 2:

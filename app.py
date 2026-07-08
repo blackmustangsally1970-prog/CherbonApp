@@ -5995,6 +5995,135 @@ def create_app():
         return {"generated": generated}
 
 
+
+    @app.route("/delete_pdfs_term", methods=["POST"])
+    def delete_pdfs_term():
+        import os
+        from models import CourseFormSubmission
+
+        term_year = int(request.form.get("term_year"))
+        term_number = int(request.form.get("term_number"))
+
+        pdf_dir = os.path.join(app.static_folder, "pdfs")
+        deleted = []
+
+        # Find all submissions for that term/year
+        submissions = CourseFormSubmission.query.filter_by(
+            term_year=term_year,
+            term_number=term_number
+        ).all()
+
+        # Delete PDFs matching submission IDs
+        for sub in submissions:
+            prefix = f"{sub.current_course}_{sub.id}.pdf"
+            full_path = os.path.join(pdf_dir, prefix)
+
+            if os.path.exists(full_path):
+                os.remove(full_path)
+                deleted.append(prefix)
+
+        return render_template(
+            "pdf_delete_result.html",
+            deleted=deleted,
+            course_code=f"Term {term_number} {term_year}"
+        )
+
+
+    @app.route("/pdf_browser")
+    def pdf_browser():
+        import os
+        from flask import request
+        from models import CourseFormSubmission, Client
+        from sqlalchemy import func
+
+        search_query = request.args.get("search", "").strip().lower()
+
+        pdf_dir = os.path.join(app.static_folder, "pdfs")
+        files = sorted(os.listdir(pdf_dir))
+
+        pdfs = [f for f in files if f.lower().endswith(".pdf")]
+
+        grouped = {}
+
+        for pdf in pdfs:
+            parts = pdf.replace(".pdf", "").split("_")
+            if len(parts) != 2:
+                continue
+
+            course_code = parts[0]
+            submission_id = parts[1]
+
+            sub = CourseFormSubmission.query.get(int(submission_id))
+
+            rider_name = "Unknown"
+
+            if sub:
+                clean = sub.rider_name.strip().lower()
+                client = Client.query.filter(func.lower(Client.full_name) == clean).first()
+                if client:
+                    rider_name = client.full_name
+
+            # Apply search filter
+            if search_query and search_query not in rider_name.lower():
+                continue
+
+            grouped.setdefault(course_code, []).append({
+                "filename": pdf,
+                "rider": rider_name
+            })
+
+        return render_template("pdf_browser.html", grouped=grouped, search_query=search_query)
+
+    @app.route("/delete_pdfs_older", methods=["POST"])
+    def delete_pdfs_older():
+        import os
+        from flask import request
+        from models import CourseFormSubmission
+
+        cutoff_year = int(request.form.get("cutoff_year"))
+        cutoff_term = int(request.form.get("cutoff_term"))
+
+        pdf_dir = os.path.join(app.static_folder, "pdfs")
+        deleted = []
+
+        # Find all submissions older than cutoff
+        submissions = CourseFormSubmission.query.all()
+
+        for sub in submissions:
+            if (sub.term_year < cutoff_year) or (
+                sub.term_year == cutoff_year and sub.term_number < cutoff_term
+            ):
+                filename = f"{sub.current_course}_{sub.id}.pdf"
+                full_path = os.path.join(pdf_dir, filename)
+
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+                    deleted.append(filename)
+
+        return render_template(
+            "pdf_delete_result.html",
+            deleted=deleted,
+            course_code=f"Older than Term {cutoff_term} {cutoff_year}"
+        )
+
+
+    @app.route("/delete_pdfs/<course_code>", methods=["POST"])
+    def delete_pdfs(course_code):
+        import os
+
+        pdf_dir = os.path.join(app.static_folder, "pdfs")
+        deleted = []
+
+        for filename in os.listdir(pdf_dir):
+            if filename.startswith(course_code) and filename.lower().endswith(".pdf"):
+                full_path = os.path.join(pdf_dir, filename)
+                os.remove(full_path)
+                deleted.append(filename)
+
+        return render_template("pdf_delete_result.html", deleted=deleted, course_code=course_code)
+
+
+
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
