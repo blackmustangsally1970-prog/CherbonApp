@@ -6123,7 +6123,10 @@ def create_app():
             )
             db.session.add(new_client)
 
-        # Only clear matches for the rider that was resolved
+        # Mark this rider as resolved so finalize_notification skips it
+        parsed["riders"][rider_index - 1]["resolved"] = True
+
+        # Only clear matches for the resolved rider
         parsed["riders"][rider_index - 1]["matches"] = []
 
         # Save updated payload

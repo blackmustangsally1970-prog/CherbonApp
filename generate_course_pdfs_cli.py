@@ -1,5 +1,9 @@
 import sys
 import os
+
+# Ensure this directory is on the Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from app import create_app
 from models import db, Course, Rider, Term
 from playwright.sync_api import sync_playwright
@@ -30,6 +34,7 @@ def main():
 
     course_code = sys.argv[1]
 
+    # Load your REAL Flask app
     app = create_app()
 
     with app.app_context():
@@ -43,7 +48,6 @@ def main():
 
         riders = Rider.query.filter_by(course_id=course.id).all()
 
-    # STEP 5 — Add PDF generation
     output_dir = "/home/ec2-user/CherbonApp/static/pdfs"
     os.makedirs(output_dir, exist_ok=True)
 
