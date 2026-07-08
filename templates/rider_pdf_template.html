@@ -27,11 +27,48 @@
 <div class="title">Rider Lesson Summary</div>
 
 <div class="section">
-    <div><span class="label">Rider:</span> {{ rider.first_name }} {{ rider.last_name }}</div>
-    <div><span class="label">Course:</span> {{ course.course_code }}</div>
-    <div><span class="label">Day:</span> {{ course.day_of_week }}</div>
-    <div><span class="label">First Lesson:</span> {{ first_date }}</div>
-    <div><span class="label">Last Lesson:</span> {{ last_date }}</div>
+
+    <div>
+        <span class="label">Rider:</span>
+        {{ rider_name }}
+    </div>
+
+    <div>
+        <span class="label">Course:</span>
+        {{ course_display_label }}
+    </div>
+
+    <div>
+        <span class="label">Day:</span>
+        {{ course_day }}
+    </div>
+
+    <div>
+        <span class="label">Time Range:</span>
+        {{ course_time_range }}
+    </div>
+
+    <div>
+        <span class="label">Frequency:</span>
+        {% if submission.frequency == 'W' %}
+            Weekly
+        {% elif submission.frequency == 'F' %}
+            Fortnightly
+        {% else %}
+            Unknown
+        {% endif %}
+    </div>
+
+    <div>
+        <span class="label">First Lesson:</span>
+        {{ first_lesson_date }}
+    </div>
+
+    <div>
+        <span class="label">Last Lesson:</span>
+        {{ last_lesson_date }}
+    </div>
+
 </div>
 
 </body>

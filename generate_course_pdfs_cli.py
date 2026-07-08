@@ -15,22 +15,29 @@ def compute_first_last_lesson(term: Term):
     return first, last
 
 
-def render_rider_html(app, submission, course, first_date, last_date):
+def render_rider_html(app, submission, course_ref, first_date, last_date):
     with app.app_context():
         from flask import render_template
-        from models import Client
-        from sqlalchemy import func
 
-        clean = submission.rider_name.strip().lower()
-        client = Client.query.filter(func.lower(Client.full_name) == clean).first()
+        # Rider name (already stored on submission)
+        rider_name = submission.rider_name
+
+        # Course display label, day, time range
+        course_display_label = course_ref.display_label
+        course_day = course_ref.day
+        course_time_range = course_ref.timerange
 
         return render_template(
             "rider_pdf_template.html",
-            rider=client,
-            course=course,
-            first_date=first_date,
-            last_date=last_date,
+            rider_name=rider_name,
+            course_display_label=course_display_label,
+            course_day=course_day,
+            course_time_range=course_time_range,
+            first_lesson_date=first_date,
+            last_lesson_date=last_date,
+            submission=submission
         )
+
 
 def main():
     if len(sys.argv) < 2:
@@ -43,8 +50,8 @@ def main():
     app = create_app()
 
     with app.app_context():
-        course = CourseReference.query.filter_by(course_code=course_code).first()
-        if not course:
+        course_ref = CourseReference.query.filter_by(course_code=course_code).first()
+        if not course_ref:
             print(f"ERROR: No course found for {course_code}", file=sys.stderr)
             sys.exit(1)
 
@@ -69,7 +76,7 @@ def main():
         page = browser.new_page()
 
         for submission in riders:
-            html = render_rider_html(app, submission, course, first_date, last_date)
+            html = render_rider_html(app, submission, course_ref, first_date, last_date)
             page.set_content(html)
 
             filename = f"{course_code}_{submission.id}.pdf"
