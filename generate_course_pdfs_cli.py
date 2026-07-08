@@ -58,11 +58,12 @@ def main():
         term = get_active_term()
         first_date, last_date = compute_first_last_lesson(term)
 
-        riders = CourseFormSubmission.query.filter_by(
-            current_course=course_code,
-            term_year=term.year,
-            term_number=term.term_number,
-            cancelled=False
+        riders = CourseFormSubmission.query.filter(
+                CourseFormSubmission.current_course == course_code,
+                CourseFormSubmission.term_year == term.year,
+                CourseFormSubmission.term_number == term.term_number,
+                CourseFormSubmission.status == "approved",
+                CourseFormSubmission.cancelled == False
         ).all()
 
     output_dir = "/home/ec2-user/CherbonApp/static/pdfs"
