@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        .label {
+            font-weight: bold;
+        }
+        ul {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="title">PDF Delete Results</div>
+
+<div class="section">
+    <div><span class="label">Context:</span> {{ course_code }}</div>
+
+    <div><span class="label">Deleted PDFs:</span></div>
+    {% if deleted %}
+        <ul>
+        {% for file in deleted %}
+            <li>{{ file }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No PDFs were deleted.</p>
+    {% endif %}
+</div>
+
+<a href="/pdf_browser" style="margin-top: 20px; display: inline-block;">
+    ← Back to PDF Browser
+</a>
+
+</body>
+</html>
