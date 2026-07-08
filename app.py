@@ -1725,7 +1725,6 @@ def parse_jotform_payload(payload, forced_submission_id=None, mode="full"):
 
 
 def create_app():
-    print(">>> JOTFORM KEY IN APP:", os.getenv("JOTFORM_API_KEY"))
     app = Flask(__name__)
 
     login_manager = LoginManager()
@@ -5985,8 +5984,11 @@ def create_app():
         if result.returncode != 0:
             return {"error": result.stderr}, 500
 
-        lines = result.stdout.strip().splitlines()
-        generated = lines[1:]  # after "OK"
+        lines = [line for line in result.stdout.splitlines() if line.strip()]
+        if not lines or lines[0] != "OK":
+            return {"error": "PDF generation failed"}, 500
+
+        generated = lines[1:]
 
         return {"generated": generated}
 
