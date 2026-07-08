@@ -15,12 +15,17 @@ def compute_first_last_lesson(term: Term):
     return first, last
 
 
-def render_rider_html(app, rider, course, first_date, last_date):
+def render_rider_html(app, submission, course, first_date, last_date):
     with app.app_context():
         from flask import render_template
+        from models import Client  # ensure this import exists
+
+        # Lookup the client using the submission's rider_name
+        client = Client.query.filter_by(full_name=submission.rider_name).first()
+
         return render_template(
             "rider_pdf_template.html",
-            rider=rider,
+            rider=client,
             course=course,
             first_date=first_date,
             last_date=last_date,
@@ -63,11 +68,11 @@ def main():
         browser = p.chromium.launch()
         page = browser.new_page()
 
-        for rider in riders:
-            html = render_rider_html(app, rider, course, first_date, last_date)
+        for submission in riders:
+            html = render_rider_html(app, submission, course, first_date, last_date)
             page.set_content(html)
 
-            filename = f"{course_code}_{rider.id}.pdf"
+            filename = f"{course_code}_{submission.id}.pdf"
             full_path = os.path.join(output_dir, filename)
 
             page.pdf(path=full_path, format="A4")
