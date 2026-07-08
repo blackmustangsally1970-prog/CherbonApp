@@ -4,7 +4,7 @@ import os
 # Ensure this directory is on the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app import create_app
+from app import create_app, get_active_term
 from models import db, CourseReference, CourseFormSubmission, Term
 from playwright.sync_api import sync_playwright
 
@@ -43,7 +43,8 @@ def main():
             print(f"ERROR: No course found for {course_code}", file=sys.stderr)
             sys.exit(1)
 
-        term = Term.query.get(course.term_id)
+        # Use the app's real term logic
+        term = get_active_term()
         first_date, last_date = compute_first_last_lesson(term)
 
         riders = CourseFormSubmission.query.filter_by(
