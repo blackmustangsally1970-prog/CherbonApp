@@ -6122,9 +6122,8 @@ def create_app():
             )
             db.session.add(new_client)
 
-        # CLEAR MATCHES FOR ALL RIDERS — conflict has been resolved
-        for r in parsed["riders"]:
-            r["matches"] = []
+        # Only clear matches for the rider that was resolved
+        parsed["riders"][rider_index - 1]["matches"] = []
 
         # Save updated payload
         import json
