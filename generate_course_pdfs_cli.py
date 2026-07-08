@@ -22,9 +22,8 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
         # Rider name (already stored on submission)
         rider_name = submission.rider_name
 
-        # Course display label, day, time range
         course_display_label = course_ref.display_label
-        course_day = course_ref.day
+        course_day = course_ref.day_of_week
         course_time_range = course_ref.timerange
 
         return render_template(
