@@ -202,10 +202,6 @@
     Check Lessons Added
 </button>
 
-<button class="pdf-btn"
-       onclick="generateCoursePDFs('{{ course_code }}')">
-    📄 Generate PDF
-</button>
 
 
 
@@ -339,17 +335,24 @@
         <!-- NEW: SMS COURSE RIDERS BUTTON (inserted between the two) -->
         <div style="flex:1; text-align:center;">
 <button class="sms-btn"
-        onclick="smsSelectedRiders('{{ course_code }}')">
+        onclick="smsSelectedRiders('{{ c.course_code }}')">
+
     📩 SMS Selected Riders
 </button>
         </div>
 
 
-        <!-- RIGHT SIDE: ADD LESSONS BUTTON -->
+        <!-- RIGHT SIDE: ADD LESSONS + GENERATE PDF BUTTONS -->
         <div style="flex:1; text-align:right;">
             <button onclick="generateLessons('{{ c.course_code }}')"
                     style="padding:6px 12px; border-radius:6px;">
                 ➕ Add Lessons for Selected Riders
+            </button>
+
+            <button class="pdf-btn"
+                    onclick="generateCoursePDFs('{{ c.course_code }}')"
+                    style="padding:6px 12px; border-radius:6px; margin-left:10px;">
+                📄 Generate PDF
             </button>
         </div>
 
