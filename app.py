@@ -5971,33 +5971,23 @@ def create_app():
 
     @app.route('/generate_course_pdfs/<course_code>')
     def generate_course_pdfs(course_code):
-        import subprocess
-        import json
+        import subprocess, sys
 
         cmd = [
             sys.executable,
-            "generate_course_pdfs_cli.py",
+            "/home/ec2-user/CherbonApp/generate_course_pdfs_cli.py",
             course_code
         ]
 
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300
-            )
-        except Exception as e:
-            return {"error": str(e)}, 500
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
-            return {"error": result.stdout + result.stderr}, 500
+            return {"error": result.stderr}, 500
 
         lines = result.stdout.strip().splitlines()
-        # first line "OK", rest are paths
-        generated = lines[1:]
-        return {"generated": generated}
+        generated = lines[1:]  # after "OK"
 
+        return {"generated": generated}
 
 
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])

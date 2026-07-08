@@ -1,73 +1,74 @@
-# generate_course_pdfs_cli.py
 import sys
-from datetime import timedelta
+import os
+from app import create_app
+from models import db, Course, Rider, Term
 from playwright.sync_api import sync_playwright
-from app import db, Course, Client, CourseRider, Term, render_template  # adjust imports
 
-def generate_for_course(course_code):
-    course = Course.query.filter_by(course_code=course_code).first_or_404()
 
-    riders = (
-        db.session.query(Client)
-        .join(CourseRider, CourseRider.client_id == Client.client_id)
-        .filter(CourseRider.course_code == course_code)
-        .all()
-    )
+def compute_first_last_lesson(term: Term):
+    first = term.start_date.strftime("%d/%m/%Y")
+    last = term.end_date.strftime("%d/%m/%Y")
+    return first, last
 
-    term = Term.query.filter_by(active=True).first()
-    if not term:
-        print("ERROR: No active term")
-        return 1
 
-    term_start = term.start_date
-    weeks = term.weeks
+def render_rider_html(app, rider, course, first_date, last_date):
+    with app.app_context():
+        from flask import render_template
+        return render_template(
+            "rider_pdf_template.html",
+            rider=rider,
+            course=course,
+            first_date=first_date,
+            last_date=last_date,
+        )
 
-    weekday_map = {
-        "Monday": 0, "Tuesday": 1, "Wednesday": 2,
-        "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6
-    }
 
-    target_weekday = weekday_map[course.day_of_week]
-    first_date = term_start + timedelta(days=(target_weekday - term_start.weekday()) % 7)
+def main():
+    if len(sys.argv) < 2:
+        print("ERROR: course_code required", file=sys.stderr)
+        sys.exit(1)
 
-    if course.frequency == "F" and course.start_week == "W2":
-        first_date += timedelta(weeks=1)
+    course_code = sys.argv[1]
 
-    if course.frequency == "W":
-        last_date = first_date + timedelta(weeks=weeks - 1)
-    else:
-        last_date = first_date + timedelta(weeks=weeks - 2)
+    app = create_app()
 
-    generated = []
+    with app.app_context():
+        course = Course.query.filter_by(course_code=course_code).first()
+        if not course:
+            print(f"ERROR: No course found for {course_code}", file=sys.stderr)
+            sys.exit(1)
+
+        term = Term.query.get(course.term_id)
+        first_date, last_date = compute_first_last_lesson(term)
+
+        riders = Rider.query.filter_by(course_id=course.id).all()
+
+    # STEP 5 — Add PDF generation
+    output_dir = "/home/ec2-user/CherbonApp/static/pdfs"
+    os.makedirs(output_dir, exist_ok=True)
+
+    generated_paths = []
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
 
-        for r in riders:
-            html = render_template(
-                "rider_pdf_template.html",
-                course=course,
-                rider=r,
-                first_date=first_date.strftime("%d %b %Y"),
-                last_date=last_date.strftime("%d %b %Y")
-            )
-
+        for rider in riders:
+            html = render_rider_html(app, rider, course, first_date, last_date)
             page.set_content(html)
 
-            rider_pdf_path = f"static/pdfs/{course_code}_{r.client_id}.pdf"
-            page.pdf(path=rider_pdf_path)
-            generated.append(rider_pdf_path)
+            filename = f"{course_code}_{rider.id}.pdf"
+            full_path = os.path.join(output_dir, filename)
+
+            page.pdf(path=full_path, format="A4")
+            generated_paths.append(full_path)
 
         browser.close()
 
     print("OK")
-    for path in generated:
+    for path in generated_paths:
         print(path)
-    return 0
+
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: generate_course_pdfs_cli.py COURSE_CODE")
-        sys.exit(1)
-    sys.exit(generate_for_course(sys.argv[1]))
+    main()
