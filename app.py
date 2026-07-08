@@ -5988,8 +5988,10 @@ def create_app():
         if not lines or lines[0] != "OK":
             return {"error": "PDF generation failed"}, 500
 
-        generated = lines[1:]
-
+        generated = [
+            "/static/pdfs/" + os.path.basename(path)
+            for path in lines[1:]
+        ]
         return {"generated": generated}
 
 
