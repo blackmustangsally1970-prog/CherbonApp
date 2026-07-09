@@ -202,6 +202,11 @@
     Check Lessons Added
 </button>
 
+<button class="pdf-btn" onclick="generateAllCoursePDFs()">
+    📄 Generate ALL Course PDFs
+</button>
+
+
     <button onclick="window.location.href='/pdf_browser'">
         PDF Browser
     </button>
@@ -801,6 +806,19 @@ function generateCoursePDFs(courseCode) {
         .catch(err => {
             console.error("PDF generation error:", err);
             alert("PDF generation failed.");
+        });
+}
+
+
+function generateAllCoursePDFs() {
+    fetch(`/generate_all_course_pdfs`)
+        .then(response => response.json())
+        .then(data => {
+            alert(`Generated ${data.total_pdfs} PDFs across ${data.total_courses} courses.`);
+        })
+        .catch(err => {
+            console.error("Global PDF error:", err);
+            alert("Global PDF generation failed.");
         });
 }
 

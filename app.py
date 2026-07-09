@@ -6034,6 +6034,51 @@ def create_app():
         ]
         return {"generated": generated}
 
+    @app.route('/generate_all_course_pdfs')
+    def generate_all_course_pdfs():
+        import subprocess, sys, os
+
+        # 1. Get all course codes
+        courses = db.session.query(Course).all()
+        course_codes = [c.course_code for c in courses]
+
+        total_pdfs = 0
+        total_courses = 0
+        all_generated = []
+
+        for code in course_codes:
+            total_courses += 1
+
+            cmd = [
+                sys.executable,
+                "/home/ec2-user/CherbonApp/generate_course_pdfs_cli.py",
+                code
+            ]
+
+            result = subprocess.run(cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                # Skip failed course but continue
+                continue
+
+            lines = [line for line in result.stdout.splitlines() if line.strip()]
+            if not lines or lines[0] != "OK":
+                continue
+
+            # Convert CLI paths → static paths
+            generated = [
+                "/static/pdfs/" + os.path.basename(path)
+                for path in lines[1:]
+            ]
+
+            total_pdfs += len(generated)
+            all_generated.extend(generated)
+
+        return {
+            "total_courses": total_courses,
+            "total_pdfs": total_pdfs,
+            "generated": all_generated
+        }
 
 
     @app.route("/delete_pdfs_term", methods=["POST"])
