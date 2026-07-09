@@ -6038,9 +6038,9 @@ def create_app():
     def generate_all_course_pdfs():
         import subprocess, sys, os
 
-        # 1. Get all course codes
-        courses = db.session.query(Course).all()
-        course_codes = [c.course_code for c in courses]
+        # 1. Get all course codes from CourseReference
+        course_refs = db.session.query(CourseReference).all()
+        course_codes = [c.course_code for c in course_refs]
 
         total_pdfs = 0
         total_courses = 0
