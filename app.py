@@ -3147,8 +3147,6 @@ def create_app():
         data = request.get_json()
         riders = data.get("riders", [])
 
-        pdf_link = f"https://cherbonapp.click/static/pdfs/{course_code}.pdf"
-
         sent = 0
         for rider in riders:
             mobile = rider.get('mobile')
@@ -3156,6 +3154,9 @@ def create_app():
 
             if not mobile:
                 continue
+
+            safe_name = name.replace(" ", "_")
+            pdf_link = f"https://cherbonapp.click/static/pdfs/{course_code}_{safe_name}.pdf"
 
             message = f"Hi, {name}'s course details are ready to view.\nPDF: {pdf_link}"
 
