@@ -6,7 +6,7 @@ from datetime import timedelta
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app, get_active_term
-from models import db, CourseReference, CourseFormSubmission, Term
+from models import db, CourseReference, CourseFormSubmission
 from playwright.sync_api import sync_playwright
 
 
@@ -14,15 +14,11 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
     with app.app_context():
         from flask import render_template
 
-        # Rider name
         rider_name = submission.rider_name
-
-        # Course details
         course_display_label = course_ref.display_label
         course_day = course_ref.day_of_week
         course_time_range = course_ref.timerange
 
-        # Base price
         base_price = submission.price or 0
 
         # Payment calculation
@@ -50,24 +46,25 @@ def render_rider_html(app, submission, course_ref, first_date, last_date):
 
 
 def main():
+    # --- Validate args ---
     if len(sys.argv) < 2:
-        print("ERROR: course_code required", file=sys.stderr)
+        # IMPORTANT: print NOTHING except the error
+        print("ERROR: course_code required")
         sys.exit(1)
 
     course_code = sys.argv[1]
 
-    # Load your REAL Flask app
+    # --- Load Flask app ---
     app = create_app()
 
     with app.app_context():
         course_ref = CourseReference.query.filter_by(course_code=course_code).first()
         if not course_ref:
-            print(f"ERROR: No course found for {course_code}", file=sys.stderr)
+            print(f"ERROR: No course found for {course_code}")
             sys.exit(1)
 
         term = get_active_term()
 
-        # Only approved riders
         riders = CourseFormSubmission.query.filter(
             CourseFormSubmission.current_course == course_code,
             CourseFormSubmission.term_year == term.year,
@@ -81,7 +78,7 @@ def main():
 
     generated_paths = []
 
-    # Weekday mapping for course day names
+    # Weekday mapping
     weekday_map = {
         "Monday": 0,
         "Tuesday": 1,
@@ -92,34 +89,31 @@ def main():
         "Sunday": 6
     }
 
+    # --- Playwright (silent mode) ---
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
 
         for submission in riders:
 
-            # Determine course weekday number
+            # Determine weekday
             course_day_name = course_ref.day_of_week
             course_weekday = weekday_map.get(course_day_name, 0)
 
-            # Term start weekday (should be Sunday = 6)
             term_weekday = term.start_date.weekday()
-
-            # Offset from Sunday → actual course day
             offset_days = (course_weekday - term_weekday) % 7
 
-            # First lesson date aligned to course day
             first_date = term.start_date + timedelta(days=offset_days)
 
             # Fortnightly W2 riders start one week later
             if submission.frequency == "F" and submission.start_week == "W2":
                 first_date = first_date + timedelta(weeks=1)
 
-            # Compute correct last lesson date
+            # Last lesson date
             if submission.frequency == "W":
-                last_date = first_date + timedelta(weeks=9)  # 10 lessons
+                last_date = first_date + timedelta(weeks=9)
             elif submission.frequency == "F":
-                last_date = first_date + timedelta(weeks=8)  # 5 lessons
+                last_date = first_date + timedelta(weeks=8)
             else:
                 last_date = first_date
 
@@ -134,6 +128,7 @@ def main():
 
         browser.close()
 
+    # --- STRICT OUTPUT FORMAT ---
     print("OK")
     for path in generated_paths:
         print(path)
