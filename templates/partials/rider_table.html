@@ -62,8 +62,8 @@
                     <!-- NEW checkbox (SMS Selected Riders) -->
                     <input type="checkbox"
                            class="sms-select"
-                           data-client-id="{{ client.id if client else '' }}"
                            data-mobile="{{ client.mobile if client else '' }}"
+                           data-name="{{ client.full_name if client else '' }}"
                            title="Include in SMS send">
                 </td>
 

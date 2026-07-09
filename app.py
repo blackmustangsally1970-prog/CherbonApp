@@ -3145,19 +3145,25 @@ def create_app():
     @app.route('/sms_selected_riders/<course_code>', methods=['POST'])
     def sms_selected_riders(course_code):
         data = request.get_json()
-        rider_ids = data.get("riders", [])
-
-        riders = Client.query.filter(Client.client_id.in_(rider_ids)).all()
+        riders = data.get("riders", [])
 
         pdf_link = f"https://cherbonapp.click/static/pdfs/{course_code}.pdf"
 
         sent = 0
-        for r in riders:
-            send_sms(
-                r.mobile,
-                f"Hi, {r.rider_name}'s course details are ready to view.\nPDF: {pdf_link}"
-            )
-            sent += 1
+        for rider in riders:
+            mobile = rider.get('mobile')
+            name = rider.get('name')
+
+            if not mobile:
+                continue
+
+            message = f"Hi, {name}'s course details are ready to view.\nPDF: {pdf_link}"
+
+            try:
+                send_sms(mobile, message)
+                sent += 1
+            except Exception as e:
+                print("SMS ERROR:", e)
 
         return jsonify({"message": f"SMS sent to {sent} rider(s)."})
 

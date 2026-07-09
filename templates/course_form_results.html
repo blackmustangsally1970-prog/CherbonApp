@@ -752,7 +752,11 @@ function smsCourseRiders(courseCode) {
 
     // Collect selected riders
     grid.querySelectorAll(".sms-select:checked").forEach(cb => {
-        selected.push(parseInt(cb.dataset.clientId));
+        selected.push({
+            mobile: cb.dataset.mobile,
+            name: cb.dataset.name
+        });
+
     });
 
     if (selected.length === 0) {
