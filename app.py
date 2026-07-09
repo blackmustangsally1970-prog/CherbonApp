@@ -3158,12 +3158,12 @@ def create_app():
         for rider in riders:
             mobile = rider.get('mobile')
             name   = rider.get('name')
+            rider_id = rider.get('id')   # <-- correct filename key
 
-            if not mobile:
+            if not mobile or not rider_id:
                 continue
 
-            safe_name = name.replace(" ", "_")
-            pdf_link = f"https://cherbonapp.click/static/pdfs/{course_code}_{safe_name}.pdf"
+            pdf_link = f"https://cherbonapp.click/static/pdfs/{course_code}_{rider_id}.pdf"
 
             message = f"Hi, {name}'s course details are ready to view.\nPDF: {pdf_link}"
 

@@ -735,13 +735,13 @@ function smsCourseRiders(courseCode) {
     const selected = [];
 
     // Collect selected riders
-    grid.querySelectorAll(".sms-select:checked").forEach(cb => {
-        selected.push({
-            mobile: cb.dataset.mobile,
-            name: cb.dataset.name
-        });
-
+grid.querySelectorAll(".sms-select:checked").forEach(cb => {
+    selected.push({
+        mobile: cb.dataset.mobile,
+        name: cb.dataset.name,
+        id: cb.dataset.id   // ⭐ REQUIRED for correct PDF link
     });
+});
 
     if (selected.length === 0) {
         alert("No riders selected.");
