@@ -1828,15 +1828,6 @@ def create_app():
         flash(f"Imported {new_count} new gift vouchers.", "success")
         return redirect(url_for("gift_vouchers"))
 
-
-
-
-
-    @app.route("/health")
-    def health():
-        return "OK", 200
-
-
     # ---------------------------------------------------------
     # HELPERS (ALL INSIDE create_app)
     # ---------------------------------------------------------
@@ -2171,6 +2162,12 @@ def create_app():
 
         db.session.commit()
         return jsonify(success=True, created=created)
+
+
+
+    @app.route("/health")
+    def health():
+        return "OK", 200
 
 
     @app.route("/login", methods=["GET", "POST"])
