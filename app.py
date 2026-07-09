@@ -2071,16 +2071,29 @@ def create_app():
         if not term:
             return jsonify(success=False, error="No active term set")
 
+        # Build term weeks (each week_start is always a Sunday)
         week_starts = build_term_weeks(term)
-        day_offset = get_day_offset(course.day_of_week)
 
-        # ✔ CORRECT TERM FIELD NAMES
+        # Get all approved riders for pricing logic
         approved = CourseFormSubmission.query.filter_by(
             status="approved",
             current_course=course_code,
             term_year=term.year,
             term_number=term.term_number
         ).all()
+
+        # Weekday mapping (same as PDF generator)
+        weekday_map = {
+            "Monday": 0,
+            "Tuesday": 1,
+            "Wednesday": 2,
+            "Thursday": 3,
+            "Friday": 4,
+            "Saturday": 5,
+            "Sunday": 6
+        }
+
+        course_weekday = weekday_map.get(course.day_of_week, 0)
 
         created = 0
 
@@ -2122,10 +2135,14 @@ def create_app():
             lesson_no = 1
 
             for wi in week_indexes:
-                week_start = week_starts[wi]
-                lesson_date = week_start + timedelta(days=day_offset)
+                week_start = week_starts[wi]          # Always a Sunday
+                week_start_weekday = week_start.weekday()  # Should be 6
 
-                # ✔ Lessons table does NOT store term/year — correct
+                # Align to correct course day (same logic as PDF)
+                offset_days = (course_weekday - week_start_weekday) % 7
+                lesson_date = week_start + timedelta(days=offset_days)
+
+                # Create lesson
                 lesson = Lesson(
                     lesson_date=lesson_date,
                     time_frame=course.timerange,
