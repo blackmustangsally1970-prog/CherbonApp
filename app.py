@@ -1724,6 +1724,49 @@ def parse_jotform_payload(payload, forced_submission_id=None, mode="full"):
     }
 
 
+def send_sms_clicksend(to_number, message, sender_number):
+    configuration = clicksend_client.Configuration()
+    configuration.username = app.config['CLICKSEND_USERNAME']
+    configuration.password = app.config['CLICKSEND_API_KEY']
+
+    api_instance = clicksend_client.SMSApi(
+        clicksend_client.ApiClient(configuration)
+    )
+
+    sms_message = SmsMessage(
+        source="python",
+        body=message,
+        to=to_number,
+        _from=sender_number,
+        shorten_urls=False
+    )
+
+    sms_messages = clicksend_client.SmsMessageCollection(
+        messages=[sms_message]
+    )
+
+    try:
+        response = api_instance.sms_send_post(sms_messages)
+        print("ClickSend API response:", response)
+
+        # Correct success check
+        try:
+            status = getattr(response.data, "_status", None)
+            if status == "SUCCESS":
+                return True
+        except Exception as inner:
+            print("ClickSend status parse error:", inner)
+
+        print("ClickSend returned non-success:", response)
+        return False
+
+    except ApiException as e:
+        print("ClickSend SMS failed:", e)
+        return False
+
+
+
+
 def create_app():
     app = Flask(__name__)
 
@@ -1832,45 +1875,6 @@ def create_app():
     # HELPERS (ALL INSIDE create_app)
     # ---------------------------------------------------------
 
-    def send_sms_clicksend(to_number, message, sender_number):
-        configuration = clicksend_client.Configuration()
-        configuration.username = app.config['CLICKSEND_USERNAME']
-        configuration.password = app.config['CLICKSEND_API_KEY']
-
-        api_instance = clicksend_client.SMSApi(
-            clicksend_client.ApiClient(configuration)
-        )
-
-        sms_message = SmsMessage(
-            source="python",
-            body=message,
-            to=to_number,
-            _from=sender_number,
-            shorten_urls=False
-        )
-
-        sms_messages = clicksend_client.SmsMessageCollection(
-            messages=[sms_message]
-        )
-
-        try:
-            response = api_instance.sms_send_post(sms_messages)
-            print("ClickSend API response:", response)
-
-            try:
-                http_code = int(getattr(response, "http_code", 0))
-            except:
-                http_code = 0
-
-            if http_code == 200:
-                return True
-
-            print("ClickSend returned non-200:", response)
-            return False
-
-        except ApiException as e:
-            print("ClickSend SMS failed:", e)
-            return False
 
 
     def load_wedding_unsubscribes():
