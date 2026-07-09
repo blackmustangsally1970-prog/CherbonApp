@@ -357,27 +357,27 @@
     </div>
 </h3>
 
+<!-- ⭐ FIXED: rider_table.html is now INSIDE the grid -->
+<div class="course-grid" id="grid-{{ c.course_code }}">
+    {% include 'rider_table.html' %}
 </div>
 
+<!-- ⭐ POPUP MODAL FOR THIS COURSE -->
+{% if missing %}
+<div id="missing-modal-{{ c.course_code }}" class="missing-modal">
+    <div class="missing-modal-content">
+        <span class="close" data-course="{{ c.course_code }}">&times;</span>
 
-        <!-- ⭐ POPUP MODAL FOR THIS COURSE -->
-        {% if missing %}
-        <div id="missing-modal-{{ c.course_code }}" class="missing-modal">
-            <div class="missing-modal-content">
-                <span class="close" data-course="{{ c.course_code }}">&times;</span>
-
-                <h3>Last Term Riders – {{ c.course_code }}</h3>
+        <h3>Last Term Riders – {{ c.course_code }}</h3>
 
 <ul>
     {% for name in missing %}
         {% set client = client_names | selectattr("full_name", "equalto", name) | first %}
         {% set sub = submissions_map.get(name) %}
+        {% set new_course = current_course_map.get(name) %}
+        {% set moved = new_course and new_course != c.course_code %}
 
-<li
-    {% set new_course = current_course_map.get(name) %}
-    {% set moved = new_course and new_course != c.course_code %}
-    style="{% if moved %}background:#ffe6e6; font-weight:bold;{% endif %}"
->
+<li style="{% if moved %}background:#ffe6e6; font-weight:bold;{% endif %}">
 
     <!-- COL 1: Rider Name -->
     <span class="rider-name">
@@ -432,18 +432,11 @@
     {% endfor %}
 </ul>
 
-
-            </div>
-        </div>
-        {% endif %}
-
-<div class="course-grid" id="grid-{{ c.course_code }}">
-    <div class="loading-msg" style="padding:10px; color:#777;">
-        Click to load riders…
     </div>
 </div>
+{% endif %}
 
-        {% endif %}
+{% endif %}
 {% endfor %}
 </div>
 
