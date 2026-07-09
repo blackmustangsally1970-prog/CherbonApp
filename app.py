@@ -3153,7 +3153,10 @@ def create_app():
 
         sent = 0
         for r in riders:
-            send_sms(r.mobile, f"Your course details are ready.\nPDF: {pdf_link}")
+            send_sms(
+                r.mobile,
+                f"Hi, {r.rider_name}'s course details are ready to view.\nPDF: {pdf_link}"
+            )
             sent += 1
 
         return jsonify({"message": f"SMS sent to {sent} rider(s)."})

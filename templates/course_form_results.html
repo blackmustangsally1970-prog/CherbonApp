@@ -753,23 +753,38 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function smsCourseRiders(courseCode) {
-    if (!confirm("Send SMS with PDF link to all riders in " + courseCode + " ?")) {
+
+    const grid = document.getElementById("grid-" + courseCode);
+    const selected = [];
+
+    // Collect selected riders
+    grid.querySelectorAll(".sms-select:checked").forEach(cb => {
+        selected.push(parseInt(cb.dataset.clientId));
+    });
+
+    if (selected.length === 0) {
+        alert("No riders selected.");
         return;
     }
 
-    fetch("/sms/course/" + courseCode, {
-        method: "POST"
+    if (!confirm("Send SMS with PDF link to " + selected.length + " rider(s)?")) {
+        return;
+    }
+
+    fetch("/sms_selected_riders/" + courseCode, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ riders: selected })
     })
     .then(response => response.json())
     .then(data => {
-        alert("SMS sent to " + data.sent + " riders in " + data.course);
+        alert(data.message);
     })
     .catch(err => {
         console.error("SMS error:", err);
         alert("SMS failed — check console.");
     });
 }
-
 
 function attachMasterCheckboxHandlers(grid) {
 
