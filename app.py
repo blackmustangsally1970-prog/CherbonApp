@@ -3925,6 +3925,9 @@ def create_app():
         conflict_index = None
 
         for i, rider in enumerate(valid_riders, start=1):
+            if rider.get("resolved"):
+                continue
+
             if rider.get("matches") and len(rider["matches"]) >= 1:
                 conflict_index = i
                 break
@@ -6353,7 +6356,10 @@ def create_app():
         )
 
         all_riders = parsed["riders"]
-        valid_riders = [r for r in all_riders if not r.get("incomplete")]
+        valid_riders = [
+            r for r in all_riders
+            if not r.get("incomplete") and not r.get("resolved")
+        ]
 
         # If no valid riders → ignore
         if not valid_riders:
@@ -6479,6 +6485,9 @@ def create_app():
         # PHASE 3: Conflict detection (fast)
         # -----------------------------------------
         for idx, rider in enumerate(valid_riders, start=1):
+            if rider.get("resolved"):
+                continue
+
             matches = rider.get("matches", [])
             if matches:
                 return redirect(url_for(
