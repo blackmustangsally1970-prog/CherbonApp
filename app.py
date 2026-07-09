@@ -6075,6 +6075,7 @@ def create_app():
             all_generated.extend(generated)
 
         return {
+            "status": "OK",
             "total_courses": total_courses,
             "total_pdfs": total_pdfs,
             "generated": all_generated
