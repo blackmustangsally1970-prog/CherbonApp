@@ -3160,7 +3160,11 @@ def create_app():
             message = f"Hi, {name}'s course details are ready to view.\nPDF: {pdf_link}"
 
             try:
-                send_sms(mobile, message)
+                send_sms_clicksend(
+                    mobile,
+                    message,
+                    app.config['EQUESTRIAN_SENDER']
+                )
                 sent += 1
             except Exception as e:
                 print("SMS ERROR:", e)
