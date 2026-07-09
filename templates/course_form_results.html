@@ -583,22 +583,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ============================================================
-       SMS BUTTONS
-    ============================================================ */
-    document.querySelectorAll(".sms-btn").forEach(btn => {
-        btn.addEventListener("click", function (e) {
-            e.stopPropagation();
-            const number = this.dataset.number;
-            const name = this.dataset.name;
-
-            window.location.href =
-                "/send_sms?to=" + encodeURIComponent(number) +
-                "&name=" + encodeURIComponent(name);
-        });
-    });
-
-
-    /* ============================================================
        CANCELLED CHECKBOXES
     ============================================================ */
     document.querySelectorAll(".cancelled-checkbox").forEach(cb => {
