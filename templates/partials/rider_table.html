@@ -1,21 +1,22 @@
 <table>
     <thead class="orange-header">
         <tr>
-<th style="width:8ch; white-space:nowrap;">
+            <th style="width:8ch; white-space:nowrap;">
 
-    <!-- Master for lesson-select -->
-    <input type="checkbox"
-           class="master-select-lessons"
-           data-course="{{ course_code }}"
-           title="Select all lessons"
-           style="margin-right:6px;">
+                <!-- Master for lesson-select -->
+                <input type="checkbox"
+                       class="master-select-lessons"
+                       data-course="{{ course_code }}"
+                       title="Select all lessons"
+                       style="margin-right:6px;">
 
-    <!-- Master for sms-select -->
-    <input type="checkbox"
-           class="master-select-sms"
-           data-course="{{ course_code }}"
-           title="Select all SMS">
-</th>
+                <!-- Master for sms-select -->
+                <input type="checkbox"
+                       class="master-select-sms"
+                       data-course="{{ course_code }}"
+                       title="Select all SMS">
+            </th>
+
             <th style="width:14ch;">Rider</th>
             <th style="width:12ch;">Horse 1</th>
             <th style="width:12ch;">Horse 2</th>
@@ -40,38 +41,40 @@
             </tr>
         {% else %}
             {% for r in riders %}
+            {% set client = client_lookup.get(r.rider_name) %}
+
             <tr data-timeframe="{{ r.current_course }}" data-rider="{{ r.rider_name }}">
 
-<td class="sel-cell" style="white-space:nowrap;">
+                <td class="sel-cell" style="white-space:nowrap;">
 
-    <!-- Existing checkbox (Add Riders to Lessons) -->
-    {% if r.lesson_added %}
-        <span style="color:green; font-weight:bold;">Added</span>
-    {% else %}
-        <input type="checkbox"
-               class="lesson-select"
-               data-id="{{ r.id }}"
-               data-course="{{ course_code }}"
-               title="Add rider to lessons"
-               style="margin-right:6px;">
-    {% endif %}
+                    <!-- Existing checkbox (Add Riders to Lessons) -->
+                    {% if r.lesson_added %}
+                        <span style="color:green; font-weight:bold;">Added</span>
+                    {% else %}
+                        <input type="checkbox"
+                               class="lesson-select"
+                               data-id="{{ r.id }}"
+                               data-course="{{ course_code }}"
+                               title="Add rider to lessons"
+                               style="margin-right:6px;">
+                    {% endif %}
 
-    <!-- NEW checkbox (SMS Selected Riders) -->
-    <input type="checkbox"
-           class="sms-select"
-           data-client-id="{{ r.client_id }}"
-           title="Include in SMS send">
-</td>
+                    <!-- NEW checkbox (SMS Selected Riders) -->
+                    <input type="checkbox"
+                           class="sms-select"
+                           data-client-id="{{ client.id if client else '' }}"
+                           data-mobile="{{ client.mobile if client else '' }}"
+                           title="Include in SMS send">
+                </td>
 
                 <!-- RIDER NAME -->
-                {% set match = client_lookup.get(r.rider_name) %}
                 <td style="width:32ch; white-space:normal; word-break:break-word;">
                     <input type="text"
                            data-id="{{ r.id }}"
                            data-field="rider_name"
                            value="{{ r.rider_name }}"
                            onchange="updateField({{ r.id }}, 'rider_name', this.value)"
-                           style="width:30ch; {% if not match %}color:red; font-weight:bold;{% endif %}">
+                           style="width:30ch; {% if not client %}color:red; font-weight:bold;{% endif %}">
                 </td>
 
                 <!-- HORSE 1 -->
@@ -168,17 +171,17 @@
                                value="{{ r.price_override }}"
                                style="width:9ch;"
                                onchange="updateField({{ r.id }}, 'price_override', this.value)">
-{% else %}
-    <span class="price-auto">💰</span>
-    <input type="number"
-           step="0.01"
-           data-id="{{ r.id }}"
-           data-field="price_override"
-           value=""
-           placeholder="{{ r.price }}"
-           style="width:9ch;"
-           onchange="updateField({{ r.id }}, 'price_override', this.value)">
-{% endif %}
+                    {% else %}
+                        <span class="price-auto">💰</span>
+                        <input type="number"
+                               step="0.01"
+                               data-id="{{ r.id }}"
+                               data-field="price_override"
+                               value=""
+                               placeholder="{{ r.price }}"
+                               style="width:9ch;"
+                               onchange="updateField({{ r.id }}, 'price_override', this.value)">
+                    {% endif %}
 
                     <input type="checkbox"
                            title="Lock price"
@@ -205,4 +208,3 @@
         {% endif %}
     </tbody>
 </table>
-
