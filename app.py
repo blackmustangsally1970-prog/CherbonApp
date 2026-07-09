@@ -3152,7 +3152,7 @@ def create_app():
         sent = 0
         for rider in riders:
             mobile = rider.get('mobile')
-            name = rider.get('name')
+            name   = rider.get('name')
 
             if not mobile:
                 continue
@@ -3166,7 +3166,6 @@ def create_app():
                 print("SMS ERROR:", e)
 
         return jsonify({"message": f"SMS sent to {sent} rider(s)."})
-
 
     @app.route('/course_form_submissions')
     def course_form_submissions():
