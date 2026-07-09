@@ -1854,7 +1854,8 @@ def create_app():
             source="python",
             body=message,
             to=to_number,
-            _from=sender_number
+            _from=sender_number,
+            shorten_urls=False
         )
 
         sms_messages = clicksend_client.SmsMessageCollection(
