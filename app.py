@@ -77,13 +77,14 @@ import time
 import subprocess
 import unicodedata
 import openpyxl
+import requests
+import base64
+
 from datetime import date, datetime, time, timedelta
 from functools import lru_cache, wraps
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
-
 from pdf2image import convert_from_path
-
 from markupsafe import Markup, escape
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
@@ -1725,43 +1726,47 @@ def parse_jotform_payload(payload, forced_submission_id=None, mode="full"):
 
 
 def send_sms_clicksend(to_number, message, sender_number):
-    configuration = clicksend_client.Configuration()
-    configuration.username = app.config['CLICKSEND_USERNAME']
-    configuration.password = app.config['CLICKSEND_API_KEY']
+    username = app.config['CLICKSEND_USERNAME']
+    api_key  = app.config['CLICKSEND_API_KEY']
 
-    api_instance = clicksend_client.SMSApi(
-        clicksend_client.ApiClient(configuration)
-    )
+    auth = base64.b64encode(f"{username}:{api_key}".encode()).decode()
 
-    sms_message = SmsMessage(
-        source="python",
-        body=message,
-        to=to_number,
-        _from=sender_number,
-        shorten_urls=False
-    )
-
-    sms_messages = clicksend_client.SmsMessageCollection(
-        messages=[sms_message]
-    )
+    payload = {
+        "messages": [
+            {
+                "source": "python",
+                "from": sender_number,
+                "body": message,
+                "to": to_number,
+                "shorten_urls": False
+            }
+        ]
+    }
 
     try:
-        response = api_instance.sms_send_post(sms_messages)
-        print("ClickSend API response:", response)
+        response = requests.post(
+            "https://rest.clicksend.com/v3/sms/send",
+            json=payload,
+            headers={
+                "Authorization": f"Basic {auth}",
+                "Content-Type": "application/json"
+            },
+            timeout=10
+        )
 
-        # Correct success check
-        try:
-            status = getattr(response.data, "_status", None)
-            if status == "SUCCESS":
-                return True
-        except Exception as inner:
-            print("ClickSend status parse error:", inner)
+        print("ClickSend REST response:", response.text)
 
-        print("ClickSend returned non-success:", response)
+        data = response.json()
+        status = data.get("data", {}).get("_status")
+
+        if status == "SUCCESS":
+            return True
+
+        print("ClickSend returned non-success:", data)
         return False
 
-    except ApiException as e:
-        print("ClickSend SMS failed:", e)
+    except Exception as e:
+        print("ClickSend REST SMS failed:", e)
         return False
 
 
