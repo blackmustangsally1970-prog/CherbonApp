@@ -44,7 +44,11 @@
             {% set client = client_lookup.get(r.rider_name) %}
 
             {% set cref = course_lookup[r.current_course] %} 
-            <tr data-timeframe="{{ cref.timerange }}" data-rider="{{ r.rider_name }}">
+<tr 
+    data-course="{{ course_code }}"
+    data-timeframe="{{ cref.timerange }}"
+    data-rider="{{ r.rider_name }}"
+>
 
                 <td class="sel-cell" style="white-space:nowrap;">
 
