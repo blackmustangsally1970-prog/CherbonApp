@@ -1659,6 +1659,8 @@ def parse_jotform_payload(payload, forced_submission_id=None, mode="full"):
             "invite_token": invite_token,
         }
 
+        rider["rider_index"] = idx + 1
+
         if mode == "full":
             compact = name.replace(" ", "").replace("-", "")
             like_pattern = f"%{compact}%"
