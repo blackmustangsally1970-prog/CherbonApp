@@ -2825,12 +2825,19 @@ def create_app():
         client_names = Client.query.all()
         client_lookup = {c.full_name: c for c in client_names}
 
+        # ⭐ Load course reference + build lookup
+        courses = CourseReference.query.all()
+        course_lookup = {c.course_code: c for c in courses}
+
         return render_template(
             "partials/rider_table.html",
             riders=approved_submissions,
             horses=horses,
             client_lookup=client_lookup,
-            course_code=course_code
+            course_lookup=course_lookup,   # ⭐ REQUIRED
+            course_code=course_code,
+            selected_year=year,
+            selected_term=term
         )
 
 
