@@ -495,60 +495,57 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
 
-/* ============================================================
-   CHECK LESSONS FOR TERM (FULLY CORRECTED)
-============================================================ */
-window.checkLessonsForTerm = function (course_code) {
+    /* ============================================================
+       CHECK LESSONS FOR TERM
+    ============================================================ */
+    window.checkLessonsForTerm = function (course_code) {
+        const year = "{{ selected_year }}";
+        const term = "{{ selected_term }}";
 
-    // Pull year + term from the template (they ARE rendered server‑side)
-    const year = "{{ selected_year }}";
-    const term = "{{ selected_term }}";
+        fetch(`/check_lessons_for_term?year=${year}&term=${term}`)
+            .then(r => r.json())
+            .then(data => {
 
-    fetch(`/check_lessons_for_term?year=${year}&term=${term}`)
-        .then(r => r.json())
-        .then(data => {
+                const rows = document.querySelectorAll(
+                    `tr[data-course="${course_code}"]`
+                );
 
-            const rows = document.querySelectorAll(
-                `tr[data-course="${course_code}"]`
-            );
+                rows.forEach(row => {
+                    const rider = row.dataset.rider;
+                    const tf = row.dataset.timeframe;
+                    const key = `${tf}|${rider}`;
+                    const selCell = row.querySelector(".sel-cell");
 
-            rows.forEach(row => {
-                const rider = row.dataset.rider;
-                const tf = row.dataset.timeframe;   // ⭐ REAL time_frame
-                const key = `${tf}|${rider}`;       // ⭐ MATCHES backend keys
-                const selCell = row.querySelector(".sel-cell");
+                    if (!selCell) return;
 
-                if (!selCell) return;
-
-                // ⭐ Backend returns: { success: true, added: { "TF|Rider": true } }
-                if (data.added[key]) {
-                    selCell.innerHTML =
-                        `<span style="color:green;font-weight:bold;">Added</span>`;
-                } else {
-                    let id = null;
-
-                    const cb = row.querySelector(".lesson-select");
-                    if (cb) {
-                        id = cb.dataset.id;
+                    if (data.added[key]) {
+                        selCell.innerHTML =
+                            `<span style="color:green;font-weight:bold;">Added</span>`;
                     } else {
-                        id = row.dataset.id;
-                    }
+                        let id = null;
 
-                    selCell.innerHTML = `
-                        <input type="checkbox"
-                               class="lesson-select"
-                               data-id="${id}"
-                               data-course="${course_code}">
-                    `;
-                }
-            });
-        })
-        .catch(err => console.error("Check lessons failed:", err));
-};
+                        const cb = row.querySelector(".lesson-select");
+                        if (cb) {
+                            id = cb.dataset.id;
+                        } else {
+                            id = row.dataset.id;
+                        }
+
+                        selCell.innerHTML = `
+                            <input type="checkbox"
+                                   class="lesson-select"
+                                   data-id="${id}"
+                                   data-course="${course_code}">
+                        `;
+                    }
+                });
+            })
+            .catch(err => console.error("Check lessons failed:", err));
+    };
 
 
     /* ============================================================
-       GENERATE LESSONS FOR SELECTED RIDERS
+       GENERATE LESSONS
     ============================================================ */
     window.generateLessons = function (course_code) {
         const ids = [...document.querySelectorAll(
@@ -579,7 +576,7 @@ window.checkLessonsForTerm = function (course_code) {
 
 
     /* ============================================================
-       CHECK BUTTON (CORRECT VERSION)
+       CHECK BUTTON
     ============================================================ */
     const checkBtn = document.getElementById("checkLessonsBtn");
     if (checkBtn) {
@@ -657,7 +654,7 @@ window.checkLessonsForTerm = function (course_code) {
 
 
     /* ============================================================
-       MASTER SELECT (SELECT ALL RIDERS)
+       MASTER SELECT
     ============================================================ */
     document.querySelectorAll(".master-select").forEach(master => {
         master.addEventListener("change", function (e) {
@@ -677,7 +674,7 @@ window.checkLessonsForTerm = function (course_code) {
 
 
     /* ============================================================
-       SELECT2 INITIALISATION
+       SELECT2 INIT
     ============================================================ */
     if (window.$) {
         $('select').select2();
@@ -685,7 +682,7 @@ window.checkLessonsForTerm = function (course_code) {
 
 
     /* ============================================================
-       CONFETTI TRIGGER
+       CONFETTI
     ============================================================ */
     const total = {{ total_nominations|int }};
     const last = parseInt(localStorage.getItem("last_total_nominations") || "0");
@@ -735,11 +732,12 @@ window.checkLessonsForTerm = function (course_code) {
         });
     });
 
-document.addEventListener("DOMContentLoaded", function () {
 
     /* ============================================================
-       LOAD RIDERS
+       LOAD RIDERS + SMS + PDF FUNCTIONS
+       (NO DOMContentLoaded WRAPPER HERE)
     ============================================================ */
+
     function loadRiders(gridId) {
         const grid = document.getElementById(gridId);
         if (!grid) return;
@@ -763,16 +761,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     $(grid).find("select").select2();
                 }
 
-                // ⭐ Apply “Added” AFTER DOM is fully inserted
                 checkLessonsForTerm(courseCode);
             })
             .catch(err => console.log("load_riders error", err));
     }
 
-
-    /* ============================================================
-       SMS COURSE RIDERS
-    ============================================================ */
     function smsCourseRiders(courseCode) {
         const grid = document.getElementById("grid-" + courseCode);
         const selected = [];
@@ -809,12 +802,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
-    /* ============================================================
-       MASTER CHECKBOX HANDLERS
-    ============================================================ */
     function attachMasterCheckboxHandlers(grid) {
-
         const masterLessons = grid.querySelector('.master-select-lessons');
         if (masterLessons) {
             masterLessons.addEventListener('change', function() {
@@ -844,10 +832,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-
-    /* ============================================================
-       PDF GENERATION
-    ============================================================ */
     function generateCoursePDFs(courseCode) {
         fetch(`/generate_course_pdfs/${courseCode}`)
             .then(response => response.json())
@@ -885,7 +869,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 });
-
 </script>
 
 
