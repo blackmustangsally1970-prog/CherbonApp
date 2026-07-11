@@ -3181,10 +3181,29 @@ def create_app():
                     app.config['EQUESTRIAN_SENDER']
                 )
                 sent += 1
+
+                # ⭐ NEW: Log SMS with rider_name
+                log = SmsLog(
+                    client_id=None,
+                    guardian=None,
+                    mobile=mobile,
+                    rider_name=name,
+                    message_body=message,
+                    sent_at=datetime.now()
+                )
+                db.session.add(log)
+                db.session.commit()
+
             except Exception as e:
                 print("SMS ERROR:", e)
 
         return jsonify({"message": f"SMS sent to {sent} rider(s)."})
+
+    @app.route('/view_sms_logs')
+    def view_sms_logs():
+        logs = SmsLog.query.order_by(SmsLog.sent_at.desc()).limit(500).all()
+        return render_template('view_sms_logs.html', logs=logs)
+
 
     @app.route('/course_form_submissions')
     def course_form_submissions():
