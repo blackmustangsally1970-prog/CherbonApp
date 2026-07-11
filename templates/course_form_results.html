@@ -735,148 +735,156 @@ window.checkLessonsForTerm = function (course_code) {
         });
     });
 
-function loadRiders(gridId) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
+document.addEventListener("DOMContentLoaded", function () {
 
-    const courseCode = gridId.replace("grid-", "");
-    const year = "{{ selected_year }}";
-    const term = "{{ selected_term }}";
+    /* ============================================================
+       LOAD RIDERS
+    ============================================================ */
+    function loadRiders(gridId) {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
 
-    fetch(`/load_riders/${courseCode}?year=${year}&term=${term}`)
-        .then(r => {
-            if (!r.ok) throw new Error("Backend returned " + r.status);
-            return r.text();
+        const courseCode = gridId.replace("grid-", "");
+        const year = "{{ selected_year }}";
+        const term = "{{ selected_term }}";
+
+        fetch(`/load_riders/${courseCode}?year=${year}&term=${term}`)
+            .then(r => {
+                if (!r.ok) throw new Error("Backend returned " + r.status);
+                return r.text();
+            })
+            .then(html => {
+                grid.innerHTML = html;
+                grid.dataset.loaded = "1";
+
+                attachMasterCheckboxHandlers(grid);
+
+                if (window.$) {
+                    $(grid).find("select").select2();
+                }
+
+                // ⭐ Apply “Added” AFTER DOM is fully inserted
+                checkLessonsForTerm(courseCode);
+            })
+            .catch(err => console.log("load_riders error", err));
+    }
+
+
+    /* ============================================================
+       SMS COURSE RIDERS
+    ============================================================ */
+    function smsCourseRiders(courseCode) {
+        const grid = document.getElementById("grid-" + courseCode);
+        const selected = [];
+
+        grid.querySelectorAll(".sms-select:checked").forEach(cb => {
+            selected.push({
+                mobile: cb.dataset.mobile,
+                name: cb.dataset.name,
+                id: cb.dataset.id
+            });
+        });
+
+        if (selected.length === 0) {
+            alert("No riders selected.");
+            return;
+        }
+
+        if (!confirm("Send SMS with PDF link to " + selected.length + " rider(s)?")) {
+            return;
+        }
+
+        fetch("/sms_selected_riders/" + courseCode, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ riders: selected })
         })
-        .then(html => {
-            grid.innerHTML = html;
-            grid.dataset.loaded = "1";
-
-            // ⭐ Attach master checkbox handlers AFTER HTML is inserted
-            attachMasterCheckboxHandlers(grid);
-
-            if (window.$) {
-                $(grid).find("select").select2();
-            }
-
-            // ⭐⭐ CRITICAL — apply “Added” AFTER DOM is fully inserted
-            checkLessonsForTerm(courseCode);
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
         })
-        .catch(err => console.log("load_riders error", err));
-}
+        .catch(err => {
+            console.error("SMS error:", err);
+            alert("SMS failed — check console.");
+        });
+    }
 
 
-function smsCourseRiders(courseCode) {
+    /* ============================================================
+       MASTER CHECKBOX HANDLERS
+    ============================================================ */
+    function attachMasterCheckboxHandlers(grid) {
 
-    const grid = document.getElementById("grid-" + courseCode);
-    const selected = [];
+        const masterLessons = grid.querySelector('.master-select-lessons');
+        if (masterLessons) {
+            masterLessons.addEventListener('change', function() {
+                const checked = this.checked;
+                grid.querySelectorAll('.lesson-select').forEach(cb => {
+                    cb.checked = checked;
+                });
+            });
+        }
 
-    // Collect selected riders
-grid.querySelectorAll(".sms-select:checked").forEach(cb => {
-    selected.push({
-        mobile: cb.dataset.mobile,
-        name: cb.dataset.name,
-        id: cb.dataset.id   // ⭐ REQUIRED for correct PDF link
-    });
+        const masterSMS = grid.querySelector('.master-select-sms');
+        if (masterSMS) {
+            masterSMS.addEventListener('change', function() {
+                const checked = this.checked;
+                grid.querySelectorAll('.sms-select').forEach(cb => {
+                    cb.checked = checked;
+                });
+            });
+        }
+
+        const checkBtn = grid.querySelector('#checkLessonsBtn');
+        if (checkBtn) {
+            checkBtn.addEventListener('click', function () {
+                const course_code = this.dataset.course;
+                checkLessonsForTerm(course_code);
+            });
+        }
+    }
+
+
+    /* ============================================================
+       PDF GENERATION
+    ============================================================ */
+    function generateCoursePDFs(courseCode) {
+        fetch(`/generate_course_pdfs/${courseCode}`)
+            .then(response => response.json())
+            .then(data => {
+                alert(`Generated ${data.generated.length} rider PDFs.`);
+            })
+            .catch(err => {
+                console.error("PDF generation error:", err);
+                alert("PDF generation failed.");
+            });
+    }
+
+    function generateAllCoursePDFs() {
+        const spinner = document.getElementById("globalPdfSpinner");
+        const btn = document.getElementById("globalPdfBtn");
+
+        spinner.style.display = "inline-block";
+        btn.disabled = true;
+
+        fetch(`/generate_all_course_pdfs`)
+            .then(response => response.json())
+            .then(data => {
+                spinner.style.display = "none";
+                btn.disabled = false;
+
+                alert(`Generated ${data.total_pdfs} PDFs across ${data.total_courses} courses.`);
+            })
+            .catch(err => {
+                spinner.style.display = "none";
+                btn.disabled = false;
+
+                console.error("Global PDF error:", err);
+                alert("Global PDF generation failed.");
+            });
+    }
+
 });
-
-    if (selected.length === 0) {
-        alert("No riders selected.");
-        return;
-    }
-
-    if (!confirm("Send SMS with PDF link to " + selected.length + " rider(s)?")) {
-        return;
-    }
-
-    fetch("/sms_selected_riders/" + courseCode, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ riders: selected })
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message);
-    })
-    .catch(err => {
-        console.error("SMS error:", err);
-        alert("SMS failed — check console.");
-    });
-}
-
-function attachMasterCheckboxHandlers(grid) {
-
-    // Lessons master checkbox
-    const masterLessons = grid.querySelector('.master-select-lessons');
-    if (masterLessons) {
-        masterLessons.addEventListener('change', function() {
-            const checked = this.checked;
-            grid.querySelectorAll('.lesson-select').forEach(cb => {
-                cb.checked = checked;
-            });
-        });
-    }
-
-    // SMS master checkbox
-    const masterSMS = grid.querySelector('.master-select-sms');
-    if (masterSMS) {
-        masterSMS.addEventListener('change', function() {
-            const checked = this.checked;
-            grid.querySelectorAll('.sms-select').forEach(cb => {
-                cb.checked = checked;
-            });
-        });
-    }
-
-    // ⭐ Check Lessons Added button (THIS is what fixes your issue)
-    const checkBtn = grid.querySelector('#checkLessonsBtn');
-    if (checkBtn) {
-        checkBtn.addEventListener('click', function () {
-            const course_code = this.dataset.course;
-            checkLessonsForTerm(course_code);
-        });
-    }
-}
-
-
-function generateCoursePDFs(courseCode) {
-    fetch(`/generate_course_pdfs/${courseCode}`)
-        .then(response => response.json())
-        .then(data => {
-            alert(`Generated ${data.generated.length} rider PDFs.`);
-        })
-        .catch(err => {
-            console.error("PDF generation error:", err);
-            alert("PDF generation failed.");
-        });
-}
-
-
-function generateAllCoursePDFs() {
-
-    const spinner = document.getElementById("globalPdfSpinner");
-    const btn = document.getElementById("globalPdfBtn");
-
-    spinner.style.display = "inline-block";
-    btn.disabled = true;
-
-    fetch(`/generate_all_course_pdfs`)
-        .then(response => response.json())
-        .then(data => {
-            spinner.style.display = "none";
-            btn.disabled = false;
-
-            alert(`Generated ${data.total_pdfs} PDFs across ${data.total_courses} courses.`);
-        })
-        .catch(err => {
-            spinner.style.display = "none";
-            btn.disabled = false;
-
-            console.error("Global PDF error:", err);
-            alert("Global PDF generation failed.");
-        });
-}
-
 
 </script>
 
