@@ -514,7 +514,8 @@ window.checkLessonsForTerm = function (course_code) {
 
             rows.forEach(row => {
                 const rider = row.dataset.rider;
-                const key = `${course_code}|${rider}`;
+                const tf = row.dataset.timeframe;   // ⭐ REAL time_frame
+                const key = `${tf}|${rider}`;       // ⭐ MATCHES backend keys
                 const selCell = row.querySelector(".sel-cell");
 
                 if (!selCell) return;
