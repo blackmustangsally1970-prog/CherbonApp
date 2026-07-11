@@ -825,7 +825,17 @@ function attachMasterCheckboxHandlers(grid) {
             });
         });
     }
+
+    // ⭐ Check Lessons Added button (THIS is what fixes your issue)
+    const checkBtn = grid.querySelector('#checkLessonsBtn');
+    if (checkBtn) {
+        checkBtn.addEventListener('click', function () {
+            const course_code = this.dataset.course;
+            checkLessonsForTerm(course_code);
+        });
+    }
 }
+
 
 function generateCoursePDFs(courseCode) {
     fetch(`/generate_course_pdfs/${courseCode}`)
