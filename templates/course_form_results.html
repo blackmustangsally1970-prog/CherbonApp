@@ -509,7 +509,7 @@ window.checkLessonsForTerm = function (course_code) {
         .then(data => {
 
             const rows = document.querySelectorAll(
-                `tr[data-timeframe="${course_code}"]`
+                `tr[data-course="${course_code}"]`
             );
 
             rows.forEach(row => {
