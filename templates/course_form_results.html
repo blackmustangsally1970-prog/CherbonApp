@@ -735,35 +735,36 @@ window.checkLessonsForTerm = function (course_code) {
         });
     });
 
-    function loadRiders(gridId) {
-        const grid = document.getElementById(gridId);
-        if (!grid) return;
+function loadRiders(gridId) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
 
-        const courseCode = gridId.replace("grid-", "");
-        const year = "{{ selected_year }}";
-        const term = "{{ selected_term }}";
+    const courseCode = gridId.replace("grid-", "");
+    const year = "{{ selected_year }}";
+    const term = "{{ selected_term }}";
 
-        fetch(`/load_riders/${courseCode}?year=${year}&term=${term}`)
-.then(r => {
-    if (!r.ok) throw new Error("Backend returned " + r.status);
-    return r.text();
-})
+    fetch(`/load_riders/${courseCode}?year=${year}&term=${term}`)
+        .then(r => {
+            if (!r.ok) throw new Error("Backend returned " + r.status);
+            return r.text();
+        })
+        .then(html => {
+            grid.innerHTML = html;
+            grid.dataset.loaded = "1";
 
-            .then(html => {
-                grid.innerHTML = html;
-                grid.dataset.loaded = "1";
+            // ⭐ Attach master checkbox handlers AFTER HTML is inserted
+            attachMasterCheckboxHandlers(grid);
 
-                                              // ⭐ Attach master checkbox handlers AFTER HTML is inserted
-                                             attachMasterCheckboxHandlers(grid);
+            if (window.$) {
+                $(grid).find("select").select2();
+            }
 
-                if (window.$) {
-                    $(grid).find("select").select2();
-                }
-            })
-            .catch(err => console.log("load_riders error", err));
-    }
+            // ⭐⭐ CRITICAL — apply “Added” AFTER DOM is fully inserted
+            checkLessonsForTerm(courseCode);
+        })
+        .catch(err => console.log("load_riders error", err));
+}
 
-});
 
 function smsCourseRiders(courseCode) {
 
