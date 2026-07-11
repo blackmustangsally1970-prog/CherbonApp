@@ -495,53 +495,60 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
 
-    /* ============================================================
-       CHECK LESSONS FOR TERM
-    ============================================================ */
-    window.checkLessonsForTerm = function (course_code) {
-        const year = "{{ selected_year }}";
-        const term = "{{ selected_term }}";
+/* ============================================================
+   CHECK LESSONS FOR TERM
+============================================================ */
+window.checkLessonsForTerm = function (course_code) {
+    const year = "{{ selected_year }}";
+    const term = "{{ selected_term }}";
 
-        fetch(`/check_lessons_for_term?year=${year}&term=${term}`)
-            .then(r => r.json())
-            .then(data => {
+    fetch(`/check_lessons_for_term?year=${year}&term=${term}`)
+        .then(r => r.json())
+        .then(data => {
 
-                const rows = document.querySelectorAll(
-                    `tr[data-course="${course_code}"]`
-                );
+            const rows = document.querySelectorAll(
+                `tr[data-course="${course_code}"]`
+            );
 
-                rows.forEach(row => {
-                    const rider = row.dataset.rider;
-                    const tf = row.dataset.timeframe;
-                    const key = `${tf}|${rider}`;
-                    const selCell = row.querySelector(".sel-cell");
+            rows.forEach(row => {
+                const rider = row.dataset.rider;
+                const tf = row.dataset.timeframe;
+                const key = `${tf}|${rider}`;
+                const selCell = row.querySelector(".sel-cell");
 
-                    if (!selCell) return;
+                if (!selCell) return;
 
-                    if (data.added[key]) {
-                        selCell.innerHTML =
-                            `<span style="color:green;font-weight:bold;">Added</span>`;
+                // ⭐ Only replace the lesson area, NOT the SMS checkbox
+                const lessonArea = selCell.querySelector(".lesson-area");
+
+                if (!lessonArea) return;
+
+                if (data.added[key]) {
+                    // Replace lesson checkbox with "Added"
+                    lessonArea.innerHTML =
+                        `<span style="color:green;font-weight:bold;">Added</span>`;
+                } else {
+                    // Rebuild lesson checkbox
+                    let id = null;
+
+                    const cb = row.querySelector(".lesson-select");
+                    if (cb) {
+                        id = cb.dataset.id;
                     } else {
-                        let id = null;
-
-                        const cb = row.querySelector(".lesson-select");
-                        if (cb) {
-                            id = cb.dataset.id;
-                        } else {
-                            id = row.dataset.id;
-                        }
-
-                        selCell.innerHTML = `
-                            <input type="checkbox"
-                                   class="lesson-select"
-                                   data-id="${id}"
-                                   data-course="${course_code}">
-                        `;
+                        id = row.dataset.id;
                     }
-                });
-            })
-            .catch(err => console.error("Check lessons failed:", err));
-    };
+
+                    lessonArea.innerHTML = `
+                        <input type="checkbox"
+                               class="lesson-select"
+                               data-id="${id}"
+                               data-course="${course_code}">
+                    `;
+                }
+            });
+        })
+        .catch(err => console.error("Check lessons failed:", err));
+};
 
 
     /* ============================================================

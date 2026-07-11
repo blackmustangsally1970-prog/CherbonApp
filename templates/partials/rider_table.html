@@ -50,27 +50,33 @@
     data-rider="{{ r.rider_name }}"
 >
 
-                <td class="sel-cell" style="white-space:nowrap;">
+<td class="sel-cell" style="white-space:nowrap;">
 
-                    <!-- Existing checkbox (Add Riders to Lessons) -->
-                    {% if r.lesson_added %}
-                        <span style="color:green; font-weight:bold;">Added</span>
-                    {% else %}
-                        <input type="checkbox"
-                               class="lesson-select"
-                               data-id="{{ r.id }}"
-                               data-course="{{ course_code }}"
-                               title="Add rider to lessons"
-                               style="margin-right:6px;">
-                    {% endif %}
+    <!-- LESSON AREA (this gets replaced by JS) -->
+    <span class="lesson-area">
+        {% if r.lesson_added %}
+            <span style="color:green; font-weight:bold;">Added</span>
+        {% else %}
+            <input type="checkbox"
+                   class="lesson-select"
+                   data-id="{{ r.id }}"
+                   data-course="{{ course_code }}"
+                   title="Add rider to lessons"
+                   style="margin-right:6px;">
+        {% endif %}
+    </span>
 
-<input type="checkbox"
-       class="sms-select"
-       data-mobile="{{ client.mobile if client else '' }}"
-       data-name="{{ client.full_name if client else '' }}"
-       data-id="{{ r.id }}"
-       title="Include in SMS send">
-                </td>
+    <!-- SMS AREA (this stays forever) -->
+    <span class="sms-area" style="margin-left:6px;">
+        <input type="checkbox"
+               class="sms-select"
+               data-mobile="{{ client.mobile if client else '' }}"
+               data-name="{{ client.full_name if client else '' }}"
+               data-id="{{ r.id }}"
+               title="Include in SMS send">
+    </span>
+
+</td>
 
                 <!-- RIDER NAME -->
                 <td style="width:32ch; white-space:normal; word-break:break-word;">
