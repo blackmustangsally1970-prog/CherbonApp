@@ -96,6 +96,10 @@ def main():
 
         for submission in riders:
 
+            # REATTACH submission to active DB session
+            with app.app_context():
+                submission = CourseFormSubmission.query.get(submission.id)
+
             # Determine weekday
             course_day_name = course_ref.day_of_week
             course_weekday = weekday_map.get(course_day_name, 0)
