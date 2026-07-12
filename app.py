@@ -6434,7 +6434,7 @@ def create_app():
         all_riders = parsed["riders"]
         valid_riders = [
             r for r in all_riders
-            if not r.get("incomplete") and not r.get("resolved")
+            if not r.get("incomplete")
         ]
 
         # If no valid riders → ignore
@@ -6462,44 +6462,47 @@ def create_app():
         # PROCESS ALL RIDERS (NON-CONFLICT RIDERS INCLUDED)
         # ---------------------------------------------------------
         for rider in valid_riders:
-            name = smart_proper_name(rider["name"])
-            age = safe_int(rider.get("age"))
-            height_cm = safe_int(rider.get("height_cm"))
-            weight_kg = safe_int(rider.get("weight_kg"))
-            notes = safe_text(rider.get("notes"))
 
-            # If rider already matched → update existing
-            matches = rider.get("matches", [])
-            if matches:
-                existing_id = matches[0][0]
-                client = clients_by_id.get(existing_id)
-                if client:
-                    client.full_name = name
-                    client.guardian_name = guardian
-                    client.age = age
-                    client.mobile = mobile
-                    client.email_primary = email
-                    client.height_cm = height_cm
-                    client.weight_kg = weight_kg
-                    client.notes = notes
-                    client.disclaimer = disclaimer
-                    client.jotform_submission_id = jotform_id
-                continue
+                # SKIP resolved riders — critical for multi-rider flow
+                if rider.get("resolved"):
+                    continue
 
-            # Otherwise create new
-            new_client = Client(
-                full_name=name,
-                guardian_name=guardian,
-                age=age,
-                mobile=mobile,
-                email_primary=email,
-                disclaimer=disclaimer,
-                height_cm=height_cm,
-                weight_kg=weight_kg,
-                notes=notes,
-                jotform_submission_id=jotform_id
-            )
-            db.session.add(new_client)
+                name = smart_proper_name(rider["name"])
+                age = safe_int(rider.get("age"))
+                height_cm = safe_int(rider.get("height_cm"))
+                weight_kg = safe_int(rider.get("weight_kg"))
+                notes = safe_text(rider.get("notes"))
+
+                matches = rider.get("matches", [])
+                if matches:
+                    existing_id = matches[0][0]
+                    client = clients_by_id.get(existing_id)
+                    if client:
+                        client.full_name = name
+                        client.guardian_name = guardian
+                        client.age = age
+                        client.mobile = mobile
+                        client.email_primary = email
+                        client.height_cm = height_cm
+                        client.weight_kg = weight_kg
+                        client.notes = notes
+                        client.disclaimer = disclaimer
+                        client.jotform_submission_id = jotform_id
+                    continue
+
+                new_client = Client(
+                    full_name=name,
+                    guardian_name=guardian,
+                    age=age,
+                    mobile=mobile,
+                    email_primary=email,
+                    disclaimer=disclaimer,
+                    height_cm=height_cm,
+                    weight_kg=weight_kg,
+                    notes=notes,
+                    jotform_submission_id=jotform_id
+                )
+                db.session.add(new_client)
 
         # ---------------------------------------------------------
         # MARK SUBMISSION AS PROCESSED
