@@ -839,7 +839,7 @@ window.checkLessonsForTerm = function (course_code) {
         }
     }
 
-    function generateCoursePDFs(courseCode) {
+    window.generateCoursePDFs = function (courseCode) {
         fetch(`/generate_course_pdfs/${courseCode}`)
             .then(response => response.json())
             .then(data => {
@@ -851,7 +851,7 @@ window.checkLessonsForTerm = function (course_code) {
             });
     }
 
-    function generateAllCoursePDFs() {
+    window.generateAllCoursePDFs = function () {
         const spinner = document.getElementById("globalPdfSpinner");
         const btn = document.getElementById("globalPdfBtn");
 
