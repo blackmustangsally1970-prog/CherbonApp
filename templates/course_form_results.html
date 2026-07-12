@@ -513,7 +513,7 @@ window.checkLessonsForTerm = function (course_code) {
             rows.forEach(row => {
                 const rider = row.dataset.rider;
                 const tf = row.dataset.timeframe;
-                const key = `${tf}|${rider}`;
+                const key = `${course_code}|${tf}|${rider}`;
                 const selCell = row.querySelector(".sel-cell");
 
                 if (!selCell) return;
@@ -526,7 +526,7 @@ window.checkLessonsForTerm = function (course_code) {
                 if (data.added[key]) {
                     // Replace lesson checkbox with "Added"
                     lessonArea.innerHTML =
-                        `<span style="color:green;font-weight:bold;">A</span>`;
+                        `<span style="color:green;font-weight:bold;">✓</span>`;
                 } else {
                     // Rebuild lesson checkbox
                     let id = null;

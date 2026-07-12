@@ -668,6 +668,8 @@ class Lesson(db.Model):
     lesson_no = db.Column(db.Text)
     freq = db.Column(db.String(2))
     voucher_number = db.Column(db.String(32))
+    course_code = db.Column(db.String)
+
 
 
 class TeacherHorse(db.Model):

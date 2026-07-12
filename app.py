@@ -2150,6 +2150,7 @@ def create_app():
                     lesson_date=lesson_date,
                     time_frame=course.timerange,
                     block_key="",
+                    course_code=course_code,   # ⭐ REQUIRED FIX
                     client=r.rider_name,
                     horse=r.horse_1,
                     adjust=0,
@@ -2173,7 +2174,6 @@ def create_app():
 
         db.session.commit()
         return jsonify(success=True, created=created)
-
 
 
     @app.route("/health")
@@ -3395,6 +3395,7 @@ def create_app():
 
         # FAST: only fetch the columns we need
         rows = db.session.query(
+            Lesson.course_code,
             Lesson.time_frame,
             Lesson.client
         ).filter(
@@ -3403,12 +3404,13 @@ def create_app():
         ).all()
 
         added_map = {}
-        for tf, rider in rows:
+        for course_code, tf, rider in rows:
+            course_code = (course_code or "").strip()
             tf = (tf or "").strip()
             rider = (rider or "").strip()
 
-            if tf and rider:
-                added_map[f"{tf}|{rider}"] = True
+            if course_code and tf and rider:
+                added_map[f"{course_code}|{tf}|{rider}"] = True
 
         return jsonify(success=True, added=added_map)
 
