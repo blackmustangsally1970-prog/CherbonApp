@@ -3231,7 +3231,7 @@ def create_app():
                 teacher_changed=False,
 
                 status="unprocessed",
-                ignore_jotform=True,
+                ignore_jotform=data.get("ignore_jotform", False),
 
                 submitted_at=datetime.utcnow()
             )
