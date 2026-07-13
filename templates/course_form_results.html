@@ -621,9 +621,7 @@ window.submitStaffBooking = function () {
         frequency: document.getElementById("sb_frequency").value,
         start_week: document.getElementById("sb_week").value,
         notes: document.getElementById("sb_notes").value,
-        current_course: document.getElementById("sb_course").value,
-
-        // These come from the page context
+        ignore_jotform: false,        
         year: "{{ selected_year }}",
         term: "{{ selected_term }}"
     };
