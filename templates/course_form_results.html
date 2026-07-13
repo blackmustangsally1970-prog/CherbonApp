@@ -214,6 +214,11 @@
         ↻ Refresh JotForm Submissions
     </a>
 
+<button class="menu-btn" onclick="openStaffBookingModal()">
+    ➕ Add Rider (Staff Booking)
+</button>
+
+
 <button id="checkLessonsBtn"
         class="menu-btn"
         data-course="{{ course_code }}"
@@ -277,6 +282,80 @@
 
 
 </div>
+
+
+<!-- ========================================================= -->
+<!--  STAFF BOOKING MODAL                                      -->
+<!-- ========================================================= -->
+
+<div id="staffBookingModal" class="missing-modal">
+    <div class="missing-modal-content" style="max-width:600px;">
+        <span class="close" onclick="closeStaffBookingModal()">&times;</span>
+
+        <h3>Add Rider to Unprocessed Submissions</h3>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+
+            <!-- Rider -->
+            <label><strong>Rider:</strong></label>
+            <select id="sb_rider" style="width:100%;">
+                {% for c in clients %}
+                    <option value="{{ c.full_name }}">{{ c.full_name }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Horse 1 -->
+            <label><strong>Horse 1:</strong></label>
+            <select id="sb_horse1" style="width:100%;">
+                <option value=""></option>
+                {% for h in horses %}
+                    <option value="{{ h.horse }}">{{ h.horse }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- FT/W -->
+            <label><strong>FT/W:</strong></label>
+            <select id="sb_ftor">
+                <option value="FT">FT</option>
+                <option value="W">W</option>
+            </select>
+
+            <!-- Frequency -->
+            <label><strong>Frequency:</strong></label>
+            <select id="sb_frequency">
+                <option value="W">W</option>
+                <option value="F">F</option>
+            </select>
+
+            <!-- Week -->
+            <label><strong>Start Week:</strong></label>
+            <select id="sb_week">
+                <option value=""></option>
+                <option value="W1">W1</option>
+                <option value="W2">W2</option>
+            </select>
+
+            <!-- Notes -->
+            <label><strong>Notes:</strong></label>
+            <textarea id="sb_notes" style="width:100%; height:4em;"></textarea>
+
+            <!-- Course -->
+            <label><strong>Course:</strong></label>
+            <select id="sb_course" style="width:100%;">
+                {% for c in sorted_courses %}
+                    {% if c.active %}
+                        <option value="{{ c.course_code }}">
+                            {{ c.display_label }} ({{ c.day_of_week }} {{ c.timerange }})
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+
+            <button class="menu-btn" onclick="submitStaffBooking()">Save</button>
+        </div>
+    </div>
+</div>
+
 
 
     <!-- ========================================================= -->
@@ -493,6 +572,70 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(err => alert("Save failed: " + err));
     };
+
+
+/* ============================================================
+   STAFF BOOKING MODAL — OPEN / CLOSE
+============================================================ */
+
+window.openStaffBookingModal = function () {
+    const modal = document.getElementById("staffBookingModal");
+    if (modal) modal.style.display = "block";
+};
+
+window.closeStaffBookingModal = function () {
+    const modal = document.getElementById("staffBookingModal");
+    if (modal) modal.style.display = "none";
+};
+
+// Close when clicking outside modal (same behaviour as your other modals)
+window.addEventListener("click", function (e) {
+    const modal = document.getElementById("staffBookingModal");
+    if (modal && e.target === modal) {
+        modal.style.display = "none";
+    }
+});
+
+
+/* ============================================================
+   STAFF BOOKING — SUBMIT NEW RIDER
+============================================================ */
+
+window.submitStaffBooking = function () {
+
+    const payload = {
+        rider_name: document.getElementById("sb_rider").value,
+        horse_1: document.getElementById("sb_horse1").value,
+        ftor: document.getElementById("sb_ftor").value,
+        frequency: document.getElementById("sb_frequency").value,
+        start_week: document.getElementById("sb_week").value,
+        notes: document.getElementById("sb_notes").value,
+        current_course: document.getElementById("sb_course").value,
+
+        // These come from the page context
+        year: "{{ selected_year }}",
+        term: "{{ selected_term }}"
+    };
+
+    fetch("/staff_add_course_submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert("Rider added to unprocessed submissions.");
+            window.location.reload();
+        } else {
+            alert("Error: " + data.error);
+        }
+    })
+    .catch(err => {
+        alert("Save failed: " + err);
+    });
+};
+
 
 
 /* ============================================================

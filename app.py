@@ -3207,6 +3207,45 @@ def create_app():
         return render_template('view_sms_logs.html', logs=logs)
 
 
+    @app.route("/staff_add_course_submission", methods=["POST"])
+    def staff_add_course_submission():
+        data = request.json
+
+        try:
+            sub = CourseFormSubmission(
+                rider_name=data["rider_name"],
+                horse_1=data.get("horse_1"),
+                horse_2=None,
+                horse_3=None,
+                ftor=data.get("ftor"),
+                frequency=data.get("frequency"),
+                start_week=data.get("start_week"),
+                notes=data.get("notes"),
+                cherbon_notes="",
+
+                term_year=int(data["year"]),
+                term_number=int(data["term"]),
+
+                original_course=data.get("current_course"),
+                current_course=data.get("current_course"),
+                teacher_changed=False,
+
+                status="unprocessed",
+                ignore_jotform=True,
+
+                submitted_at=datetime.utcnow()
+            )
+
+            db.session.add(sub)
+            db.session.commit()
+
+            return jsonify({"success": True})
+
+        except Exception as e:
+            print("Staff booking error:", e)
+            return jsonify({"success": False, "error": str(e)})
+
+
     @app.route('/course_form_submissions')
     def course_form_submissions():
         import time
