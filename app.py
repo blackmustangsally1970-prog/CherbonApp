@@ -3389,6 +3389,7 @@ def create_app():
             missing_by_course.setdefault(course, []).append(rider)
 
         # ---- CLIENTS ----
+        clients = Client.query.order_by(Client.full_name).all() 
         client_names = Client.query.all()
         client_lookup = {c.full_name: c for c in client_names}
         print("Loaded clients in", time.time() - t0); t0 = time.time()
@@ -3415,6 +3416,7 @@ def create_app():
             current_course_map=current_course_map,
             client_names=client_names,
             client_lookup=client_lookup,
+            clients=clients,
             horses=horses
         )
 
