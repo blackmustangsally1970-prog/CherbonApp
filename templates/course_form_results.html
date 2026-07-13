@@ -204,8 +204,6 @@
     </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
 
 
 </head>
@@ -836,13 +834,6 @@ window.checkLessonsForTerm = function (course_code) {
     });
 
 
-    /* ============================================================
-       SELECT2 INIT
-    ============================================================ */
-    if (window.$) {
-        $('select').select2();
-    }
-
 
     /* ============================================================
        CONFETTI
@@ -919,10 +910,6 @@ window.checkLessonsForTerm = function (course_code) {
                 grid.dataset.loaded = "1";
 
                 attachMasterCheckboxHandlers(grid);
-
-                if (window.$) {
-                    $(grid).find("select").select2();
-                }
 
                 checkLessonsForTerm(courseCode);
             })
