@@ -319,11 +319,12 @@
 
             <!-- Rider -->
             <label><strong>Rider:</strong></label>
-            <select id="sb_rider" style="width:100%;">
-                {% for c in clients %}
-                    <option value="{{ c.full_name }}">{{ c.full_name }}</option>
-                {% endfor %}
-            </select>
+<select id="sb_rider" style="width:100%;">
+    <option value=""></option>   <!-- ⭐ THIS MAKES IT BLANK ON OPEN -->
+    {% for c in clients %}
+        <option value="{{ c.full_name }}">{{ c.full_name }}</option>
+    {% endfor %}
+</select>
 
             <!-- Horse 1 -->
             <label><strong>Horse 1:</strong></label>
