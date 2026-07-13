@@ -980,6 +980,41 @@ window.checkLessonsForTerm = function (course_code) {
         }
     }
 
+function prefixMatcher(params, data) {
+    if ($.trim(params.term) === '') return data;
+    if (typeof data.text === 'undefined') return null;
+
+    const term = params.term.toLowerCase();
+    const text = data.text.toLowerCase();
+
+    return text.startsWith(term) ? data : null;
+}
+
+function safeSelect2(selector) {
+    $(selector).select2({
+        width: '100%',
+        dropdownParent: $('#staffBookingModal'),
+        minimumInputLength: 0,
+        matcher: prefixMatcher
+    });
+}
+
+window.openStaffBookingModal = function () {
+    document.getElementById("staffBookingModal").style.display = "block";
+
+    safeSelect2('#sb_rider');
+    safeSelect2('#sb_horse1');
+};
+
+$('#sb_rider').on('select2:open', () => {
+    document.querySelector('.select2-search__field').focus();
+});
+
+$('#sb_horse1').on('select2:open', () => {
+    document.querySelector('.select2-search__field').focus();
+});
+
+
     window.generateCoursePDFs = function (courseCode) {
         fetch(`/generate_course_pdfs/${courseCode}`)
             .then(response => response.json())
