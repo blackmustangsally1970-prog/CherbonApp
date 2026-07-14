@@ -39,30 +39,27 @@ Pattern:
     <option value="Custom">Custom</option>
 </select>
 
-<div id="custom_days" style="display:none; margin-top:10px;">
-    Start Day:
-    <select name="start_day">
-        <option>Sunday</option>
-        <option>Monday</option>
-        <option>Tuesday</option>
-        <option>Wednesday</option>
-        <option>Thursday</option>
-        <option>Friday</option>
-        <option>Saturday</option>
-    </select>
+Start Day:
+<select name="start_day" id="start_day">
+    <option>Sunday</option>
+    <option>Monday</option>
+    <option>Tuesday</option>
+    <option>Wednesday</option>
+    <option>Thursday</option>
+    <option>Friday</option>
+    <option>Saturday</option>
+</select>
 
-    End Day:
-    <select name="end_day">
-        <option>Sunday</option>
-        <option>Monday</option>
-        <option>Tuesday</option>
-        <option>Wednesday</option>
-        <option>Thursday</option>
-        <option>Friday</option>
-        <option>Saturday</option>
-    </select>
-</div>
-
+End Day:
+<select name="end_day" id="end_day">
+    <option>Sunday</option>
+    <option>Monday</option>
+    <option>Tuesday</option>
+    <option>Wednesday</option>
+    <option>Thursday</option>
+    <option>Friday</option>
+    <option>Saturday</option>
+</select>
     Weeks: <input type="number" name="weeks" min="1" max="20" value="10" required>
 
     <button type="submit" class="btn">Add Term</button>
@@ -117,6 +114,69 @@ Pattern:
     // Run once on page load
     updatePatternUI();
 </script>
+
+<script>
+    function updateEndDate() {
+        const startInput = document.querySelector('input[name="start_date"]');
+        const weeksInput = document.querySelector('input[name="weeks"]');
+        const endInput = document.querySelector('input[name="end_date"]');
+
+        if (!startInput.value || !weeksInput.value) return;
+
+        const startDate = new Date(startInput.value);
+        const weeks = parseInt(weeksInput.value);
+
+        // Sunday → Saturday logic:
+        // End date = start + (weeks * 7 days) - 1 day
+        const endDate = new Date(startDate.getTime() + (weeks * 7 * 24 * 60 * 60 * 1000) - (24 * 60 * 60 * 1000));
+
+        const yyyy = endDate.getFullYear();
+        const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(endDate.getDate()).padStart(2, '0');
+
+        endInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    document.querySelector('input[name="start_date"]').addEventListener('change', updateEndDate);
+    document.querySelector('input[name="weeks"]').addEventListener('change', updateEndDate);
+</script>
+
+<script>
+    function weekdayName(dateObj) {
+        return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][dateObj.getDay()];
+    }
+
+    function updateEndDate() {
+        const startInput = document.querySelector('input[name="start_date"]');
+        const weeksInput = document.querySelector('input[name="weeks"]');
+        const endInput = document.querySelector('input[name="end_date"]');
+
+        if (!startInput.value || !weeksInput.value) return;
+
+        const startDate = new Date(startInput.value);
+        const weeks = parseInt(weeksInput.value);
+
+        // Sunday → Saturday logic:
+        const endDate = new Date(startDate.getTime() + (weeks * 7 * 86400000) - 86400000);
+
+        // Format YYYY-MM-DD
+        const yyyy = endDate.getFullYear();
+        const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(endDate.getDate()).padStart(2, '0');
+
+        endInput.value = `${yyyy}-${mm}-${dd}`;
+
+        // Auto-select start_day
+        document.getElementById('start_day').value = weekdayName(startDate);
+
+        // Auto-select end_day
+        document.getElementById('end_day').value = weekdayName(endDate);
+    }
+
+    document.querySelector('input[name="start_date"]').addEventListener('change', updateEndDate);
+    document.querySelector('input[name="weeks"]').addEventListener('change', updateEndDate);
+</script>
+
 
 </body>
 </html>
