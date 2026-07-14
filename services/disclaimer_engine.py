@@ -1,5 +1,5 @@
 from models import IncomingSubmission, Client
-
+from services.jotform_parser import parse_jotform_payload
 
 def build_conflict_context(submission_row, rider_index):
     """
