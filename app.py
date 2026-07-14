@@ -3515,10 +3515,14 @@ def create_app():
         except Exception as e:
             return jsonify(success=False, error=str(e))
 
+# -----------------------------
+# TERM ROUTES
+# -----------------------------
+
 
     @app.route('/terms')
     def terms():
-        all_terms = Term.query.order_by(Term.year, Term.term_number).all()
+        all_terms = Term.query.order_by(Term.year.desc(), Term.term_number.desc()).all()
         return render_template('terms.html', terms=all_terms)
 
     @app.route('/terms/add', methods=['POST'])
