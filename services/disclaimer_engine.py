@@ -1,3 +1,6 @@
+from models import IncomingSubmission, Client
+
+
 def build_conflict_context(submission_row, rider_index):
     """
     Build all data needed to render the conflict page.
