@@ -18,20 +18,52 @@
 
 <form method="POST" action="{{ url_for('add_term') }}">
     <h3>Add Term</h3>
+
     Year: <input type="number" name="year" required>
-    Term #: <select name="term_number">
+
+    Term #: 
+    <select name="term_number">
         <option value="1">Term 1</option>
         <option value="2">Term 2</option>
         <option value="3">Term 3</option>
         <option value="4">Term 4</option>
     </select>
+
     Start: <input type="date" name="start_date" required>
     End: <input type="date" name="end_date" required>
-    Pattern:
-    <select name="week_pattern">
-        <option value="Sun-Sat">Sun → Sat</option>
-        <option value="Mon-Sun">Mon → Sun</option>
+
+Pattern:
+<select name="week_pattern" id="week_pattern">
+    <option value="Sun-Sat">Sun → Sat</option>
+    <option value="Mon-Sun">Mon → Sun</option>
+    <option value="Custom">Custom</option>
+</select>
+
+<div id="custom_days" style="display:none; margin-top:10px;">
+    Start Day:
+    <select name="start_day">
+        <option>Sunday</option>
+        <option>Monday</option>
+        <option>Tuesday</option>
+        <option>Wednesday</option>
+        <option>Thursday</option>
+        <option>Friday</option>
+        <option>Saturday</option>
     </select>
+
+    End Day:
+    <select name="end_day">
+        <option>Sunday</option>
+        <option>Monday</option>
+        <option>Tuesday</option>
+        <option>Wednesday</option>
+        <option>Thursday</option>
+        <option>Friday</option>
+        <option>Saturday</option>
+    </select>
+</div>
+
+    Weeks: <input type="number" name="weeks" min="1" max="20" value="10" required>
 
     <button type="submit" class="btn">Add Term</button>
 </form>
@@ -67,6 +99,24 @@
         {% endfor %}
     </tbody>
 </table>
+
+<script>
+    const patternSelect = document.getElementById('week_pattern');
+    const customDays = document.getElementById('custom_days');
+
+    function updatePatternUI() {
+        if (patternSelect.value === 'Custom') {
+            customDays.style.display = 'block';
+        } else {
+            customDays.style.display = 'none';
+        }
+    }
+
+    patternSelect.addEventListener('change', updatePatternUI);
+
+    // Run once on page load
+    updatePatternUI();
+</script>
 
 </body>
 </html>

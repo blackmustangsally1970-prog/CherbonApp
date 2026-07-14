@@ -3527,7 +3527,16 @@ def create_app():
         term_number = request.form['term_number']
         start_date = request.form['start_date']
         end_date = request.form['end_date']
+
         week_pattern = request.form['week_pattern']
+        weeks = int(request.form['weeks'])
+
+        start_day = request.form.get('start_day')
+        end_day = request.form.get('end_day')
+
+        if week_pattern != "Custom":
+            start_day = None
+            end_day = None
 
         t = Term(
             year=year,
@@ -3535,8 +3544,11 @@ def create_app():
             start_date=start_date,
             end_date=end_date,
             week_pattern=week_pattern,
-            weeks=10
+            start_day=start_day,
+            end_day=end_day,
+            weeks=weeks
         )
+
         db.session.add(t)
         db.session.commit()
 
