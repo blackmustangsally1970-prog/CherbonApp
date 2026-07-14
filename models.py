@@ -177,6 +177,8 @@ class Term(db.Model):
     week_pattern = db.Column(db.String(20), default="Sun-Sat")  # or "Mon-Sun"
     weeks = db.Column(db.Integer, default=10)
     active = db.Column(db.Boolean, default=False)
+    start_day = db.Column(db.String(20))
+    end_day = db.Column(db.String(20))
 
     @property
     def label(self):
