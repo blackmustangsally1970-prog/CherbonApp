@@ -1,5 +1,11 @@
 from models import IncomingSubmission, Client
-from services.jotform_parser import parse_jotform_payload
+from extensions import db
+from flask import url_for
+
+from services.jotform_parser import parse_jotform_payload, normalize_name
+from app import smart_proper_name, generate_unique_client_name, log_disclaimer_processed
+
+
 
 def build_conflict_context(submission_row, rider_index):
     """
