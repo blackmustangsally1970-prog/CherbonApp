@@ -1787,8 +1787,11 @@ def create_app():
             if r.frequency not in ("W", "F"):
                 continue
 
-            if r.frequency == "F" and not r.start_week:
-                continue
+            # ⭐ Convert "W6" → 6 (default W1)
+            if r.start_week and r.start_week.startswith("W"):
+                start_week = int(r.start_week[1:])
+            else:
+                start_week = 1
 
             # PRICE SELECTION
             if r.price_override is not None:
@@ -1808,11 +1811,20 @@ def create_app():
 
             price = float(price)
 
-            # WEEK INDEXES
+            # ⭐ NEW WEEK INDEX LOGIC (W1 → W10)
+            week_indexes = []
+
             if r.frequency == "W":
-                week_indexes = [0,1,2,3,4,5,6,7,8,9]
+                # Weekly: start_week → 10
+                for w in range(start_week, 11):
+                    week_indexes.append(w - 1)
+
             else:
-                week_indexes = [0,2,4,6,8] if r.start_week == "W1" else [1,3,5,7,9]
+                # Fortnightly: start_week, start_week+2, ... → 10
+                w = start_week
+                while w <= 10:
+                    week_indexes.append(w - 1)
+                    w += 2
 
             lesson_no = 1
 
@@ -1829,7 +1841,7 @@ def create_app():
                     lesson_date=lesson_date,
                     time_frame=course.timerange,
                     block_key="",
-                    course_code=course_code,   # ⭐ REQUIRED FIX
+                    course_code=course_code,
                     client=r.rider_name,
                     horse=r.horse_1,
                     adjust=0,
@@ -2743,6 +2755,10 @@ def create_app():
         if not r:
             return redirect(request.referrer)
 
+        # ⭐ STEP 5 — Auto-default start week ONLY if blank
+        if not r.start_week:
+            r.start_week = "W1"
+
         # Set status
         r.status = "approved"
         db.session.commit()
@@ -2778,7 +2794,6 @@ def create_app():
 
         db.session.commit()
         return redirect(request.referrer)
-
 
     @app.route('/unapprove_course_submission/<int:id>')
     def unapprove_course_submission(id):
