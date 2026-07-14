@@ -332,60 +332,21 @@ def get_group_pricing(group_priv):
     """Return the pricing row for a given group_priv, or None."""
     return GroupPricing.query.filter_by(group_priv=group_priv).first()
 
-def detect_two_course(rider_name, approved_submissions):
-    """
-    Auto-detect two-course:
-    rider appears in 2+ approved courses.
-    """
-    count = sum(1 for r in approved_submissions if r.rider_name == rider_name)
-    return count >= 2
-
-def detect_sibling(rider_name, approved_submissions):
-    """
-    Auto-detect sibling:
-    surname appears in 2+ riders.
-    """
-    def surname(name):
-        parts = name.strip().split()
-        return parts[-1].lower() if parts else ""
-
-    target_surname = surname(rider_name)
-    if not target_surname:
-        return False
-
-    surnames = [surname(r.rider_name) for r in approved_submissions]
-    counts = Counter(surnames)
-    return counts.get(target_surname, 0) >= 2
-
 def calculate_price(group_priv, ftor, frequency, rider_name, approved_submissions):
     """
     Core pricing engine:
-    - auto-detect two-course
-    - auto-detect sibling
-    - choose correct tier (two_course / sibling / base)
-    - pick weekly / fortnightly / full
+    - sibling discount removed
+    - two-course discount removed
+    - always use base pricing tier
     """
     gp = get_group_pricing(group_priv)
     if not gp:
         return None
 
-    is_two_course = detect_two_course(rider_name, approved_submissions)
-    is_sibling = False
-    if not is_two_course:
-        is_sibling = detect_sibling(rider_name, approved_submissions)
-
-    if is_two_course:
-        weekly = gp.two_course_weekly
-        fortnightly = gp.two_course_fortnightly
-        full = gp.two_course_full
-    elif is_sibling:
-        weekly = gp.sibling_weekly
-        fortnightly = gp.sibling_fortnightly
-        full = gp.sibling_full
-    else:
-        weekly = gp.weekly_price
-        fortnightly = gp.fortnightly_price
-        full = gp.full_price
+    # Always use base pricing
+    weekly = gp.weekly_price
+    fortnightly = gp.fortnightly_price
+    full = gp.full_price
 
     if ftor == "FT":
         return full
