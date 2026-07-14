@@ -3,7 +3,7 @@ from extensions import db
 from flask import url_for
 
 from services.jotform_parser import parse_jotform_payload, normalize_name
-from app import smart_proper_name, generate_unique_client_name, log_disclaimer_processed
+from services.name_tools import smart_proper_name, generate_unique_client_name, log_disclaimer_processed
 
 
 
