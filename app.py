@@ -2942,16 +2942,11 @@ def create_app():
 
     @app.route('/course_form_submissions')
     def course_form_submissions():
-        import time
-        t0 = time.time()
-        print("=== COURSE FORM SUBMISSIONS START ===")
-
         from collections import defaultdict
         from sqlalchemy import and_
 
         # ---- HORSES ----
         horses = Horse.query.order_by(Horse.horse).all()
-        print("Loaded horses in", time.time() - t0); t0 = time.time()
 
         # ---- YEARS ----
         years = [
@@ -2961,7 +2956,6 @@ def create_app():
                 .order_by(CourseFormSubmission.term_year)
                 .all()
         ]
-        print("Loaded years in", time.time() - t0); t0 = time.time()
 
         year = request.args.get('year', type=int)
         if year is None and years:
@@ -2978,7 +2972,6 @@ def create_app():
                 .order_by(CourseFormSubmission.term_number)
                 .all()
         ]
-        print("Loaded terms in", time.time() - t0); t0 = time.time()
 
         term = request.args.get('term', type=int)
         if term is None and terms:
@@ -2994,29 +2987,23 @@ def create_app():
         )
 
         all_subs = base_q.order_by(CourseFormSubmission.id.desc()).all()
-
         unprocessed_submissions = [s for s in all_subs if s.status == "unprocessed"]
 
         approved_submissions = base_q.filter(
             CourseFormSubmission.status == "approved"
         ).order_by(CourseFormSubmission.id.desc()).all()
 
-        from collections import defaultdict
-
         riders_by_course = defaultdict(list)
         for r in approved_submissions:
             riders_by_course[r.current_course].append(r)
-
-        print("Loaded submissions in", time.time() - t0); t0 = time.time()
 
         # ---- COURSES ----
         courses = CourseReference.query.order_by(
             CourseReference.day_of_week,
             CourseReference.timerange
         ).all()
-        print("Loaded courses in", time.time() - t0); t0 = time.time()
 
-        # ---- SORT COURSES (Step 4A) ----
+        # ---- SORT COURSES ----
         day_order = {
             'Sunday': 1,
             'Monday': 2,
@@ -3049,7 +3036,6 @@ def create_app():
         # ============================================================
         # LAST TERM RIDERS LOGIC
         # ============================================================
-
         prev_term = term - 1
         prev_year = year
 
@@ -3083,14 +3069,22 @@ def create_app():
             missing_by_course.setdefault(course, []).append(rider)
 
         # ---- CLIENTS ----
-        clients = Client.query.order_by(Client.full_name).all() 
+        clients = Client.query.order_by(Client.full_name).all()
         client_names = Client.query.all()
         client_lookup = {c.full_name: c for c in client_names}
-        print("Loaded clients in", time.time() - t0); t0 = time.time()
 
         total_nominations = len(unprocessed_submissions) + len(approved_submissions)
 
-        print("=== COURSE FORM SUBMISSIONS COMPLETE in", time.time() - t0, "seconds ===")
+        # ---- WEEK TOOLTIP (W1 → W10 dates) ----
+        week_tooltip = ""
+        active_term = Term.query.filter_by(year=year, term_number=term).first()
+
+        if active_term:
+            week_starts = build_term_weeks(active_term)
+            lines = []
+            for i, dt in enumerate(week_starts, start=1):
+                lines.append(f"W{i}: {dt.strftime('%d/%m/%Y')}")
+            week_tooltip = "\n".join(lines)
 
         # ---- RENDER ----
         return render_template(
@@ -3111,8 +3105,10 @@ def create_app():
             client_names=client_names,
             client_lookup=client_lookup,
             clients=clients,
-            horses=horses
+            horses=horses,
+            week_tooltip=week_tooltip
         )
+
 
 
     @app.route('/check_lessons_for_term')
