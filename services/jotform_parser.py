@@ -1,3 +1,37 @@
+from sqlalchemy import func
+from extensions import db
+from models import Client
+
+
+
+def extract_number(value):
+    """
+    Extracts digits from a string like '63kg' or '178 cm' and returns an int.
+    Returns None if no digits found.
+    """
+    if not value:
+        return None
+    digits = ''.join(ch for ch in str(value) if ch.isdigit())
+    return int(digits) if digits else None
+
+
+def normalize_name(s: str) -> str:
+    """
+    Normalize a name for matching:
+    - strip accents
+    - lowercase
+    - collapse spaces
+    - remove weird unicode spaces
+    """
+    if not s:
+        return ""
+    import unicodedata
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.replace("\xa0", " ")
+    return " ".join(s.strip().lower().split())
+
+
 def parse_jotform_payload(payload, forced_submission_id=None, mode="full"):
     import json
     import re

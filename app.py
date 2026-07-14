@@ -1364,16 +1364,6 @@ def clean_mobile(s):
         return ""
     return s.replace(" ", "").strip()
 
-def extract_number(value):
-    """
-    Extracts digits from a string like '63kg' or '178 cm' and returns an int.
-    Returns None if no digits found.
-    """
-    if not value:
-        return None
-    digits = ''.join(ch for ch in str(value) if ch.isdigit())
-    return int(digits) if digits else None
-
 def compute_sort_order(day_of_week, timerange):
     # Day ordering for global weekly sort (Sunday → Saturday)
     day_index = {
@@ -1505,24 +1495,6 @@ INVITE_FULLNAME_FIELDS = ["43", "46", "49", "52", "55", "58", "61", "64", "67", 
 INVITE_HEIGHT_FIELDS   = ["44", "47", "50", "53", "56", "59", "62", "65", "68", "71"]
 INVITE_WEIGHT_FIELDS   = ["45", "48", "51", "54", "57", "60", "63", "66", "69", "72"]
 INVITE_NOTES_FIELDS    = []   # none in this form
-
-
-
-def normalize_name(s: str) -> str:
-    """
-    Normalize a name for matching:
-    - strip accents
-    - lowercase
-    - collapse spaces
-    - remove weird unicode spaces
-    """
-    if not s:
-        return ""
-    import unicodedata
-    s = unicodedata.normalize("NFKD", s)
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    s = s.replace("\xa0", " ")
-    return " ".join(s.strip().lower().split())
 
 
 
