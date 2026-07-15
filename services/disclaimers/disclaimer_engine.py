@@ -2,8 +2,12 @@ from models import IncomingSubmission, Client
 from extensions import db
 from flask import url_for
 
-from services.jotform_parser import parse_jotform_payload, normalize_name
-from services.name_tools import smart_proper_name, generate_unique_client_name, log_disclaimer_processed
+from services.disclaimers.parser import parse_jotform_payload, normalize_name
+from services.disclaimers.name_tools import (
+    smart_proper_name,
+    generate_unique_client_name,
+    log_disclaimer_processed
+)
 
 
 
@@ -168,12 +172,16 @@ def process_all_fastpath():
     if not next_row:
         return url_for('notifications')
 
-    # Parse payload
     parsed = parse_jotform_payload(
         next_row.raw_payload,
         forced_submission_id=next_row.id,
         mode="full"
     )
+
+    # RESET RIDER STATE (prevents conflict poisoning)
+    for rider in parsed["riders"]:
+        rider["resolved"] = False if rider.get("resolved") is None else rider["resolved"]
+        rider["matches"] = rider.get("matches", [])
 
     riders = parsed["riders"]
     valid_riders = [r for r in riders if not r.get("incomplete")]
@@ -244,12 +252,16 @@ def finalize_submission(submission_row):
     import json
     from datetime import datetime
 
-    # Parse full payload
     parsed = parse_jotform_payload(
         submission_row.raw_payload,
         forced_submission_id=submission_row.id,
         mode="full"
     )
+
+    # RESET RIDER STATE (prevents conflict poisoning)
+    for rider in parsed["riders"]:
+        rider["resolved"] = False if rider.get("resolved") is None else rider["resolved"]
+        rider["matches"] = rider.get("matches", [])
 
     all_riders = parsed["riders"]
     valid_riders = [r for r in all_riders if not r.get("incomplete")]

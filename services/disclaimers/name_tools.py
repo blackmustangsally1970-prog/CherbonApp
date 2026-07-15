@@ -53,8 +53,9 @@ def smart_proper_name(name):
 def generate_unique_client_name(base_name):
     cleaned = base_name.strip()
 
-    existing = Clients.query.filter(
-        Clients.name.ilike(f"{cleaned}%")
+    # Query existing clients with same base prefix
+    existing = Client.query.filter(
+        Client.full_name.ilike(f"{cleaned}%")
     ).all()
 
     if not existing:
@@ -63,7 +64,7 @@ def generate_unique_client_name(base_name):
     suffix = 2
     while True:
         candidate = f"{cleaned} ({suffix})"
-        if not any(c.name == candidate for c in existing):
+        if not any(c.full_name == candidate for c in existing):
             return candidate
         suffix += 1
 

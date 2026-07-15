@@ -8,9 +8,13 @@ from flask_login import LoginManager, current_user
 from flask_login import login_user
 from decimal import Decimal
 from playwright.async_api import async_playwright
-from services.disclaimer_engine import finalize_submission
-from services.jotform_parser import parse_jotform_payload
-from services.name_tools import smart_proper_name, generate_unique_client_name, log_disclaimer_processed
+from services.disclaimers.engine import finalize_submission
+from services.disclaimers.parser import parse_jotform_payload
+from services.disclaimers.name_tools import (
+    smart_proper_name,
+    generate_unique_client_name,
+    log_disclaimer_processed
+)
 
 
 from collections import defaultdict
@@ -5463,6 +5467,11 @@ def create_app():
         return render_template('debug.html', clients=clients, selected_client=selected_client)
 
 
+    # ================================================================
+    # =======================  DISCLAIMER ROUTES  =====================
+    # ================================================================
+
+
     @app.route('/notifications')
     def notifications():
         """
@@ -5501,12 +5510,11 @@ def create_app():
                 r.display_names = "(unknown)"
 
         return render_template(
-            'notifications.html',
+            'disclaimers/notifications.html',
             rows=rows,
             page=page,
             per_page=per_page
         )
-
         
     @app.route('/notifications/fetch')
     def fetch_jotform_submissions():
@@ -5692,15 +5700,10 @@ def create_app():
 
         return redirect(url_for('notifications'))
 
-
-# ================================================================
-# =======================  DISCLAIMER ROUTES  =====================
-# ================================================================
-
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['GET'])
     def resolve_conflict(submission_id, rider_index):
 
-        from services.disclaimer_engine import build_conflict_context
+        from services.disclaimers.engine import build_conflict_context
 
         row = IncomingSubmission.query.get_or_404(submission_id)
 
@@ -5709,7 +5712,7 @@ def create_app():
             abort(404)
 
         return render_template(
-            'resolve_conflict.html',
+            'disclaimers/resolve_conflict.html',
             submission=row,
             rider_index=rider_index,
             rider=ctx["rider"],
@@ -5734,7 +5737,7 @@ def create_app():
     @app.route('/notifications/process_all')
     def process_all_pending():
 
-        from services.disclaimer_engine import process_all_fastpath
+        from services.disclaimers.engine import process_all_fastpath
 
         redirect_url = process_all_fastpath()
         return redirect(redirect_url)
@@ -5743,7 +5746,7 @@ def create_app():
     @app.route('/notifications/conflict/<int:submission_id>/<int:rider_index>', methods=['POST'])
     def finalize_conflict(submission_id, rider_index):
 
-        from services.disclaimer_engine import process_conflict_resolution
+        from services.disclaimers.engine import process_conflict_resolution
 
         choice = (request.form.get("choice") or "").strip().lower()
         client_id = request.form.get("client_id")
@@ -5757,9 +5760,9 @@ def create_app():
         return redirect(redirect_url)
 
 
-# ================================================================
-# =======================  COURSE PDF ROUTES  =====================
-# ================================================================
+    # ================================================================
+    # =======================  COURSE PDF ROUTES  =====================
+    # ================================================================
 
     @app.route('/generate_course_pdfs/<course_code>')
     def generate_course_pdfs(course_code):
