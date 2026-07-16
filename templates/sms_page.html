@@ -1,7 +1,47 @@
-<h2>SMS — {{ course_code }} (Term {{ selected_term }} {{ selected_year }})</h2>
+<div style="margin-bottom: 20px; display:flex; gap:12px;">
+    <a href="{{ url_for('courses_menu') }}" class="menu-btn">Course Menu</a>
+</div>
 
-<!-- Rider list -->
-<table border="1" cellpadding="6" cellspacing="0">
+<h2>📱 Next Term SMS — Year {{ selected_year }} Term {{ selected_term }}</h2>
+
+<!-- YEAR + TERM SELECTOR -->
+<div style="margin-bottom: 20px;">
+    <form method="get" action="{{ url_for('sms_next_term') }}" style="display:flex; gap:10px; align-items:center;">
+
+        <!-- YEAR DROPDOWN -->
+        <select name="year" class="form-control" style="width:120px;">
+            {% for y in range(2024, 2031) %}
+                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- TERM DROPDOWN -->
+        <select name="term" class="form-control" style="width:120px;">
+            {% for t in [1,2,3,4] %}
+                <option value="{{ t }}" {% if t == selected_term %}selected{% endif %}>Term {{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="menu-btn">🔄 Load Riders</button>
+    </form>
+</div>
+
+<!-- SMS MESSAGE + SEND BUTTON -->
+<div style="margin-bottom:20px; padding:15px; border:1px solid #ccc; border-radius:8px;">
+    <h3>📨 SMS Message</h3>
+
+    <textarea id="sms_message" style="width:100%; height:8em;">
+Hi, your next term (Year {{ selected_year }} Term {{ selected_term }}) is ready to book!
+    </textarea>
+
+    <br><br>
+    <button class="menu-btn" onclick="sendSMS()">📤 Send SMS</button>
+</div>
+
+<!-- RIDER LIST -->
+<h3>Riders (A from previous term + B from selected term)</h3>
+
+<table border="1" cellpadding="6" cellspacing="0" style="width:100%; margin-top:10px;">
     <tr>
         <th>Rider</th>
         <th>Guardian</th>
@@ -16,7 +56,6 @@
         <td>{{ r.guardian_name }}</td>
         <td>{{ r.mobile }}</td>
 
-        <!-- Lifecycle indicator -->
         <td>
             {% if r.term_status == 'A' %}
                 <span style="color:green; font-weight:bold;">A</span>
@@ -27,24 +66,12 @@
             {% endif %}
         </td>
 
-        <!-- Checkbox -->
         <td>
             <input type="checkbox" name="sms_include" value="{{ r.id }}" checked>
         </td>
     </tr>
     {% endfor %}
 </table>
-
-<br>
-
-<!-- SMS message box -->
-<textarea id="sms_message" style="width:50ch; height:10em;">
-Hi, your {{ course_code }} lesson details for Term {{ selected_term }} {{ selected_year }}…
-</textarea>
-
-<br><br>
-
-<button onclick="sendSMS()">Send SMS</button>
 
 <script>
 function sendSMS() {
