@@ -3396,6 +3396,57 @@ def create_app():
 
 
 
+    @app.route('/download_all_riders_week')
+    def download_all_riders_week():
+        # Pull all course references (Sunday → Saturday)
+        courses = CourseReference.query.order_by(
+            CourseReference.day_of_week,
+            CourseReference.timerange
+        ).all()
+
+        lines = []
+
+        for cref in courses:
+            # Header for each course
+            lines.append(f"{cref.day_of_week} {cref.timerange} {cref.course_code} Course")
+            lines.append("")
+
+            # Pull riders for this course
+            subs = CourseFormSubmission.query.filter(
+                CourseFormSubmission.current_course == cref.course_code,
+                CourseFormSubmission.ignore_jotform.is_(False)
+            ).all()
+
+            groups = {"A": [], "B": [], "C": []}
+
+            for r in subs:
+                if r.term_status in groups:
+                    groups[r.term_status].append(r.rider_name)
+
+            # Sort alphabetically
+            for k in groups:
+                groups[k] = sorted(groups[k], key=lambda x: x.lower())
+
+            # Write groups
+            for status in ["A", "B", "C"]:
+                lines.append(status)
+                for name in groups[status]:
+                    lines.append(f"- {name}")
+                lines.append("")
+
+            lines.append("")  # spacing between courses
+
+        text_output = "\n".join(lines)
+
+        return Response(
+            text_output,
+            mimetype="text/plain",
+            headers={
+                "Content-Disposition": "attachment; filename=weekly_rider_list.txt"
+            }
+        )
+
+
     @app.route('/sms_next_term')
     def sms_next_term():
         selected_year = request.args.get('year', type=int)

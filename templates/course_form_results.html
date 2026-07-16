@@ -209,7 +209,6 @@
     z-index: 100001 !important;
 }
 
-
     </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -267,6 +266,11 @@
 </button>
 
 
+<button class="menu-btn"
+        title="Download all riders for the entire week"
+        onclick="window.location.href='{{ url_for('download_all_riders_week') }}'">
+    📄 All rider txt
+</button>
 </div>
 
 <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
@@ -303,8 +307,6 @@
         {{ total_nominations }}
     </span>
 </div>
-
-
 
 
 </div>
