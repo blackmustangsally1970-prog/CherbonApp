@@ -3425,9 +3425,24 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # Combine and dedupe by rider ID (handles multi‑course riders)
-        unique = {}
+        # Riders already booked in NEXT TERM (selected_year/selected_term)
+        already_booked = CourseFormSubmission.query.filter(
+            CourseFormSubmission.term_year == selected_year,
+            CourseFormSubmission.term_number == selected_term,
+            CourseFormSubmission.ignore_jotform.is_(False)
+        ).with_entities(CourseFormSubmission.rider_name).all()
+
+        already_booked_names = {r.rider_name for r in already_booked}
+
+        # Filter out riders already booked for next term
+        filtered = []
         for r in a_riders + b_riders:
+            if r.rider_name not in already_booked_names:
+                filtered.append(r)
+
+        # Dedupe by rider ID
+        unique = {}
+        for r in filtered:
             unique[r.id] = r
 
         riders = list(unique.values())
