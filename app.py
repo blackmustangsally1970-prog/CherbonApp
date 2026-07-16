@@ -3412,8 +3412,12 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # Combine
-        riders = a_riders + b_riders
+        # Combine and dedupe by rider ID (handles multi‑course riders)
+        unique = {}
+        for r in a_riders + b_riders:
+            unique[r.id] = r
+
+        riders = list(unique.values())
         riders.sort(key=lambda r: r.rider_name)
 
         return render_template(
@@ -3443,9 +3447,9 @@ def create_app():
             db.session.commit()
             flash("Status updated", "success")
 
+            # Redirect back to the main submissions page
             return redirect(url_for(
-                'load_riders',
-                course_code=rider.current_course,
+                'course_form_submissions',
                 year=rider.term_year,
                 term=rider.term_number
             ))
