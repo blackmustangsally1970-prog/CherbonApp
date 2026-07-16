@@ -30,13 +30,21 @@
 <div style="margin-bottom:20px; padding:15px; border:1px solid #ccc; border-radius:8px;">
     <h3>📨 SMS Message</h3>
 
-    <textarea id="sms_message" style="width:100%; height:8em;">
-Hi, your next term (Year {{ selected_year }} Term {{ selected_term }}) is ready to book!
+    <textarea id="sms_message"
+              oninput="updateCharCount()"
+              style="width:100%; height:8em;">
+Hi, next term courses are ready to book! Thankyou, Cherbon Waters.
+www.cherbonwaters.com.au/term-courses
     </textarea>
 
-    <br><br>
+    <div style="margin-top:8px; font-size:0.9em;">
+        Characters: <span id="char_count">0</span> / 160
+    </div>
+
+    <br>
     <button class="menu-btn" onclick="sendSMS()">📤 Send SMS</button>
 </div>
+
 
 <!-- RIDER LIST -->
 <h3>Riders (A from previous term + B from selected term)</h3>
@@ -100,3 +108,14 @@ function sendSMS() {
     });
 }
 </script>
+
+<script>
+function updateCharCount() {
+    const msg = document.getElementById("sms_message").value;
+    document.getElementById("char_count").innerText = msg.length;
+}
+
+// Run once on page load
+updateCharCount();
+</script>
+
