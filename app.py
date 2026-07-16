@@ -3398,46 +3398,54 @@ def create_app():
 
     @app.route('/download_all_riders_week')
     def download_all_riders_week():
-        # Pull all course references (Sunday → Saturday)
-        courses = CourseReference.query.order_by(
-            CourseReference.day_of_week,
-            CourseReference.timerange
-        ).all()
+        # Real weekday order
+        weekday_order = {
+            "Sunday": 1,
+            "Monday": 2,
+            "Tuesday": 3,
+            "Wednesday": 4,
+            "Thursday": 5,
+            "Friday": 6,
+            "Saturday": 7
+        }
+
+        # Pull all course references
+        courses = CourseReference.query.all()
+
+        # Sort by real weekday + timerange
+        courses = sorted(
+            courses,
+            key=lambda c: (weekday_order.get(c.day_of_week, 99), c.timerange)
+        )
 
         lines = []
 
         for cref in courses:
-            # Header for each course
-            lines.append(f"{cref.day_of_week} {cref.timerange} {cref.course_code} Course")
+            lines.append(f"{cref.day_of_week} {cref.timerange} {cref.course_code} ")
             lines.append("")
 
-            # Pull riders for this course
             subs = CourseFormSubmission.query.filter(
                 CourseFormSubmission.current_course == cref.course_code,
                 CourseFormSubmission.ignore_jotform.is_(False)
             ).all()
 
-            # Use sets to dedupe
             groups = {"A": set(), "B": set(), "C": set()}
 
             for r in subs:
                 if r.term_status in groups:
                     groups[r.term_status].add(r.rider_name)
 
-            # Sort alphabetically
             for k in groups:
                 groups[k] = sorted(groups[k], key=lambda x: x.lower())
 
-            # Write groups
             for status in ["A", "B", "C"]:
-                # Only show heading if group has riders
                 if groups[status]:
                     lines.append(status)
                     for name in groups[status]:
                         lines.append(f"- {name}")
                     lines.append("")
 
-            lines.append("")  # spacing between courses
+            lines.append("")
 
         text_output = "\n".join(lines)
 
