@@ -3417,11 +3417,12 @@ def create_app():
                 CourseFormSubmission.ignore_jotform.is_(False)
             ).all()
 
-            groups = {"A": [], "B": [], "C": []}
+            # Use sets to dedupe
+            groups = {"A": set(), "B": set(), "C": set()}
 
             for r in subs:
                 if r.term_status in groups:
-                    groups[r.term_status].append(r.rider_name)
+                    groups[r.term_status].add(r.rider_name)
 
             # Sort alphabetically
             for k in groups:
@@ -3429,10 +3430,12 @@ def create_app():
 
             # Write groups
             for status in ["A", "B", "C"]:
-                lines.append(status)
-                for name in groups[status]:
-                    lines.append(f"- {name}")
-                lines.append("")
+                # Only show heading if group has riders
+                if groups[status]:
+                    lines.append(status)
+                    for name in groups[status]:
+                        lines.append(f"- {name}")
+                    lines.append("")
 
             lines.append("")  # spacing between courses
 
@@ -3468,11 +3471,11 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # Dedupe A riders
-        a_unique = {}
+        # Dedupe by rider_name
+        a_names = {}
         for r in a_raw:
-            a_unique[r.id] = r
-        a_riders = list(a_unique.values())
+            a_names[r.rider_name] = r
+        a_riders = list(a_names.values())
 
         # B riders from selected term (ALL courses)
         b_raw = CourseFormSubmission.query.filter(
@@ -3482,11 +3485,11 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # Dedupe B riders
-        b_unique = {}
+        # Dedupe by rider_name
+        b_names = {}
         for r in b_raw:
-            b_unique[r.id] = r
-        b_riders = list(b_unique.values())
+            b_names[r.rider_name] = r
+        b_riders = list(b_names.values())
 
         # Riders already booked in NEXT TERM
         already_booked = CourseFormSubmission.query.filter(
@@ -3503,10 +3506,10 @@ def create_app():
             if r.rider_name not in already_booked_names:
                 filtered.append(r)
 
-        # Final dedupe by rider ID
+        # Final dedupe by rider_name
         unique = {}
         for r in filtered:
-            unique[r.id] = r
+            unique[r.rider_name] = r
 
         riders = list(unique.values())
         riders.sort(key=lambda r: r.rider_name)
