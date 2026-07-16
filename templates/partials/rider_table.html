@@ -48,6 +48,13 @@
     data-course="{{ course_code }}"
     data-timeframe="{{ cref.timerange }}"
     data-rider="{{ r.rider_name }}"
+    {% if r.term_status == 'A' %}
+        style="background:#e8f7e8;"   <!-- very light green -->
+    {% elif r.term_status == 'B' %}
+        style="background:#fff8e1;"   <!-- very light yellow -->
+    {% elif r.term_status == 'C' %}
+        style="background:#fdecea;"   <!-- very light red -->
+    {% endif %}
 >
 
 <td class="sel-cell" style="white-space:nowrap;">
@@ -83,14 +90,7 @@
     width:32ch;
     white-space:normal;
     word-break:break-word;
-    {% if r.term_status == 'A' %}
-        background:#e8f7e8;   /* very light green */
-    {% elif r.term_status == 'B' %}
-        background:#fff8e1;   /* very light yellow */
-    {% elif r.term_status == 'C' %}
-        background:#fdecea;   /* very light red */
-    {% endif %}
-">
+    ">
     <input type="text"
            data-id="{{ r.id }}"
            data-field="rider_name"

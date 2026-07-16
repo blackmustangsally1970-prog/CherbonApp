@@ -3410,22 +3410,34 @@ def create_app():
             prev_year -= 1
 
         # A riders from previous term (ALL courses)
-        a_riders = CourseFormSubmission.query.filter(
+        a_raw = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
             CourseFormSubmission.term_status == 'A',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
+        # Dedupe A riders
+        a_unique = {}
+        for r in a_raw:
+            a_unique[r.id] = r
+        a_riders = list(a_unique.values())
+
         # B riders from selected term (ALL courses)
-        b_riders = CourseFormSubmission.query.filter(
+        b_raw = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
             CourseFormSubmission.term_status == 'B',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # Riders already booked in NEXT TERM (selected_year/selected_term)
+        # Dedupe B riders
+        b_unique = {}
+        for r in b_raw:
+            b_unique[r.id] = r
+        b_riders = list(b_unique.values())
+
+        # Riders already booked in NEXT TERM
         already_booked = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
@@ -3440,7 +3452,7 @@ def create_app():
             if r.rider_name not in already_booked_names:
                 filtered.append(r)
 
-        # Dedupe by rider ID
+        # Final dedupe by rider ID
         unique = {}
         for r in filtered:
             unique[r.id] = r
