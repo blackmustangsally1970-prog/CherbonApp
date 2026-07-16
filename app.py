@@ -2952,12 +2952,26 @@ def create_app():
         )
 
         all_subs = base_q.order_by(CourseFormSubmission.id.desc()).all()
-        unprocessed_submissions = [s for s in all_subs if s.status == "unprocessed"]
 
-        approved_submissions = base_q.filter(
+        # ---- DEDUPE UNPROCESSED ----
+        unprocessed_unique = {}
+        for s in all_subs:
+            if s.status == "unprocessed":
+                unprocessed_unique[s.id] = s
+        unprocessed_submissions = list(unprocessed_unique.values())
+
+        # ---- APPROVED ----
+        approved_raw = base_q.filter(
             CourseFormSubmission.status == "approved"
         ).order_by(CourseFormSubmission.id.desc()).all()
 
+        # ---- DEDUPE APPROVED ----
+        approved_unique = {}
+        for s in approved_raw:
+            approved_unique[s.id] = s
+        approved_submissions = list(approved_unique.values())
+
+        # ---- RIDERS BY COURSE (DEDUPED) ----
         riders_by_course = defaultdict(list)
         for r in approved_submissions:
             riders_by_course[r.current_course].append(r)
@@ -3040,7 +3054,7 @@ def create_app():
 
         total_nominations = len(unprocessed_submissions) + len(approved_submissions)
 
-        # ---- WEEK TOOLTIP (W1 → W10 dates) ----
+        # ---- WEEK TOOLTIP ----
         week_tooltip = ""
         active_term = Term.query.filter_by(year=year, term_number=term).first()
 
@@ -3073,7 +3087,6 @@ def create_app():
             horses=horses,
             week_tooltip=week_tooltip
         )
-
 
 
     @app.route('/check_lessons_for_term')

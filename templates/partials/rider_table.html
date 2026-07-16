@@ -78,31 +78,26 @@
 
 </td>
 
-                <!-- RIDER NAME -->
-                <td style="width:32ch; white-space:normal; word-break:break-word;">
-                    <input type="text"
-                           data-id="{{ r.id }}"
-                           data-field="rider_name"
-                           value="{{ r.rider_name }}"
-                           onchange="updateField({{ r.id }}, 'rider_name', this.value)"
-                           style="width:30ch; {% if not client %}color:red; font-weight:bold;{% endif %}">
-
-                    <!-- TERM STATUS BADGE -->
-                    {% if r.term_status == 'A' %}
-                        <span style="background:#4CAF50; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em;">
-                            A
-                        </span>
-                    {% elif r.term_status == 'B' %}
-                        <span style="background:#FFC107; color:black; padding:2px 6px; border-radius:4px; font-size:0.8em;">
-                            B
-                        </span>
-                    {% elif r.term_status == 'C' %}
-                        <span style="background:#F44336; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em;">
-                            C
-                        </span>
-                    {% endif %}
-
-                </td>
+<!-- RIDER NAME -->
+<td style="
+    width:32ch;
+    white-space:normal;
+    word-break:break-word;
+    {% if r.term_status == 'A' %}
+        background:#e8f7e8;   /* very light green */
+    {% elif r.term_status == 'B' %}
+        background:#fff8e1;   /* very light yellow */
+    {% elif r.term_status == 'C' %}
+        background:#fdecea;   /* very light red */
+    {% endif %}
+">
+    <input type="text"
+           data-id="{{ r.id }}"
+           data-field="rider_name"
+           value="{{ r.rider_name }}"
+           onchange="updateField({{ r.id }}, 'rider_name', this.value)"
+           style="width:30ch; {% if not client %}color:red; font-weight:bold;{% endif %}">
+</td>
 
                 <!-- HORSE 1 -->
                 <td style="width:12ch; white-space:nowrap;">
