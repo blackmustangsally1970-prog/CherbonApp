@@ -86,6 +86,22 @@
                            value="{{ r.rider_name }}"
                            onchange="updateField({{ r.id }}, 'rider_name', this.value)"
                            style="width:30ch; {% if not client %}color:red; font-weight:bold;{% endif %}">
+
+                    <!-- TERM STATUS BADGE -->
+                    {% if r.term_status == 'A' %}
+                        <span style="background:#4CAF50; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em;">
+                            A
+                        </span>
+                    {% elif r.term_status == 'B' %}
+                        <span style="background:#FFC107; color:black; padding:2px 6px; border-radius:4px; font-size:0.8em;">
+                            B
+                        </span>
+                    {% elif r.term_status == 'C' %}
+                        <span style="background:#F44336; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em;">
+                            C
+                        </span>
+                    {% endif %}
+
                 </td>
 
                 <!-- HORSE 1 -->
@@ -220,6 +236,7 @@
                     <a href="{{ url_for('edit_course_submission', id=r.id) }}">Edit</a>
                     <a href="{{ url_for('unapprove_course_submission', id=r.id) }}">Unapprove</a>
                     <a href="{{ url_for('delete_course_submission', id=r.id) }}" style="color:red;">Delete</a>
+                    <a href="{{ url_for('edit_term_status', id=r.id) }}">Status</a>
                 </td>
 
             </tr>

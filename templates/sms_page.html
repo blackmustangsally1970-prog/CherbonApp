@@ -1,0 +1,75 @@
+<h2>SMS — {{ course_code }} (Term {{ selected_term }} {{ selected_year }})</h2>
+
+<!-- Rider list -->
+<table border="1" cellpadding="6" cellspacing="0">
+    <tr>
+        <th>Rider</th>
+        <th>Guardian</th>
+        <th>Mobile</th>
+        <th>Status</th>
+        <th>Include?</th>
+    </tr>
+
+    {% for r in riders %}
+    <tr>
+        <td>{{ r.rider_name }}</td>
+        <td>{{ r.guardian_name }}</td>
+        <td>{{ r.mobile }}</td>
+
+        <!-- Lifecycle indicator -->
+        <td>
+            {% if r.term_status == 'A' %}
+                <span style="color:green; font-weight:bold;">A</span>
+            {% elif r.term_status == 'B' %}
+                <span style="color:orange; font-weight:bold;">B</span>
+            {% elif r.term_status == 'C' %}
+                <span style="color:red; font-weight:bold;">C</span>
+            {% endif %}
+        </td>
+
+        <!-- Checkbox -->
+        <td>
+            <input type="checkbox" name="sms_include" value="{{ r.id }}" checked>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<br>
+
+<!-- SMS message box -->
+<textarea id="sms_message" style="width:50ch; height:10em;">
+Hi, your {{ course_code }} lesson details for Term {{ selected_term }} {{ selected_year }}…
+</textarea>
+
+<br><br>
+
+<button onclick="sendSMS()">Send SMS</button>
+
+<script>
+function sendSMS() {
+    const message = document.getElementById("sms_message").value;
+
+    const ids = [];
+    document.querySelectorAll("input[name='sms_include']:checked").forEach(cb => {
+        ids.push(cb.value);
+    });
+
+    fetch("/send_sms", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            rider_ids: ids,
+            message: message
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            alert("SMS sent successfully!");
+        } else {
+            alert("SMS failed: " + (res.error || "Unknown error"));
+        }
+    });
+}
+</script>

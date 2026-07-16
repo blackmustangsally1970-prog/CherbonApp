@@ -254,6 +254,18 @@ class CourseFormSubmission(db.Model):
     price_override = db.Column(db.Numeric(10, 2), nullable=True)
     price_locked = db.Column(db.Boolean, default=False)
 
+    # Term lifecycle status
+    term_status = db.Column(db.String(1), default='A')
+    # 'A' = active, 'B' = back next term, 'C' = cancelled
+
+    # If status = 'B', store when they return
+    return_year = db.Column(db.Integer, nullable=True)
+    return_term = db.Column(db.Integer, nullable=True)
+
+    # Notes for B or C riders
+    status_notes = db.Column(db.String(255), nullable=True)
+
+
 
 
 class CourseEnrolment(db.Model):

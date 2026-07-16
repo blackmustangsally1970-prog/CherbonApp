@@ -3382,6 +3382,82 @@ def create_app():
         )
 
 
+
+    @app.route('/sms/<course_code>')
+    def sms_page(course_code):
+        from sqlalchemy import and_
+
+        selected_year = request.args.get('year', type=int)
+        selected_term = request.args.get('term', type=int)
+
+        # Compute previous term
+        prev_term = selected_term - 1
+        prev_year = selected_year
+
+        if prev_term == 0:
+            prev_term = 4
+            prev_year -= 1
+
+        # A riders from previous term
+        a_riders = CourseFormSubmission.query.filter(
+            CourseFormSubmission.term_year == prev_year,
+            CourseFormSubmission.term_number == prev_term,
+            CourseFormSubmission.current_course == course_code,
+            CourseFormSubmission.term_status == 'A',
+            CourseFormSubmission.ignore_jotform.is_(False)
+        ).all()
+
+        # B riders from selected term
+        b_riders = CourseFormSubmission.query.filter(
+            CourseFormSubmission.term_year == selected_year,
+            CourseFormSubmission.term_number == selected_term,
+            CourseFormSubmission.current_course == course_code,
+            CourseFormSubmission.term_status == 'B',
+            CourseFormSubmission.ignore_jotform.is_(False)
+        ).all()
+
+        # Combine
+        riders = a_riders + b_riders
+        riders.sort(key=lambda r: r.rider_name)
+
+        return render_template(
+            "sms_page.html",
+            riders=riders,
+            course_code=course_code,
+            selected_year=selected_year,
+            selected_term=selected_term
+        )
+
+    @app.route('/term/status/<int:id>', methods=['GET', 'POST'])
+    def edit_term_status(id):
+        rider = CourseFormSubmission.query.get_or_404(id)
+
+        if request.method == 'POST':
+            rider.term_status = request.form.get('term_status')
+
+            # Only store return year/term if status = B
+            if rider.term_status == 'B':
+                rider.return_year = request.form.get('return_year')
+                rider.return_term = request.form.get('return_term')
+            else:
+                rider.return_year = None
+                rider.return_term = None
+
+            rider.status_notes = request.form.get('status_notes')
+
+            db.session.commit()
+            flash("Status updated", "success")
+
+            return redirect(url_for(
+                'load_riders',
+                course_code=rider.current_course,
+                year=rider.term_year,
+                term=rider.term_number
+            ))
+
+        return render_template('edit_term_status.html', rider=rider)
+
+
     @app.route("/print/horses/<date>")
     def print_horses(date):
         from datetime import datetime
@@ -3483,6 +3559,59 @@ def create_app():
 # -----------------------------
 # TERM ROUTES
 # -----------------------------
+
+
+    @app.route('/send_sms', methods=['POST'])
+    def send_sms():
+        data = request.get_json()
+
+        rider_ids = data.get("rider_ids", [])
+        message = data.get("message", "").strip()
+
+        if not rider_ids or not message:
+            return {"error": "Missing rider IDs or message"}, 400
+
+        # Load riders
+        riders = CourseFormSubmission.query.filter(
+            CourseFormSubmission.id.in_(rider_ids)
+        ).all()
+
+        # Build ClickSend payload
+        sms_list = []
+        for r in riders:
+            if not r.mobile:
+                continue
+
+            sms_list.append({
+                "source": "python",
+                "from": "Cherbon",
+                "body": message,
+                "to": r.mobile
+            })
+
+        if not sms_list:
+            return {"error": "No valid mobile numbers"}, 400
+
+        # Send SMS via ClickSend
+        import requests
+        import base64
+
+        username = CLICK_SEND_USERNAME
+        api_key = CLICK_SEND_API_KEY
+
+        auth = base64.b64encode(f"{username}:{api_key}".encode()).decode()
+
+        response = requests.post(
+            "https://rest.clicksend.com/v3/sms/send",
+            json={"messages": sms_list},
+            headers={"Authorization": f"Basic {auth}"}
+        )
+
+        if response.status_code != 200:
+            print("SMS ERROR:", response.text)
+            return {"error": "SMS failed", "details": response.text}, 500
+
+        return {"success": True}, 200
 
 
     @app.route('/terms')

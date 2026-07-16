@@ -1,0 +1,43 @@
+<h2>Edit Term Status — {{ rider.rider_name }}</h2>
+
+<form method="POST">
+
+    <!-- STATUS -->
+    <label>Status:</label>
+    <select name="term_status" onchange="toggleReturnFields(this.value)">
+        <option value="A" {% if rider.term_status == 'A' %}selected{% endif %}>A — Active</option>
+        <option value="B" {% if rider.term_status == 'B' %}selected{% endif %}>B — Back Next Term</option>
+        <option value="C" {% if rider.term_status == 'C' %}selected{% endif %}>C — Cancelled</option>
+    </select>
+
+    <!-- RETURN YEAR/TERM (only for B) -->
+    <div id="returnFields" style="margin-top:1em; {% if rider.term_status != 'B' %}display:none;{% endif %}">
+        <label>Return Year:</label>
+        <input type="number" name="return_year" value="{{ rider.return_year or '' }}">
+
+        <label>Return Term:</label>
+        <select name="return_term">
+            <option value=""></option>
+            <option value="1" {% if rider.return_term == 1 %}selected{% endif %}>Term 1</option>
+            <option value="2" {% if rider.return_term == 2 %}selected{% endif %}>Term 2</option>
+            <option value="3" {% if rider.return_term == 3 %}selected{% endif %}>Term 3</option>
+            <option value="4" {% if rider.return_term == 4 %}selected{% endif %}>Term 4</option>
+        </select>
+    </div>
+
+    <!-- NOTES -->
+    <div style="margin-top:1em;">
+        <label>Notes (reason):</label><br>
+        <textarea name="status_notes" style="width:40ch; height:6em;">{{ rider.status_notes or '' }}</textarea>
+    </div>
+
+    <button type="submit" style="margin-top:1em;">Save Status</button>
+
+</form>
+
+<script>
+function toggleReturnFields(val) {
+    const div = document.getElementById('returnFields');
+    div.style.display = (val === 'B') ? 'block' : 'none';
+}
+</script>
