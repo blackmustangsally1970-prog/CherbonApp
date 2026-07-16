@@ -3383,10 +3383,8 @@ def create_app():
 
 
 
-    @app.route('/sms/<course_code>')
-    def sms_page(course_code):
-        from sqlalchemy import and_
-
+    @app.route('/sms_next_term')
+    def sms_next_term():
         selected_year = request.args.get('year', type=int)
         selected_term = request.args.get('term', type=int)
 
@@ -3398,20 +3396,18 @@ def create_app():
             prev_term = 4
             prev_year -= 1
 
-        # A riders from previous term
+        # A riders from previous term (ALL courses)
         a_riders = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
-            CourseFormSubmission.current_course == course_code,
             CourseFormSubmission.term_status == 'A',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # B riders from selected term
+        # B riders from selected term (ALL courses)
         b_riders = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
-            CourseFormSubmission.current_course == course_code,
             CourseFormSubmission.term_status == 'B',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
@@ -3423,7 +3419,6 @@ def create_app():
         return render_template(
             "sms_page.html",
             riders=riders,
-            course_code=course_code,
             selected_year=selected_year,
             selected_term=selected_term
         )
