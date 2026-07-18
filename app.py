@@ -2873,6 +2873,7 @@ def create_app():
         try:
             sub = CourseFormSubmission(
                 rider_name=data["rider_name"],
+                courseno=data.get("current_course"),    
                 horse_1=data.get("horse_1"),
                 horse_2=None,
                 horse_3=None,
