@@ -890,37 +890,6 @@ window.checkLessonsForTerm = function (course_code) {
     });
 
 
-
-    /* ============================================================
-       CONFETTI
-    ============================================================ */
-    const total = {{ total_nominations|int }};
-    const last = parseInt(localStorage.getItem("last_total_nominations") || "0");
-
-    if (total >= 190 && last < 190) {
-        confetti({
-            particleCount: 200,
-            spread: 120,
-            startVelocity: 45,
-            origin: { y: 0.6 }
-        });
-
-        let count = 0;
-        const interval = setInterval(() => {
-            confetti({
-                particleCount: 150,
-                spread: 100,
-                startVelocity: 40,
-                origin: { y: Math.random() }
-            });
-            count++;
-            if (count > 3) clearInterval(interval);
-        }, 800);
-    }
-
-    localStorage.setItem("last_total_nominations", total);
-
-
     /* ============================================================
        COURSE GRID TOGGLE + LAZY LOAD
     ============================================================ */
@@ -1077,7 +1046,20 @@ window.checkLessonsForTerm = function (course_code) {
     }
 
 });
+
 </script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('.course-grid').forEach(grid => {
+        loadRiders(grid.id);   // loads content
+        grid.classList.remove('open'); // keeps them collapsed
+    });
+});
+</script>
+
+
 
 
 </body>
