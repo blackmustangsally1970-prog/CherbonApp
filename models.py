@@ -31,6 +31,17 @@ class WeddingTemplateField(db.Model):
     active = db.Column(db.Boolean, default=True)
 
 
+
+class LessonChangeLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    lesson_id = db.Column(db.Integer, nullable=False)
+    field = db.Column(db.String(50), nullable=False)
+    old_value = db.Column(db.String(255))
+    new_value = db.Column(db.String(255))
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    changed_by = db.Column(db.String(100))
+
+
 class WeddingDetailLibrary(db.Model):
     __tablename__ = 'wedding_detail_library'
 

@@ -90,6 +90,24 @@
     transform: translateY(0);
 }
 
+#saved-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 15px;
+    opacity: 0;
+    transition: opacity 0.4s;
+    z-index: 9999;
+}
+#saved-toast.show {
+    opacity: 1;
+}
+
+
 
 /* teacher column body: force top-aligned stack */
 .teacher-col-body {
@@ -538,6 +556,11 @@ select.teacher-dropdown {
 
 .client-link:hover {
     text-decoration: underline;
+}
+
+.field-saved {
+    background-color: #d4ffd4 !important;
+    transition: background-color 0.6s ease;
 }
 
 
@@ -1687,7 +1710,12 @@ body {
 
 
     <td>
-      <select name="attendance_{{ lesson.lesson_id }}" data-client-id="{{ client.client_id if client else '' }}" class="compact-small attendance-field">
+      <select name="attendance_{{ lesson.lesson_id }}"
+              data-id="{{ lesson.lesson_id }}"
+              data-field="attendance"
+              data-client-id="{{ client.client_id if client else '' }}"
+              class="compact-small attendance-field"
+              onchange="updateLessonField({{ lesson.lesson_id }}, 'attendance', this.value)">
         <option value="" {% if not lesson.attendance %}selected{% endif %}></option>
         <option value="Y" {% if lesson.attendance == 'Y' %}selected{% endif %}>Y</option>
         <option value="C" {% if lesson.attendance == 'C' %}selected{% endif %}>C</option>
@@ -1702,18 +1730,19 @@ body {
     {% set show_red = ((price_val or 0) > (bal_val or 0) and not pay_val) %}
     <input type="text"
            name="payment_{{ lesson.lesson_id }}"
+           data-id="{{ lesson.lesson_id }}"
+           data-field="payment"
            value="{% if pay_val and pay_val > 0.001 %}{{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
            class="compact-money{% if show_red %} negative-balance{% endif %}"
            autocomplete="off" inputmode="decimal"
-           oninput="recalculateBalance({{ lesson.lesson_id }})">
+           oninput="recalculateBalance({{ lesson.lesson_id }}); updateLessonField({{ lesson.lesson_id }}, 'payment', this.value)">
 </td>
 
 <td>
-    <input type="text"
-           name="price_pl_{{ lesson.lesson_id }}"
-           value="{{ '%.2f' % lesson.price_pl if lesson.price_pl is not none else '' }}"
-           class="compact-money"
-           oninput="recalculateBalance({{ lesson.lesson_id }})">
+<input type="text"
+       data-id="{{ lesson.lesson_id }}" data-field="price_pl"
+       value="{{ lesson.price_pl or '' }}"
+       onchange="updateLessonField({{ lesson.lesson_id }}, 'price_pl', this.value)">
 </td>
 
 <td id="balance_display_{{ lesson.lesson_id }}">
@@ -1723,10 +1752,20 @@ body {
 <td>
     {% set cid = client.client_id if client else None %}
     {% if cid and cid not in rendered_clients %}
-      <input type="text" name="notes_{{ cid }}" value="{{ client.notes or '' }}" class="notes-input">
+      <input type="text"
+             name="notes_{{ cid }}"
+             data-id="{{ cid }}"
+             data-field="client_notes"
+             value="{{ client.notes or '' }}"
+             class="notes-input"
+             onchange="updateClientNotes({{ cid }}, this.value)">
       {% set _ = rendered_clients.append(cid) %}
     {% else %}
-      <input type="text" value="{{ client.notes or '' }}" readonly class="notes-input" style="background:#f9f9f9;">
+      <input type="text"
+             value="{{ client.notes or '' }}"
+             readonly
+             class="notes-input"
+             style="background:#f9f9f9;">
     {% endif %}
 </td>
 
@@ -1754,7 +1793,11 @@ body {
 {% else %}
   <p style="text-align:center;">No lessons found for {{ selected_date }}</p>
 {% endif %}
-<div id="export-toast">TXT + Excel saved. Notepad++ opened.</div>
+<div id="toast-container">
+    <div id="export-toast">TXT + Excel saved. Notepad++ opened.</div>
+    <div id="saved-toast">Saved.</div>
+</div>
+
 
 <script>
     // Core datasets — kept SEPARATE on purpose
@@ -4418,6 +4461,56 @@ document.getElementById("recalc-all-btn").addEventListener("click", async () => 
 });
 </script>
 
+<script>
+window.updateLessonField = function(id, field, value) {
+    fetch(`/update_lesson_field/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ field, value })
+    })
+    .then(r => r.text())
+    .then(() => {
+        const el = document.querySelector(`[data-id="${id}"][data-field="${field}"]`);
+        if (el) {
+            el.classList.add("field-saved");
+            setTimeout(() => el.classList.remove("field-saved"), 800);
+        }
+    })
+    .catch(err => alert("Save failed: " + err));
+};
+</script>
+
+<script>
+function updateClientNotes(clientId, value) {
+    fetch(`/update_client_notes/${clientId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value })
+    })
+    .then(r => r.text())
+    .then(() => {
+        const el = document.querySelector(`[data-id="${clientId}"][data-field="client_notes"]`);
+        if (el) {
+            el.classList.add("field-saved");
+            setTimeout(() => el.classList.remove("field-saved"), 800);
+        }
+    })
+    .catch(err => alert("Save failed: " + err));
+}
+</script>
+
+<script>
+document.getElementById("save-button").addEventListener("click", function() {
+    // Trigger your existing save logic here (whatever you already have)
+
+    const toast = document.getElementById("saved-toast");
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 1500);
+});
+</script>
 
 </body>
 </html>

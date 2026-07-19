@@ -42,6 +42,7 @@ from models import (
     IncomingSubmission,
     Lesson,
     LessonBlockTag,
+    LessonChangeLog,
     LessonInvite,
     LessonTeacherTag,
     Receipt, 
@@ -4933,6 +4934,63 @@ def create_app():
         if errors:
             return f"Processed {len(created_lessons)} riders into lessons; errors: {len(errors)}"
         return f"Processed {len(created_lessons)} riders into lessons"
+
+
+    @app.route('/update_lesson_field/<int:lesson_id>', methods=['POST'])
+    def update_lesson_field(lesson_id):
+        data = request.get_json()
+        field = data.get("field")
+        new_value = data.get("value")
+
+        lesson = Lesson.query.get(lesson_id)
+        if not lesson:
+            return "Lesson not found", 404
+
+        old_value = getattr(lesson, field)
+
+        # Update the lesson
+        setattr(lesson, field, new_value)
+
+        # Log the change
+        log = LessonChangeLog(
+            lesson_id=lesson_id,
+            field=field,
+            old_value=str(old_value),
+            new_value=str(new_value),
+            changed_by=session.get("username", "system")
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        return "ok"
+
+
+    @app.route('/update_client_notes/<int:client_id>', methods=['POST'])
+    def update_client_notes(client_id):
+        data = request.get_json()
+        new_value = data.get("value")
+
+        client = Client.query.get(client_id)
+        if not client:
+            return "Client not found", 404
+
+        old_value = client.notes
+        client.notes = new_value
+
+        log = LessonChangeLog(
+            lesson_id=None,
+            field="client_notes",
+            old_value=str(old_value),
+            new_value=str(new_value),
+            changed_by=session.get("username", "system")
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        return "ok"
+
 
     @app.route('/client/<int:client_id>/statement')
     def client_statement_pdf(client_id):
