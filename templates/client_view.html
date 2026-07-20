@@ -1004,15 +1004,15 @@ $(document).on('input', '.lesson-edit', function () {
 <!-- ========================= -->
 <script>
 $(document).on('change', '.client-edit', function () {
-    const clientId = $(this).data('id');
-    const field = $(this).data('field');
-    const value = $(this).val();
+    const clientId = $(this).data('id');     // ✔ client-id
+    const field    = $(this).data('field');  // ✔ client field
+    const value    = $(this).val();
 
-    fetch('/update_client_field', {
+    fetch('/update_client_field', {          // ✔ correct route
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            client_id: clientId,
+            client_id: clientId,             // ✔ correct payload
             field: field,
             value: value
         })

@@ -55,15 +55,19 @@ def build_conflict_context(submission_row, rider_index):
     }
 
 def process_conflict_resolution(submission_row, rider_index, choice, client_id):
-    """
-    Handles the POST conflict resolution logic.
-    Returns a redirect URL for finalize_notification.
-    """
-
     import json
 
+    # 1. Load ORIGINAL payload (full submission)
+    original = submission_row.raw_payload
+    try:
+        full_payload = json.loads(original)
+    except Exception:
+        print("ERROR: Could not decode original payload")
+        return None
+
+    # 2. Parse FULL payload for conflict logic
     parsed = parse_jotform_payload(
-        submission_row.raw_payload,
+        full_payload,
         forced_submission_id=submission_row.id,
         mode="full"
     )
@@ -143,11 +147,16 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
         )
         db.session.add(new_client)
 
-    # MARK RIDER AS RESOLVED
-    parsed["riders"][rider_index - 1]["resolved"] = True
-    parsed["riders"][rider_index - 1]["matches"] = []
+    # 3. UPDATE ONLY THE CONFLICT RIDER INSIDE THE ORIGINAL PAYLOAD
+    full_riders = full_payload.get("riders", [])
+    if rider_index - 1 < len(full_riders):
+        full_riders[rider_index - 1]["resolved"] = True
+        full_riders[rider_index - 1]["matches"] = []
 
-    submission_row.raw_payload = json.dumps(parsed)
+    # 4. WRITE BACK FULL PAYLOAD (ALL RIDERS PRESERVED)
+    full_payload["riders"] = full_riders
+    submission_row.raw_payload = json.dumps(full_payload)
+
     db.session.commit()
 
     return url_for('finalize_notification', webhook_id=submission_row.id)
