@@ -1740,8 +1740,10 @@ body {
 
 <td>
 <input type="text"
-       data-id="{{ lesson.lesson_id }}" data-field="price_pl"
-       value="{{ lesson.price_pl or '' }}"
+       name="price_pl_{{ lesson.lesson_id }}"
+       data-id="{{ lesson.lesson_id }}"
+       data-field="price_pl"
+       value="{{ '%.2f'|format(lesson.price_pl) if lesson.price_pl is not none else '' }}"
        onchange="updateLessonField({{ lesson.lesson_id }}, 'price_pl', this.value)">
 </td>
 
