@@ -3773,41 +3773,6 @@ def create_app():
 
 
 
-    @app.post("/update_lesson_field")
-    def update_lesson_field():
-        data = request.get_json()
-        lesson_id = data.get("lesson_id")
-        field = data.get("field")
-        value = data.get("value")
-
-        allowed = {
-            "attendance",
-            "carry_fwd",
-            "payment",
-            "price_pl",
-            "adjust",
-            "lesson_notes"      # ⭐ NEW
-        }
-        if field not in allowed:
-            return jsonify(success=False, error="Invalid field")
-
-        lesson = Lesson.query.get(lesson_id)
-        if not lesson:
-            return jsonify(success=False, error=f"Lesson {lesson_id} not found")
-
-        numeric_fields = {"carry_fwd", "payment", "price_pl", "adjust"}
-        if field in numeric_fields:
-            try:
-                value = float(value) if value not in (None, "", "None") else 0
-            except:
-                return jsonify(success=False, error="Invalid number")
-
-        setattr(lesson, field, value)
-
-        # no recalculation here
-        db.session.commit()
-
-        return jsonify(success=True)
 
 
     # ---------------------------------------------------------
