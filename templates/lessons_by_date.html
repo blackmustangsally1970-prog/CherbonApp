@@ -1727,7 +1727,7 @@ body {
     {% set pay_val = parse_money(lesson.payment) %}
     {% set bal_val = lesson.balance or 0 %}
     {% set price_val = lesson.price_pl %}
-    {% set show_red = (bal_val < price_val) %}
+    {% set show_red = ((price_val or 0) > (bal_val or 0) and (not pay_val or pay_val < 0.001)) %}
 <input type="text"
        name="payment_{{ lesson.lesson_id }}"
        data-id="{{ lesson.lesson_id }}"
