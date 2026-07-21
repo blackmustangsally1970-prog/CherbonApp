@@ -783,7 +783,7 @@ input[type="number"] {
                             data-field="attendance"
                             data-id="{{ lesson.lesson_id }}"
                             style="width:60px;"
-                            onchange="recalculateBalance({{ lesson.lesson_id }})">
+                            onchange="recalcBalance({{ lesson.lesson_id }})">
                         <option value="" {% if not lesson.attendance %}selected{% endif %}></option>
                         <option value="Y" {% if lesson.attendance == 'Y' %}selected{% endif %}>Y</option>
                         <option value="C" {% if lesson.attendance == 'C' %}selected{% endif %}>C</option>
@@ -799,7 +799,7 @@ input[type="number"] {
            data-id="{{ lesson.lesson_id }}"
            value="{{ '' if not lesson.adjust else '%.2f'|format(lesson.adjust) }}"
            style="width:70px;"
-           oninput="recalculateBalance({{ lesson.lesson_id }})">
+           oninput="recalcBalance({{ lesson.lesson_id }})">
 </td>
 <td>
     <input type="number"
@@ -809,7 +809,7 @@ input[type="number"] {
            data-id="{{ lesson.lesson_id }}"
            value="{{ '' if not lesson.carry_fwd else '%.2f'|format(lesson.carry_fwd) }}"
            style="width:70px;"
-           oninput="recalculateBalance({{ lesson.lesson_id }})">
+           oninput="recalcBalance({{ lesson.lesson_id }})">
 </td>
 
 <td>
@@ -820,7 +820,7 @@ input[type="number"] {
            data-id="{{ lesson.lesson_id }}"
            value="{{ '' if not lesson.payment else '%.2f'|format(lesson.payment) }}"
            style="width:70px;"
-           oninput="recalculateBalance({{ lesson.lesson_id }})">
+           oninput="recalcBalance({{ lesson.lesson_id }})">
 </td>
 
                 <td>
@@ -831,7 +831,7 @@ input[type="number"] {
                            data-id="{{ lesson.lesson_id }}"
                            value="{{ '%.2f'|format(lesson.price_pl or 0) }}"
                            style="width:70px;"
-                           oninput="recalculateBalance({{ lesson.lesson_id }})">
+                           oninput="recalcBalance({{ lesson.lesson_id }})">
                 </td>
 
                 <td id="balance_display_{{ lesson.lesson_id }}">
@@ -1031,7 +1031,7 @@ $(document).on('change', '.client-edit', function () {
 <!-- BALANCE RECALCULATION -->
 <!-- ========================= -->
 <script>
-function recalculateBalance(lessonId) {
+function recalcBalance(lessonId) {
     const paymentField = document.querySelector(`input[data-field="payment"][data-id="${lessonId}"]`);
     const priceField   = document.querySelector(`input[data-field="price_pl"][data-id="${lessonId}"]`);
     const adjustField  = document.querySelector(`input[data-field="adjust"][data-id="${lessonId}"]`);
