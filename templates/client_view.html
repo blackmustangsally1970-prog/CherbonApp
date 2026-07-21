@@ -971,24 +971,28 @@ $(document).ready(function () {
 </script>
 
 
+<!-- ========================= -->
+<!-- LESSON FIELD LIVE UPDATE -->
+<!-- ========================= -->
 <script>
 $(document).on('input', '.lesson-edit', function () {
     const lessonId = $(this).data('id');
     const field = $(this).data('field');
     const value = $(this).val();
 
-    fetch(`/update_lesson_field/${lessonId}`, {   // ⭐ FIXED — ID IN URL
+    fetch('/update_lesson_field', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+            lesson_id: lessonId,
             field: field,
             value: value
         })
     })
-    .then(res => res.text())
-    .then(resp => {
-        if (resp !== "ok") {
-            alert("Update failed: " + resp);
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert("Update failed: " + data.error);
         }
     });
 });

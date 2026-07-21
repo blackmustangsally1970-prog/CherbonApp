@@ -1034,9 +1034,12 @@ body {
 
 <!-- Popup box hidden by default -->
 <div class="lesson-popup" data-block-key="{{ item.block_key }}" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:9000;">
-  <div class="sms-invite-form">
+  <form onsubmit="return false;" class="sms-invite-form">
+
     <input type="hidden" name="date" value="{{ selected_date }}">
     <input type="hidden" name="start" value="{{ item.time }}">
+
+
 
 <label>Lesson Time</label>
 <select name="end" class="popup-end-select searchable-dropdown" style="min-width:200px;">
@@ -1123,7 +1126,10 @@ body {
 
 <!-- Popup box hidden by default -->
 <div class="lesson-popup" data-block-key="{{ item.block_key }}" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:9000;">
-  <div class="sms-invite-form">
+  <form onsubmit="return false;" class="sms-invite-form">
+
+
+
     <input type="hidden" name="date" value="{{ selected_date }}">
     <input type="hidden" name="start" value="{{ item.time }}">
 
@@ -1737,7 +1743,7 @@ body {
        name="price_pl_{{ lesson.lesson_id }}"
        data-id="{{ lesson.lesson_id }}"
        data-field="price_pl"
-       value="{{ lesson.price_pl }}"
+       value="{{ '%.2f'|format(lesson.price_pl) if lesson.price_pl is not none else '' }}"
        onchange="updateLessonField({{ lesson.lesson_id }}, 'price_pl', this.value)">
 </td>
 
