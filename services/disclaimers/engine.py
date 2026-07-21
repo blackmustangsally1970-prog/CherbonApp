@@ -93,10 +93,17 @@ def build_conflict_context(submission_row, rider_index):
 
 def process_conflict_resolution(submission_row, rider_index, choice, client_id):
     import json
+    from datetime import datetime
+    from sqlalchemy.util._collections import immutabledict
 
     # 1. Load ORIGINAL payload (full submission)
-    original = submission_row.raw_payload    
-    full_payload = safe_decode_payload(original)
+    original = submission_row.raw_payload
+
+    # FIX: handle dict + immutabledict properly
+    if isinstance(original, (dict, immutabledict)):
+        full_payload = dict(original)
+    else:
+        full_payload = safe_decode_payload(original)
 
     # 2. Parse FULL payload for conflict logic
     parsed = parse_jotform_payload(
@@ -133,7 +140,7 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
 
     # APPLY USER CHOICE
     if choice == "ignore":
-        pass
+        submission_row.ignored = True
 
     elif choice in ("use_existing", "overwrite") and existing:
         existing.full_name = name
@@ -190,9 +197,15 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
     full_payload["riders"] = full_riders
     submission_row.raw_payload = json.dumps(full_payload)
 
+    # ⭐ 5. MARK SUBMISSION AS PROCESSED (THE MISSING STEP)
+    submission_row.processed = True
+    submission_row.processed_at = datetime.utcnow()
+
     db.session.commit()
 
-    return url_for('finalize_notification', webhook_id=submission_row.id)
+    # ⭐ 6. RETURN TO NOTIFICATIONS (NOT finalize_notification)
+    return url_for('notifications')
+
 
 
 def process_all_fastpath():
