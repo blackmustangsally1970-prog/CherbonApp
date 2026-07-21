@@ -1728,6 +1728,9 @@ body {
     {% set bal_val = lesson.balance or 0 %}
     {% set price_val = lesson.price_pl %}
     {% set show_red = ((price_val or 0) > (bal_val or 0) and (not pay_val or pay_val < 0.001)) %}
+
+    <!-- DEBUG: PRINT THE REAL VALUES -->
+    {{ price_val }} | {{ bal_val }} | {{ pay_val }} | show_red={{ show_red }}
 <input type="text"
        name="payment_{{ lesson.lesson_id }}"
        data-id="{{ lesson.lesson_id }}"
