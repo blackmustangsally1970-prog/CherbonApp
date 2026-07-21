@@ -10,6 +10,36 @@ from services.disclaimers.name_tools import (
 )
 
 
+import json
+import ast
+
+def safe_decode_payload(raw):
+    if not raw:
+        return {}
+
+    # Try normal JSON
+    try:
+        return json.loads(raw)
+    except:
+        pass
+
+    # Try cleaned UTF-8
+    try:
+        cleaned = raw.encode("utf-8", "ignore").decode("utf-8")
+        return json.loads(cleaned)
+    except:
+        pass
+
+    # Try Python literal
+    try:
+        return ast.literal_eval(raw)
+    except:
+        pass
+
+    print("ERROR: Could not decode original payload")
+    return {}
+
+
 
 def build_conflict_context(submission_row, rider_index):
     """
@@ -18,7 +48,7 @@ def build_conflict_context(submission_row, rider_index):
     """
 
     parsed = parse_jotform_payload(
-        submission_row.raw_payload,
+        safe_decode_payload(submission_row.raw_payload),
         forced_submission_id=submission_row.id,
         mode="full"
     )
@@ -58,12 +88,8 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
     import json
 
     # 1. Load ORIGINAL payload (full submission)
-    original = submission_row.raw_payload
-    try:
-        full_payload = json.loads(original)
-    except Exception:
-        print("ERROR: Could not decode original payload")
-        return None
+    original = submission_row.raw_payload    
+    full_payload = safe_decode_payload(original)
 
     # 2. Parse FULL payload for conflict logic
     parsed = parse_jotform_payload(
@@ -182,7 +208,7 @@ def process_all_fastpath():
         return url_for('notifications')
 
     parsed = parse_jotform_payload(
-        next_row.raw_payload,
+        safe_decode_payload(next_row.raw_payload),
         forced_submission_id=next_row.id,
         mode="full"
     )
