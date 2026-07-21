@@ -37,6 +37,16 @@ input[type="number"] {
     -moz-appearance: textfield;
 }
 
+.flash-save {
+    animation: flashGreen 1s ease-out;
+}
+
+@keyframes flashGreen {
+    0%   { background-color: #c8f7c5; }
+    100% { background-color: transparent; }
+}
+
+
 
 .client-link {
     color: #0645AD;
@@ -979,6 +989,11 @@ $(document).on('keyup change input paste', '.lesson-edit', function () {
     const lessonId = $(this).data('id');
     const field = $(this).data('field');
     const value = $(this).val();
+
+    // ⭐ FLASH THE ROW
+    const row = $(this).closest('tr');
+    row.addClass('flash-save');
+    setTimeout(() => row.removeClass('flash-save'), 1000);
 
     fetch('/update_lesson_field', {
         method: 'POST',
