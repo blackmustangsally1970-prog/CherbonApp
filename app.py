@@ -4956,6 +4956,37 @@ def create_app():
         return "ok"
 
 
+    @app.route('/update_lesson_field', methods=['POST'])
+    def update_lesson_field_noid():
+        data = request.get_json()
+        lesson_id = data.get("lesson_id")
+        field = data.get("field")
+        new_value = data.get("value")
+
+        lesson = Lesson.query.get(lesson_id)
+        if not lesson:
+            return jsonify(success=False, error="Lesson not found")
+
+        old_value = getattr(lesson, field)
+
+        # Update the lesson
+        setattr(lesson, field, new_value)
+
+        # Log the change
+        log = LessonChangeLog(
+            lesson_id=lesson_id,
+            field=field,
+            old_value=str(old_value),
+            new_value=str(new_value),
+            changed_by=session.get("username", "system")
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        return jsonify(success=True)
+
+
     @app.route('/client/<int:client_id>/statement')
     def client_statement_pdf(client_id):
         try:
