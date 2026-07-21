@@ -1732,7 +1732,7 @@ body {
            name="payment_{{ lesson.lesson_id }}"
            data-id="{{ lesson.lesson_id }}"
            data-field="payment"
-           value="{% if pay_val and pay_val > 0.001 %}{{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
+           value="{{ '%.2f'|format(pay_val or 0) }}"
            class="compact-money{% if show_red %} negative-balance{% endif %}"
            autocomplete="off" inputmode="decimal"
            onchange="recalculateBalance({{ lesson.lesson_id }}); updateLessonField({{ lesson.lesson_id }}, 'payment', this.value)">
