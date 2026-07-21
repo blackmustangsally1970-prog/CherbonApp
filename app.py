@@ -4900,7 +4900,6 @@ def create_app():
             return f"Processed {len(created_lessons)} riders into lessons; errors: {len(errors)}"
         return f"Processed {len(created_lessons)} riders into lessons"
 
-
     @app.route('/update_lesson_field/<int:lesson_id>', methods=['POST'])
     def update_lesson_field(lesson_id):
         data = request.get_json()
