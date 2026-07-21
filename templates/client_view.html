@@ -975,7 +975,8 @@ $(document).ready(function () {
 <!-- LESSON FIELD LIVE UPDATE -->
 <!-- ========================= -->
 <script>
-$(document).on('input', '.lesson-edit', function () {
+$(document).on('change input', '.lesson-edit', function () {
+
     const lessonId = $(this).data('id');
     const field = $(this).data('field');
     const value = $(this).val();
