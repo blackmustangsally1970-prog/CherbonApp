@@ -47,8 +47,10 @@ def build_conflict_context(submission_row, rider_index):
     Returns a dict with rider, guardian, mobile, email, disclaimer, matches.
     """
 
+    decoded = safe_decode_payload(submission_row.raw_payload)
+
     parsed = parse_jotform_payload(
-        safe_decode_payload(submission_row.raw_payload),
+        json.dumps(decoded),
         forced_submission_id=submission_row.id,
         mode="full"
     )
@@ -93,7 +95,7 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
 
     # 2. Parse FULL payload for conflict logic
     parsed = parse_jotform_payload(
-        full_payload,
+        json.dumps(full_payload),
         forced_submission_id=submission_row.id,
         mode="full"
     )
@@ -207,8 +209,10 @@ def process_all_fastpath():
     if not next_row:
         return url_for('notifications')
 
+    decoded = safe_decode_payload(next_row.raw_payload)
+
     parsed = parse_jotform_payload(
-        safe_decode_payload(next_row.raw_payload),
+        json.dumps(decoded),
         forced_submission_id=next_row.id,
         mode="full"
     )
@@ -287,8 +291,10 @@ def finalize_submission(submission_row):
     import json
     from datetime import datetime
 
+    decoded = safe_decode_payload(submission_row.raw_payload)
+
     parsed = parse_jotform_payload(
-        submission_row.raw_payload,
+        json.dumps(decoded),
         forced_submission_id=submission_row.id,
         mode="full"
     )
