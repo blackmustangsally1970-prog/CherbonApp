@@ -12,10 +12,15 @@ from services.disclaimers.name_tools import (
 
 import json
 import ast
+from sqlalchemy.util._collections import immutabledict
 
 def safe_decode_payload(raw):
     if not raw:
         return {}
+
+    # If it's already a dict or immutabledict, just return a plain dict
+    if isinstance(raw, (dict, immutabledict)):
+        return dict(raw)
 
     # Try normal JSON
     try:
