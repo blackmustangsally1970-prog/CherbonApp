@@ -1728,14 +1728,14 @@ body {
     {% set bal_val = lesson.balance or 0 %}
     {% set price_val = lesson.price_pl %}
     {% set show_red = ((price_val or 0) > (bal_val or 0) and not pay_val) %}
-    <input type="text"
-           name="payment_{{ lesson.lesson_id }}"
-           data-id="{{ lesson.lesson_id }}"
-           data-field="payment"
-           value="{% if pay_val and pay_val > 0.001 %}{{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
-           class="compact-money{% if show_red %} negative-balance-outline{% endif %}"
-           autocomplete="off" inputmode="decimal"
-           oninput="updateLessonField({{ lesson.lesson_id }}, 'payment', this.value); recalculateBalance({{ lesson.lesson_id }});">
+<input type="text"
+       name="payment_{{ lesson.lesson_id }}"
+       data-id="{{ lesson.lesson_id }}"
+       data-field="payment"
+       value="{% if pay_val and pay_val > 0.001 %}{{ '%.2f'|format(pay_val) }}{% else %}{% endif %}"
+       class="compact-money{% if show_red %} negative-balance-outline{% endif %}"
+       autocomplete="off"
+       oninput="updateLessonField({{ lesson.lesson_id }}, 'payment', this.value); recalculateBalance({{ lesson.lesson_id }});">
 </td>
 
 <td>
