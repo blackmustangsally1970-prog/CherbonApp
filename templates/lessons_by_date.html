@@ -857,6 +857,13 @@ body {
         <span style="font-size:13px;">Show client horse history</span>
     </label>
 
+{% if is_processable_day %}
+    <label style="font-size:18px; margin-bottom:10px; display:block;">
+        <input type="checkbox" id="markAllY" onchange="markAllBlankAsY()">
+        Mark all blank attendance as Y
+    </label>
+{% endif %}
+
 </div>
 
 <!-- ⭐ ADD THIS HERE -->
@@ -4526,6 +4533,21 @@ document.getElementById("save-button").addEventListener("click", function() {
     }, 1500);
 });
 </script>
+
+<script>
+function markAllBlankAsY() {
+    const checked = document.getElementById('markAllY').checked;
+    if (!checked) return;
+
+    document.querySelectorAll('.attendance-field').forEach(sel => {
+        if (sel.value.trim() === "") {
+            sel.value = "Y";
+            sel.dispatchEvent(new Event('change'));
+        }
+    });
+}
+</script>
+
 
 </body>
 </html>

@@ -99,7 +99,6 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
     # 1. Load ORIGINAL payload (full submission)
     original = submission_row.raw_payload
 
-    # FIX: handle dict + immutabledict properly
     if isinstance(original, (dict, immutabledict)):
         full_payload = dict(original)
     else:
@@ -124,6 +123,7 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
     email      = (parsed.get("email") or "").strip()
     disclaimer = int(parsed.get("disclaimer") or 0)
 
+    # Store global disclaimer on submission row
     submission_row.universal_disclaimer = disclaimer
 
     raw_name = (rider.get("name") or "").strip()
@@ -193,18 +193,22 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
         full_riders[rider_index - 1]["resolved"] = True
         full_riders[rider_index - 1]["matches"] = []
 
-    # 4. WRITE BACK FULL PAYLOAD (ALL RIDERS PRESERVED)
+    # 4. WRITE BACK FULL PAYLOAD
     full_payload["riders"] = full_riders
     submission_row.raw_payload = json.dumps(full_payload)
 
-    # ⭐ 5. MARK SUBMISSION AS PROCESSED (THE MISSING STEP)
+    # 5. MARK SUBMISSION AS PROCESSED (temporary)
     submission_row.processed = True
     submission_row.processed_at = datetime.utcnow()
 
     db.session.commit()
 
-    # ⭐ 6. RETURN TO NOTIFICATIONS (NOT finalize_notification)
-    return url_for('notifications')
+    # ⭐ 6. CRITICAL FIX — finalize ALL riders now
+    return url_for('finalize_notification', webhook_id=submission_row.id)
+
+    # ❌ OLD: return url_for('notifications')
+    # ✔ NEW: return url_for('finalize_notification', webhook_id=submission_row.id)
+
 
 
 

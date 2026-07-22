@@ -4572,7 +4572,9 @@ def create_app():
         clients = ctx["clients"]
         teacher_horse_usage = ctx["teacher_horse_usage"]
         slot_map = ctx["slot_map"]
-
+        
+        from datetime import date
+        is_processable_day = selected_date <= date.today()
 
         return render_template(
             'lessons_by_date.html',
@@ -4597,6 +4599,7 @@ def create_app():
             norm_timerange_key=norm_timerange_key,
             grid_overrides=grid_overrides,
             teacher_blocks=teacher_blocks_json,
+            is_processable_day=is_processable_day
         )
 
 
@@ -10058,8 +10061,11 @@ Cherbon Waters Admin
 
         # If no employee matches this PIN → failure
         if not emp:
-            # No idea who attempted → cannot increment per-employee failures
             return {"error": "Incorrect PIN"}, 400
+
+        # BLOCK INACTIVE EMPLOYEES
+        if not emp.active:
+            return {"error": "Inactive employee"}, 403
 
         # Check lockout
         now = datetime.now()
