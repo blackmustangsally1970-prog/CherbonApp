@@ -6,8 +6,49 @@
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 
 
-
 <style>
+.toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    display: inline-block;
+}
+
+.toggle-switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 20px;
+    transition: .3s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .3s;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
 
 /* Fix Select2 width inside booking panel */
 #top_existing_client + .select2-container {
@@ -847,22 +888,31 @@ body {
 
 
 
-    <label style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
-        <input type="checkbox" id="toggle-all-lessons" checked>
-        <span style="font-size:13px;">Show all lesson details</span>
-    </label>
+<!--
+<label style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+    <input type="checkbox" id="toggle-all-lessons" checked>
+    <span style="font-size:13px;">Show all lesson details</span>
+</label>
+-->
 
-    <label style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+<label style="display:inline-flex; align-items:center; gap:8px; margin-left:8px;">
+    <div class="toggle-switch">
         <input type="checkbox" id="toggle-horse-history">
-        <span style="font-size:13px;">Show client horse history</span>
-    </label>
+        <span class="slider"></span>
+    </div>
+    <span style="font-size:13px;">Show client horse history</span>
+</label>
 
 {% if is_processable_day %}
-    <label style="font-size:18px; margin-bottom:10px; display:block;">
+<label style="display:inline-flex; align-items:center; gap:8px; margin-left:8px;">
+    <div class="toggle-switch">
         <input type="checkbox" id="markAllY" onchange="markAllBlankAsY()">
-        Mark all blank attendance as Y
-    </label>
+        <span class="slider"></span>
+    </div>
+    <span style="font-size:13px;">Mark all blank attendance as Y</span>
+</label>
 {% endif %}
+
 
 </div>
 
