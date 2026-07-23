@@ -19,8 +19,8 @@
 
             <th style="width:14ch;">Rider</th>
             <th style="width:12ch;">Horse 1</th>
-            <th style="width:12ch;">Horse 2</th>
-            <th style="width:12ch;">Horse 3</th>
+            <th class="col-horse2" style="width:12ch;">Horse 2</th>
+            <th class="col-horse3" style="width:12ch;">Horse 3</th> 
             <th style="width:70ch;">Notes</th>
             <th style="width:57ch;">Cherbon Notes</th>
             <th style="width:6ch;">FT/W</th>
@@ -111,25 +111,25 @@
                         </select>
                     </td>
 
-                    <!-- HORSE 2 -->
-                    <td style="width:12ch; white-space:nowrap;">
-                        <input type="text"
-                               data-id="{{ r.id }}"
-                               data-field="horse_2"
-                               value="{{ r.horse_2 }}"
-                               onchange="updateField({{ r.id }}, 'horse_2', this.value)"
-                               style="width:10ch;">
-                    </td>
+<!-- HORSE 2 -->
+<td class="col-horse2" style="width:12ch; white-space:nowrap;">
+    <input type="text"
+           data-id="{{ r.id }}"
+           data-field="horse_2"
+           value="{{ r.horse_2 }}"
+           onchange="updateField({{ r.id }}, 'horse_2', this.value)"
+           style="width:10ch;">
+</td>
 
-                    <!-- HORSE 3 -->
-                    <td style="width:12ch; white-space:nowrap;">
-                        <input type="text"
-                               data-id="{{ r.id }}"
-                               data-field="horse_3"
-                               value="{{ r.horse_3 }}"
-                               onchange="updateField({{ r.id }}, 'horse_3', this.value)"
-                               style="width:10ch;">
-                    </td>
+<!-- HORSE 2 -->
+<td class="col-horse2" style="width:12ch; white-space:nowrap;">
+    <input type="text"
+           data-id="{{ r.id }}"
+           data-field="horse_2"
+           value="{{ r.horse_2 }}"
+           onchange="updateField({{ r.id }}, 'horse_2', this.value)"
+           style="width:10ch;">
+</td>
 
                     <!-- NOTES -->
                     <td style="width:50ch; max-width:50ch; white-space:normal; word-break:break-word;">
