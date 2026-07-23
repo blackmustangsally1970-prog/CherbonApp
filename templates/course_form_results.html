@@ -210,6 +210,12 @@
     z-index: 100001 !important;
 }
 
+.hide-horses .col-horse2,
+.hide-horses .col-horse3 {
+    display: none;
+}
+
+
     </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -218,7 +224,7 @@
 
 </head>
 
-<body>
+<body class="hide-horses">
 
 <!-- ========================================================= -->
 <!--  TOP MENU + FILTERS                                       -->
@@ -1068,9 +1074,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script>
 function toggleHorseColumns() {
-    document.querySelectorAll('.col-horse2, .col-horse3').forEach(el => {
-        el.style.display = (el.style.display === 'none') ? '' : 'none';
-    });
+    document.body.classList.toggle('hide-horses');
 }
 </script>
 
