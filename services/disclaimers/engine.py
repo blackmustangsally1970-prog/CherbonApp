@@ -197,10 +197,6 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
     full_payload["riders"] = full_riders
     submission_row.raw_payload = json.dumps(full_payload)
 
-    # 5. MARK SUBMISSION AS PROCESSED (temporary)
-    submission_row.processed = True
-    submission_row.processed_at = datetime.utcnow()
-
     db.session.commit()
 
     # ⭐ 6. CRITICAL FIX — finalize ALL riders now
