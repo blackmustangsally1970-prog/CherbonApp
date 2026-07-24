@@ -597,7 +597,7 @@ class IncomingSubmission(db.Model):
 
     # Disclaimer flow
     ignored = db.Column(db.Boolean, default=False)
-    
+
     # JotForm ID (same as submission_id)
     jotform_id = db.Column(db.String, index=True)
 
@@ -605,6 +605,9 @@ class IncomingSubmission(db.Model):
     universal_disclaimer = db.Column(db.Integer)
     display_names = db.Column(db.String(255))
 
+    # ⭐ NEW FIELDS FOR CONFLICT RESOLUTION STATE
+    resolved_riders = db.Column(db.JSON, default=dict)        # { "1": true, "2": false }
+    cleared_matches = db.Column(db.JSON, default=dict)        # { "1": true }
 
 class GeneralEnquirySubmission(db.Model):
     __tablename__ = "general_enquiry_submissions"
