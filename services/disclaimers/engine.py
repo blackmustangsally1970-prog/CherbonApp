@@ -246,11 +246,18 @@ def process_all_fastpath():
 def finalize_submission(submission_row):
     """
     Main pipeline for processing a single submission.
-    Now respects resolved_riders + cleared_matches stored in DB.
+    Respects resolved_riders + cleared_matches stored in DB.
     """
 
     import json
     from sqlalchemy.util._collections import immutabledict
+    from datetime import datetime
+
+    print("=== FINALIZE SUBMISSION ===")
+    print(f"Submission ID: {submission_row.id}")
+    print(f"processed: {submission_row.processed}, ignored: {submission_row.ignored}")
+    print(f"resolved_riders (raw): {submission_row.resolved_riders}")
+    print(f"cleared_matches (raw): {submission_row.cleared_matches}")
 
     # Load original payload
     original = submission_row.raw_payload
@@ -270,45 +277,52 @@ def finalize_submission(submission_row):
     riders = parsed["riders"]
     total_riders = len(riders)
 
-    # Ensure new fields exist
     resolved_map = submission_row.resolved_riders or {}
     cleared_map = submission_row.cleared_matches or {}
 
+    print(f"Total riders: {total_riders}")
+
     # PROCESS EACH RIDER IN ORDER
     for idx, rider in enumerate(riders, start=1):
+        matches = rider.get("matches") or []
+        resolved_flag = resolved_map.get(str(idx))
+        cleared_flag = cleared_map.get(str(idx))
 
-        # If rider already resolved → skip
-        if resolved_map.get(str(idx)) is True:
+        print(f"Rider {idx}: name={rider.get('name')}, "
+              f"resolved={resolved_flag}, cleared={cleared_flag}, "
+              f"matches_count={len(matches)}")
+
+        # Already resolved → skip
+        if resolved_flag:
             continue
 
-        # If rider has matches AND not cleared → conflict
-        matches = rider.get("matches") or []
-        if matches and not cleared_map.get(str(idx)):
-            # Send user to conflict page
+        # Has matches and not cleared → conflict
+        if matches and not cleared_flag:
+            print(f"Rider {idx} has unresolved matches → sending to conflict")
             return url_for(
                 'resolve_conflict',
                 submission_id=submission_row.id,
                 rider_index=idx
             )
 
-        # If no matches OR matches cleared → auto‑resolve
+        # No matches OR matches cleared → mark resolved
         resolved_map[str(idx)] = True
 
     # Update DB fields
     submission_row.resolved_riders = resolved_map
     submission_row.cleared_matches = cleared_map
 
-    # If ALL riders resolved → mark submission processed
-    if all(resolved_map.get(str(i), False) for i in range(1, total_riders + 1)):
+    # All riders resolved?
+    all_resolved = all(resolved_map.get(str(i), False) for i in range(1, total_riders + 1))
+    print(f"All riders resolved? {all_resolved}")
+
+    if all_resolved:
         submission_row.processed = True
         submission_row.processed_at = datetime.utcnow()
         db.session.commit()
-
-        # Return to notifications
+        print("Submission marked processed → back to notifications")
         return url_for('notifications')
 
-    # Otherwise continue pipeline (should not happen but safe fallback)
     db.session.commit()
+    print("Not all resolved (unexpected) → back to notifications anyway")
     return url_for('notifications')
-
-
