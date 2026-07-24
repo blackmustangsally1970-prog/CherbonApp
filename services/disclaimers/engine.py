@@ -235,11 +235,6 @@ def process_all_fastpath():
         mode="full"
     )
 
-    # RESET RIDER STATE (prevents conflict poisoning)
-    for rider in parsed["riders"]:
-        rider["resolved"] = False if rider.get("resolved") is None else rider["resolved"]
-        rider["matches"] = rider.get("matches", [])
-
     riders = parsed["riders"]
     valid_riders = [r for r in riders if not r.get("incomplete")]
 
@@ -316,11 +311,6 @@ def finalize_submission(submission_row):
         forced_submission_id=submission_row.id,
         mode="full"
     )
-
-    # RESET RIDER STATE (prevents conflict poisoning)
-    for rider in parsed["riders"]:
-        rider["resolved"] = False if rider.get("resolved") is None else rider["resolved"]
-        rider["matches"] = rider.get("matches", [])
 
     all_riders = parsed["riders"]
     valid_riders = [r for r in all_riders if not r.get("incomplete")]
