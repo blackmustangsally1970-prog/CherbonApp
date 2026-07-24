@@ -258,7 +258,7 @@ def finalize_submission(submission_row):
     import json
     from sqlalchemy.util._collections import immutabledict
     from datetime import datetime
-
+    print(">>> USING ENGINE FILE:", __file__)
     print("=== FINALIZE SUBMISSION (AUTO-CREATE VERSION) ===")
     print(f"Submission ID: {submission_row.id}")
     print(f"processed: {submission_row.processed}, ignored: {submission_row.ignored}")
