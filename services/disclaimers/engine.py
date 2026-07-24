@@ -246,18 +246,17 @@ def process_all_fastpath():
 def finalize_submission(submission_row):
     """
     Main pipeline for processing a single submission.
-    Respects resolved_riders + cleared_matches stored in DB.
+    Fully patched version:
+    - Respects resolved_riders + cleared_matches
+    - Prevents parse_jotform_payload from resurrecting matches
+    - Auto-resolves phantom matches
+    - Correctly marks processed when all riders done
+    - Correct conflict routing
     """
 
     import json
     from sqlalchemy.util._collections import immutabledict
     from datetime import datetime
-
-    print("=== FINALIZE SUBMISSION ===")
-    print(f"Submission ID: {submission_row.id}")
-    print(f"processed: {submission_row.processed}, ignored: {submission_row.ignored}")
-    print(f"resolved_riders (raw): {submission_row.resolved_riders}")
-    print(f"cleared_matches (raw): {submission_row.cleared_matches}")
 
     # Load original payload
     original = submission_row.raw_payload
@@ -277,52 +276,70 @@ def finalize_submission(submission_row):
     riders = parsed["riders"]
     total_riders = len(riders)
 
+    # Ensure new fields exist
     resolved_map = submission_row.resolved_riders or {}
     cleared_map = submission_row.cleared_matches or {}
 
-    print(f"Total riders: {total_riders}")
+    # ⭐ CRITICAL FIX #1 — Prevent resurrected matches
+    # If a rider has already been cleared, force matches = []
+    for idx, rider in enumerate(riders, start=1):
+        if cleared_map.get(str(idx)):
+            rider["matches"] = []
 
-    # PROCESS EACH RIDER IN ORDER
+    # ⭐ CRITICAL FIX #2 — Kill phantom matches
+    # If parse_jotform_payload created matches but none correspond to real clients → clear them
     for idx, rider in enumerate(riders, start=1):
         matches = rider.get("matches") or []
-        resolved_flag = resolved_map.get(str(idx))
-        cleared_flag = cleared_map.get(str(idx))
+        if matches:
+            real_matches = []
+            for m in matches:
+                client_id = m[0]
+                if Client.query.get(client_id):
+                    real_matches.append(m)
 
-        print(f"Rider {idx}: name={rider.get('name')}, "
-              f"resolved={resolved_flag}, cleared={cleared_flag}, "
-              f"matches_count={len(matches)}")
+            # Phantom matches → auto-clear + auto-resolve
+            if not real_matches:
+                rider["matches"] = []
+                cleared_map[str(idx)] = True
+                resolved_map[str(idx)] = True
+
+    # ⭐ MAIN RIDER LOOP
+    for idx, rider in enumerate(riders, start=1):
 
         # Already resolved → skip
-        if resolved_flag:
+        if resolved_map.get(str(idx)):
             continue
 
-        # Has matches and not cleared → conflict
+        matches = rider.get("matches") or []
+        cleared_flag = cleared_map.get(str(idx))
+
+        # Conflict if matches exist AND not cleared
         if matches and not cleared_flag:
-            print(f"Rider {idx} has unresolved matches → sending to conflict")
             return url_for(
                 'resolve_conflict',
                 submission_id=submission_row.id,
                 rider_index=idx
             )
 
-        # No matches OR matches cleared → mark resolved
+        # No matches OR matches cleared → auto-resolve
         resolved_map[str(idx)] = True
 
     # Update DB fields
     submission_row.resolved_riders = resolved_map
     submission_row.cleared_matches = cleared_map
 
-    # All riders resolved?
-    all_resolved = all(resolved_map.get(str(i), False) for i in range(1, total_riders + 1))
-    print(f"All riders resolved? {all_resolved}")
+    # ⭐ FINAL CHECK — All riders resolved?
+    all_resolved = all(
+        resolved_map.get(str(i), False)
+        for i in range(1, total_riders + 1)
+    )
 
     if all_resolved:
         submission_row.processed = True
         submission_row.processed_at = datetime.utcnow()
         db.session.commit()
-        print("Submission marked processed → back to notifications")
         return url_for('notifications')
 
+    # Fallback (should never happen)
     db.session.commit()
-    print("Not all resolved (unexpected) → back to notifications anyway")
     return url_for('notifications')
