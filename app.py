@@ -17,15 +17,48 @@ from services.disclaimers.name_tools import (
     log_disclaimer_processed
 )
 
-
 from collections import defaultdict
 from collections import Counter
 from config import Config
 from datetime import timedelta
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from models import Users
 
+# ⭐ GLOBAL MODEL IMPORTS — required for wrappers + global functions
+from models import (
+    BlockoutDate,
+    BlockoutRange,
+    Client,
+    CourseEnrolment,
+    CourseReference,
+    CourseFormSubmission,
+    DisclaimerState,
+    DailyEvent,
+    GeneralEnquirySubmission,
+    GroupPricing,
+    Horse,
+    UpgradeItem,
+    IncomingSubmission,
+    Lesson,
+    LessonBlockTag,
+    LessonChangeLog,
+    LessonInvite,
+    LessonTeacherTag,
+    Receipt,
+    SmsLog,
+    Teacher,
+    TeacherBlock,
+    TeacherGridOverride,
+    TeacherHorse,
+    TeacherSlot,
+    TeacherTime,
+    Term,
+    Time,
+    TrailRideSubmission,
+    Users,
+    Employee,
+    EmployeeHours
+)
 
 # Core libs
 import os
@@ -1449,41 +1482,6 @@ def create_app():
     from weddings.models.timeline import WeddingTimeline
     from weddings.models.detail_template import WeddingDetailLibrary
 
-    # ⭐ THEN your other models
-    from models import (
-        BlockoutDate,
-        BlockoutRange,
-        Client,
-        CourseEnrolment,
-        CourseReference,
-        CourseFormSubmission,
-        DisclaimerState,
-        DailyEvent,
-        GeneralEnquirySubmission,
-        GroupPricing,
-        Horse,
-        UpgradeItem,
-        IncomingSubmission,
-        Lesson,
-        LessonBlockTag,
-        LessonChangeLog,
-        LessonInvite,
-        LessonTeacherTag,
-        Receipt, 
-        SmsLog,
-        Teacher,
-        TeacherBlock,
-        TeacherGridOverride,
-        TeacherHorse,
-        TeacherSlot,
-        TeacherTime,
-        Term,
-        Time,
-        TrailRideSubmission,
-        Users,
-        Employee,
-        EmployeeHours
-    )
 
 
 
