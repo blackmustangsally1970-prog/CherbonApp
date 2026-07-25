@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 
 class WeddingStaffAssignment(db.Model):
     __tablename__ = 'wedding_staff_assignment'

@@ -1,5 +1,5 @@
 from datetime import datetime
-from app import db
+from extensions import db
 
 class Wedding(db.Model):
     __tablename__ = 'wedding'

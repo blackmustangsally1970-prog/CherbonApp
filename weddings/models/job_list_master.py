@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 
 class JobListMaster(db.Model):
     __tablename__ = 'job_list_master'

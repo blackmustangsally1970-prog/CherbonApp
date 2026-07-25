@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 
 class Caterer(db.Model):
     __tablename__ = 'caterer'

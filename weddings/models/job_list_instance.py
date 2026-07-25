@@ -1,3 +1,5 @@
+from extensions import db
+
 class JobListInstance(db.Model):
     __tablename__ = 'job_list_instance'
 
