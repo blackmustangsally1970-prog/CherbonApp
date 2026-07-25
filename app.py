@@ -1482,8 +1482,27 @@ def create_app():
     from weddings.models.timeline import WeddingTimeline
     from weddings.models.detail_template import WeddingDetailLibrary
 
+    # ---------------------------------------------------------
+    # ⭐ GLOBAL ADMIN/MANAGEMENT PROTECTION FOR ALL NON-EMPLOYEE ROUTES
+    # ---------------------------------------------------------
+    @app.before_request
+    def protect_admin_and_management():
+        path = request.path
 
+        # Employee PIN login system stays separate
+        if path.startswith("/employeehours"):
+            return
 
+        # Allow login + static files
+        if request.endpoint in ["login", "static"]:
+            return
+
+        # Everything else requires admin/management login
+        if not current_user.is_authenticated:
+            return redirect(url_for("login"))
+
+        if current_user.role not in ["admin", "management"]:
+            abort(403)
 
 
     @app.route("/fetch_gift_vouchers")
@@ -5897,8 +5916,15 @@ def create_app():
             existing = IncomingSubmission.query.filter_by(
                 submission_id=submission_id
             ).first()
+
             if existing:
-                print("SKIP: already have submission_id", submission_id)
+                # 🚫 If already processed or ignored, DO NOT TOUCH IT
+                if existing.processed or existing.ignored:
+                    print("SKIP: already processed/ignored", submission_id)
+                    continue
+
+                # 🚫 If it exists but is pending, DO NOT re-insert or reset
+                print("SKIP: already exists (pending)", submission_id)
                 continue
 
             # EXTRACT DISCLAIMER NUMBERS

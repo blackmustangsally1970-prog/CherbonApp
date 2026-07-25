@@ -1,12 +1,27 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from datetime import datetime
 from extensions import db
 from weddings.models import Wedding
+from flask_login import login_required, current_user
 
+# ---------------------------------------------------------
+# DEFINE BLUEPRINT FIRST
+# ---------------------------------------------------------
 bookings_bp = Blueprint('bookings', __name__, url_prefix='/weddings')
 
 # ---------------------------------------------------------
-# WEDDING CALENDAR (ADMIN ONLY)
+# LOCK DOWN ALL /weddings ROUTES
+# (Admin / Management / Manager / Coordinator)
+# ---------------------------------------------------------
+@bookings_bp.before_request
+@login_required
+def protect_weddings():
+    if current_user.role not in ['admin', 'management', 'manager', 'coordinator']:
+        abort(403)
+
+
+# ---------------------------------------------------------
+# WEDDING CALENDAR (Admin / Management / Manager / Coordinator)
 # ---------------------------------------------------------
 @bookings_bp.route('/calendar')
 def wedding_calendar():
@@ -40,7 +55,7 @@ def wedding_calendar():
 
 
 # ---------------------------------------------------------
-# ADD WEDDING (MANUAL HOLD / TENTATIVE)
+# ADD WEDDING (Admin / Management / Manager / Coordinator)
 # ---------------------------------------------------------
 @bookings_bp.route('/add', methods=['GET', 'POST'])
 def add_wedding():
@@ -49,9 +64,9 @@ def add_wedding():
         groom = request.form.get('groom_name')
         date_str = request.form.get('wedding_date')
         other_information = request.form.get('other_information', '')
-        status = request.form.get('status', 'hold')  # default hold
+        status = request.form.get('status', 'hold')
 
-        # ⭐ NEW FIELDS
+        # NEW FIELDS
         event_type = request.form.get('event_type')
         bride_mobile = request.form.get('bride_mobile')
         service = request.form.get('service')
@@ -71,7 +86,6 @@ def add_wedding():
             status=status,
             booking_source='manual',
 
-            # ⭐ NEW FIELDS
             event_type=event_type,
             bride_mobile=bride_mobile,
             service=service,
@@ -87,7 +101,7 @@ def add_wedding():
 
 
 # ---------------------------------------------------------
-# EDIT WEDDING
+# EDIT WEDDING (Admin / Management / Manager / Coordinator)
 # ---------------------------------------------------------
 @bookings_bp.route('/edit/<int:wedding_id>', methods=['GET', 'POST'])
 def edit_wedding(wedding_id):
@@ -98,7 +112,7 @@ def edit_wedding(wedding_id):
         wedding.groom_name = request.form.get('groom_name')
         wedding.other_information = request.form.get('other_information')
 
-        # ⭐ NEW FIELDS
+        # NEW FIELDS
         wedding.event_type = request.form.get('event_type')
         wedding.bride_mobile = request.form.get('bride_mobile')
         wedding.service = request.form.get('service')
@@ -117,7 +131,7 @@ def edit_wedding(wedding_id):
 
 
 # ---------------------------------------------------------
-# DELETE WEDDING
+# DELETE WEDDING (Admin / Management / Manager / Coordinator)
 # ---------------------------------------------------------
 @bookings_bp.route('/delete/<int:wedding_id>')
 def delete_wedding(wedding_id):
@@ -128,7 +142,7 @@ def delete_wedding(wedding_id):
 
 
 # ---------------------------------------------------------
-# STATUS CHANGE ROUTES
+# STATUS CHANGE (Admin / Management / Manager / Coordinator)
 # ---------------------------------------------------------
 @bookings_bp.route('/status/<int:wedding_id>/<string:new_status>')
 def change_status(wedding_id, new_status):
@@ -141,7 +155,6 @@ def change_status(wedding_id, new_status):
 
     wedding.status = new_status
 
-    # Timestamp logic
     now = datetime.utcnow()
     if new_status == 'cancelled':
         wedding.cancelled_at = now
@@ -155,7 +168,7 @@ def change_status(wedding_id, new_status):
 
 
 # ---------------------------------------------------------
-# MERGE MANUAL → JOTFORM T&C SUBMISSION
+# MERGE MANUAL → JOTFORM T&C (Admin / Management / Manager / Coordinator)
 # ---------------------------------------------------------
 @bookings_bp.route('/merge_tnc/<int:wedding_id>/<string:submission_id>')
 def merge_tnc(wedding_id, submission_id):
