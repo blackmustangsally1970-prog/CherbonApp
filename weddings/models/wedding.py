@@ -27,7 +27,7 @@ class Wedding(db.Model):
     event_type = db.Column(db.String(120))     # CO / IND / WR / etc
     options = db.Column(db.String(255))
     service = db.Column(db.String(255))
-    est_guests = db.Column(db.Integer)
+    est_guests = db.Column(db.String(50))
     start_time = db.Column(db.String(50))
     other_information = db.Column(db.Text)
 
