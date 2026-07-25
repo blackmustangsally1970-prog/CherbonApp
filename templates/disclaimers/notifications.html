@@ -115,5 +115,16 @@
     {% endfor %}
 </table>
 
+<script>
+window.addEventListener("message", (event) => {
+    if (event.data === "closeConflictModal") {
+        // Close your modal here
+        $('#conflictModal').modal('hide');   // Bootstrap example
+        // or whatever your modal uses
+    }
+});
+
+</script>
+
 </body>
 </html>

@@ -377,6 +377,7 @@ def finalize_submission(submission_row):
 
     if all_resolved:
         submission_row.processed = True
+        submission_row.ignored = True   # ⭐ ADD THIS LINE
         submission_row.processed_at = datetime.utcnow()
         db.session.commit()
         print("Submission marked processed → back to notifications")
