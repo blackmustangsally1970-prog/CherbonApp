@@ -20,7 +20,7 @@ def wedding_calendar():
             "bride": w.bride_name,
             "groom": w.groom_name,
             "status": w.status,
-            "notes": w.notes
+            "notes": w.other_information
         })
 
     return render_template('weddings/calendar.html', weddings=rows)
