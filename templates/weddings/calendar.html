@@ -39,11 +39,27 @@
             font-size: 14px;
         }
 
-        /* STATUS COLORS */
+        /* STATUS COLORS (LEFT BORDER) */
         .status-booked { border-left: 5px solid #28a745; }
         .status-hold { border-left: 5px solid #ffc107; }
         .status-cancelled { border-left: 5px solid #dc3545; }
         .status-tentative { border-left: 5px solid #6c757d; }
+        .status-archived { border-left: 5px solid #444; opacity: 0.6; background: #f0f0f0; }
+
+        /* BADGES */
+        .badge {
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #fff;
+            margin-left: 6px;
+        }
+
+        .badge-booked { background: #28a745; }
+        .badge-hold { background: #ffc107; color: #000; }
+        .badge-cancelled { background: #dc3545; }
+        .badge-tentative { background: #6c757d; }
+        .badge-archived { background: #444; }
 
         .btn-sm {
             padding: 2px 6px;
@@ -59,14 +75,23 @@
     <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
 </div>
 
-
-
 <div class="container" style="margin-top: 30px;">
 
     <h2>Wedding Calendar</h2>
 
+    <!-- TOP BUTTONS -->
     <div style="margin-bottom: 15px;">
         <a href="/weddings/add" class="btn btn-success">➕ Add Wedding</a>
+
+        {% if show_archived %}
+            <a href="/weddings/calendar?show_archived=0" class="btn btn-secondary">
+                👁 Hide Archived
+            </a>
+        {% else %}
+            <a href="/weddings/calendar?show_archived=1" class="btn btn-secondary">
+                📦 Show Archived
+            </a>
+        {% endif %}
     </div>
 
     {% for w in weddings %}
@@ -82,7 +107,7 @@
                 <!-- BRIDE & GROOM -->
                 <div class="truncate">
                     {{ w.bride }} & {{ w.groom }}
-                    <strong>[{{ w.status }}]</strong>
+                    <span class="badge badge-{{ w.status }}">{{ w.status }}</span>
                 </div>
 
                 <!-- EVENT TYPE -->
@@ -93,17 +118,35 @@
 
                 <!-- ACTIONS -->
                 <div>
+
                     <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}"
                        class="btn btn-info btn-sm">Hub</a>
 
                     <a href="{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}"
                        class="btn btn-warning btn-sm">Edit</a>
 
+                    {% if w.status != 'archived' %}
+                        <a href="{{ url_for('bookings.change_status', wedding_id=w.id, new_status='archived') }}"
+                           class="btn btn-secondary btn-sm"
+                           onclick="return confirm('Archive this wedding?');">
+                            Archive
+                        </a>
+                    {% endif %}
+
+                    {% if w.status == 'archived' %}
+                        <a href="{{ url_for('bookings.change_status', wedding_id=w.id, new_status='hold') }}"
+                           class="btn btn-dark btn-sm"
+                           onclick="return confirm('Restore this wedding?');">
+                            Restore
+                        </a>
+                    {% endif %}
+
                     <a href="{{ url_for('bookings.delete_wedding', wedding_id=w.id) }}"
                        class="btn btn-danger btn-sm"
-                       onclick="return confirm('Delete this wedding?');">
+                       onclick="return confirm('Are you absolutely sure you want to DELETE this wedding? This cannot be undone.');">
                         Delete
                     </a>
+
                 </div>
 
             </div>

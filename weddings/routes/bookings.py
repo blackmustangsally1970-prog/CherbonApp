@@ -10,7 +10,14 @@ bookings_bp = Blueprint('bookings', __name__, url_prefix='/weddings')
 # ---------------------------------------------------------
 @bookings_bp.route('/calendar')
 def wedding_calendar():
-    weddings = Wedding.query.order_by(Wedding.wedding_date.asc()).all()
+    show_archived = request.args.get('show_archived', '0') == '1'
+
+    query = Wedding.query.order_by(Wedding.wedding_date.asc())
+
+    if not show_archived:
+        query = query.filter(Wedding.status != 'archived')
+
+    weddings = query.all()
 
     rows = []
     for w in weddings:
@@ -21,15 +28,15 @@ def wedding_calendar():
             "groom": w.groom_name,
             "status": w.status,
             "notes": w.other_information,
-
-            # ⭐ NEW FIELDS
             "event_type": w.event_type,
             "bride_mobile": w.bride_mobile,
             "service": w.service,
             "est_guests": w.est_guests
         })
 
-    return render_template('weddings/calendar.html', weddings=rows)
+    return render_template('weddings/calendar.html',
+                           weddings=rows,
+                           show_archived=show_archived)
 
 
 # ---------------------------------------------------------
