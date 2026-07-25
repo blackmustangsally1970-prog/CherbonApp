@@ -322,12 +322,6 @@ def finalize_submission(submission_row):
               f"resolved={resolved_flag}, cleared={cleared_flag}, "
               f"matches_count={len(matches)}")
 
-        # ⭐ DIRTY STATE PROTECTION
-        # If rider is marked resolved but no client exists → force unresolved
-        if resolved_flag and not matches:
-            print(f"Rider {idx}: resolved flag set but no matches → forcing unresolved")
-            resolved_flag = False
-            resolved_map[str(idx)] = False
 
         # Already resolved → skip
         if resolved_flag:

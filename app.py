@@ -9117,6 +9117,13 @@ Cherbon Waters Admin
         return jsonify({"status": "ok"})
 
 
+
+    # ================================================================
+    # =======================  WEDDING ROUTES  =======================
+    # ================================================================
+
+
+
     @app.route('/weddings/<int:wedding_id>/staff/<int:employee_id>')
     def wedding_staff_dashboard(wedding_id, employee_id):
         wedding = Wedding.query.get_or_404(wedding_id)
@@ -9611,6 +9618,60 @@ Cherbon Waters Admin
                 return redirect(url_for('wedding_staffing'))
 
         return render_template('add_wedding.html')
+
+
+    @app.route('/admin/wedding_staff/<int:staff_id>/edit', methods=['GET', 'POST'])
+    def wedding_staff_edit(staff_id):
+        staff = WeddingStaff.query.get_or_404(staff_id)
+
+        if request.method == 'POST':
+            staff.employee_id = request.form.get('employee_id')
+            staff.role = request.form.get('role')
+
+            db.session.commit()
+
+            return redirect(url_for('wedding_details_hub', wedding_id=staff.wedding_id))
+
+        # GET request → show edit form
+        employees = Employee.query.order_by(Employee.full_name.asc()).all()
+
+        return render_template(
+            'wedding_staff_edit.html',
+            staff=staff,
+            employees=employees
+        )
+
+
+
+    @app.route("/wedding_tasks/<int:task_id>/done", methods=["POST"])
+    def wedding_task_done(task_id):
+        if "employee_id" not in session:
+            return "Not logged in", 403
+
+        staff_id = session["employee_id"]
+        staff_name = session.get("full_name", "Unknown")
+
+        task = WeddingTasks.query.get_or_404(task_id)
+
+        # Only allow if assigned or shared
+        if task.assigned_to != staff_id and not task.shared:
+            return "Forbidden", 403
+
+        task.is_done = True
+        task.done_by = staff_id
+        task.done_by_name = staff_name
+        task.done_at = datetime.utcnow()
+
+        db.session.commit()
+        return "OK"
+
+
+
+
+    # ================================================================
+    # =======================  WEDDING ROUTES END =====================
+    # ================================================================
+
 
 
     @app.get('/add_client')
@@ -10765,57 +10826,6 @@ Cherbon Waters Admin
             db.session.commit()
 
         return redirect(f"/admin/employeehours/day/{d}/{emp_id}")
-
-    @app.route('/admin/wedding_staff/<int:staff_id>/edit', methods=['GET', 'POST'])
-    def wedding_staff_edit(staff_id):
-        staff = WeddingStaff.query.get_or_404(staff_id)
-
-        if request.method == 'POST':
-            staff.employee_id = request.form.get('employee_id')
-            staff.role = request.form.get('role')
-
-            db.session.commit()
-
-            return redirect(url_for('wedding_details_hub', wedding_id=staff.wedding_id))
-
-        # GET request → show edit form
-        employees = Employee.query.order_by(Employee.full_name.asc()).all()
-
-        return render_template(
-            'wedding_staff_edit.html',
-            staff=staff,
-            employees=employees
-        )
-
-
-
-    @app.route("/wedding_tasks/<int:task_id>/done", methods=["POST"])
-    def wedding_task_done(task_id):
-        if "employee_id" not in session:
-            return "Not logged in", 403
-
-        staff_id = session["employee_id"]
-        staff_name = session.get("full_name", "Unknown")
-
-        task = WeddingTasks.query.get_or_404(task_id)
-
-        # Only allow if assigned or shared
-        if task.assigned_to != staff_id and not task.shared:
-            return "Forbidden", 403
-
-        task.is_done = True
-        task.done_by = staff_id
-        task.done_by_name = staff_name
-        task.done_at = datetime.utcnow()
-
-        db.session.commit()
-        return "OK"
-
-
-
-
-
-
 
     @app.route("/mark_cancelled", methods=["POST"])
     def mark_cancelled():
