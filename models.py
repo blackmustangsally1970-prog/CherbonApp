@@ -14,24 +14,6 @@ class DailyEvent(db.Model):
         db.UniqueConstraint('date', 'fy', name='uq_daily_date_fy'),
     )
 
-
-class WeddingTemplateField(db.Model):
-    __tablename__ = 'wedding_template_fields'
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    field_name = db.Column(db.String(100), nullable=False)
-    field_type = db.Column(db.String(20), nullable=False)  # text, textarea, number, select, checkbox
-    category = db.Column(db.String(50))                    # ceremony, reception, menu, setup, timeline, notes
-    required = db.Column(db.Boolean, default=False)
-    staff_visible = db.Column(db.Boolean, default=False)
-    coordinator_visible = db.Column(db.Boolean, default=True)
-    default_value = db.Column(db.Text)
-    order = db.Column(db.Integer, default=0)
-    active = db.Column(db.Boolean, default=True)
-
-
-
 class LessonChangeLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     lesson_id = db.Column(db.Integer, nullable=False)
@@ -40,105 +22,6 @@ class LessonChangeLog(db.Model):
     new_value = db.Column(db.String(255))
     changed_at = db.Column(db.DateTime, default=datetime.utcnow)
     changed_by = db.Column(db.String(100))
-
-
-class WeddingDetailLibrary(db.Model):
-    __tablename__ = 'wedding_detail_library'
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    # Core field info
-    category = db.Column(db.String(50), nullable=False)       # ceremony, reception, menu, setup, timeline, admin
-    field_name = db.Column(db.Text, nullable=False)
-    field_type = db.Column(db.String(20), nullable=False)     # text, textarea, number, dropdown, checkbox
-
-    # Defaults applied to every wedding
-    default_value = db.Column(db.Text)
-    coordinator_visible = db.Column(db.Boolean, default=True)
-    staff_visible = db.Column(db.Boolean, default=True)
-
-    # Ordering
-    default_order = db.Column(db.Integer, default=0)
-
-    # Notes
-    default_notes = db.Column(db.Text)
-
-    # Active flag (soft delete)
-    active = db.Column(db.Boolean, default=True)
-
-    updated_at = db.Column(db.DateTime, server_default=db.func.now())
-
-
-
-class WeddingTask(db.Model):
-    __tablename__ = 'wedding_tasks'
-
-    id = db.Column(db.Integer, primary_key=True)
-    wedding_id = db.Column(db.Integer, nullable=False)
-
-    # Core task info
-    task_name = db.Column(db.Text, nullable=False)
-    task_type = db.Column(db.String(20), nullable=False)  # 'coordinator' or 'staff'
-
-    # Assignment
-    assigned_to = db.Column(db.Integer)          # employee_id or None
-    assigned_to_name = db.Column(db.Text)        # cached for speed
-
-    # Completion
-    is_done = db.Column(db.Boolean, default=False)
-    done_by = db.Column(db.Integer)              # employee_id
-    done_by_name = db.Column(db.Text)
-    done_at = db.Column(db.DateTime)
-
-    # In-progress tracking
-    in_progress_by = db.Column(db.Integer)       # employee_id
-    in_progress_by_name = db.Column(db.Text)
-    in_progress_at = db.Column(db.DateTime)      # timestamp when started
-
-    # Coordinator-specific
-    coordinator_id = db.Column(db.Integer)       # employee_id (optional)
-
-    # Flags
-    required = db.Column(db.Boolean, default=True)
-    shared = db.Column(db.Boolean, default=False)
-
-    # Categorisation
-    category = db.Column(db.String(50))          # 'setup', 'ceremony', 'reception', etc.
-
-    # Notes
-    notes = db.Column(db.Text)
-
-    # Deadlines (Option A)
-    deadline = db.Column(db.DateTime)
-
-    # Ordering (Option E)
-    order = db.Column(db.Integer, default=0)
-
-    # System fields
-    updated_at = db.Column(db.DateTime, server_default=db.func.now())
-
-
-class WeddingTaskLibrary(db.Model):
-    __tablename__ = 'wedding_task_library'
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    # Core task info
-    task_name = db.Column(db.Text, nullable=False)
-    task_type = db.Column(db.String(20), nullable=False)  # 'admin', 'coordinator', or 'staff'
-
-    # Defaults applied to every wedding
-    default_required = db.Column(db.Boolean, default=True)
-    default_shared = db.Column(db.Boolean, default=False)
-    default_category = db.Column(db.String(50))
-    default_notes = db.Column(db.Text)
-
-    # Default ordering
-    default_order = db.Column(db.Integer, default=0)
-
-    # System flags
-    active = db.Column(db.Boolean, default=True)  # soft delete / hide
-    updated_at = db.Column(db.DateTime, server_default=db.func.now())
 
 
 class Receipt(db.Model):
@@ -412,15 +295,7 @@ class UpgradeItem(db.Model):
 
 
 
-class WeddingStaffUnavailability(db.Model):
-    __tablename__ = 'wedding_staff_unavailability'
 
-    id = db.Column(db.Integer, primary_key=True)
-    staff_id = db.Column(db.Integer, db.ForeignKey('wedding_staff.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    reason = db.Column(db.Text)
-
-    staff = db.relationship('WeddingStaff', backref='unavailability')
 
 
 class LessonInvite(db.Model):
@@ -507,57 +382,6 @@ class CourseReference(db.Model):
 
     sort_order = db.Column(db.Integer, default=0)
     active = db.Column(db.Boolean, default=True)
-
-
-class Wedding(db.Model):
-    __tablename__ = 'wedding'
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    bride_name = db.Column(db.String(120))
-    groom_name = db.Column(db.String(120))
-
-    wedding_date = db.Column(db.Date, nullable=False)
-
-    status = db.Column(db.String(50), default='active')
-
-    # Cancel fields
-    cancel_reason = db.Column(db.Text)
-    cancelled_at = db.Column(db.DateTime)
-
-    # Postpone fields
-    postpone_reason = db.Column(db.Text)
-    postponed_at = db.Column(db.DateTime)
-
-    # Archive fields
-    archive_reason = db.Column(db.Text)
-    archived_at = db.Column(db.DateTime)
-
-    # Optional notes
-    notes = db.Column(db.Text)
-
-    # Relationship to staff assignments
-    assignments = db.relationship(
-        'WeddingAssignment',
-        backref='wedding',
-        cascade="all, delete-orphan"
-    )
-
-
-class WeddingStaff(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-
-    assignments = db.relationship('WeddingAssignment', backref='staff', cascade="all, delete-orphan")
-
-
-class WeddingAssignment(db.Model):
-    __tablename__ = 'wedding_assignment'
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    wedding_id = db.Column(db.Integer, db.ForeignKey('wedding.id'), nullable=False)
-    staff_id = db.Column(db.Integer, db.ForeignKey('wedding_staff.id'), nullable=False)
 
 
 

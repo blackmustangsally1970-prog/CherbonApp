@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wedding List</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+
+    <style>
+        .wedding-card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.15s ease;
+        }
+        .wedding-card:hover {
+            transform: scale(1.02);
+        }
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+        .status-active { background-color: #d4edda; color: #155724; }
+        .status-postponed { background-color: #fff3cd; color: #856404; }
+        .status-cancelled { background-color: #f8d7da; color: #721c24; }
+        .status-archived { background-color: #e2e3e5; color: #6c757d; }
+    </style>
+</head>
+
+<body>
+<div class="container" style="margin-top: 30px;">
+
+    <h2 class="mb-4">💒 Wedding Management</h2>
+    <p>Select a wedding to open its hub.</p>
+
+    <hr>
+
+    <div class="row">
+        {% for w in weddings %}
+        <div class="col-md-4">
+            <div class="wedding-card">
+
+                <h4>{{ w.bride_name }} & {{ w.groom_name }}</h4>
+                <p class="text-muted">{{ w.wedding_date.strftime('%d %b %Y') }}</p>
+
+                <!-- STATUS BADGE -->
+                {% if w.status == 'active' %}
+                    <span class="status-badge status-active">Active</span>
+                {% elif w.status == 'postponed' %}
+                    <span class="status-badge status-postponed">Postponed</span>
+                {% elif w.status == 'cancelled' %}
+                    <span class="status-badge status-cancelled">Cancelled</span>
+                {% else %}
+                    <span class="status-badge status-archived">{{ w.status }}</span>
+                {% endif %}
+
+                <hr>
+
+                <a href="/weddings/{{ w.id }}/hub" class="btn btn-primary btn-sm w-100 mb-2">
+                    Open Hub
+                </a>
+
+                <a href="/weddings/edit/{{ w.id }}" class="btn btn-secondary btn-sm w-100 mb-2">
+                    Edit Wedding
+                </a>
+
+                <a href="/weddings/delete/{{ w.id }}" 
+                   onclick="return confirm('Delete this wedding?');"
+                   class="btn btn-danger btn-sm w-100">
+                    Delete Wedding
+                </a>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <hr>
+
+    <h4>Tools</h4>
+    <ul>
+        <li><a href="/weddings/add">Add New Wedding</a></li>
+        <li><a href="/weddings/job_master">Master Job List</a></li>
+        <li><a href="/weddings/staff/manage">Manage Wedding Staff</a></li>
+    </ul>
+
+    <hr>
+
+    <a href="/dashboard" class="btn btn-secondary">Back</a>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Wedding</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+<div class="container" style="margin-top: 30px;">
+
+    <h2>Add Wedding</h2>
+
+    <form method="POST">
+
+        <div class="mb-3">
+            <label>Bride Name</label>
+            <input type="text" name="bride_name" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label>Groom Name</label>
+            <input type="text" name="groom_name" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label>Wedding Date</label>
+            <input type="date" name="wedding_date" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Status</label>
+            <select name="status" class="form-control">
+                <option value="hold">Hold</option>
+                <option value="tentative">Tentative</option>
+                <option value="booked">Booked</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label>Notes</label>
+            <textarea name="notes" class="form-control"></textarea>
+        </div>
+
+        <button class="btn btn-success">Save</button>
+        <a href="/weddings/calendar" class="btn btn-secondary">Cancel</a>
+
+    </form>
+
+</div>
+</body>
+</html>
