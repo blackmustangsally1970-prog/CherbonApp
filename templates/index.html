@@ -175,21 +175,22 @@
     <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
   </li>
 
-  <li>
-    <a href="{{ url_for('gift_vouchers') }}" class="menu-btn">🎁 Gift Vouchers</a>
-  </li>
+<!-- ⭐ WEDDINGS MENU -->
+{% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
+<a href="/weddings/calendar" class="menu-btn">💒 Weddings</a>
+{% endif %}
+<!-- ⭐ END WEDDINGS MENU -->
+
 
   <li>
     <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
   </li>
 
-<!-- ⭐ WEDDINGS MENU -->
-{% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
-<a href="/weddings" class="menu-btn">💒 Weddings</a>
-{% endif %}
-<!-- ⭐ END WEDDINGS MENU -->
 
 
+  <li>
+    <a href="{{ url_for('gift_vouchers') }}" class="menu-btn">🎁 Gift Vouchers</a>
+  </li>
   <li>
     <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
   </li>
@@ -198,9 +199,11 @@
     <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
   </li>
 
+<!--
   <li>
     <a href="{{ url_for('messages_menu') }}" class="menu-btn">✉️ Messages</a>
   </li>
+ -->
 
   <li>
     <a href="{{ url_for('employees_home') }}" class="menu-btn">🧑‍🤝‍🧑 Employees</a>
