@@ -167,10 +167,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("form").forEach(form => {
         form.addEventListener("submit", () => {
 
-            // Tell parent to close modal
+            // 1️⃣ Tell parent to close the conflict modal
             window.parent.postMessage("closeConflictModal", "*");
 
-            // Then navigate parent to finalize_notification
+            // 2️⃣ Then navigate parent to finalize_notification
             setTimeout(() => {
                 window.parent.location.href =
                     "{{ url_for('finalize_notification', webhook_id=submission.id) }}";
@@ -179,7 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 </script>
-
 
 </body>
 </html>
