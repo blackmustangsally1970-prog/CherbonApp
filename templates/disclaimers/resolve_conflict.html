@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
         form.addEventListener("submit", () => {
             // Allow backend to process, then break out of iframe safely
             setTimeout(() => {
-                window.top.location.href = "/notifications";
+                window.top.location.href = "{{ url_for('finalize_notification', webhook_id=submission.id) }}";
             }, 150);
         });
     });
