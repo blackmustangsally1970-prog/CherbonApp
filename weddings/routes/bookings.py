@@ -35,7 +35,7 @@ def add_wedding():
         bride = request.form.get('bride_name')
         groom = request.form.get('groom_name')
         date_str = request.form.get('wedding_date')
-        notes = request.form.get('notes', '')
+        other_information = request.form.get('other_information', '')
         status = request.form.get('status', 'hold')  # default hold
 
         if not date_str:
@@ -48,7 +48,7 @@ def add_wedding():
             bride_name=bride,
             groom_name=groom,
             wedding_date=wedding_date,
-            notes=notes,
+            other_information=other_information,
             status=status,
             booking_source='manual'
         )
@@ -71,8 +71,7 @@ def edit_wedding(wedding_id):
     if request.method == 'POST':
         wedding.bride_name = request.form.get('bride_name')
         wedding.groom_name = request.form.get('groom_name')
-        wedding.notes = request.form.get('notes')
-
+        wedding.other_information = request.form.get('other_information')
         date_str = request.form.get('wedding_date')
         if date_str:
             wedding.wedding_date = datetime.strptime(date_str, "%Y-%m-%d").date()
