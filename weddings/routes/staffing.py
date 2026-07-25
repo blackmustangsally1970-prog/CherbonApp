@@ -12,8 +12,7 @@ staffing_bp = Blueprint('staffing', __name__, url_prefix='/weddings')
 def staff_list(wedding_id):
     wedding = Wedding.query.get_or_404(wedding_id)
     staff = WeddingStaffAssignment.query.filter_by(wedding_id=wedding.id).all()
-    employees = Employee.query.order_by(Employee.name.asc()).all()
-
+    employees = Employee.query.order_by(Employee.full_name.asc()).all()
     return render_template(
         'weddings/staff.html',
         wedding=wedding,
