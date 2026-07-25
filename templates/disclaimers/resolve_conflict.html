@@ -162,5 +162,21 @@
             </button>
         </form>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", () => {
+            // Allow backend to process, then break out of iframe
+            setTimeout(() => {
+                window.top.location.href = "/notifications/process_all";
+            }, 150);
+        });
+    });
+});
+</script>
+
+
+
+
     </body>
     </html>

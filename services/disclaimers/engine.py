@@ -246,9 +246,9 @@ def process_all_fastpath():
 def finalize_submission(submission_row):
     """
     Main pipeline for processing a single submission.
-    Fully patched version:
+    DIRTY-STATE-PROTECTED VERSION:
     - Auto-creates new clients when no matches exist
-    - Respects resolved_riders + cleared_matches
+    - Respects resolved_riders + cleared_matches but overrides dirty state
     - Prevents parse_jotform_payload from resurrecting matches
     - Kills phantom matches
     - Correct conflict routing
@@ -258,8 +258,9 @@ def finalize_submission(submission_row):
     import json
     from sqlalchemy.util._collections import immutabledict
     from datetime import datetime
+
+    print("=== FINALIZE SUBMISSION (DIRTY-STATE-PROTECTED VERSION) ===")
     print(">>> USING ENGINE FILE:", __file__)
-    print("=== FINALIZE SUBMISSION (AUTO-CREATE VERSION) ===")
     print(f"Submission ID: {submission_row.id}")
     print(f"processed: {submission_row.processed}, ignored: {submission_row.ignored}")
     print(f"resolved_riders (raw): {submission_row.resolved_riders}")
@@ -320,6 +321,13 @@ def finalize_submission(submission_row):
         print(f"Rider {idx}: name={rider.get('name')}, "
               f"resolved={resolved_flag}, cleared={cleared_flag}, "
               f"matches_count={len(matches)}")
+
+        # ⭐ DIRTY STATE PROTECTION
+        # If rider is marked resolved but no client exists → force unresolved
+        if resolved_flag and not matches:
+            print(f"Rider {idx}: resolved flag set but no matches → forcing unresolved")
+            resolved_flag = False
+            resolved_map[str(idx)] = False
 
         # Already resolved → skip
         if resolved_flag:
