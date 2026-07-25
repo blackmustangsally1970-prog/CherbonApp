@@ -24,6 +24,7 @@ from config import Config
 from datetime import timedelta
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from models import Users
 
 
 # Core libs
@@ -1378,7 +1379,6 @@ def send_sms_clicksend(to_number, message, sender_number):
 def create_app():
     app = Flask(__name__)
 
-    from models import Users
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = "login"
