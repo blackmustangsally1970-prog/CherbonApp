@@ -15,10 +15,10 @@
             background: #fff;
         }
 
-        /* MAIN ROW GRID */
+        /* MAIN ROW GRID — widened event_type column */
         .calendar-row {
             display: grid;
-            grid-template-columns: 150px 320px 180px 200px auto;
+            grid-template-columns: 150px 320px 320px 200px auto;
             gap: 10px;
             font-size: 15px;
             align-items: center;
@@ -60,6 +60,11 @@
         .badge-cancelled { background: #dc3545; }
         .badge-tentative { background: #6c757d; }
         .badge-archived { background: #444; }
+
+        /* BUTTON SPACING */
+        .action-buttons button {
+            margin-right: 4px;
+        }
 
         .btn-sm {
             padding: 2px 6px;
@@ -110,42 +115,33 @@
                     <span class="badge badge-{{ w.status }}">{{ w.status }}</span>
                 </div>
 
-                <!-- EVENT TYPE -->
+                <!-- EVENT TYPE (now wider) -->
                 <div class="truncate">{{ w.event_type }}</div>
 
                 <!-- SERVICE -->
                 <div class="truncate">{{ w.service }}</div>
 
-                <!-- ACTIONS -->
-                <div>
+                <!-- ACTION BUTTONS -->
+                <div class="action-buttons">
 
-                    <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}"
-                       class="btn btn-info btn-sm">Hub</a>
+                    <button onclick="window.location='{{ url_for('hub.wedding_hub', wedding_id=w.id) }}'"
+                            class="btn btn-info btn-sm">Hub</button>
 
-                    <a href="{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}"
-                       class="btn btn-warning btn-sm">Edit</a>
+                    <button onclick="window.location='{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}'"
+                            class="btn btn-warning btn-sm">Edit</button>
 
                     {% if w.status != 'archived' %}
-                        <a href="{{ url_for('bookings.change_status', wedding_id=w.id, new_status='archived') }}"
-                           class="btn btn-secondary btn-sm"
-                           onclick="return confirm('Archive this wedding?');">
-                            Archive
-                        </a>
+                        <button onclick="if(confirm('Archive this wedding?')) window.location='{{ url_for('bookings.change_status', wedding_id=w.id, new_status='archived') }}'"
+                                class="btn btn-secondary btn-sm">Archive</button>
                     {% endif %}
 
                     {% if w.status == 'archived' %}
-                        <a href="{{ url_for('bookings.change_status', wedding_id=w.id, new_status='hold') }}"
-                           class="btn btn-dark btn-sm"
-                           onclick="return confirm('Restore this wedding?');">
-                            Restore
-                        </a>
+                        <button onclick="if(confirm('Restore this wedding?')) window.location='{{ url_for('bookings.change_status', wedding_id=w.id, new_status='hold') }}'"
+                                class="btn btn-dark btn-sm">Restore</button>
                     {% endif %}
 
-                    <a href="{{ url_for('bookings.delete_wedding', wedding_id=w.id) }}"
-                       class="btn btn-danger btn-sm"
-                       onclick="return confirm('Are you absolutely sure you want to DELETE this wedding? This cannot be undone.');">
-                        Delete
-                    </a>
+                    <button onclick="if(confirm('Are you absolutely sure you want to DELETE this wedding? This cannot be undone.')) window.location='{{ url_for('bookings.delete_wedding', wedding_id=w.id) }}'"
+                            class="btn btn-danger btn-sm">Delete</button>
 
                 </div>
 
