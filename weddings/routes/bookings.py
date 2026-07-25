@@ -20,7 +20,13 @@ def wedding_calendar():
             "bride": w.bride_name,
             "groom": w.groom_name,
             "status": w.status,
-            "notes": w.other_information
+            "notes": w.other_information,
+
+            # ⭐ NEW FIELDS
+            "event_type": w.event_type,
+            "bride_mobile": w.bride_mobile,
+            "service": w.service,
+            "est_guests": w.est_guests
         })
 
     return render_template('weddings/calendar.html', weddings=rows)
@@ -38,6 +44,12 @@ def add_wedding():
         other_information = request.form.get('other_information', '')
         status = request.form.get('status', 'hold')  # default hold
 
+        # ⭐ NEW FIELDS
+        event_type = request.form.get('event_type')
+        bride_mobile = request.form.get('bride_mobile')
+        service = request.form.get('service')
+        est_guests = request.form.get('est_guests')
+
         if not date_str:
             flash("Wedding date is required", "danger")
             return redirect(url_for('bookings.add_wedding'))
@@ -50,7 +62,13 @@ def add_wedding():
             wedding_date=wedding_date,
             other_information=other_information,
             status=status,
-            booking_source='manual'
+            booking_source='manual',
+
+            # ⭐ NEW FIELDS
+            event_type=event_type,
+            bride_mobile=bride_mobile,
+            service=service,
+            est_guests=est_guests
         )
 
         db.session.add(new_wedding)
@@ -72,6 +90,13 @@ def edit_wedding(wedding_id):
         wedding.bride_name = request.form.get('bride_name')
         wedding.groom_name = request.form.get('groom_name')
         wedding.other_information = request.form.get('other_information')
+
+        # ⭐ NEW FIELDS
+        wedding.event_type = request.form.get('event_type')
+        wedding.bride_mobile = request.form.get('bride_mobile')
+        wedding.service = request.form.get('service')
+        wedding.est_guests = request.form.get('est_guests')
+
         date_str = request.form.get('wedding_date')
         if date_str:
             wedding.wedding_date = datetime.strptime(date_str, "%Y-%m-%d").date()
