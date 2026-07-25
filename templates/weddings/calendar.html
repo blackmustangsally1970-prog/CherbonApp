@@ -5,36 +5,51 @@
     <link rel="stylesheet" href="/static/bootstrap.min.css">
 
     <style>
+
+        /* BOX AROUND EACH WEDDING */
+        .calendar-box {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 12px;
+            background: #fff;
+        }
+
+        /* MAIN ROW GRID */
         .calendar-row {
             display: grid;
-            grid-template-columns: 180px 1fr 120px 200px;
+            grid-template-columns: 150px 320px 180px 200px auto;
             gap: 10px;
-            padding: 10px 8px;
-            border-bottom: 1px solid #ddd;
             font-size: 15px;
             align-items: center;
         }
 
-        .calendar-row:hover {
-            background: #f7f7f7;
+        /* TRUNCATE LONG TEXT */
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
+        /* SECOND LINE */
+        .extra-line {
+            margin-left: 5px;
+            margin-top: 4px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* STATUS COLORS */
         .status-booked { border-left: 5px solid #28a745; }
         .status-hold { border-left: 5px solid #ffc107; }
         .status-cancelled { border-left: 5px solid #dc3545; }
         .status-tentative { border-left: 5px solid #6c757d; }
 
-        .extra-line {
-            margin-left: 10px;
-            margin-bottom: 8px;
-            color: #555;
-            font-size: 14px;
-        }
-
         .btn-sm {
             padding: 2px 6px;
             font-size: 12px;
         }
+
     </style>
 </head>
 
@@ -49,49 +64,50 @@
 
     {% for w in weddings %}
 
-        <!-- MAIN ROW -->
-        <div class="calendar-row status-{{ w.status }}">
+        <div class="calendar-box status-{{ w.status }}">
 
-            <!-- DATE -->
-            <div><strong>{{ w.date }}</strong></div>
+            <!-- MAIN ROW -->
+            <div class="calendar-row">
 
-            <!-- BRIDE & GROOM -->
-            <div>
-                {{ w.bride }} & {{ w.groom }}
-                <span style="margin-left: 10px;">
+                <!-- DATE -->
+                <div><strong>{{ w.date }}</strong></div>
+
+                <!-- BRIDE & GROOM -->
+                <div class="truncate">
+                    {{ w.bride }} & {{ w.groom }}
                     <strong>[{{ w.status }}]</strong>
-                </span>
+                </div>
+
+                <!-- EVENT TYPE -->
+                <div class="truncate">{{ w.event_type }}</div>
+
+                <!-- SERVICE -->
+                <div class="truncate">{{ w.service }}</div>
+
+                <!-- ACTIONS -->
+                <div>
+                    <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}"
+                       class="btn btn-info btn-sm">Hub</a>
+
+                    <a href="{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}"
+                       class="btn btn-warning btn-sm">Edit</a>
+
+                    <a href="{{ url_for('bookings.delete_wedding', wedding_id=w.id) }}"
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Delete this wedding?');">
+                        Delete
+                    </a>
+                </div>
+
             </div>
 
-            <!-- EVENT TYPE -->
-            <div>{{ w.event_type }}</div>
-
-            <!-- ACTIONS -->
-            <div>
-                <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}"
-                   class="btn btn-info btn-sm">Hub</a>
-
-                <a href="{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}"
-                   class="btn btn-warning btn-sm">Edit</a>
-
-                <a href="{{ url_for('bookings.delete_wedding', wedding_id=w.id) }}"
-                   class="btn btn-danger btn-sm"
-                   onclick="return confirm('Delete this wedding?');">
-                    Delete
-                </a>
+            <!-- OPTIONAL SECOND LINE -->
+            <div class="extra-line">
+                Guests: {{ w.est_guests }} |
+                Bride Mobile: {{ w.bride_mobile }}
+                {% if w.notes %} | Notes: {{ w.notes }} {% endif %}
             </div>
 
-        </div>
-
-        <!-- OPTIONAL SECOND LINE -->
-        <div class="extra-line">
-            Service: {{ w.service }} |
-            Guests: {{ w.est_guests }} |
-            Bride Mobile: {{ w.bride_mobile }}
-
-            {% if w.notes %}
-                | Notes: {{ w.notes }}
-            {% endif %}
         </div>
 
     {% endfor %}

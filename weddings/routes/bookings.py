@@ -16,7 +16,7 @@ def wedding_calendar():
     for w in weddings:
         rows.append({
             "id": w.id,
-            "date": w.wedding_date.strftime('%d %b %Y'),
+            "date": w.wedding_date.strftime('%a %d-%m-%Y'),
             "bride": w.bride_name,
             "groom": w.groom_name,
             "status": w.status,
