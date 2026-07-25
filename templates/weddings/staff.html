@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Staff for {{ wedding.bride_name }} & {{ wedding.groom_name }}</h2>
+
+<h3>Assigned Staff</h3>
+<ul>
+    {% for s in staff %}
+        <li>
+            {{ s.employee.full_name }} — {{ s.role }}
+            <a href="{{ url_for('staffing.staff_remove', wedding_id=wedding.id, assignment_id=s.id) }}">Remove</a>
+        </li>
+    {% endfor %}
+</ul>
+
+<h3>Add Staff</h3>
+<form method="POST" action="{{ url_for('staffing.staff_add', wedding_id=wedding.id) }}">
+    <select name="employee_id">
+        {% for e in employees %}
+            <option value="{{ e.id }}">{{ e.full_name }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="role">
+        <option value="Coordinator">Coordinator</option>
+        <option value="Wait">Wait</option>
+        <option value="Bar">Bar</option>
+        <option value="Floater">Floater</option>
+    </select>
+
+    <button type="submit">Add</button>
+</form>
+{% endblock %}
