@@ -1,99 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Wedding Calendar</title>
-    <link rel="stylesheet" href="/static/bootstrap.min.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Calendar</title>
+<link rel="stylesheet" href="/static/bootstrap.min.css">
 
-    <style>
+<style>
+    body {
+        background: #f5f5f5;
+        font-family: Arial, sans-serif;
+    }
 
-        /* BOX AROUND EACH WEDDING */
-        .calendar-box {
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 12px;
-            background: #fff;
+    .page-title {
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+        padding: 20px;
+        background: #ffffff;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #eee;
+    }
+
+    /* Sexy card layout */
+    .wedding-card {
+        background: #ffffff;
+        margin: 15px;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        font-size: 1.4rem;
+    }
+
+    .wedding-date {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .names {
+        font-size: 1.6rem;
+        margin-bottom: 8px;
+    }
+
+    /* Status badges */
+    .status {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 12px;
+        color: #fff;
+    }
+
+    .status-booked { background: #28a745; }
+    .status-hold { background: #ffc107; color: #000; }
+    .status-tentative { background: #17a2b8; }
+    .status-cancelled { background: #dc3545; }
+    .status-postponed { background: #6c757d; }
+    .status-archived { background: #343a40; }
+
+    .info-row {
+        margin-bottom: 10px;
+        font-size: 1.3rem;
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-block;
+        padding: 14px 20px;
+        font-size: 1.4rem;
+        border-radius: 10px;
+        text-decoration: none;
+        margin-right: 10px;
+        margin-top: 10px;
+        color: #fff;
+    }
+
+    .btn-hub { background: #17a2b8; }
+    .btn-edit { background: #ffc107; color: #000; }
+    .btn-archive { background: #6c757d; }
+    .btn-restore { background: #343a40; }
+    .btn-delete { background: #dc3545; }
+
+    /* Bigger on small phones */
+    @media (max-width: 480px) {
+        .wedding-card {
+            padding: 24px;
+            font-size: 1.6rem;
         }
-
-        /* MAIN ROW GRID — widened event_type column */
-        .calendar-row {
-            display: grid;
-            grid-template-columns: 150px 320px 320px 200px auto;
-            gap: 10px;
-            font-size: 15px;
-            align-items: center;
+        .wedding-date {
+            font-size: 2rem;
         }
-
-        /* TRUNCATE LONG TEXT */
-        .truncate {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .names {
+            font-size: 1.8rem;
         }
-
-        /* SECOND LINE */
-        .extra-line {
-            margin-left: 5px;
-            margin-top: 4px;
-            color: #555;
-            font-size: 14px;
+        .btn {
+            font-size: 1.6rem;
+            padding: 16px 22px;
         }
-
-        /* STATUS COLORS (LEFT BORDER) */
-        .status-booked { border-left: 5px solid #28a745; }
-        .status-hold { border-left: 5px solid #ffc107; }
-        .status-cancelled { border-left: 5px solid #dc3545; }
-        .status-tentative { border-left: 5px solid #6c757d; }
-        .status-archived { border-left: 5px solid #444; opacity: 0.6; background: #f0f0f0; }
-
-        /* BADGES */
-        .badge {
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #fff;
-            margin-left: 6px;
-        }
-
-        .badge-booked { background: #28a745; }
-        .badge-hold { background: #ffc107; color: #000; }
-        .badge-cancelled { background: #dc3545; }
-        .badge-tentative { background: #6c757d; }
-        .badge-archived { background: #444; }
-
-        /* BUTTON SPACING */
-        .action-buttons button {
-            margin-right: 4px;
-        }
-
-        .btn-sm {
-            padding: 2px 6px;
-            font-size: 12px;
-        }
-
-    </style>
+    }
+</style>
 </head>
 
 <body>
 
-<div style="margin-bottom:12px;" class="no-print" id="top-controls">
-    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
-</div>
+<div class="page-title">Wedding Calendar</div>
 
-<div class="container" style="margin-top: 30px;">
-
-    <h2>Wedding Calendar</h2>
+<div class="container">
 
     <!-- TOP BUTTONS -->
-    <div style="margin-bottom: 15px;">
-        <a href="/weddings/add" class="btn btn-success">➕ Add Wedding</a>
+    <div style="margin-bottom: 15px; text-align:center;">
+        <a href="/weddings/add" class="btn btn-success" style="font-size:1.6rem; padding:16px 22px;">➕ Add Wedding</a>
 
         {% if show_archived %}
-            <a href="/weddings/calendar?show_archived=0" class="btn btn-secondary">
+            <a href="/weddings/calendar?show_archived=0" class="btn btn-secondary" style="font-size:1.6rem; padding:16px 22px;">
                 👁 Hide Archived
             </a>
         {% else %}
-            <a href="/weddings/calendar?show_archived=1" class="btn btn-secondary">
+            <a href="/weddings/calendar?show_archived=1" class="btn btn-secondary" style="font-size:1.6rem; padding:16px 22px;">
                 📦 Show Archived
             </a>
         {% endif %}
@@ -101,58 +127,53 @@
 
     {% for w in weddings %}
 
-        <div class="calendar-box status-{{ w.status }}">
+        <div class="wedding-card">
 
-            <!-- MAIN ROW -->
-            <div class="calendar-row">
+            <!-- DATE -->
+            <div class="wedding-date">{{ w.date }}</div>
 
-                <!-- DATE -->
-                <div><strong>{{ w.date }}</strong></div>
+            <!-- NAMES -->
+            <div class="names">{{ w.bride }} & {{ w.groom }}</div>
 
-                <!-- BRIDE & GROOM -->
-                <div class="truncate">
-                    {{ w.bride }} & {{ w.groom }}
-                    <span class="badge badge-{{ w.status }}">{{ w.status }}</span>
-                </div>
+            <!-- STATUS -->
+            <div class="status status-{{ w.status }}">{{ w.status|upper }}</div>
 
-                <!-- EVENT TYPE (now wider) -->
-                <div class="truncate">{{ w.event_type }}</div>
+            <!-- INFO -->
+            <div class="info-row"><strong>Event:</strong> {{ w.event_type }}</div>
+            <div class="info-row"><strong>Service:</strong> {{ w.service }}</div>
+            <div class="info-row"><strong>Guests:</strong> {{ w.est_guests }}</div>
+            <div class="info-row"><strong>Bride Mobile:</strong> {{ w.bride_mobile }}</div>
 
-                <!-- SERVICE -->
-                <div class="truncate">{{ w.service }}</div>
+            {% if w.notes %}
+                <div class="info-row"><strong>Notes:</strong> {{ w.notes }}</div>
+            {% endif %}
 
-                <!-- ACTION BUTTONS -->
-                <div class="action-buttons">
+            <!-- BUTTONS -->
+            <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}" class="btn btn-hub">Hub</a>
 
-                    <button onclick="window.location='{{ url_for('hub.wedding_hub', wedding_id=w.id) }}'"
-                            class="btn btn-info btn-sm">Hub</button>
+            <a href="{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}" class="btn btn-edit">Edit</a>
 
-                    <button onclick="window.location='{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}'"
-                            class="btn btn-warning btn-sm">Edit</button>
+            {% if w.status != 'archived' %}
+                <a href="{{ url_for('bookings.change_status', wedding_id=w.id, new_status='archived') }}"
+                   class="btn btn-archive"
+                   onclick="return confirm('Archive this wedding?');">
+                    Archive
+                </a>
+            {% endif %}
 
-                    {% if w.status != 'archived' %}
-                        <button onclick="if(confirm('Archive this wedding?')) window.location='{{ url_for('bookings.change_status', wedding_id=w.id, new_status='archived') }}'"
-                                class="btn btn-secondary btn-sm">Archive</button>
-                    {% endif %}
+            {% if w.status == 'archived' %}
+                <a href="{{ url_for('bookings.change_status', wedding_id=w.id, new_status='hold') }}"
+                   class="btn btn-restore"
+                   onclick="return confirm('Restore this wedding?');">
+                    Restore
+                </a>
+            {% endif %}
 
-                    {% if w.status == 'archived' %}
-                        <button onclick="if(confirm('Restore this wedding?')) window.location='{{ url_for('bookings.change_status', wedding_id=w.id, new_status='hold') }}'"
-                                class="btn btn-dark btn-sm">Restore</button>
-                    {% endif %}
-
-                    <button onclick="if(confirm('Are you absolutely sure you want to DELETE this wedding? This cannot be undone.')) window.location='{{ url_for('bookings.delete_wedding', wedding_id=w.id) }}'"
-                            class="btn btn-danger btn-sm">Delete</button>
-
-                </div>
-
-            </div>
-
-            <!-- OPTIONAL SECOND LINE -->
-            <div class="extra-line">
-                Guests: {{ w.est_guests }} |
-                Bride Mobile: {{ w.bride_mobile }}
-                {% if w.notes %} | Notes: {{ w.notes }} {% endif %}
-            </div>
+            <a href="{{ url_for('bookings.delete_wedding', wedding_id=w.id) }}"
+               class="btn btn-delete"
+               onclick="return confirm('Are you absolutely sure you want to DELETE this wedding? This cannot be undone.');">
+                Delete
+            </a>
 
         </div>
 
