@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app import db
+from extensions import db
 from weddings.models import JobListMaster
 
 job_master_bp = Blueprint('job_master', __name__, url_prefix='/weddings')

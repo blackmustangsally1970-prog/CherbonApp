@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, url_for, session
 from datetime import datetime
-from app import db
+from extensions import db
 from weddings.models import JobListInstance
 
 job_instance_bp = Blueprint('job_instance', __name__, url_prefix='/weddings')

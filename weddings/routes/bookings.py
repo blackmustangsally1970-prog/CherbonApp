@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime
-from app import db
+from extensions import db
 from weddings.models import Wedding
 
 bookings_bp = Blueprint('bookings', __name__, url_prefix='/weddings')

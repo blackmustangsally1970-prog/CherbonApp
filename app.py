@@ -1,3 +1,4 @@
+from extensions import db
 from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, make_response, after_this_request, flash,
@@ -24,72 +25,6 @@ from datetime import timedelta
 from werkzeug.utils import secure_filename
 from datetime import datetime
 
-
-from weddings.routes.bookings import bookings_bp
-app.register_blueprint(bookings_bp)
-
-from weddings.routes.hub import hub_bp
-app.register_blueprint(hub_bp)
-
-from weddings.routes.staffing import staffing_bp
-app.register_blueprint(staffing_bp)
-
-from weddings.routes.job_master import job_master_bp
-app.register_blueprint(job_master_bp)
-
-from weddings.routes.job_instance import job_instance_bp
-app.register_blueprint(job_instance_bp)
-
-from weddings.routes.job_clone import job_clone_bp
-app.register_blueprint(job_clone_bp)
-
-from weddings.routes.wedding_list import wedding_list_bp
-app.register_blueprint(wedding_list_bp)
-
-# Database + Models
-from extensions import db
-from weddings.models.wedding import Wedding
-from weddings.models.staff_assignment import WeddingStaffAssignment
-from weddings.models.job_list_master import JobListMaster
-from weddings.models.job_list_instance import JobListInstance
-from weddings.models.caterer import Caterer
-from weddings.models.timeline import WeddingTimeline
-from weddings.models.detail_template import WeddingDetailLibrary
-
-from models import (
-    BlockoutDate,
-    BlockoutRange,
-    Client,
-    CourseEnrolment,
-    CourseReference,
-    CourseFormSubmission,
-    DisclaimerState,
-    DailyEvent,
-    GeneralEnquirySubmission,
-    GroupPricing,
-    Horse,
-    UpgradeItem,
-    IncomingSubmission,
-    Lesson,
-    LessonBlockTag,
-    LessonChangeLog,
-    LessonInvite,
-    LessonTeacherTag,
-    Receipt, 
-    SmsLog,
-    Teacher,
-    TeacherBlock,
-    TeacherGridOverride,
-    TeacherHorse,
-    TeacherSlot,
-    TeacherTime,
-    Term,
-    Time,
-    TrailRideSubmission,
-    Users,
-    Employee,
-    EmployeeHours
-)
 
 # Core libs
 import os
@@ -1477,9 +1412,80 @@ def create_app():
 
 
     app.config['SQLALCHEMY_ECHO'] = False
-    db.init_app(app)
 
     # print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())  # <-- remove or wrap
+    
+    db.init_app(app)
+
+    # ⭐ NOW import + register wedding blueprints
+    from weddings.routes.bookings import bookings_bp
+    app.register_blueprint(bookings_bp)
+
+    from weddings.routes.hub import hub_bp
+    app.register_blueprint(hub_bp)
+
+    from weddings.routes.staffing import staffing_bp
+    app.register_blueprint(staffing_bp)
+
+    from weddings.routes.job_master import job_master_bp
+    app.register_blueprint(job_master_bp)
+
+    from weddings.routes.job_instance import job_instance_bp
+    app.register_blueprint(job_instance_bp)
+
+    from weddings.routes.job_clone import job_clone_bp
+    app.register_blueprint(job_clone_bp)
+
+    from weddings.routes.wedding_list import wedding_list_bp
+    app.register_blueprint(wedding_list_bp)
+
+    # ⭐ THEN import models
+    from weddings.models.wedding import Wedding
+    from weddings.models.staff_assignment import WeddingStaffAssignment
+    from weddings.models.job_list_master import JobListMaster
+    from weddings.models.job_list_instance import JobListInstance
+    from weddings.models.caterer import Caterer
+    from weddings.models.timeline import WeddingTimeline
+    from weddings.models.detail_template import WeddingDetailLibrary
+
+    # ⭐ THEN your other models
+    from models import (
+        BlockoutDate,
+        BlockoutRange,
+        Client,
+        CourseEnrolment,
+        CourseReference,
+        CourseFormSubmission,
+        DisclaimerState,
+        DailyEvent,
+        GeneralEnquirySubmission,
+        GroupPricing,
+        Horse,
+        UpgradeItem,
+        IncomingSubmission,
+        Lesson,
+        LessonBlockTag,
+        LessonChangeLog,
+        LessonInvite,
+        LessonTeacherTag,
+        Receipt, 
+        SmsLog,
+        Teacher,
+        TeacherBlock,
+        TeacherGridOverride,
+        TeacherHorse,
+        TeacherSlot,
+        TeacherTime,
+        Term,
+        Time,
+        TrailRideSubmission,
+        Users,
+        Employee,
+        EmployeeHours
+    )
+
+
+
 
     @app.route("/fetch_gift_vouchers")
     def fetch_gift_vouchers():

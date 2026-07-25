@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for
-from app import db
+from extensions import db
 from weddings.models import (
     Wedding,
     WeddingStaffAssignment,

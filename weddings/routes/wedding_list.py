@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from app import db
+from extensions import db
 from weddings.models import Wedding
 
 wedding_list_bp = Blueprint('wedding_list', __name__, url_prefix='/weddings')

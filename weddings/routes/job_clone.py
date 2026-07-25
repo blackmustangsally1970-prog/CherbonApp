@@ -1,5 +1,5 @@
 from flask import Blueprint, redirect, url_for, flash
-from app import db
+from extensions import db
 from weddings.models import JobListMaster, JobListInstance
 
 job_clone_bp = Blueprint('job_clone', __name__, url_prefix='/weddings')
