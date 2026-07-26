@@ -175,18 +175,17 @@
     <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
   </li>
 
-<!-- ⭐ WEDDINGS MENU -->
-{% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
-<a href="/weddings/calendar" class="menu-btn">💒 Weddings</a>
-{% endif %}
-<!-- ⭐ END WEDDINGS MENU -->
-
+  <!-- ⭐ WEDDINGS MENU -->
+  {% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
+  <li>
+      <a href="/weddings/calendar" class="menu-btn">💒 Weddings</a>
+  </li>
+  {% endif %}
+  <!-- ⭐ END WEDDINGS MENU -->
 
   <li>
     <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
   </li>
-
-
 
   <li>
     <a href="{{ url_for('gift_vouchers') }}" class="menu-btn">🎁 Gift Vouchers</a>
@@ -200,24 +199,18 @@
     <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
   </li>
 
-<!--
-  <li>
-    <a href="{{ url_for('messages_menu') }}" class="menu-btn">✉️ Messages</a>
-  </li>
- -->
-
   <li>
     <a href="{{ url_for('employees_home') }}" class="menu-btn">🧑‍🤝‍🧑 Employees</a>
   </li>
 
-
   <li>
-    <a href="{{ url_for('daily_summary') }}" class="menu-btn">📊Daily Summaries</a>
+    <a href="{{ url_for('daily_summary') }}" class="menu-btn">📊 Daily Summaries</a>
   </li>
 
-<li class="nav-item">
-    <a class="nav-link" href="{{ url_for('admin_users') }}">Manage Users</a>
-</li>
+  <!-- ⭐ FIXED BUTTON -->
+  <li>
+      <a href="{{ url_for('admin_users') }}" class="menu-btn">👤 Manage Users</a>
+  </li>
 
   <li class="has-submenu">
       <a class="menu-btn submenu-toggle">🧾 Receipts</a>
@@ -242,6 +235,7 @@
   </li>
 
 </ul>
+
 
 
 <!-- ⭐ QUOTE SCRIPT -->
