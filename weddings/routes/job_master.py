@@ -66,17 +66,23 @@ def job_master_update(job_id):
     return redirect(url_for('job_master.job_master'))
 
 
-# ---------------------------------------------------------
-# DRAG/DROP REORDER ENDPOINT
-# ---------------------------------------------------------
-@job_master_bp.route('/job_master/reorder', methods=['POST'])
-def job_master_reorder():
-    data = request.get_json()
-    ids = data.get("order", [])
+@job_master_bp.route('/job_master/move_up/<int:id>')
+def job_master_move_up(id):
+    job = JobListMaster.query.get(id)
+    above = JobListMaster.query.filter(JobListMaster.sort_order < job.sort_order)\
+                               .order_by(JobListMaster.sort_order.desc()).first()
+    if above:
+        job.sort_order, above.sort_order = above.sort_order, job.sort_order
+        db.session.commit()
+    return redirect(url_for('job_master.job_master'))
 
-    for index, job_id in enumerate(ids):
-        job = JobListMaster.query.get(int(job_id))
-        job.sort_order = index + 1
 
-    db.session.commit()
-    return jsonify({"status": "ok"})
+@job_master_bp.route('/job_master/move_down/<int:id>')
+def job_master_move_down(id):
+    job = JobListMaster.query.get(id)
+    below = JobListMaster.query.filter(JobListMaster.sort_order > job.sort_order)\
+                               .order_by(JobListMaster.sort_order.asc()).first()
+    if below:
+        job.sort_order, below.sort_order = below.sort_order, job.sort_order
+        db.session.commit()
+    return redirect(url_for('job_master.job_master'))
