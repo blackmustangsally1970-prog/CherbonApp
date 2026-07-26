@@ -1,63 +1,126 @@
-<h2>Admin Users</h2>
+<h2 class="page-title">👤 Manage Users</h2>
 
-<a href="{{ url_for('admin_users_add') }}" class="btn btn-success mb-3">➕ Add User</a>
+<a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th style="width:200px;">Actions</th>
-        </tr>
-    </thead>
+<a href="{{ url_for('admin_users_add') }}" class="menu-btn mb-3">➕ Add User</a>
 
-    <tbody>
-        {% for u in users %}
-        <tr>
-            <td>{{ u.username }}</td>
-            <td>{{ u.full_name }}</td>
-            <td>{{ u.role }}</td>
-            <td>
+<div class="user-grid">
+
+    {% for u in users %}
+    <div class="user-card">
+
+        <div class="user-header">
+            <div class="user-name">{{ u.full_name }}</div>
+            <div class="user-username">@{{ u.username }}</div>
+        </div>
+
+        <div class="user-info">
+            <div class="info-row">
+                <span class="label">Role:</span>
+                <span class="value">{{ u.role|capitalize }}</span>
+            </div>
+
+            <div class="info-row">
+                <span class="label">Status:</span>
                 {% if u.active %}
                     <span class="badge bg-success">Active</span>
                 {% else %}
                     <span class="badge bg-secondary">Inactive</span>
                 {% endif %}
-            </td>
+            </div>
+        </div>
 
-            <td>
-                <a href="{{ url_for('admin_users_edit', user_id=u.user_id) }}" class="btn btn-warning btn-sm">Edit</a>
+        <div class="user-actions">
 
-                <form action="{{ url_for('admin_users_reset_password', user_id=u.user_id) }}"
-                      method="POST" style="display:inline-block;">
-                    <input type="hidden" name="new_password" value="Reset123">
-                    <button class="btn btn-info btn-sm"
-                            onclick="return confirm('Reset password to Reset123?');">
-                        Reset PW
-                    </button>
-                </form>
+            <a href="{{ url_for('admin_users_edit', user_id=u.user_id) }}"
+               class="btn btn-warning btn-sm">✏️ Edit</a>
 
-                {% if u.active %}
-                <form action="{{ url_for('admin_users_deactivate', user_id=u.user_id) }}"
-                      method="POST" style="display:inline-block;">
-                    <button class="btn btn-secondary btn-sm"
-                            onclick="return confirm('Deactivate user?');">
-                        Deactivate
-                    </button>
-                </form>
-                {% else %}
-                <form action="{{ url_for('admin_users_activate', user_id=u.user_id) }}"
-                      method="POST" style="display:inline-block;">
-                    <button class="btn btn-success btn-sm"
-                            onclick="return confirm('Activate user?');">
-                        Activate
-                    </button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <form action="{{ url_for('admin_users_reset_password', user_id=u.user_id) }}"
+                  method="POST" style="display:inline-block;">
+                <input type="hidden" name="new_password" value="Reset123">
+                <button class="btn btn-info btn-sm"
+                        onclick="return confirm('Reset password to Reset123?');">
+                    🔑 Reset PW
+                </button>
+            </form>
+
+            {% if u.active %}
+            <form action="{{ url_for('admin_users_deactivate', user_id=u.user_id) }}"
+                  method="POST" style="display:inline-block;">
+                <button class="btn btn-secondary btn-sm"
+                        onclick="return confirm('Deactivate user?');">
+                    ⛔ Deactivate
+                </button>
+            </form>
+            {% else %}
+            <form action="{{ url_for('admin_users_activate', user_id=u.user_id) }}"
+                  method="POST" style="display:inline-block;">
+                <button class="btn btn-success btn-sm"
+                        onclick="return confirm('Activate user?');">
+                    ✅ Activate
+                </button>
+            </form>
+            {% endif %}
+
+        </div>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+<style>
+.page-title {
+    margin-bottom: 20px;
+}
+
+.user-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 15px;
+}
+
+.user-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.user-header {
+    margin-bottom: 12px;
+}
+
+.user-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.user-username {
+    font-size: 0.9rem;
+    color: #777;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.label {
+    font-weight: 600;
+    color: #444;
+}
+
+.value {
+    color: #333;
+}
+
+.user-actions {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+</style>
