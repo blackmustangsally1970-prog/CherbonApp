@@ -1,0 +1,63 @@
+<h2>Admin Users</h2>
+
+<a href="{{ url_for('admin_users_add') }}" class="btn btn-success mb-3">➕ Add User</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th style="width:200px;">Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.full_name }}</td>
+            <td>{{ u.role }}</td>
+            <td>
+                {% if u.active %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <a href="{{ url_for('admin_users_edit', user_id=u.id) }}" class="btn btn-warning btn-sm">Edit</a>
+
+                <form action="{{ url_for('admin_users_reset_password', user_id=u.id) }}"
+                      method="POST" style="display:inline-block;">
+                    <input type="hidden" name="new_password" value="Reset123">
+                    <button class="btn btn-info btn-sm"
+                            onclick="return confirm('Reset password to Reset123?');">
+                        Reset PW
+                    </button>
+                </form>
+
+                {% if u.active %}
+                <form action="{{ url_for('admin_users_deactivate', user_id=u.id) }}"
+                      method="POST" style="display:inline-block;">
+                    <button class="btn btn-secondary btn-sm"
+                            onclick="return confirm('Deactivate user?');">
+                        Deactivate
+                    </button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('admin_users_activate', user_id=u.id) }}"
+                      method="POST" style="display:inline-block;">
+                    <button class="btn btn-success btn-sm"
+                            onclick="return confirm('Activate user?');">
+                        Activate
+                    </button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -1,0 +1,29 @@
+<h2>Edit User</h2>
+
+<form method="POST">
+
+    <div class="mb-3">
+        <label>Username</label>
+        <input name="username" class="form-control" value="{{ user.username }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Full Name</label>
+        <input name="full_name" class="form-control" value="{{ user.full_name }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Role</label>
+        <select name="role" class="form-control">
+            <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Admin</option>
+            <option value="management" {% if user.role=='management' %}selected{% endif %}>Management</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Active</label>
+        <input type="checkbox" name="active" {% if user.active %}checked{% endif %}>
+    </div>
+
+    <button class="btn btn-primary">Save</button>
+</form>

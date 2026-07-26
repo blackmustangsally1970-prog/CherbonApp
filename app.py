@@ -1505,6 +1505,103 @@ def create_app():
             abort(403)
 
 
+
+    from werkzeug.security import generate_password_hash, check_password_hash
+
+    @app.route("/admin/users")
+    def admin_users():
+        users = Users.query.order_by(Users.username.asc()).all()
+        return render_template("admin_users.html", users=users)
+
+
+    @app.route("/admin/users/add", methods=["GET", "POST"])
+    def admin_users_add():
+        if request.method == "POST":
+            username = request.form.get("username").strip()
+            full_name = request.form.get("full_name").strip()
+            role = request.form.get("role").strip()
+            password = request.form.get("password").strip()
+
+            if not username or not full_name or not role or not password:
+                flash("All fields required.", "danger")
+                return redirect(url_for("admin_users_add"))
+
+            hashed = generate_password_hash(password)
+
+            u = Users(
+                username=username,
+                full_name=full_name,
+                role=role,
+                password_hash=hashed,
+                active=True
+            )
+
+            db.session.add(u)
+            db.session.commit()
+
+            flash("User created.", "success")
+            return redirect(url_for("admin_users"))
+
+        return render_template("admin_users_add.html")
+
+
+    @app.route("/admin/users/<int:user_id>/edit", methods=["GET", "POST"])
+    def admin_users_edit(user_id):
+        u = Users.query.get_or_404(user_id)
+
+        if request.method == "POST":
+            u.username = request.form.get("username").strip()
+            u.full_name = request.form.get("full_name").strip()
+            u.role = request.form.get("role").strip()
+            u.active = True if request.form.get("active") == "on" else False
+
+            db.session.commit()
+            flash("User updated.", "success")
+            return redirect(url_for("admin_users"))
+
+        return render_template("admin_users_edit.html", user=u)
+
+
+    @app.route("/admin/users/<int:user_id>/reset_password", methods=["POST"])
+    def admin_users_reset_password(user_id):
+        u = Users.query.get_or_404(user_id)
+
+        new_pass = request.form.get("new_password")
+        if not new_pass:
+            flash("Password required.", "danger")
+            return redirect(url_for("admin_users"))
+
+        u.password_hash = generate_password_hash(new_pass)
+        db.session.commit()
+
+        flash("Password reset.", "success")
+        return redirect(url_for("admin_users"))
+
+
+    @app.route("/admin/users/<int:user_id>/deactivate", methods=["POST"])
+    def admin_users_deactivate(user_id):
+        u = Users.query.get_or_404(user_id)
+        u.active = False
+        db.session.commit()
+
+        flash("User deactivated.", "info")
+        return redirect(url_for("admin_users"))
+
+
+    @app.route("/admin/users/<int:user_id>/activate", methods=["POST"])
+    def admin_users_activate(user_id):
+        u = Users.query.get_or_404(user_id)
+        u.active = True
+        db.session.commit()
+
+        flash("User activated.", "success")
+        return redirect(url_for("admin_users"))
+
+
+
+
+
+
     @app.route("/fetch_gift_vouchers")
     def fetch_gift_vouchers():
         print("FETCH GV ROUTE HIT — BEFORE API KEY CHECK")
