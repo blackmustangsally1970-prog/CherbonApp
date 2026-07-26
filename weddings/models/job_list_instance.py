@@ -6,7 +6,7 @@ class JobListInstance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     wedding_id = db.Column(db.Integer, db.ForeignKey('wedding.id'), nullable=False)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=True)  # who owns it
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=True)  # who owns it
 
     master_id = db.Column(db.Integer, db.ForeignKey('job_list_master.id'))
 

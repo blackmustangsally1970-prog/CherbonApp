@@ -30,23 +30,15 @@
                     <select name="role" class="form-control field-input">
                         <option value="coordinator">Coordinator</option>
                         <option value="wait">Wait</option>
-                        <option value="bar">Bar</option>
-                        <option value="floater">Floater</option>
-                        <option value="admin">Admin</option>
                     </select>
                 </div>
 
-                <div class="col-md-6">
-                    <label class="field-label">Description</label>
-                    <input type="text" name="description" class="form-control field-input"
-                           placeholder="Job description">
-                </div>
+<div class="col-md-6">
+    <label class="field-label">Description</label>
+    <textarea name="description" class="form-control field-input" rows="4"
+              placeholder="Job description"></textarea>
+</div>
 
-                <div class="col-md-2">
-                    <label class="field-label">Order</label>
-                    <input type="number" name="sort_order" class="form-control field-input"
-                           placeholder="Order">
-                </div>
 
                 <div class="col-md-1 d-flex align-items-end">
                     <button class="menu-btn w-100">Add</button>
@@ -67,53 +59,45 @@
                 <tr>
                     <th>Role</th>
                     <th>Description</th>
-                    <th>Order</th>
                     <th>Active</th>
                     <th style="width:160px;">Actions</th>
                 </tr>
             </thead>
 
-            <tbody>
-                {% for j in jobs %}
-                <tr class="job-row">
-                    <form method="POST" action="/weddings/job_master/update/{{ j.id }}">
-                        <td>
-                            <select name="role" class="form-control field-input">
-                                <option value="coordinator" {% if j.role=='coordinator' %}selected{% endif %}>Coordinator</option>
-                                <option value="wait" {% if j.role=='wait' %}selected{% endif %}>Wait</option>
-                                <option value="bar" {% if j.role=='bar' %}selected{% endif %}>Bar</option>
-                                <option value="floater" {% if j.role=='floater' %}selected{% endif %}>Floater</option>
-                                <option value="admin" {% if j.role=='admin' %}selected{% endif %}>Admin</option>
-                            </select>
-                        </td>
+<tbody id="jobTableBody">
+    {% for j in jobs %}
+    <tr class="job-row draggable-row" draggable="true" data-id="{{ j.id }}">
+        <form method="POST" action="/weddings/job_master/update/{{ j.id }}">
 
-                        <td>
-                            <input type="text" name="description" class="form-control field-input"
-                                   value="{{ j.description }}">
-                        </td>
+            <td>
+                <select name="role" class="form-control field-input">
+                    <option value="coordinator" {% if j.role=='coordinator' %}selected{% endif %}>Coordinator</option>
+                    <option value="wait" {% if j.role=='wait' %}selected{% endif %}>Wait</option>
+                </select>
+            </td>
 
-                        <td>
-                            <input type="number" name="sort_order" class="form-control field-input"
-                                   value="{{ j.sort_order }}">
-                        </td>
+            <td>
+                <textarea name="description" class="form-control field-input" rows="4">{{ j.description }}</textarea>
+            </td>
 
-                        <td class="text-center">
-                            <input type="checkbox" name="active" {% if j.active %}checked{% endif %}>
-                        </td>
+            <td class="text-center">
+                <input type="checkbox" name="active" {% if j.active %}checked{% endif %}>
+            </td>
 
-                        <td class="action-buttons">
-                            <button class="btn btn-primary btn-sm action-btn">Update</button>
+            <td class="action-buttons">
+                <button class="btn btn-primary btn-sm action-btn">Update</button>
 
-                            <a href="/weddings/job_master/delete/{{ j.id }}"
-                               class="btn btn-danger btn-sm action-btn"
-                               onclick="return confirm('Delete job?');">
-                                Delete
-                            </a>
-                        </td>
-                    </form>
-                </tr>
-                {% endfor %}
-            </tbody>
+                <a href="/weddings/job_master/delete/{{ j.id }}"
+                   class="btn btn-danger btn-sm action-btn"
+                   onclick="return confirm('Delete job?');">
+                    Delete
+                </a>
+            </td>
+
+        </form>
+    </tr>
+    {% endfor %}
+</tbody>
         </table>
     </div>
 
@@ -213,6 +197,46 @@
     background: #ddd;
 }
 </style>
+
+
+
+<script>
+const rows = document.querySelectorAll(".draggable-row");
+let dragSrcEl = null;
+
+rows.forEach(row => {
+    row.addEventListener("dragstart", e => {
+        dragSrcEl = row;
+        e.dataTransfer.effectAllowed = "move";
+        row.style.opacity = "0.4";
+    });
+
+    row.addEventListener("dragend", () => {
+        row.style.opacity = "1";
+    });
+
+    row.addEventListener("dragover", e => {
+        e.preventDefault();
+    });
+
+    row.addEventListener("drop", e => {
+        e.preventDefault();
+        if (dragSrcEl !== row) {
+            row.parentNode.insertBefore(dragSrcEl, row.nextSibling);
+
+            const ids = [...document.querySelectorAll(".draggable-row")]
+                .map(r => r.dataset.id);
+
+            fetch("/weddings/job_master/reorder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order: ids })
+            });
+        }
+    });
+});
+</script>
+
 
 </body>
 </html>
