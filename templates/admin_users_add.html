@@ -1,29 +1,81 @@
-<h2>Add User</h2>
+<h2 class="page-title">➕ Add User</h2>
 
-<form method="POST">
+<div class="top-links">
+    <a href="{{ url_for('admin_users') }}" class="menu-btn-small">← Back to Users</a>
+</div>
 
-    <div class="mb-3">
-        <label>Username</label>
-        <input name="username" class="form-control" required>
-    </div>
+<div class="edit-card">
 
-    <div class="mb-3">
-        <label>Full Name</label>
-        <input name="full_name" class="form-control" required>
-    </div>
+    <form method="POST">
 
-    <div class="mb-3">
-        <label>Role</label>
-        <select name="role" class="form-control" required>
-            <option value="admin">Admin</option>
-            <option value="management">Management</option>
-        </select>
-    </div>
+        <div class="mb-3">
+            <label class="field-label">Username</label>
+            <input name="username" class="form-control field-input" required>
+        </div>
 
-    <div class="mb-3">
-        <label>Password</label>
-        <input name="password" type="password" class="form-control" required>
-    </div>
+        <div class="mb-3">
+            <label class="field-label">Full Name</label>
+            <input name="full_name" class="form-control field-input" required>
+        </div>
 
-    <button class="btn btn-success">Create User</button>
-</form>
+        <div class="mb-3">
+            <label class="field-label">Role</label>
+            <select name="role" class="form-control field-input" required>
+                <option value="admin">Admin</option>
+                <option value="management">Management</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="field-label">Password</label>
+            <input name="password" type="password" class="form-control field-input" required>
+        </div>
+
+        <button class="menu-btn">✨ Create User</button>
+
+    </form>
+
+</div>
+
+<style>
+.page-title {
+    margin-bottom: 20px;
+}
+
+.top-links {
+    margin-bottom: 15px;
+}
+
+.edit-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    max-width: 500px;
+    margin: auto;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.field-label {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.field-input {
+    border-radius: 8px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+</style>

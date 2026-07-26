@@ -1,29 +1,83 @@
-<h2>Edit User</h2>
+<h2 class="page-title">✏️ Edit User</h2>
 
-<form method="POST">
+<div class="top-links">
+    <a href="{{ url_for('admin_users') }}" class="menu-btn-small">← Back to Users</a>
+</div>
 
-    <div class="mb-3">
-        <label>Username</label>
-        <input name="username" class="form-control" value="{{ user.username }}" required>
-    </div>
+<div class="edit-card">
 
-    <div class="mb-3">
-        <label>Full Name</label>
-        <input name="full_name" class="form-control" value="{{ user.full_name }}" required>
-    </div>
+    <form method="POST">
 
-    <div class="mb-3">
-        <label>Role</label>
-        <select name="role" class="form-control">
-            <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Admin</option>
-            <option value="management" {% if user.role=='management' %}selected{% endif %}>Management</option>
-        </select>
-    </div>
+        <div class="mb-3">
+            <label class="field-label">Username</label>
+            <input name="username" class="form-control field-input"
+                   value="{{ user.username }}" required>
+        </div>
 
-    <div class="mb-3">
-        <label>Active</label>
-        <input type="checkbox" name="active" {% if user.active %}checked{% endif %}>
-    </div>
+        <div class="mb-3">
+            <label class="field-label">Full Name</label>
+            <input name="full_name" class="form-control field-input"
+                   value="{{ user.full_name }}" required>
+        </div>
 
-    <button class="btn btn-primary">Save</button>
-</form>
+        <div class="mb-3">
+            <label class="field-label">Role</label>
+            <select name="role" class="form-control field-input">
+                <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Admin</option>
+                <option value="management" {% if user.role=='management' %}selected{% endif %}>Management</option>
+            </select>
+        </div>
+
+        <div class="mb-3 checkbox-row">
+            <label class="field-label">Active</label>
+            <input type="checkbox" name="active" {% if user.active %}checked{% endif %}>
+        </div>
+
+        <button class="menu-btn">💾 Save Changes</button>
+
+    </form>
+
+</div>
+
+<style>
+.page-title {
+    margin-bottom: 20px;
+}
+
+.top-links {
+    margin-bottom: 15px;
+}
+
+.edit-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    max-width: 500px;
+    margin: auto;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.field-label {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.field-input {
+    border-radius: 8px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+</style>

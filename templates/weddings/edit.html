@@ -6,50 +6,147 @@
 </head>
 
 <body>
-<div class="container" style="margin-top: 30px;">
 
-    <h2>Edit Wedding</h2>
+<div class="container" style="margin-top: 30px; max-width: 650px;">
 
-    <form method="POST">
+    <h2 class="page-title">💒 Edit Wedding</h2>
 
-        <div class="mb-3">
-            <label>Bride Name</label>
-            <input type="text" name="bride_name" class="form-control" value="{{ wedding.bride_name }}">
-        </div>
+    <div class="top-links">
+        <a href="/weddings/calendar" class="menu-btn-small">← Back to Calendar</a>
+    </div>
 
-        <div class="mb-3">
-            <label>Groom Name</label>
-            <input type="text" name="groom_name" class="form-control" value="{{ wedding.groom_name }}">
-        </div>
+    <div class="wedding-card">
 
-        <div class="mb-3">
-            <label>Wedding Date</label>
-            <input type="date" name="wedding_date" class="form-control"
-                   value="{{ wedding.wedding_date }}">
-        </div>
+        <form method="POST">
 
-        <div class="mb-3">
-            <label>Status</label>
-            <select name="status" class="form-control">
-                <option value="hold" {% if wedding.status=='hold' %}selected{% endif %}>Hold</option>
-                <option value="tentative" {% if wedding.status=='tentative' %}selected{% endif %}>Tentative</option>
-                <option value="booked" {% if wedding.status=='booked' %}selected{% endif %}>Booked</option>
-                <option value="cancelled" {% if wedding.status=='cancelled' %}selected{% endif %}>Cancelled</option>
-                <option value="postponed" {% if wedding.status=='postponed' %}selected{% endif %}>Postponed</option>
-                <option value="archived" {% if wedding.status=='archived' %}selected{% endif %}>Archived</option>
-            </select>
-        </div>
+            <div class="mb-3">
+                <label class="field-label">Bride Name</label>
+                <input type="text" name="bride_name" class="form-control field-input"
+                       value="{{ wedding.bride_name }}">
+            </div>
 
-        <div class="mb-3">
-            <label>Notes</label>
-            <textarea name="notes" class="form-control">{{ wedding.notes }}</textarea>
-        </div>
+            <div class="mb-3">
+                <label class="field-label">Groom Name</label>
+                <input type="text" name="groom_name" class="form-control field-input"
+                       value="{{ wedding.groom_name }}">
+            </div>
 
-        <button class="btn btn-success">Save</button>
-        <a href="/weddings/calendar" class="btn btn-secondary">Cancel</a>
+            <div class="mb-3">
+                <label class="field-label">Wedding Date</label>
+                <input type="date" name="wedding_date" class="form-control field-input"
+                       value="{{ wedding.wedding_date }}">
+            </div>
 
-    </form>
+            <div class="mb-3">
+                <label class="field-label">Status</label>
+                <select name="status" class="form-control field-input">
+                    <option value="hold" {% if wedding.status=='hold' %}selected{% endif %}>Hold</option>
+                    <option value="tentative" {% if wedding.status=='tentative' %}selected{% endif %}>Tentative</option>
+                    <option value="booked" {% if wedding.status=='booked' %}selected{% endif %}>Booked</option>
+                    <option value="cancelled" {% if wedding.status=='cancelled' %}selected{% endif %}>Cancelled</option>
+                    <option value="postponed" {% if wedding.status=='postponed' %}selected{% endif %}>Postponed</option>
+                    <option value="archived" {% if wedding.status=='archived' %}selected{% endif %}>Archived</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="field-label">Notes</label>
+                <textarea name="notes" class="form-control field-input" rows="4">{{ wedding.notes }}</textarea>
+            </div>
+
+            <div class="action-row">
+                <button class="menu-btn">💾 Save Changes</button>
+                <a href="/weddings/calendar" class="menu-btn-cancel">Cancel</a>
+            </div>
+
+        </form>
+
+    </div>
 
 </div>
+
+<style>
+.page-title {
+    margin-bottom: 20px;
+}
+
+.top-links {
+    margin-bottom: 15px;
+}
+
+.wedding-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    border: 1px solid #ddd;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wedding-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.field-label {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.field-input {
+    border-radius: 8px;
+}
+
+.action-row {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.menu-btn {
+    background: #17a2b8;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    font-size: 1.1rem;
+}
+
+.menu-btn:hover {
+    background: #138496;
+    color: #fff;
+}
+
+.menu-btn-cancel {
+    background: #6c757d;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 1.1rem;
+}
+
+.menu-btn-cancel:hover {
+    background: #5a6268;
+    color: #fff;
+}
+
+.menu-btn-small {
+    background: #eee;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.menu-btn-small:hover {
+    background: #ddd;
+}
+</style>
+
 </body>
 </html>

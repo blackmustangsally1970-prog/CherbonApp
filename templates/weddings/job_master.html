@@ -6,98 +6,213 @@
 </head>
 
 <body>
-<div class="container" style="margin-top: 30px;">
 
-    <h2>Master Job List</h2>
-    <p>This is your master checklist. Items here can be inserted into any wedding.</p>
+<div class="container" style="margin-top: 30px; max-width: 900px;">
 
-    <hr>
+    <h2 class="page-title">🧰 Master Job List</h2>
+    <p class="page-subtitle">Your master checklist — items here can be inserted into any wedding.</p>
 
-    <h4>Add New Job</h4>
-    <form method="POST" action="/weddings/job_master/add">
+    <div class="top-links">
+        <a href="/weddings/calendar" class="menu-btn-small">← Back to Calendar</a>
+    </div>
 
-        <div class="row">
-            <div class="col-md-3">
-                <select name="role" class="form-control">
-                    <option value="coordinator">Coordinator</option>
-                    <option value="wait">Wait</option>
-                    <option value="bar">Bar</option>
-                    <option value="floater">Floater</option>
-                    <option value="admin">Admin</option>
-                </select>
+    <!-- ⭐ ADD NEW JOB CARD -->
+    <div class="job-card">
+
+        <h4 class="section-title">➕ Add New Job</h4>
+
+        <form method="POST" action="/weddings/job_master/add">
+
+            <div class="row g-2">
+
+                <div class="col-md-3">
+                    <label class="field-label">Role</label>
+                    <select name="role" class="form-control field-input">
+                        <option value="coordinator">Coordinator</option>
+                        <option value="wait">Wait</option>
+                        <option value="bar">Bar</option>
+                        <option value="floater">Floater</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="field-label">Description</label>
+                    <input type="text" name="description" class="form-control field-input"
+                           placeholder="Job description">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="field-label">Order</label>
+                    <input type="number" name="sort_order" class="form-control field-input"
+                           placeholder="Order">
+                </div>
+
+                <div class="col-md-1 d-flex align-items-end">
+                    <button class="menu-btn w-100">Add</button>
+                </div>
+
             </div>
 
-            <div class="col-md-6">
-                <input type="text" name="description" class="form-control" placeholder="Job description">
-            </div>
+        </form>
 
-            <div class="col-md-2">
-                <input type="number" name="sort_order" class="form-control" placeholder="Order">
-            </div>
+    </div>
 
-            <div class="col-md-1">
-                <button class="btn btn-success">Add</button>
-            </div>
-        </div>
+    <!-- ⭐ EXISTING JOBS -->
+    <h4 class="section-title">📋 Existing Jobs</h4>
 
-    </form>
+    <div class="job-table-wrapper">
+        <table class="table table-bordered job-table">
+            <thead>
+                <tr>
+                    <th>Role</th>
+                    <th>Description</th>
+                    <th>Order</th>
+                    <th>Active</th>
+                    <th style="width:160px;">Actions</th>
+                </tr>
+            </thead>
 
-    <hr>
+            <tbody>
+                {% for j in jobs %}
+                <tr class="job-row">
+                    <form method="POST" action="/weddings/job_master/update/{{ j.id }}">
+                        <td>
+                            <select name="role" class="form-control field-input">
+                                <option value="coordinator" {% if j.role=='coordinator' %}selected{% endif %}>Coordinator</option>
+                                <option value="wait" {% if j.role=='wait' %}selected{% endif %}>Wait</option>
+                                <option value="bar" {% if j.role=='bar' %}selected{% endif %}>Bar</option>
+                                <option value="floater" {% if j.role=='floater' %}selected{% endif %}>Floater</option>
+                                <option value="admin" {% if j.role=='admin' %}selected{% endif %}>Admin</option>
+                            </select>
+                        </td>
 
-    <h4>Existing Jobs</h4>
+                        <td>
+                            <input type="text" name="description" class="form-control field-input"
+                                   value="{{ j.description }}">
+                        </td>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Role</th>
-                <th>Description</th>
-                <th>Sort Order</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
+                        <td>
+                            <input type="number" name="sort_order" class="form-control field-input"
+                                   value="{{ j.sort_order }}">
+                        </td>
 
-        <tbody>
-            {% for j in jobs %}
-            <tr>
-                <form method="POST" action="/weddings/job_master/update/{{ j.id }}">
-                    <td>
-                        <select name="role" class="form-control">
-                            <option value="coordinator" {% if j.role=='coordinator' %}selected{% endif %}>Coordinator</option>
-                            <option value="wait" {% if j.role=='wait' %}selected{% endif %}>Wait</option>
-                            <option value="bar" {% if j.role=='bar' %}selected{% endif %}>Bar</option>
-                            <option value="floater" {% if j.role=='floater' %}selected{% endif %}>Floater</option>
-                            <option value="admin" {% if j.role=='admin' %}selected{% endif %}>Admin</option>
-                        </select>
-                    </td>
+                        <td class="text-center">
+                            <input type="checkbox" name="active" {% if j.active %}checked{% endif %}>
+                        </td>
 
-                    <td>
-                        <input type="text" name="description" class="form-control" value="{{ j.description }}">
-                    </td>
+                        <td class="action-buttons">
+                            <button class="btn btn-primary btn-sm action-btn">Update</button>
 
-                    <td>
-                        <input type="number" name="sort_order" class="form-control" value="{{ j.sort_order }}">
-                    </td>
-
-                    <td>
-                        <input type="checkbox" name="active" {% if j.active %}checked{% endif %}>
-                    </td>
-
-                    <td>
-                        <button class="btn btn-primary btn-sm">Update</button>
-                        <a href="/weddings/job_master/delete/{{ j.id }}" class="btn btn-danger btn-sm"
-                           onclick="return confirm('Delete job?');">Delete</a>
-                    </td>
-                </form>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <hr>
-
-    <a href="/weddings/calendar" class="btn btn-secondary">Back to Calendar</a>
+                            <a href="/weddings/job_master/delete/{{ j.id }}"
+                               class="btn btn-danger btn-sm action-btn"
+                               onclick="return confirm('Delete job?');">
+                                Delete
+                            </a>
+                        </td>
+                    </form>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
 </div>
+
+<style>
+.page-title {
+    margin-bottom: 10px;
+}
+
+.page-subtitle {
+    margin-bottom: 20px;
+    color: #555;
+}
+
+.top-links {
+    margin-bottom: 20px;
+}
+
+.job-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    border: 1px solid #ddd;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.job-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.section-title {
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.field-label {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.field-input {
+    border-radius: 8px;
+}
+
+.job-table-wrapper {
+    background: #fff;
+    border-radius: 14px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+}
+
+.job-row:hover {
+    background: #f9f9f9;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.action-btn {
+    min-width: 70px;
+}
+
+.menu-btn {
+    background: #17a2b8;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    font-size: 1rem;
+}
+
+.menu-btn:hover {
+    background: #138496;
+    color: #fff;
+}
+
+.menu-btn-small {
+    background: #eee;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.menu-btn-small:hover {
+    background: #ddd;
+}
+</style>
+
 </body>
 </html>
