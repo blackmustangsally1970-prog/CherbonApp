@@ -6,59 +6,65 @@
 </head>
 
 <body>
-<div style="margin-bottom: 15px;">
-    <a href="{{ url_for('bookings.wedding_calendar') }}" class="btn btn-primary">
-        📅 View Calendar
-    </a>
-</div>
 
+<div class="container" style="margin-top: 30px; max-width: 1100px;">
 
+    <!-- HEADER -->
+    <div class="hub-header">
+        <h2 class="page-title">💒 Wedding Hub</h2>
+        <h4 class="page-subtitle">{{ wedding.bride_name }} & {{ wedding.groom_name }} — {{ wedding.wedding_date }}</h4>
+        <p class="status-line">Status: <strong>{{ wedding.status }}</strong></p>
 
-<div class="container" style="margin-top: 30px;">
+        <a href="{{ url_for('bookings.wedding_calendar') }}" class="menu-btn-small">
+            ← Back to Calendar
+        </a>
+    </div>
 
-    <h2>Wedding Hub</h2>
-    <h4>{{ wedding.bride_name }} & {{ wedding.groom_name }} — {{ wedding.wedding_date }}</h4>
-    <p>Status: <strong>{{ wedding.status }}</strong></p>
+    <div class="hub-grid">
 
-    <hr>
+        <!-- ⭐ STAFFING CARD -->
+        <div class="hub-card">
+            <h5 class="section-title">🧑‍🤝‍🧑 Staffing</h5>
 
-    <div class="row">
-
-        <!-- STAFFING -->
-        <div class="col-md-4">
-            <h5>Staffing</h5>
-            <ul>
+            {% if staff %}
+            <ul class="hub-list">
                 {% for s in staff %}
-                    <li>{{ s.role }} — Employee #{{ s.employee_id }}</li>
+                    <li class="hub-item">
+                        <span class="item-main">{{ s.role }}</span>
+                        <span class="item-sub">Employee #{{ s.employee_id }}</span>
+                    </li>
                 {% endfor %}
             </ul>
+            {% else %}
+            <p class="empty-text">No staff assigned yet.</p>
+            {% endif %}
 
-            <a href="/weddings/{{ wedding.id }}/staff" class="btn btn-primary btn-sm">
-                Manage Staffing
-            </a>
+            <a href="/weddings/{{ wedding.id }}/staff" class="menu-btn mt-2">Manage Staffing</a>
         </div>
 
+        <!-- ⭐ JOB LISTS CARD -->
+        <div class="hub-card">
+            <h5 class="section-title">📋 Job Lists</h5>
 
-        <!-- JOB LISTS -->
-        <div class="col-md-4">
-            <h5>Job Lists</h5>
-
-            <!-- INSERT MASTER JOB LIST BUTTON -->
             <a href="/weddings/{{ wedding.id }}/jobs/clone_master"
-               class="btn btn-info btn-sm"
+               class="menu-btn-small"
                onclick="return confirm('Insert master job list into this wedding?');">
-                Insert Master Job List
+                ➕ Insert Master Job List
             </a>
 
-            <ul style="margin-top: 10px;">
+            <!-- NEW: Link to Master Job List page -->
+            <a href="/weddings/job_master" class="menu-btn-small mt-2">
+                🧰 Open Master Job List
+            </a>
+
+            <ul class="hub-list" style="margin-top: 10px;">
                 {% for j in job_lists %}
-                    <li style="
-                        {% if j.in_progress_by %}background-color: #fff3cd;{% endif %}
-                        {% if j.completed %}background-color: #d4edda; text-decoration: line-through;{% endif %}
-                        padding: 5px;
-                        margin-bottom: 5px;
-                    ">
-                        {{ j.description }}
+                    <li class="hub-item"
+                        style="
+                            {% if j.in_progress_by %}background-color: #fff3cd;{% endif %}
+                            {% if j.completed %}background-color: #d4edda; text-decoration: line-through;{% endif %}
+                        ">
+                        <span class="item-main">{{ j.description }}</span>
 
                         {% if j.in_progress_by %}
                             <span class="badge bg-warning text-dark">
@@ -72,8 +78,7 @@
                             </span>
                         {% endif %}
 
-                        <!-- ACTION BUTTONS -->
-                        <div style="margin-top: 5px;">
+                        <div class="job-actions">
                             {% if not j.completed %}
                                 {% if not j.in_progress_by %}
                                     <a href="/weddings/{{ wedding.id }}/jobs/start/{{ j.id }}/{{ session.employee_id }}"
@@ -92,15 +97,22 @@
             </ul>
         </div>
 
+        <!-- ⭐ TIMELINE CARD -->
+        <div class="hub-card">
+            <h5 class="section-title">🕒 Timeline</h5>
 
-        <!-- TIMELINE -->
-        <div class="col-md-4">
-            <h5>Timeline</h5>
-            <ul>
+            {% if timeline %}
+            <ul class="hub-list">
                 {% for t in timeline %}
-                    <li>[{{ t.event_type }}] {{ t.content }} ({{ t.created_at }})</li>
+                    <li class="hub-item">
+                        <span class="item-main">[{{ t.event_type }}] {{ t.content }}</span>
+                        <span class="item-sub">{{ t.created_at }}</span>
+                    </li>
                 {% endfor %}
             </ul>
+            {% else %}
+            <p class="empty-text">No timeline entries yet.</p>
+            {% endif %}
         </div>
 
     </div>
@@ -108,17 +120,34 @@
     <hr>
 
     <!-- DETAIL TEMPLATES -->
-    <h5>Detail Templates (for future forms)</h5>
-    <ul>
-        {% for d in detail_templates %}
-            <li>{{ d.category }} — {{ d.field_name }} ({{ d.field_type }})</li>
-        {% endfor %}
-    </ul>
+    <div class="hub-card">
+        <h5 class="section-title">📄 Detail Templates (for future forms)</h5>
 
-    <hr>
+        {% if detail_templates %}
+        <ul class="hub-list">
+            {% for d in detail_templates %}
+                <li class="hub-item">
+                    <span class="item-main">{{ d.category }}</span>
+                    <span class="item-sub">{{ d.field_name }} ({{ d.field_type }})</span>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-text">No detail templates found.</p>
+        {% endif %}
+    </div>
 
-    <a href="/weddings/calendar" class="btn btn-secondary">Back to Calendar</a>
+    <a href="/weddings/calendar" class="menu-btn-cancel mt-3">Back to Calendar</a>
 
 </div>
-</body>
-</html>
+
+<style>
+.page-title { margin-bottom: 5px; }
+.page-subtitle { margin-bottom: 10px; color: #555; }
+.status-line { margin-bottom: 20px; }
+
+.hub-header { margin-bottom: 20px; }
+
+.hub-grid {
+    display: grid;
+    grid-template-columns: repeat
