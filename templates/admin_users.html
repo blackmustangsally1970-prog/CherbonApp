@@ -1,8 +1,9 @@
 <h2 class="page-title">👤 Manage Users</h2>
 
-<a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
-
-<a href="{{ url_for('admin_users_add') }}" class="menu-btn mb-3">➕ Add User</a>
+<div class="top-links">
+    <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
+    <a href="{{ url_for('admin_users_add') }}" class="menu-btn">➕ Add User</a>
+</div>
 
 <div class="user-grid">
 
@@ -33,12 +34,12 @@
         <div class="user-actions">
 
             <a href="{{ url_for('admin_users_edit', user_id=u.user_id) }}"
-               class="btn btn-warning btn-sm">✏️ Edit</a>
+               class="btn btn-warning btn-sm action-btn">✏️ Edit</a>
 
             <form action="{{ url_for('admin_users_reset_password', user_id=u.user_id) }}"
                   method="POST" style="display:inline-block;">
                 <input type="hidden" name="new_password" value="Reset123">
-                <button class="btn btn-info btn-sm"
+                <button class="btn btn-info btn-sm action-btn"
                         onclick="return confirm('Reset password to Reset123?');">
                     🔑 Reset PW
                 </button>
@@ -47,7 +48,7 @@
             {% if u.active %}
             <form action="{{ url_for('admin_users_deactivate', user_id=u.user_id) }}"
                   method="POST" style="display:inline-block;">
-                <button class="btn btn-secondary btn-sm"
+                <button class="btn btn-secondary btn-sm action-btn"
                         onclick="return confirm('Deactivate user?');">
                     ⛔ Deactivate
                 </button>
@@ -55,7 +56,7 @@
             {% else %}
             <form action="{{ url_for('admin_users_activate', user_id=u.user_id) }}"
                   method="POST" style="display:inline-block;">
-                <button class="btn btn-success btn-sm"
+                <button class="btn btn-success btn-sm action-btn"
                         onclick="return confirm('Activate user?');">
                     ✅ Activate
                 </button>
@@ -74,6 +75,12 @@
     margin-bottom: 20px;
 }
 
+.top-links {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
 .user-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -85,7 +92,13 @@
     border-radius: 12px;
     padding: 15px;
     border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.user-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
 }
 
 .user-header {
@@ -93,7 +106,7 @@
 }
 
 .user-name {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: bold;
 }
 
@@ -122,5 +135,9 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.action-btn {
+    min-width: 90px;
 }
 </style>
