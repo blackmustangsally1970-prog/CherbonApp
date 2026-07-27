@@ -41,6 +41,38 @@ def wedding_hub(wedding_id):
 
     caterers = Caterer.query.all()
 
+    # ---------------------------------------------------------
+    # JOB STATS (Coordinator + Staff)
+    # ---------------------------------------------------------
+    coord_total = JobListInstance.query.filter_by(
+        wedding_id=wedding.id,
+        assigned_role="coordinator"
+    ).count()
+
+    coord_completed = JobListInstance.query.filter_by(
+        wedding_id=wedding.id,
+        assigned_role="coordinator",
+        status="completed"
+    ).count()
+
+    staff_total = JobListInstance.query.filter_by(
+        wedding_id=wedding.id,
+        assigned_role="staff"
+    ).count()
+
+    staff_completed = JobListInstance.query.filter_by(
+        wedding_id=wedding.id,
+        assigned_role="staff",
+        status="completed"
+    ).count()
+
+    stats = {
+        "coord_total": coord_total,
+        "coord_completed": coord_completed,
+        "staff_total": staff_total,
+        "staff_completed": staff_completed
+    }
+
     return render_template(
         'weddings/hub.html',
         wedding=wedding,
@@ -49,7 +81,8 @@ def wedding_hub(wedding_id):
         timeline=timeline,
         detail_templates=detail_templates,
         caterers=caterers,
-        coordinator_view=is_coordinator()  # allows template to hide admin-only controls
+        coordinator_view=is_coordinator(),
+        stats=stats
     )
 
 
