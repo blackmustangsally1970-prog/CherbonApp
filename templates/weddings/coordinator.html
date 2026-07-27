@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Coordinator — {{ wedding.bride }} & {{ wedding.groom }}</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container" style="margin-top: 30px; max-width: 1200px;">
+
+    <!-- HEADER -->
+<div class="top-links">
+    <a href="/weddings/{{ wedding.id }}/hub" class="menu-btn-small">← Back to Hub</a>
+    <a href="/weddings/calendar" class="menu-btn-small">Calendar</a>
+
+    <a href="/weddings/{{ wedding.id }}/coordinator" class="menu-btn-small">Coordinator</a>
+    <a href="/weddings/{{ wedding.id }}/staff" class="menu-btn-small">Staff</a>
+    <a href="/weddings/{{ wedding.id }}/staff_jobs" class="menu-btn-small">Wait Staff</a>
+    <a href="/weddings/{{ wedding.id }}/menu" class="menu-btn-small">Menu</a>
+    <a href="/weddings/{{ wedding.id }}/caterer" class="menu-btn-small">Caterer</a>
+    <a href="/weddings/{{ wedding.id }}/timeline" class="menu-btn-small">Timeline</a>
+    <a href="/weddings/{{ wedding.id }}/job_engine" class="menu-btn-small">Jobs</a>
+</div>
+
+    <hr>
+
+    <!-- ⭐ COORDINATOR JOBS -->
+    <div class="hub-section">
+        <h4 class="section-title">📋 Coordinator Jobs</h4>
+
+        <table class="table table-bordered table-sm excel-table freeze-header">
+            <thead>
+                <tr>
+                    <th style="width:40px;" class="text-center">#</th>
+                    <th>Description</th>
+                    <th style="width:120px;" class="text-center">Status</th>
+                    <th style="width:160px;" class="text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for j in coord_jobs %}
+                <tr class="excel-row">
+                    <td class="text-center">{{ loop.index }}</td>
+
+                    <td>{{ j.description }}</td>
+
+                    <td class="text-center">
+                        {% if j.completed %}
+                            <span class="badge bg-success">Completed</span>
+                        {% elif j.in_progress %}
+                            <span class="badge bg-warning text-dark">In Progress</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Pending</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                        {% if not j.completed %}
+                            {% if not j.in_progress %}
+                                <a href="/weddings/{{ wedding.id }}/jobs/start/{{ j.id }}/{{ session.employee_id }}"
+                                   class="btn btn-sm btn-warning">Start</a>
+                            {% else %}
+                                <a href="/weddings/{{ wedding.id }}/jobs/finish/{{ j.id }}/{{ session.employee_id }}"
+                                   class="btn btn-sm btn-success">Finish</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <!-- ⭐ WAIT STAFF JOBS -->
+    <div class="hub-section">
+        <h4 class="section-title">🧑‍🍽️ Wait Staff Jobs (Coordinator View)</h4>
+
+        <table class="table table-bordered table-sm excel-table freeze-header">
+            <thead>
+                <tr>
+                    <th style="width:40px;" class="text-center">#</th>
+                    <th>Description</th>
+                    <th style="width:120px;" class="text-center">Status</th>
+                    <th style="width:160px;" class="text-center">Assigned</th>
+                    <th style="width:160px;" class="text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for j in wait_jobs %}
+                <tr class="excel-row">
+                    <td class="text-center">{{ loop.index }}</td>
+
+                    <td>{{ j.description }}</td>
+
+                    <td class="text-center">
+                        {% if j.completed %}
+                            <span class="badge bg-success">Completed</span>
+                        {% elif j.in_progress %}
+                            <span class="badge bg-warning text-dark">In Progress</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Pending</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                        {{ j.assigned_name or "Unassigned" }}
+                    </td>
+
+                    <td class="text-center">
+                        {% if not j.completed %}
+                            {% if not j.in_progress %}
+                                <a href="/weddings/{{ wedding.id }}/jobs/start/{{ j.id }}/{{ session.employee_id }}"
+                                   class="btn btn-sm btn-warning">Start</a>
+                            {% else %}
+                                <a href="/weddings/{{ wedding.id }}/jobs/finish/{{ j.id }}/{{ session.employee_id }}"
+                                   class="btn btn-sm btn-success">Finish</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <!-- ⭐ STAFF ROSTER -->
+    <div class="hub-section">
+        <h4 class="section-title">👥 Staff Assigned</h4>
+
+        <ul class="hub-list">
+            {% for s in staff %}
+            <li class="hub-item">
+                <span class="item-main">{{ s.name }}</span>
+                <span class="item-sub">{{ s.role }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <a href="/weddings/{{ wedding.id }}/staff" class="btn btn-primary btn-sm">Manage Staff</a>
+    </div>
+
+    <hr>
+
+    <!-- ⭐ TIMELINE -->
+    <div class="hub-section">
+        <h4 class="section-title">🕒 Timeline</h4>
+
+        <ul class="hub-list">
+            {% for t in timeline %}
+            <li class="hub-item">
+                <span class="item-main">{{ t.time }} — {{ t.content }}</span>
+                <span class="item-sub">{{ t.created_at }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <a href="/weddings/{{ wedding.id }}/timeline" class="btn btn-secondary btn-sm">Manage Timeline</a>
+    </div>
+
+</div>
+
+<style>
+.page-title { margin-bottom: 5px; }
+.page-subtitle { margin-bottom: 10px; color: #555; }
+.hub-meta { margin-bottom: 15px; }
+.meta-item { margin-right: 20px; }
+
+.hub-section { margin-bottom: 30px; }
+.section-title { font-weight: 600; margin-bottom: 10px; }
+
+.excel-table th {
+    background: #eaeaea;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.excel-row:nth-child(even) { background: #f7f7f7; }
+.excel-row:nth-child(odd) { background: #ffffff; }
+
+.hub-list { list-style: none; padding-left: 0; }
+.hub-item { padding: 8px 0; border-bottom: 1px solid #eee; }
+.item-main { font-weight: bold; }
+.item-sub { font-size: 0.9rem; color: #666; }
+
+.menu-btn-small {
+    background: #eee;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.top-links {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+</style>
+
+
+</body>
+</html>

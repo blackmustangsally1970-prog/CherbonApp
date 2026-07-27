@@ -31,6 +31,13 @@ class Wedding(db.Model):
     start_time = db.Column(db.String(50))
     other_information = db.Column(db.Text)
 
+
+    # ============================
+    # CATERER DETAILS
+    # ============================
+    caterer_id = db.Column(db.Integer, db.ForeignKey('caterer.id'))
+
+
     # ============================
     # SUBMISSION METADATA
     # ============================

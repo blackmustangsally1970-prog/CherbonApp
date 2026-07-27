@@ -3,6 +3,7 @@ from datetime import datetime
 from extensions import db
 from weddings.models import Wedding
 from flask_login import login_required, current_user
+from permissions import is_coordinator  # admin/management handled via current_user.role
 
 # ---------------------------------------------------------
 # DEFINE BLUEPRINT FIRST
@@ -11,17 +12,17 @@ bookings_bp = Blueprint('bookings', __name__, url_prefix='/weddings')
 
 # ---------------------------------------------------------
 # LOCK DOWN ALL /weddings ROUTES
-# (Admin / Management / Manager / Coordinator)
+# Admin / Management / Coordinator (view-only for coordinator)
 # ---------------------------------------------------------
 @bookings_bp.before_request
 @login_required
 def protect_weddings():
-    if current_user.role not in ['admin', 'management', 'manager', 'coordinator']:
+    if current_user.role not in ['admin', 'management', 'coordinator']:
         abort(403)
 
 
 # ---------------------------------------------------------
-# WEDDING CALENDAR (Admin / Management / Manager / Coordinator)
+# WEDDING CALENDAR (Admin / Management / Coordinator VIEW ONLY)
 # ---------------------------------------------------------
 @bookings_bp.route('/calendar')
 def wedding_calendar():
@@ -55,10 +56,13 @@ def wedding_calendar():
 
 
 # ---------------------------------------------------------
-# ADD WEDDING (Admin / Management / Manager / Coordinator)
+# ADD WEDDING (Admin / Management ONLY)
 # ---------------------------------------------------------
 @bookings_bp.route('/add', methods=['GET', 'POST'])
 def add_wedding():
+    if is_coordinator():
+        return "Unauthorized", 403
+
     if request.method == 'POST':
         bride = request.form.get('bride_name')
         groom = request.form.get('groom_name')
@@ -66,7 +70,6 @@ def add_wedding():
         other_information = request.form.get('other_information', '')
         status = request.form.get('status', 'hold')
 
-        # NEW FIELDS
         event_type = request.form.get('event_type')
         bride_mobile = request.form.get('bride_mobile')
         service = request.form.get('service')
@@ -85,7 +88,6 @@ def add_wedding():
             other_information=other_information,
             status=status,
             booking_source='manual',
-
             event_type=event_type,
             bride_mobile=bride_mobile,
             service=service,
@@ -101,10 +103,13 @@ def add_wedding():
 
 
 # ---------------------------------------------------------
-# EDIT WEDDING (Admin / Management / Manager / Coordinator)
+# EDIT WEDDING (Admin / Management ONLY)
 # ---------------------------------------------------------
 @bookings_bp.route('/edit/<int:wedding_id>', methods=['GET', 'POST'])
 def edit_wedding(wedding_id):
+    if is_coordinator():
+        return "Unauthorized", 403
+
     wedding = Wedding.query.get_or_404(wedding_id)
 
     if request.method == 'POST':
@@ -112,7 +117,6 @@ def edit_wedding(wedding_id):
         wedding.groom_name = request.form.get('groom_name')
         wedding.other_information = request.form.get('other_information')
 
-        # NEW FIELDS
         wedding.event_type = request.form.get('event_type')
         wedding.bride_mobile = request.form.get('bride_mobile')
         wedding.service = request.form.get('service')
@@ -131,10 +135,13 @@ def edit_wedding(wedding_id):
 
 
 # ---------------------------------------------------------
-# DELETE WEDDING (Admin / Management / Manager / Coordinator)
+# DELETE WEDDING (Admin / Management ONLY)
 # ---------------------------------------------------------
 @bookings_bp.route('/delete/<int:wedding_id>')
 def delete_wedding(wedding_id):
+    if is_coordinator():
+        return "Unauthorized", 403
+
     wedding = Wedding.query.get_or_404(wedding_id)
     db.session.delete(wedding)
     db.session.commit()
@@ -142,10 +149,13 @@ def delete_wedding(wedding_id):
 
 
 # ---------------------------------------------------------
-# STATUS CHANGE (Admin / Management / Manager / Coordinator)
+# STATUS CHANGE (Admin / Management ONLY)
 # ---------------------------------------------------------
 @bookings_bp.route('/status/<int:wedding_id>/<string:new_status>')
 def change_status(wedding_id, new_status):
+    if is_coordinator():
+        return "Unauthorized", 403
+
     wedding = Wedding.query.get_or_404(wedding_id)
 
     valid_statuses = ['hold', 'booked', 'tentative', 'cancelled', 'postponed', 'archived']
@@ -168,10 +178,13 @@ def change_status(wedding_id, new_status):
 
 
 # ---------------------------------------------------------
-# MERGE MANUAL → JOTFORM T&C (Admin / Management / Manager / Coordinator)
+# MERGE MANUAL → JOTFORM T&C (Admin / Management ONLY)
 # ---------------------------------------------------------
 @bookings_bp.route('/merge_tnc/<int:wedding_id>/<string:submission_id>')
 def merge_tnc(wedding_id, submission_id):
+    if is_coordinator():
+        return "Unauthorized", 403
+
     wedding = Wedding.query.get_or_404(wedding_id)
 
     wedding.tnc_submission_id = submission_id

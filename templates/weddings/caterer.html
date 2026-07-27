@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Caterer — {{ wedding.bride }} & {{ wedding.groom }}</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container" style="margin-top: 30px; max-width: 900px;">
+
+    <!-- HEADER -->
+<div class="top-links">
+    <a href="/caterer/calendar" class="menu-btn-small">← Back to Caterer Calendar</a>
+
+    <a href="/weddings/{{ wedding.id }}/caterer" class="menu-btn-small">Menu</a>
+    <a href="/weddings/{{ wedding.id }}/caterer/dietary" class="menu-btn-small">Dietary</a>
+    <a href="/weddings/{{ wedding.id }}/caterer/service_times" class="menu-btn-small">Service Times</a>
+    <a href="/weddings/{{ wedding.id }}/timeline" class="menu-btn-small">Timeline</a>
+    <a href="/weddings/{{ wedding.id }}/caterer/notes" class="menu-btn-small">Notes</a>
+</div>
+
+    <hr>
+
+    <!-- ⭐ MENU SELECTIONS -->
+    <div class="hub-section">
+        <h4 class="section-title">📋 Menu Selections</h4>
+
+        {% if menu_items %}
+        <table class="table table-bordered table-sm excel-table">
+            <thead>
+                <tr>
+                    <th style="width:40px;" class="text-center">#</th>
+                    <th>Category</th>
+                    <th>Selection</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for m in menu_items %}
+                <tr class="excel-row">
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td>{{ m.category }}</td>
+                    <td>{{ m.selection }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="empty-text">No menu selections have been entered yet.</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- ⭐ DIETARY REQUIREMENTS -->
+    <div class="hub-section">
+        <h4 class="section-title">⚠️ Dietary Requirements</h4>
+
+        {% if dietary %}
+        <ul class="hub-list">
+            {% for d in dietary %}
+            <li class="hub-item">
+                <span class="item-main">{{ d.name }}</span>
+                <span class="item-sub">{{ d.requirement }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+            <p class="empty-text">No dietary requirements recorded.</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- ⭐ SERVICE TIMES -->
+    <div class="hub-section">
+        <h4 class="section-title">⏱️ Service Times</h4>
+
+        {% if service_times %}
+        <ul class="hub-list">
+            {% for s in service_times %}
+            <li class="hub-item">
+                <span class="item-main">{{ s.label }}</span>
+                <span class="item-sub">{{ s.time }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+            <p class="empty-text">No service times entered.</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- ⭐ CATERER NOTES -->
+    <div class="hub-section">
+        <h4 class="section-title">📝 Caterer Notes</h4>
+
+        <form method="POST" action="/weddings/{{ wedding.id }}/caterer/notes">
+            <textarea name="notes" class="form-control" rows="4"
+                      placeholder="Add notes for the coordinator or admin...">{{ caterer_notes }}</textarea>
+
+            <button class="btn btn-primary btn-sm mt-2">Save Notes</button>
+        </form>
+    </div>
+
+</div>
+
+<style>
+.page-title { margin-bottom: 5px; }
+.page-subtitle { margin-bottom: 10px; color: #555; }
+.hub-meta { margin-bottom: 15px; }
+.meta-item { margin-right: 20px; }
+
+.hub-section { margin-bottom: 30px; }
+.section-title { font-weight: 600; margin-bottom: 10px; }
+
+.excel-table th {
+    background: #eaeaea;
+    font-weight: 600;
+}
+
+.excel-row:nth-child(even) { background: #f7f7f7; }
+.excel-row:nth-child(odd) { background: #ffffff; }
+
+.hub-list { list-style: none; padding-left: 0; }
+.hub-item { padding: 8px 0; border-bottom: 1px solid #eee; }
+.item-main { font-weight: bold; }
+.item-sub { font-size: 0.9rem; color: #666; }
+
+.empty-text {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px dashed #ccc;
+    color: #666;
+    text-align: center;
+}
+
+.menu-btn-small {
+    background: #eee;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    color: #333;
+}
+</style>
+
+</body>
+</html>

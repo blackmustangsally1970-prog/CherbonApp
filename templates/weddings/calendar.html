@@ -21,7 +21,6 @@
         border-bottom: 2px solid #eee;
     }
 
-    /* Sexy card layout */
     .wedding-card {
         background: #ffffff;
         margin: 15px;
@@ -43,7 +42,6 @@
         margin-bottom: 8px;
     }
 
-    /* Status badges */
     .status {
         display: inline-block;
         padding: 8px 14px;
@@ -62,44 +60,38 @@
     .status-archived { background: #343a40; }
 
     .info-row {
-        margin-bottom: 10px;
-        font-size: 1.3rem;
+        margin-bottom: 8px;
+        font-size: 1.25rem;
     }
 
-    /* Buttons */
     .btn {
         display: inline-block;
-        padding: 14px 20px;
-        font-size: 1.4rem;
+        padding: 12px 18px;
+        font-size: 1.3rem;
         border-radius: 10px;
         text-decoration: none;
-        margin-right: 10px;
+        margin-right: 8px;
         margin-top: 10px;
         color: #fff;
     }
 
     .btn-hub { background: #17a2b8; }
     .btn-edit { background: #ffc107; color: #000; }
+    .btn-staff { background: #6f42c1; }
+    .btn-jobs { background: #20c997; }
+    .btn-menu { background: #fd7e14; }
+    .btn-coord { background: #007bff; }
+    .btn-cater { background: #6610f2; }
+
     .btn-archive { background: #6c757d; }
     .btn-restore { background: #343a40; }
     .btn-delete { background: #dc3545; }
 
-    /* Bigger on small phones */
     @media (max-width: 480px) {
-        .wedding-card {
-            padding: 24px;
-            font-size: 1.6rem;
-        }
-        .wedding-date {
-            font-size: 2rem;
-        }
-        .names {
-            font-size: 1.8rem;
-        }
-        .btn {
-            font-size: 1.6rem;
-            padding: 16px 22px;
-        }
+        .wedding-card { padding: 24px; font-size: 1.6rem; }
+        .wedding-date { font-size: 2rem; }
+        .names { font-size: 1.8rem; }
+        .btn { font-size: 1.6rem; padding: 16px 22px; }
     }
 </style>
 </head>
@@ -138,7 +130,13 @@
             <!-- STATUS -->
             <div class="status status-{{ w.status }}">{{ w.status|upper }}</div>
 
-            <!-- INFO -->
+            <!-- NEW INFO LINES -->
+            <div class="info-row"><strong>Coordinator:</strong> {{ w.coordinator_name or "Not assigned" }}</div>
+            <div class="info-row"><strong>Jobs:</strong> {{ w.jobs_completed }}/{{ w.jobs_total }}</div>
+            <div class="info-row"><strong>Menu:</strong> {{ w.menu_status or "Pending" }}</div>
+            <div class="info-row"><strong>CRM:</strong> Coming soon</div>
+
+            <!-- EXISTING INFO -->
             <div class="info-row"><strong>Event:</strong> {{ w.event_type }}</div>
             <div class="info-row"><strong>Service:</strong> {{ w.service }}</div>
             <div class="info-row"><strong>Guests:</strong> {{ w.est_guests }}</div>
@@ -150,6 +148,11 @@
 
             <!-- BUTTONS -->
             <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}" class="btn btn-hub">Hub</a>
+            <a href="/weddings/{{ w.id }}/jobs" class="btn btn-jobs">Jobs</a>
+            <a href="/weddings/{{ w.id }}/staff" class="btn btn-staff">Staff</a>
+            <a href="/weddings/{{ w.id }}/menu" class="btn btn-menu">Menu</a>
+            <a href="/weddings/{{ w.id }}/coordinator" class="btn btn-coord">Coordinator</a>
+            <a href="/weddings/{{ w.id }}/caterer" class="btn btn-cater">Caterer</a>
 
             <a href="{{ url_for('bookings.edit_wedding', wedding_id=w.id) }}" class="btn btn-edit">Edit</a>
 

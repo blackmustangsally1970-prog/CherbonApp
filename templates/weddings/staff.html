@@ -11,9 +11,17 @@
 
     <h2 class="page-title">🧑‍🤝‍🧑 Staffing — {{ wedding.bride_name }} & {{ wedding.groom_name }}</h2>
 
-    <div class="top-links">
-        <a href="/weddings/calendar" class="menu-btn-small">← Back to Calendar</a>
-    </div>
+<div class="top-links">
+    <a href="/weddings/{{ wedding.id }}/hub" class="menu-btn-small">← Back to Hub</a>
+    <a href="/weddings/calendar" class="menu-btn-small">Calendar</a>
+
+    <a href="/weddings/{{ wedding.id }}/coordinator" class="menu-btn-small">Coordinator</a>
+    <a href="/weddings/{{ wedding.id }}/staff_jobs" class="menu-btn-small">Wait Staff</a>
+    <a href="/weddings/{{ wedding.id }}/menu" class="menu-btn-small">Menu</a>
+    <a href="/weddings/{{ wedding.id }}/caterer" class="menu-btn-small">Caterer</a>
+    <a href="/weddings/{{ wedding.id }}/timeline" class="menu-btn-small">Timeline</a>
+    <a href="/weddings/{{ wedding.id }}/job_engine" class="menu-btn-small">Jobs</a>
+</div>
 
     <!-- ⭐ Assigned Staff -->
     <div class="staff-card">
@@ -187,7 +195,15 @@
 .menu-btn-small:hover {
     background: #ddd;
 }
+
+.top-links {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
 </style>
+
 
 </body>
 </html>
