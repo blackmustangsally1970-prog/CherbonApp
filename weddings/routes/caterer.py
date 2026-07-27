@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session
 from datetime import date
 from extensions import db
-from permissions import is_admin, is_caterer
+from auth.permissions import is_coordinator
 from weddings.models import Wedding, WeddingTimeline
 
 caterer_bp = Blueprint('caterer', __name__, url_prefix='/caterer')

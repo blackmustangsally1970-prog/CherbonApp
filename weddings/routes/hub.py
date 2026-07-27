@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request
 from extensions import db
-from permissions import admin_required, is_coordinator, is_caterer
+from auth.permissions import admin_required, is_coordinator, is_caterer
 
 from weddings.models import (
     Wedding,

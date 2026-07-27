@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 from extensions import db
-from permissions import is_admin, is_coordinator, is_caterer
+from auth.permissions import is_admin, is_coordinator, is_caterer
 from weddings.models import Wedding
 
 wedding_list_bp = Blueprint('wedding_list', __name__, url_prefix='/weddings')

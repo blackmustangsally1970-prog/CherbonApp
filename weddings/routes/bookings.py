@@ -3,7 +3,8 @@ from datetime import datetime
 from extensions import db
 from weddings.models import Wedding
 from flask_login import login_required, current_user
-from permissions import is_coordinator  # admin/management handled via current_user.role
+from auth.permissions import is_coordinator
+
 
 # ---------------------------------------------------------
 # DEFINE BLUEPRINT FIRST

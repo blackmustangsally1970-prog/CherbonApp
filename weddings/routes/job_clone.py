@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, url_for, flash
 from extensions import db
-from permissions import is_coordinator, is_caterer, is_admin
+from auth.permissions import is_coordinator, is_caterer, is_admin
 from weddings.models import JobListMaster, JobListInstance
 
 job_clone_bp = Blueprint('job_clone', __name__, url_prefix='/weddings')

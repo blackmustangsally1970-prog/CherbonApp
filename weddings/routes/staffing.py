@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from extensions import db
-from permissions import is_admin, is_coordinator, is_caterer
+from auth.permissions import is_admin, is_coordinator, is_caterer
 from weddings.models import Wedding, WeddingStaffAssignment
 from models import Employee  # your existing staff table
 
