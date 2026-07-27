@@ -22,4 +22,5 @@ class JobListInstance(db.Model):
     started_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
     assigned_role = db.Column(db.String(50))
+    status = db.Column(db.String(50), default="pending")
 
