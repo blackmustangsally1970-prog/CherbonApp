@@ -3,6 +3,25 @@ from datetime import datetime
 from flask_login import UserMixin
 
 
+class Account(db.Model):
+    __tablename__ = "accounts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(30))
+    active = db.Column(db.Boolean, default=True)
+
+    username = db.Column(db.String(120), unique=True)
+    password_hash = db.Column(db.String(200))
+
+    role = db.Column(db.String(50), nullable=False)
+
+    setup_code = db.Column(db.String(20), unique=True)
+    pin_hash = db.Column(db.String(200))
+    pin_failures = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime)
+
+
 class DailyEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
@@ -188,7 +207,7 @@ class Employee(db.Model):
     # Lockout system
     pin_failures = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
-
+    role = db.Column(db.String(50), default='staff')
 
 class EmployeeHours(db.Model):
     id = db.Column(db.Integer, primary_key=True)
