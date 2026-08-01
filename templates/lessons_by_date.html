@@ -1650,20 +1650,6 @@ body {
 
       </div> <!-- end group-header -->
 
-    <!-- ⭐ Teacher rows + button inline 
-    <div style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
-
-        <button type="button"
-                class="add-teacher-block-btn"
-                data-block-key="{{ block_key }}"
-                style="font-size:11px;">
-          ➕ Teacher
-        </button>
-
-        <div class="block-teacher-rows"
-             data-block-key="{{ block_key }}"
-             style="display:flex; gap:6px;">
-        </div>   -->
 
     </div>
 
@@ -4191,39 +4177,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-
-  // Handle Add Teacher Block
-  $(document).on("click", ".add-teacher-block-btn", function () {
-
-    const blockKey = $(this).data("block-key");
-    const container = $(`.block-teacher-rows[data-block-key='${blockKey}']`);
-
-    // Clone the new template
-    const newRow = $("#teacher-block-template .teacher-block-row").clone(true);
-
-    // Set block key
-    newRow.find(".teacher-block-key").val(blockKey);
-
-    // Append into this block
-    container.append(newRow);
-
-    // Init Select2 on horse dropdown
-    newRow.find(".teacher-block-horse").select2({
-      width: '100%',
-      dropdownAutoWidth: true
-    });
-  });
-
-  // Handle delete
-  $(document).on("click", ".teacher-block-delete", function () {
-    $(this).closest(".teacher-block-row").remove();
-  });
-
-});
-</script>
-
-<script>
 
 // ------------------------------------------------------------
 // NORMALISE BLOCK KEY → match the container's data-block-key
@@ -4596,6 +4549,45 @@ function markAllBlankAsY() {
         }
     });
 }
+</script>
+
+<script>
+
+// --- UNIVERSAL PREFIX MATCHER (safe, no duplicates) ---
+function horsePrefixMatcher(params, data) {
+    if (!params.term) return data;
+    if (!data.text) return null;
+
+    const term = params.term.toLowerCase().trim();
+    const text = data.text.toLowerCase().trim();
+
+    return text.startsWith(term) ? data : null;
+}
+
+// --- SAFE SELECT2 INIT FOR HORSE DROPDOWNS ONLY ---
+function initHorseSelect2() {
+    document.querySelectorAll('select.compact-horse').forEach(sel => {
+        const $sel = $(sel);
+
+        if ($sel.data('select2')) return;   // already active
+
+        $sel.select2({
+            width: '100%',
+            dropdownAutoWidth: true,
+            matcher: horsePrefixMatcher,
+            allowClear: true
+        });
+    });
+}
+
+// Run once on load
+document.addEventListener("DOMContentLoaded", initHorseSelect2);
+
+// Run again when popups open
+$(document).on('select2:open', function () {
+    initHorseSelect2();
+});
+
 </script>
 
 
