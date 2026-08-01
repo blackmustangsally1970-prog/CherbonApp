@@ -2227,26 +2227,25 @@ function buildCloneRow(horseList) {
                 ${horseList.map(h => `<option value="${h}">${h}</option>`).join('')}
             </select>
 
-            <input type="text" class="clone-teacher" value="Teacher" 
+            <input type="text" class="clone-teacher" value="Teacher"
                    style="width:120px; margin-left:10px;">
 
-            <input type="text" class="clone-notes" placeholder="Notes" 
+            <input type="text" class="clone-notes" placeholder="Notes"
                    style="width:200px; margin-left:10px;">
 
-            <button type="button" class="clone-save-btn" 
+            <button type="button" class="clone-save-btn"
                     style="color:#090; margin-left:10px;">Save</button>
 
-            <button type="button" class="clone-delete-btn" 
+            <button type="button" class="clone-delete-btn"
                     style="color:#900; margin-left:10px;">✕</button>
 
         </td>
     `;
 
-    // Re-init Select2 with FIXED width
     setTimeout(() => {
         if (window.jQuery) {
             $(row).find('.clone-horse').select2({
-                width: '120px',          // ⭐ EXACT width of real horse column
+                width: '120px',
                 dropdownAutoWidth: false,
                 allowClear: true
             });
