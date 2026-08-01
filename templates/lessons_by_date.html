@@ -4580,11 +4580,12 @@ function initHorseSelect2() {
     });
 }
 
-// ⭐ Run ONLY when the entire page is fully loaded
-window.addEventListener("load", function () {
+// ⭐ Run BEFORE any other Select2 logic
+document.addEventListener("DOMContentLoaded", function () {
     initHorseSelect2();
 });
 </script>
+
 
 </body>
 </html>
