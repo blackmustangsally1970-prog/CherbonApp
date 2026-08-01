@@ -8162,6 +8162,29 @@ def create_app():
         flash("General enquiry processed and lesson created.", "success")
         return redirect(url_for('general_enquiries'))
 
+    @app.route('/archive_old_general_enquiries')
+    def archive_old_general_enquiries():
+        cutoff = datetime.utcnow() - timedelta(days=28)
+
+        old_rows = GeneralEnquirySubmission.query.filter(
+            GeneralEnquirySubmission.created_at < cutoff
+        ).all()
+
+        for row in old_rows:
+            row.ignored = True   # ⭐ prevents JotForm re-fetching
+
+        db.session.commit()
+
+        flash(f"Archived {len(old_rows)} General Enquiries older than 28 days.", "success")
+        return redirect(url_for('general_enquiries'))
+
+    @app.route('/count_old_general_enquiries')
+    def count_old_general_enquiries():
+        cutoff = datetime.utcnow() - timedelta(days=28)
+        count = GeneralEnquirySubmission.query.filter(
+            GeneralEnquirySubmission.created_at < cutoff
+        ).count()
+        return {"count": count}
 
 
     @app.route('/send_invoice')
