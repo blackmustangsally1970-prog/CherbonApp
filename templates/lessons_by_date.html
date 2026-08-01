@@ -1905,6 +1905,7 @@ body {
     window.teacherHorseUsage = {{ teacher_horse_usage | tojson }};
     window.invoiceClients = new Set({{ invoice_clients | tojson }});
     window.savedTeacherBlocks = {{ teacher_blocks | tojson }};
+    window.horse_list = {{ horse_list | tojson }};
 
     // ❗ DO NOT MERGE teacherHorseUsage into horseSchedule
     // Teacher entries contain objects (block_key, teacher, notes, etc.)
