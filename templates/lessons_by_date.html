@@ -2255,14 +2255,10 @@ document.addEventListener("click", function (e) {
     const tr = btn.closest("tr[data-lesson-id]");
     if (!tr) return;
 
-    const container = tr.querySelector(".teacher-clone-container");
-    if (!container) return;
-
-    const lessonId = tr.dataset.lessonId;
-    const start = tr.querySelector(".meta-start").value;
-
     const cloneRow = buildCloneRow(window.horse_list);
-    container.appendChild(cloneRow);
+
+    // ⭐ ONE CHANGE: put clone ABOVE the lesson row
+    tr.insertAdjacentElement("beforebegin", cloneRow);
 });
 
 // DELETE + SAVE handlers
