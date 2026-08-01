@@ -4552,8 +4552,7 @@ function markAllBlankAsY() {
 </script>
 
 <script>
-
-// --- UNIVERSAL PREFIX MATCHER (safe, no duplicates) ---
+// --- PREFIX MATCHER FOR HORSES ---
 function horsePrefixMatcher(params, data) {
     if (!params.term) return data;
     if (!data.text) return null;
@@ -4564,12 +4563,13 @@ function horsePrefixMatcher(params, data) {
     return text.startsWith(term) ? data : null;
 }
 
-// --- SAFE SELECT2 INIT FOR HORSE DROPDOWNS ONLY ---
+// --- SAFE SELECT2 INIT FOR HORSE DROPDOWNS ---
 function initHorseSelect2() {
     document.querySelectorAll('select.compact-horse').forEach(sel => {
         const $sel = $(sel);
 
-        if ($sel.data('select2')) return;   // already active
+        // Prevent double-binding
+        if ($sel.data('select2')) return;
 
         $sel.select2({
             width: '100%',
@@ -4580,8 +4580,11 @@ function initHorseSelect2() {
     });
 }
 
+// ⭐ Run ONLY when the entire page is fully loaded
+window.addEventListener("load", function () {
+    initHorseSelect2();
+});
 </script>
-
 
 </body>
 </html>
