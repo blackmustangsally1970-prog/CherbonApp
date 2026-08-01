@@ -2213,6 +2213,7 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
 </script>
 
 <script>
+
 function buildCloneRow(horseList) {
     const row = document.createElement("div");
     row.className = "teacher-clone-row";
@@ -2234,19 +2235,6 @@ function buildCloneRow(horseList) {
         <button type="button" class="clone-save-btn" style="color:#090;">Save</button>
         <button type="button" class="clone-delete-btn" style="color:#900;">✕</button>
     `;
-
-    setTimeout(() => {
-        if (window.jQuery) {
-            $(row).find('.clone-horse').select2({
-                width: '120px',
-                dropdownAutoWidth: false,
-                allowClear: true
-            });
-        }
-    }, 10);
-
-    return row;
-}
 
     setTimeout(() => {
         if (window.jQuery) {
