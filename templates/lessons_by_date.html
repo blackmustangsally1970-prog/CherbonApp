@@ -2251,20 +2251,6 @@ function buildCloneRow(horseList) {
     return row;
 }
 
-document.addEventListener("click", function (e) {
-    if (!e.target.classList.contains("clone-teacher-row-btn")) return;
-
-    const btn = e.target;
-    const tr = btn.closest("tr[data-lesson-id]");
-    if (!tr) return;
-
-    const cloneRow = buildCloneRow(window.horse_list);
-
-    // ⭐ Insert clone row ABOVE the lesson row at the correct DOM level
-    tr.parentNode.insertBefore(cloneRow, tr);
-});
-
-// DELETE + SAVE handlers
 document.addEventListener('click', function (e) {
 
     if (e.target.classList.contains('clone-delete-btn')) {
@@ -2274,7 +2260,7 @@ document.addEventListener('click', function (e) {
 
     if (e.target.classList.contains('clone-save-btn')) {
         const row = e.target.closest('.teacher-clone-row');
-        const tr = row.closest('.lesson-block');
+        const tr = row.closest('tr[data-lesson-id]');   // ⭐ FIXED
         const lessonId = tr.getAttribute('data-lesson-id');
 
         const payload = {
@@ -2296,6 +2282,7 @@ document.addEventListener('click', function (e) {
         });
     }
 });
+
 </script>
 
 
