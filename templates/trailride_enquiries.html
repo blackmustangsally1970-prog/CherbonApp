@@ -41,11 +41,11 @@
 </p>
 
 <p>
-  <a href="{{ url_for('delete_old_trailride_submissions') }}"
+  <a href="#"
      class="menu-btn"
      style="display:inline-block; padding:10px 15px; background:#dc3545; color:white; border-radius:6px; text-decoration:none;"
-     onclick="return confirm('Delete all Trail Ride submissions older than 28 days? This cannot be undone.');">
-     🗑️ Delete submissions older than 28 days
+     onclick="return confirmArchive();">
+     🗑️ Archive submissions older than 28 days
   </a>
 </p>
 
@@ -351,6 +351,27 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+</script>
+
+<script>
+function confirmArchive() {
+    // Ask backend how many submissions will be archived
+    fetch("{{ url_for('count_old_trailride_submissions') }}")
+        .then(response => response.json())
+        .then(data => {
+            const count = data.count || 0;
+
+            const ok = confirm(
+                `Are you sure you want to archive ${count} submissions older than 28 days?\nThis cannot be undone.`
+            );
+
+            if (ok) {
+                window.location.href = "{{ url_for('archive_old_trailride_submissions') }}";
+            }
+        });
+
+    return false; // prevent default click
+}
 </script>
 
 
