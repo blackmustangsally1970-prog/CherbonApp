@@ -4551,5 +4551,28 @@ function markAllBlankAsY() {
 }
 </script>
 
+<script>
+function initHorseSelect2() {
+    $('select.compact-horse').each(function () {
+        const $sel = $(this);
+
+        if ($sel.data('select2')) return;
+
+        $sel.select2({
+            width: '100%',
+            dropdownAutoWidth: true,
+            matcher: horsePrefixMatcher,
+            allowClear: true
+        });
+    });
+}
+
+// ⭐ Run AFTER lesson rows are inserted
+$(document).on('lessons:rendered', function () {
+    initHorseSelect2();
+});
+</script>
+
+
 </body>
 </html>
