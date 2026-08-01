@@ -1700,7 +1700,7 @@ body {
 
     <td class="horse-cell">
       <span class="horse-print-only">{{ lesson.horse }}</span>
-      <select name="horse_{{ lesson.lesson_id }}" class="compact-horse searchable-dropdown">
+      <select name="horse_{{ lesson.lesson_id }}" class="compact-horse">
         <option value="" {% if not lesson.horse %}selected{% endif %}></option>
         {% for horse in horse_list %}
           <option value="{{ horse }}" {% if horse == lesson.horse %}selected{% endif %}>{{ horse }}</option>
