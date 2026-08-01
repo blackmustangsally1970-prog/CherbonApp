@@ -2250,10 +2250,10 @@ function buildCloneRow(horseList) {
 document.addEventListener('DOMContentLoaded', function () {
     const horseList = window.horse_list || [];
 
-    $('.lesson-block').each(function () {
+    $('tr[data-lesson-id]').each(function () {
         const $tr = $(this);
         const container = $tr.find('.teacher-clone-container')[0];
-        const btn = $tr.find('.clone-teacher-row-btn')[0];
+        const container = $tr.find('.teacher-clone-container').get(0);
 
         if (btn && container) {
             btn.addEventListener('click', function () {
