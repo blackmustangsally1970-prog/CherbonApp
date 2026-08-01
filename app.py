@@ -7638,6 +7638,13 @@ def create_app():
                 e.needs_client_match = multiple_matches
                 needs_commit = True
 
+            # ⭐ NEW — Extract extra JotForm fields
+            answers = payload.get("answers", {})
+
+            preferred_day = answers.get("90", {}).get("answer") or ""
+            preferred_time = answers.get("91", {}).get("answer") or ""
+            comments = answers.get("15", {}).get("answer") or ""
+
             # FILTERS
             if filter_name and filter_name not in main_name.lower():
                 continue
@@ -7662,7 +7669,12 @@ def create_app():
                 "riders": riders,
                 "has_match": has_match,
                 "multiple_matches": multiple_matches,
-                "match_count": len(matches)
+                "match_count": len(matches),
+
+                # ⭐ NEW FIELDS
+                "preferred_day": preferred_day,
+                "preferred_time": preferred_time,
+                "comments": comments
             })
 
         if needs_commit:
@@ -7678,9 +7690,8 @@ def create_app():
             'trailride_enquiries.html',
             enquiries=display_rows,
             pagination=pagination,
-            times = Time.query.order_by(Time.timerange).all()
+            times=Time.query.order_by(Time.timerange).all()
         )
-
 
     @app.route('/trailride_enquiries/process', methods=['POST'])
     def trailride_enquiries_process():

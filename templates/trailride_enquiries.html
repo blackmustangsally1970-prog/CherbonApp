@@ -76,6 +76,37 @@
         {% endif %}
     </div>
 
+<!-- CUSTOMER PREFERENCES -->
+<div style="
+    border:1px solid #ddd;
+    padding:12px;
+    border-radius:6px;
+    background:#fefefe;
+    margin-bottom:16px;
+">
+    <div style="font-weight:bold; margin-bottom:8px;">
+        Customer Preferences
+    </div>
+
+    <div style="margin-bottom:6px;">
+        <strong>Preferred Day:</strong>
+        {{ e.preferred_day if e.preferred_day else "—" }}
+    </div>
+
+    <div style="margin-bottom:6px;">
+        <strong>Preferred Time:</strong>
+        {{ e.preferred_time if e.preferred_time else "—" }}
+    </div>
+
+    <div style="margin-bottom:6px;">
+        <strong>Comments:</strong><br>
+        <div style="white-space:pre-wrap; font-size:0.95em; color:#444;">
+            {{ e.comments if e.comments else "—" }}
+        </div>
+    </div>
+</div>
+
+
     <!-- CARD BODY -->
     <div class="tr-card-body">
 
