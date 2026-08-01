@@ -2261,7 +2261,7 @@ document.addEventListener("click", function (e) {
     const lessonId = tr.dataset.lessonId;
     const start = tr.querySelector(".meta-start").value;
 
-    const cloneRow = buildCloneRow(lessonId, start);
+    const cloneRow = buildCloneRow(window.horse_list);
     container.appendChild(cloneRow);
 });
 
