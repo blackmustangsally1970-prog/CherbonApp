@@ -2247,21 +2247,21 @@ function buildCloneRow(horseList) {
     return row;
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    const horseList = window.horse_list || [];
+document.addEventListener("click", function (e) {
+    if (!e.target.classList.contains("clone-teacher-row-btn")) return;
 
-    $('tr[data-lesson-id]').each(function () {
-        const $tr = $(this);
-        const container = $tr.find('.teacher-clone-container')[0];
-        const container = $tr.find('.teacher-clone-container').get(0);
+    const btn = e.target;
+    const tr = btn.closest("tr[data-lesson-id]");
+    if (!tr) return;
 
-        if (btn && container) {
-            btn.addEventListener('click', function () {
-                const newRow = buildCloneRow(horseList);
-                container.appendChild(newRow);
-            });
-        }
-    });
+    const container = tr.querySelector(".teacher-clone-container");
+    if (!container) return;
+
+    const lessonId = tr.dataset.lessonId;
+    const start = tr.querySelector(".meta-start").value;
+
+    const cloneRow = buildCloneRow(lessonId, start);
+    container.appendChild(cloneRow);
 });
 
 // DELETE + SAVE handlers
