@@ -2258,8 +2258,8 @@ document.addEventListener("click", function (e) {
 
     const cloneRow = buildCloneRow(window.horse_list);
 
-    // ⭐ ONE CHANGE: put clone ABOVE the lesson row
-    tr.insertAdjacentElement("beforebegin", cloneRow);
+    // ⭐ Insert clone row ABOVE the lesson row at the correct DOM level
+    tr.parentNode.insertBefore(cloneRow, tr);
 });
 
 // DELETE + SAVE handlers
