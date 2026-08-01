@@ -2283,6 +2283,20 @@ document.addEventListener('click', function (e) {
     }
 });
 
+document.addEventListener("click", function (e) {
+    if (!e.target.classList.contains("clone-teacher-row-btn")) return;
+
+    const btn = e.target;
+    const tr = btn.closest("tr[data-lesson-id]");
+    if (!tr) return;
+
+    const cloneRow = buildCloneRow(window.horse_list);
+
+    // Insert clone row ABOVE the lesson row
+    tr.parentNode.insertBefore(cloneRow, tr);
+});
+
+
 </script>
 
 
