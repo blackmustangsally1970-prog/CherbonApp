@@ -537,47 +537,94 @@ select.teacher-dropdown {
   max-width: 100% !important;
 }
 
-/* 4. Now apply your actual column widths */
+/* 1. Horse */
 .lesson-table table th:nth-child(1),
-.lesson-table table td:nth-child(1) { width: 120px !important; }  /* Horse */
+.lesson-table table td:nth-child(1) {
+    width: 120px !important;
+}
 
+/* 2. + (clone column) — VERY NARROW */
 .lesson-table table th:nth-child(2),
-.lesson-table table td:nth-child(2) { width: 180px !important; }  /* Client */
+.lesson-table table td:nth-child(2) {
+    width: 25px !important;   /* fits "+" perfectly */
+    text-align: center;
+}
 
+/* 3. Client */
 .lesson-table table th:nth-child(3),
-.lesson-table table td:nth-child(3) { width: 50px !important; }   /* Age */
+.lesson-table table td:nth-child(3) {
+    width: 180px !important;
+}
 
+/* 4. Age */
 .lesson-table table th:nth-child(4),
-.lesson-table table td:nth-child(4) { width: 120px !important; }  /* Guardian */
+.lesson-table table td:nth-child(4) {
+    width: 50px !important;
+}
 
+/* 5. Guardian */
 .lesson-table table th:nth-child(5),
-.lesson-table table td:nth-child(5) { width: 90px !important; }   /* Mobile */
+.lesson-table table td:nth-child(5) {
+    width: 120px !important;
+}
 
-/* ⭐ NEW COLUMN: FREQ (1‑letter) */
+/* 6. Mobile */
 .lesson-table table th:nth-child(6),
-.lesson-table table td:nth-child(6) { width: 40px !important; text-align:center; } /* FREQ */
+.lesson-table table td:nth-child(6) {
+    width: 90px !important;
+}
 
-/* Shift everything below by +1 */
+/* 7. FREQ (1‑letter) */
 .lesson-table table th:nth-child(7),
-.lesson-table table td:nth-child(7) { width: 40px !important; text-align:center; } /* Weight */
+.lesson-table table td:nth-child(7) {
+    width: 40px !important;
+    text-align: center;
+}
 
+/* 8. Weight */
 .lesson-table table th:nth-child(8),
-.lesson-table table td:nth-child(8) { width: 40px !important; text-align:center; } /* Height */
+.lesson-table table td:nth-child(8) {
+    width: 40px !important;
+    text-align: center;
+}
 
+/* 9. Height */
 .lesson-table table th:nth-child(9),
-.lesson-table table td:nth-child(9) { width: 40px !important; text-align:center; } /* ATT */
+.lesson-table table td:nth-child(9) {
+    width: 40px !important;
+    text-align: center;
+}
 
+/* 10. ATT */
 .lesson-table table th:nth-child(10),
-.lesson-table table td:nth-child(10) { width: 90px !important; }  /* Payment */
+.lesson-table table td:nth-child(10) {
+    width: 40px !important;
+    text-align: center;
+}
 
+/* 11. Payment */
 .lesson-table table th:nth-child(11),
-.lesson-table table td:nth-child(11) { width: 90px !important; }  /* Price */
+.lesson-table table td:nth-child(11) {
+    width: 90px !important;
+}
 
+/* 12. Price */
 .lesson-table table th:nth-child(12),
-.lesson-table table td:nth-child(12) { width: 70px !important; }  /* Balance */
+.lesson-table table td:nth-child(12) {
+    width: 90px !important;
+}
 
+/* 13. Balance */
 .lesson-table table th:nth-child(13),
-.lesson-table table td:nth-child(13) { width: 390px !important; } /* Notes */
+.lesson-table table td:nth-child(13) {
+    width: 70px !important;
+}
+
+/* 14. Notes */
+.lesson-table table th:nth-child(14),
+.lesson-table table td:nth-child(14) {
+    width: 390px !important;
+}
 
 /* Kill the Select2 arrow that is drawing the ghost line */
 .lesson-table .select2-selection__arrow {
@@ -1663,6 +1710,7 @@ body {
           <thead>
             <tr>
               <th>Horse</th>
+              <th>+</th>
               <th>Client</th>
               <th>Age</th>
               <th>Guardian</th>
@@ -1708,6 +1756,11 @@ body {
       </select>
       <div class="tooltip-box" aria-hidden="true"></div>
     </td>
+<td class="clone-cell">
+    <button type="button" class="clone-teacher-row-btn">+</button>
+    <div class="teacher-clone-container"></div>
+</td>
+
 
 {% set display_name = client.full_name if client else (lesson.client or '') %}
 {% set cid = client.client_id if client else None %}
@@ -1851,6 +1904,7 @@ body {
     window.horseSchedule = {{ horse_schedule | tojson }};
     window.teacherHorseUsage = {{ teacher_horse_usage | tojson }};
     window.invoiceClients = new Set({{ invoice_clients | tojson }});
+    window.savedTeacherBlocks = {{ teacher_blocks | tojson }};
 
     // ❗ DO NOT MERGE teacherHorseUsage into horseSchedule
     // Teacher entries contain objects (block_key, teacher, notes, etc.)
@@ -2157,6 +2211,92 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
 })();
 </script>
 
+<script>
+// STEP 1.2 — Clone row builder + attach button
+
+function buildCloneRow(horseList) {
+    const row = document.createElement("div");
+    row.className = "teacher-clone-row";
+    row.style.display = "flex";
+    row.style.gap = "8px";
+    row.style.margin = "4px 0";
+
+    row.innerHTML = `
+        <select class="clone-horse" style="width:120px;">
+            <option value=""></option>
+            ${horseList.map(h => `<option value="${h}">${h}</option>`).join('')}
+        </select>
+
+        <input type="text" class="clone-teacher" value="Teacher" style="width:120px;">
+        <input type="text" class="clone-notes" placeholder="Notes" style="width:200px;">
+
+        <button type="button" class="clone-save-btn" style="color:#090;">Save</button>
+        <button type="button" class="clone-delete-btn" style="color:#900;">✕</button>
+    `;
+
+    setTimeout(() => {
+        if (window.jQuery) {
+            $(row).find('.clone-horse').select2({
+                width: '100%',
+                dropdownAutoWidth: true,
+                allowClear: true
+            });
+        }
+    }, 10);
+
+    return row;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const horseList = window.horse_list || [];
+
+    $('.lesson-block').each(function () {
+        const $tr = $(this);
+        const container = $tr.find('.teacher-clone-container')[0];
+        const btn = $tr.find('.clone-teacher-row-btn')[0];
+
+        if (btn && container) {
+            btn.addEventListener('click', function () {
+                const newRow = buildCloneRow(horseList);
+                container.appendChild(newRow);
+            });
+        }
+    });
+});
+
+// DELETE + SAVE handlers
+document.addEventListener('click', function (e) {
+
+    if (e.target.classList.contains('clone-delete-btn')) {
+        const row = e.target.closest('.teacher-clone-row');
+        if (row) row.remove();
+    }
+
+    if (e.target.classList.contains('clone-save-btn')) {
+        const row = e.target.closest('.teacher-clone-row');
+        const tr = row.closest('.lesson-block');
+        const lessonId = tr.getAttribute('data-lesson-id');
+
+        const payload = {
+            lesson_id: lessonId,
+            teacher: row.querySelector('.clone-teacher').value.trim(),
+            horse: row.querySelector('.clone-horse').value.trim(),
+            notes: row.querySelector('.clone-notes').value.trim()
+        };
+
+        fetch('/save_teacher_clone', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(() => {
+            row.style.background = '#d4ffd4';
+            setTimeout(() => row.style.background = '', 800);
+        });
+    }
+});
+</script>
 
 
 <script>

@@ -9832,6 +9832,43 @@ Cherbon Waters Admin
         return render_template("admin_lockouts.html", locked=locked)
 
 
+    @app.route('/save_teacher_clone', methods=['POST'])
+    def save_teacher_clone():
+        data = request.get_json() or {}
+
+        lesson_id = data.get("lesson_id")
+        horse = (data.get("horse") or "").strip()
+        teacher = (data.get("teacher") or "").strip()
+        notes = (data.get("notes") or "").strip()
+
+        # Find the lesson
+        lesson = Lesson.query.get(lesson_id)
+        if not lesson:
+            return {"error": "Lesson not found"}, 404
+
+        # Date string
+        selected_date_str = lesson.lesson_date.strftime("%Y-%m-%d")
+
+        # Extract start time from lesson.time_frame ("14:00 - 15:00")
+        start = lesson.time_frame.split(" - ")[0].strip()
+
+        # Build block_key EXACTLY like your TXT/XLSX routes
+        block_key = f"{selected_date_str}_{start}"
+
+        # Create TeacherBlock entry
+        tb = TeacherBlock(
+            date=selected_date_str,
+            block_key=block_key,
+            horse=horse,
+            teacher=teacher,
+            notes=notes
+        )
+
+        db.session.add(tb)
+        db.session.commit()
+
+        return {"status": "ok"}
+
 
     @app.route("/admin/weekly_summary")
     def admin_weekly_summary():
