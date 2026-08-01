@@ -4551,41 +4551,5 @@ function markAllBlankAsY() {
 }
 </script>
 
-<script>
-// --- PREFIX MATCHER FOR HORSES ---
-function horsePrefixMatcher(params, data) {
-    if (!params.term) return data;
-    if (!data.text) return null;
-
-    const term = params.term.toLowerCase().trim();
-    const text = data.text.toLowerCase().trim();
-
-    return text.startsWith(term) ? data : null;
-}
-
-// --- SAFE SELECT2 INIT FOR HORSE DROPDOWNS ---
-function initHorseSelect2() {
-    document.querySelectorAll('select.compact-horse').forEach(sel => {
-        const $sel = $(sel);
-
-        // Prevent double-binding
-        if ($sel.data('select2')) return;
-
-        $sel.select2({
-            width: '100%',
-            dropdownAutoWidth: true,
-            matcher: horsePrefixMatcher,
-            allowClear: true
-        });
-    });
-}
-
-// ⭐ Run BEFORE any other Select2 logic
-document.addEventListener("DOMContentLoaded", function () {
-    initHorseSelect2();
-});
-</script>
-
-
 </body>
 </html>
