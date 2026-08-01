@@ -546,7 +546,7 @@ select.teacher-dropdown {
 /* 2. + (clone column) — VERY NARROW */
 .lesson-table table th:nth-child(2),
 .lesson-table table td:nth-child(2) {
-    width: 25px !important;   /* fits "+" perfectly */
+    width: 30px !important;   /* fits "+" perfectly */
     text-align: center;
 }
 
@@ -565,7 +565,7 @@ select.teacher-dropdown {
 /* 5. Guardian */
 .lesson-table table th:nth-child(5),
 .lesson-table table td:nth-child(5) {
-    width: 120px !important;
+    width: 115px !important;
 }
 
 /* 6. Mobile */
@@ -2216,30 +2216,38 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
 // STEP 1.2 — Clone row builder + attach button
 
 function buildCloneRow(horseList) {
-    const row = document.createElement("div");
+    const row = document.createElement("tr");
     row.className = "teacher-clone-row";
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.margin = "4px 0";
 
     row.innerHTML = `
-        <select class="clone-horse" style="width:120px;">
-            <option value=""></option>
-            ${horseList.map(h => `<option value="${h}">${h}</option>`).join('')}
-        </select>
+        <td colspan="99" style="background:#eef; padding:6px;">
 
-        <input type="text" class="clone-teacher" value="Teacher" style="width:120px;">
-        <input type="text" class="clone-notes" placeholder="Notes" style="width:200px;">
+            <select class="clone-horse" style="width:120px;">
+                <option value=""></option>
+                ${horseList.map(h => `<option value="${h}">${h}</option>`).join('')}
+            </select>
 
-        <button type="button" class="clone-save-btn" style="color:#090;">Save</button>
-        <button type="button" class="clone-delete-btn" style="color:#900;">✕</button>
+            <input type="text" class="clone-teacher" value="Teacher" 
+                   style="width:120px; margin-left:10px;">
+
+            <input type="text" class="clone-notes" placeholder="Notes" 
+                   style="width:200px; margin-left:10px;">
+
+            <button type="button" class="clone-save-btn" 
+                    style="color:#090; margin-left:10px;">Save</button>
+
+            <button type="button" class="clone-delete-btn" 
+                    style="color:#900; margin-left:10px;">✕</button>
+
+        </td>
     `;
 
+    // Re-init Select2 with FIXED width
     setTimeout(() => {
         if (window.jQuery) {
             $(row).find('.clone-horse').select2({
-                width: '100%',
-                dropdownAutoWidth: true,
+                width: '120px',          // ⭐ EXACT width of real horse column
+                dropdownAutoWidth: false,
                 allowClear: true
             });
         }
