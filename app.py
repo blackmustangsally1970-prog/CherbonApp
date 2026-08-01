@@ -7693,6 +7693,24 @@ def create_app():
             times=Time.query.order_by(Time.timerange).all()
         )
 
+
+    @app.route('/delete_old_trailride_submissions')
+    def delete_old_trailride_submissions():
+        cutoff = datetime.utcnow() - timedelta(days=28)
+
+        old_rows = TrailRideSubmission.query.filter(
+            TrailRideSubmission.received_at < cutoff
+        ).all()
+
+        for row in old_rows:
+            row.ignored = True   # ⭐ mark ignored instead of deleting
+
+        db.session.commit()
+
+        flash(f"Marked {len(old_rows)} submissions older than 28 days as ignored.", "success")
+        return redirect(url_for('trailride_enquiries'))
+
+
     @app.route('/trailride_enquiries/process', methods=['POST'])
     def trailride_enquiries_process():
         enquiry_id = request.form.get("process_enquiry")

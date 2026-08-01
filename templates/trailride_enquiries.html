@@ -40,6 +40,16 @@
   </a>
 </p>
 
+<p>
+  <a href="{{ url_for('delete_old_trailride_submissions') }}"
+     class="menu-btn"
+     style="display:inline-block; padding:10px 15px; background:#dc3545; color:white; border-radius:6px; text-decoration:none;"
+     onclick="return confirm('Delete all Trail Ride submissions older than 28 days? This cannot be undone.');">
+     🗑️ Delete submissions older than 28 days
+  </a>
+</p>
+
+
 <form method="POST"
       action="{{ url_for('trailride_enquiries_process') }}"
       class="trailride-process-form">
