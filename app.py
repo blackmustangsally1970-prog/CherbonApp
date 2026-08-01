@@ -7694,8 +7694,8 @@ def create_app():
         )
 
 
-    @app.route('/delete_old_trailride_submissions')
-    def delete_old_trailride_submissions():
+    @app.route('/archive_old_trailride_submissions')
+    def archive_old_trailride_submissions():
         cutoff = datetime.utcnow() - timedelta(days=28)
 
         old_rows = TrailRideSubmission.query.filter(
@@ -7703,13 +7703,20 @@ def create_app():
         ).all()
 
         for row in old_rows:
-            row.ignored = True   # ⭐ mark ignored instead of deleting
+            row.ignored = True   # ⭐ prevents JotForm re-fetching
 
         db.session.commit()
 
-        flash(f"Marked {len(old_rows)} submissions older than 28 days as ignored.", "success")
+        flash(f"Archived {len(old_rows)} submissions older than 28 days.", "success")
         return redirect(url_for('trailride_enquiries'))
 
+    @app.route('/count_old_trailride_submissions')
+    def count_old_trailride_submissions():
+        cutoff = datetime.utcnow() - timedelta(days=28)
+        count = TrailRideSubmission.query.filter(
+            TrailRideSubmission.received_at < cutoff
+        ).count()
+        return {"count": count}
 
     @app.route('/trailride_enquiries/process', methods=['POST'])
     def trailride_enquiries_process():
