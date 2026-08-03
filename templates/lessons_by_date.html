@@ -7,6 +7,7 @@
 
 
 <style>
+
 .toggle-switch {
     position: relative;
     width: 40px;
@@ -22,7 +23,7 @@
     position: absolute;
     cursor: pointer;
     top: 0;
-    left: 0;
+    left: 0
     right: 0;
     bottom: 0;
     background-color: #ccc;
@@ -1728,8 +1729,20 @@ body {
 <tbody>
 {% set rendered_clients = [] %}
 {% for pair in lesson_group %}
-    {% set lesson = pair[0] %}
-    {% set client = pair[1] %}
+{% set lesson = pair[0] %}
+{% set client = pair[1] %}
+
+{% set clones = lesson_rows_map[lesson.lesson_id].clones if lesson.lesson_id in lesson_rows_map else [] %}
+
+{% for clone in clones %}
+<div class="teacher-clone-row" style="display:flex; gap:10px; padding:6px; background:#eef; margin-bottom:4px;">
+    <div style="width:120px;">{{ clone.horse }}</div>
+    <div style="width:120px;">{{ clone.teacher_name }}</div>
+    <div style="width:200px;">{{ clone.notes }}</div>
+</div>
+{% endfor %}
+
+
 
 <tr data-lesson-id="{{ lesson.lesson_id }}" data-time="{{ lesson.time_frame }}" data-att="{{ lesson.attendance or '' }}">
     <input type="hidden" class="meta-group-priv" value="{{ lesson.group_priv }}">
@@ -2213,39 +2226,50 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
 </script>
 
 <script>
-
-function buildCloneRow(horseList) {
-    const row = document.createElement("tr");
+function buildCloneRow(horseList, lessonId, startTime) {
+    const row = document.createElement("div");
     row.className = "teacher-clone-row";
+    row.dataset.lessonId = lessonId;
+    row.dataset.startTime = startTime;
 
-    const td = document.createElement("td");
-    td.colSpan = 99;
-    td.style.background = "#eef";
-    td.style.padding = "6px";
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "10px";
+    row.style.padding = "6px";
+    row.style.background = "#eef";
+    row.style.marginBottom = "4px";
+    row.style.width = "100%";
+    row.style.boxSizing = "border-box";
+    row.style.flexWrap = "nowrap";
+    row.style.justifyContent = "flex-start";
 
-    td.innerHTML = `
+    row.innerHTML = `
         <select class="clone-horse" style="width:120px;">
             <option value=""></option>
             ${horseList.map(h => `<option value="${h}">${h}</option>`).join('')}
         </select>
 
-        <input type="text" class="clone-teacher" value="Teacher" style="width:120px; margin-left:10px;">
-        <input type="text" class="clone-notes" placeholder="Notes" style="width:200px; margin-left:10px;">
-
-        <button type="button" class="clone-save-btn" style="color:#090; margin-left:10px;">Save</button>
-        <button type="button" class="clone-delete-btn" style="color:#900; margin-left:10px;">✕</button>
+        <input type="text" class="clone-teacher" value="Teacher" style="width:120px;">
+        <input type="text" class="clone-notes" placeholder="Notes" style="width:200px;">
+        <button type="button" class="clone-save-btn" style="color:#090;">Save</button>
+        <button type="button" class="clone-delete-btn" style="color:#900;">✕</button>
     `;
 
-    row.appendChild(td);
+    const teacher = row.querySelector('.clone-teacher');
+    const notes = row.querySelector('.clone-notes');
+    teacher.style.flex = "0 0 120px";
+    notes.style.flex = "0 0 200px";
 
     setTimeout(() => {
-        if (window.jQuery) {
-            $(row).find('.clone-horse').select2({
-                width: '120px',
-                dropdownAutoWidth: false,
-                allowClear: true
-            });
-        }
+        const sel = $(row).find('.clone-horse');
+        sel.select2({
+            width: 'resolve',
+            dropdownAutoWidth: false,
+            allowClear: true
+        });
+        const box = sel.next('.select2');
+        box.css({ width: '120px', minWidth: '120px' });
+        box.find('.select2-selection').css({ width: '120px', minWidth: '120px' });
     }, 10);
 
     return row;
@@ -2253,24 +2277,33 @@ function buildCloneRow(horseList) {
 
 document.addEventListener('click', function (e) {
 
+    // DELETE
     if (e.target.classList.contains('clone-delete-btn')) {
         const row = e.target.closest('.teacher-clone-row');
         if (row) row.remove();
+        return;
     }
 
+    // SAVE
     if (e.target.classList.contains('clone-save-btn')) {
         const row = e.target.closest('.teacher-clone-row');
-        const tr = row.closest('tr[data-lesson-id]');   // ⭐ FIXED
-        const lessonId = tr.getAttribute('data-lesson-id');
+
+        const lessonId = row.dataset.lessonId;
+        const startTime = row.dataset.startTime;
+        if (!lessonId || !startTime) return;
+
+        const selectedDateStr = document.getElementById("selected_date").value;
 
         const payload = {
             lesson_id: lessonId,
+            start_time: startTime,
             teacher: row.querySelector('.clone-teacher').value.trim(),
-            horse: row.querySelector('.clone-horse').value.trim(),
-            notes: row.querySelector('.clone-notes').value.trim()
+            horse: ($(row).find('.clone-horse').val() || "").trim(),
+            notes: row.querySelector('.clone-notes').value.trim(),
+            selected_date: selectedDateStr
         };
 
-        fetch('/save_teacher_clone', {
+        fetch(window.location.origin + '/save_teacher_clone', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -2280,25 +2313,27 @@ document.addEventListener('click', function (e) {
             row.style.background = '#d4ffd4';
             setTimeout(() => row.style.background = '', 800);
         });
+
+        return;
+    }
+
+    // ADD NEW CLONE ROW
+    if (e.target.classList.contains("clone-teacher-row-btn")) {
+        const tr = e.target.closest("tr[data-lesson-id]");
+        if (!tr) return;
+
+        const lessonId = tr.getAttribute("data-lesson-id");
+        const startTime = tr.querySelector('.meta-start')?.value || '';
+        const lessonTableDiv = tr.closest(".lesson-table");
+        if (!lessonTableDiv) return;
+
+        const cloneRow = buildCloneRow(window.horse_list, lessonId, startTime);
+
+        // Insert ABOVE the lesson-table wrapper
+        lessonTableDiv.parentNode.insertBefore(cloneRow, lessonTableDiv);
     }
 });
-
-document.addEventListener("click", function (e) {
-    if (!e.target.classList.contains("clone-teacher-row-btn")) return;
-
-    const btn = e.target;
-    const tr = btn.closest("tr[data-lesson-id]");
-    if (!tr) return;
-
-    const cloneRow = buildCloneRow(window.horse_list);
-
-    // Insert clone row ABOVE the lesson row
-    tr.parentNode.insertBefore(cloneRow, tr);
-});
-
-
 </script>
-
 
 <script>
 window.addEventListener("load", function () {

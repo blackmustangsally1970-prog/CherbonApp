@@ -4623,9 +4623,6 @@ def create_app():
         }
 
 
-
-
-
     @app.route('/lessons_by_date', methods=['GET', 'POST'])
     def lessons_by_date():
         db.session.rollback()
@@ -4660,7 +4657,7 @@ def create_app():
             print("  sample:", r.lesson_id, getattr(r, 'client', None), getattr(r, 'lesson_date', None))
         print("=== END DEBUG ===")
 
-        # ⭐ BUILD CONTEXT (we will patch inside this function) ⭐
+        # ⭐ BUILD CONTEXT
         ctx = build_lessons_context(selected_date, selected_date_str)
 
         # Load grid overrides
@@ -4675,6 +4672,16 @@ def create_app():
 
         # Load teacher blocks
         teacher_blocks = TeacherBlock.query.filter_by(date=selected_date_str).all()
+
+        # ⭐ Build clone lookup (your new logic)
+        clone_lookup = {}
+        for tb in teacher_blocks:
+            clone_lookup.setdefault(tb.block_key, []).append({
+                "id": tb.id,
+                "horse": tb.horse,
+                "teacher_name": tb.teacher_name,
+                "notes": tb.notes
+            })
 
         # Detach ORM objects
         db.session.expunge_all()
@@ -4714,7 +4721,16 @@ def create_app():
         clients = ctx["clients"]
         teacher_horse_usage = ctx["teacher_horse_usage"]
         slot_map = ctx["slot_map"]
-        
+
+        # ⭐ Attach clones to lesson rows (your new logic)
+        for lr in lesson_rows:
+            start = lr.time_frame.split(" - ")[0].strip()
+            block_key = f"{selected_date_str}_{start}"
+            lr.clones = clone_lookup.get(block_key, [])
+
+        # ⭐ Build lesson_rows_map (your new logic)
+        lesson_rows_map = { lr.lesson_id: lr for lr in lesson_rows }
+
         from datetime import date
         is_processable_day = selected_date <= date.today()
 
@@ -4741,7 +4757,8 @@ def create_app():
             norm_timerange_key=norm_timerange_key,
             grid_overrides=grid_overrides,
             teacher_blocks=teacher_blocks_json,
-            is_processable_day=is_processable_day
+            is_processable_day=is_processable_day,
+            lesson_rows_map=lesson_rows_map
         )
 
 
@@ -9840,35 +9857,43 @@ Cherbon Waters Admin
         horse = (data.get("horse") or "").strip()
         teacher = (data.get("teacher") or "").strip()
         notes = (data.get("notes") or "").strip()
+        selected_date_str = (data.get("selected_date") or "").strip()
+        start_time = (data.get("start_time") or "").strip()
 
-        # Find the lesson
+        print("PAYLOAD RECEIVED:", data)
+
         lesson = Lesson.query.get(lesson_id)
         if not lesson:
             return {"error": "Lesson not found"}, 404
 
-        # Date string
-        selected_date_str = lesson.lesson_date.strftime("%Y-%m-%d")
+        # if start_time missing, fall back to lesson.time_frame
+        if not start_time:
+            start_time = lesson.time_frame.split(" - ")[0].strip()
 
-        # Extract start time from lesson.time_frame ("14:00 - 15:00")
-        start = lesson.time_frame.split(" - ")[0].strip()
+        block_key = f"{selected_date_str}_{start_time}"
 
-        # Build block_key EXACTLY like your TXT/XLSX routes
-        block_key = f"{selected_date_str}_{start}"
-
-        # Create TeacherBlock entry
         tb = TeacherBlock(
             date=selected_date_str,
             block_key=block_key,
             horse=horse,
-            teacher=teacher,
+            teacher_name=teacher,
             notes=notes
         )
 
         db.session.add(tb)
         db.session.commit()
 
-        return {"status": "ok"}
-
+        return {
+            "status": "ok",
+            "clone": {
+                "id": tb.id,
+                "date": selected_date_str,
+                "block_key": block_key,
+                "horse": horse,
+                "teacher_name": teacher,
+                "notes": notes
+            }
+        }
 
     @app.route("/admin/weekly_summary")
     def admin_weekly_summary():
