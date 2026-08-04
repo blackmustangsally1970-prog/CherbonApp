@@ -27,7 +27,6 @@
             margin-top: 12px;
         }
 
-        /* ⭐ Base cell styling */
         th, td {
             border: 1px solid #000;
             padding: 3px 4px;
@@ -40,44 +39,38 @@
             white-space: nowrap;
         }
 
-        /* ⭐ Column widths */
-        th:nth-child(1), td:nth-child(1) { width: 120px; }  /* Horse */
-        th:nth-child(2), td:nth-child(2) { width: 160px; }  /* Client */
-        th:nth-child(3), td:nth-child(3) { width: 35px; }   /* Att */
-        th:nth-child(4), td:nth-child(4) { width: 120px; }  /* Teacher */
+        th:nth-child(1), td:nth-child(1) { width: 120px; }
+        th:nth-child(2), td:nth-child(2) { width: 160px; }
+        th:nth-child(3), td:nth-child(3) { width: 35px; }
+        th:nth-child(4), td:nth-child(4) { width: 120px; }
 
-        /* ⭐ Keep lesson rows together */
         .lesson-block {
             break-inside: avoid;
             page-break-inside: avoid;
         }
 
-        /* ⭐ Repeat table header on each printed page */
         thead { display: table-header-group; }
         tfoot { display: table-footer-group; }
 
-.block-header-row td {
-    background: #d9e7ff !important;
-    color: #003366 !important;
-    font-weight: bold;
-    font-size: 11pt;
-    padding: 6px 8px;
-    border: 1px solid #003366 !important;
+        .block-header-row td {
+            background: #d9e7ff !important;
+            color: #003366 !important;
+            font-weight: bold;
+            font-size: 11pt;
+            padding: 6px 8px;
+            border: 1px solid #003366 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            display: table-cell !important;
+        }
 
-    /* ⭐ REQUIRED FOR CHROME PRINT BUG */
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    display: table-cell !important;
-}
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
 
-@media print {
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-}
-
-        /* Buttons */
         .print-btn,
         .back-btn {
             font-size: 24pt;
@@ -137,6 +130,20 @@
             <td>{{ r.att }}</td>
             <td>{{ r.teacher or "" }}</td>
         </tr>
+
+        {# ⭐ INSERT MATCHED TEACHER BLOCK ROWS #}
+        {% for tb in teacher_blocks %}
+            {% set tb_lid = tb.block_key.split("_")[2] %}
+            {% if tb_lid == r.lesson_id|string %}
+                <tr class="lesson-block">
+                    <td>{{ tb.horse }}</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>{{ tb.teacher_name }}{% if tb.notes %} ({{ tb.notes }}){% endif %}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+
         {% endfor %}
 
     {% endfor %}

@@ -199,6 +199,31 @@
                     <td>{{ l.freq }}</td>
                     <td></td>
                 </tr>
+
+{# ⭐ INSERT MATCHED TEACHER BLOCK ROWS #}
+{% for tb in teacher_blocks %}
+    {% set tb_lid = tb.block_key.split("_")[2] %}
+    {% if tb_lid == l.lesson_id|string %}
+        <tr>
+            <td>{{ l.age }}</td>
+            <td>{{ tb.horse }}</td>
+            <td>—</td>
+            <td>—</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{{ tb.teacher_name }}</td>
+            <td></td>
+            <td class="notes-cell">
+                {% if tb.notes %}{{ tb.notes }}{% endif %}
+            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    {% endif %}
+{% endfor %}
             {% endfor %}
         {% endfor %}
     </tbody>
@@ -262,11 +287,11 @@
                         {% endif %}
                     </td>
 
-<td class="{{ 'balance-red' if l.balance < 0 else '' }}">
-    {% if l.balance != 0 %}
-        ${{ "%.2f"|format(l.balance) }}
-    {% endif %}
-</td>
+                    <td class="{{ 'balance-red' if l.balance < 0 else '' }}">
+                        {% if l.balance != 0 %}
+                            ${{ "%.2f"|format(l.balance) }}
+                        {% endif %}
+                    </td>
 
                     <td>{{ l.guardian }}</td>
                     <td>{{ l.mobile }}</td>
@@ -276,6 +301,36 @@
                     <td>{{ l.freq }}</td>
                     <td></td>
                 </tr>
+
+                {# ⭐ INSERT MATCHED TEACHER BLOCK ROWS #}
+                {% for tb in teacher_blocks %}
+                    {% set tb_lid = tb.block_key.split("_")[2] %}
+                    {% if tb_lid == l.lesson_id|string %}
+                        <tr>
+                            <td>{{ l.age }}</td>
+                            <td>{{ tb.horse }}</td>
+                            <td>—</td>
+                            <td>—</td>
+
+                            <td></td>   {# Payment #}
+                            <td></td>   {# Price #}
+                            <td></td>   {# Balance #}
+
+                            <td>{{ tb.teacher_name }}</td>
+                            <td></td>   {# Mobile #}
+
+                            <td class="notes-cell">
+                                {% if tb.notes %}{{ tb.notes }}{% endif %}
+                            </td>
+
+                            <td></td>   {# Wgt #}
+                            <td></td>   {# Hgt #}
+                            <td></td>   {# Freq #}
+                            <td></td>   {# SignNoPayment #}
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+
             {% endfor %}
         {% endfor %}
     </tbody>

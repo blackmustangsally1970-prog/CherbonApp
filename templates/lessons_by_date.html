@@ -61,7 +61,6 @@ input:checked + .slider:before {
     min-width: 200px !important;
 }
 
-
 /* Fix Select2 width for time dropdowns */
 .time-field + .select2-container {
     width: 100% !important;
@@ -1706,6 +1705,8 @@ body {
 
       <!-- ⭐ Your lesson-table continues below this point -->
 
+<input type="hidden" id="selected_date" value="{{ selected_date }}">
+
 <div class="lesson-table">
     <table id="lesson-table">
           <thead>
@@ -1733,15 +1734,34 @@ body {
 {% set client = pair[1] %}
 
 {% set clones = lesson_rows_map[lesson.lesson_id].clones if lesson.lesson_id in lesson_rows_map else [] %}
-
 {% for clone in clones %}
-<div class="teacher-clone-row" style="display:flex; gap:10px; padding:6px; background:#eef; margin-bottom:4px;">
-    <div style="width:120px;">{{ clone.horse }}</div>
-    <div style="width:120px;">{{ clone.teacher_name }}</div>
-    <div style="width:200px;">{{ clone.notes }}</div>
+{% set parts = clone.block_key.split('_') if clone.block_key else [] %}
+
+<div class="teacher-clone-row"
+     data-id="{{ clone.id }}"
+     data-lesson-id="{{ parts[2] if parts|length > 2 else lesson.lesson_id }}"
+     data-start-time="{{ parts[1] if parts|length > 1 else lesson.time_frame.split(' - ')[0] }}"
+     style="display:flex; align-items:center; gap:10px; padding:6px; background:#eef; margin-bottom:4px;">
+
+    <select class="clone-horse" style="width:120px;">
+        <option value=""></option>
+        {% for horse in horse_list %}
+            <option value="{{ horse }}" {% if horse == clone.horse %}selected{% endif %}>{{ horse }}</option>
+        {% endfor %}
+    </select>
+
+<input type="text" class="clone-teacher"
+       value="{{ clone.teacher_name }}"
+       style="width:120px; flex:0 0 120px; max-width:120px;">
+<input type="text" class="clone-notes"
+       value="{{ clone.notes }}"
+       style="width:200px; flex:0 0 200px; max-width:200px;">
+
+
+    <button type="button" class="clone-save-btn" style="color:#090;">Save</button>
+    <button type="button" class="clone-delete-btn" style="color:#900;">✕</button>
 </div>
 {% endfor %}
-
 
 
 <tr data-lesson-id="{{ lesson.lesson_id }}" data-time="{{ lesson.time_frame }}" data-att="{{ lesson.attendance or '' }}">
@@ -1967,29 +1987,34 @@ window.savedTeacherBlocks = JSON.parse(`{{ teacher_blocks|tojson|safe }}`);
 function extractPrettyTime(blockKey) {
     if (!blockKey) return "";
 
-    // Take only the first segment before underscore
-    let first = blockKey.split("_")[0].trim();
+    const parts = blockKey.split("_");
 
-    // Normalize all hyphens (convert en-dash, em-dash, minus, etc.)
+    // If first segment is a date (YYYY-MM-DD), use second segment instead
+    let first = parts[0].trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(first) && parts[1]) {
+        first = parts[1].trim();
+    }
+
+    // Normalize hyphens
     first = first.replace(/[–—−]/g, "-");
 
-    // Remove all spaces
+    // Remove spaces
     first = first.replace(/\s+/g, "");
 
-    // CASE 1: Already in HH:MM-HH:MM format
+    // CASE 1: HH:MM-HH:MM
     if (/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(first)) {
         const [start, end] = first.split("-");
         return `${start} - ${end}`;
     }
 
-    // CASE 2: Smashed HH:MMHH:MM format (12:3013:20)
+    // CASE 2: HH:MMHH:MM
     if (/^\d{2}:\d{2}\d{2}:\d{2}$/.test(first)) {
         const start = first.slice(0, 5);
         const end   = first.slice(5);
         return `${start} - ${end}`;
     }
 
-    // ⭐ CASE 3: Fully smashed HHMMHHMM format (12301320)
+    // CASE 3: HHMMHHMM
     if (/^\d{8}$/.test(first)) {
         const start = first.slice(0, 2) + ":" + first.slice(2, 4);
         const end   = first.slice(4, 6) + ":" + first.slice(6, 8);
@@ -2000,6 +2025,17 @@ function extractPrettyTime(blockKey) {
     return first;
 }
 
+function rebuild_full_timerange(start) {
+    // Expect "HH:MM"
+    if (!start || !/^\d{2}:\d{2}$/.test(start)) return start;
+
+    const [h, m] = start.split(':').map(Number);
+    const endH = h + 1; // 1‑hour default lesson length
+
+    const end = `${String(endH).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    return `${start} - ${end}`;
+}
+
 
 function aggregateTimesForHorse(horseName) {
     const key = canon(horseName);
@@ -2007,37 +2043,48 @@ function aggregateTimesForHorse(horseName) {
     if (!key) return [];
 
     // 1. Rider lesson times (from window.horseSchedule)
-    Object.keys(window.horseSchedule || {}).forEach(k => {
-        if (canon(k) === key) {
-            (window.horseSchedule[k] || []).forEach(t => {
-                if (t && String(t).trim()) set.add(String(t).trim());
+            Object.keys(window.horseSchedule || {}).forEach(k => {
+                if (canon(k) === key) {
+                    (window.horseSchedule[k] || []).forEach(t => {
+                        if (t && String(t).trim()) {
+                            // Convert "HH:MM" into full "HH:MM - HH:MM"
+                            const full = rebuild_full_timerange(String(t).trim());
+                            set.add(full);
+                        }
+                    });
+                }
             });
-        }
-    });
 
 // 2. Saved TeacherBlock times (from DB)
-savedTeacherBlocks.forEach(tb => {
+(window.savedTeacherBlocks || []).forEach(tb => {
     if (tb.horse && canon(tb.horse) === key) {
-        console.log("SAVED TB RAW:", tb.block_key,
-                    "PRETTY:", extractPrettyTime(tb.block_key));
-        set.add(extractPrettyTime(tb.block_key));
+
+        let raw = tb.block_key || "";
+
+        // If block_key contains a date prefix (YYYY-MM-DD_), strip it
+        if (raw.includes("_")) {
+            raw = raw.split("_")[1];
+        }
+
+        // Normalize and convert to full HH:MM - HH:MM range
+        const pretty = extractPrettyTime(raw);
+
+        if (pretty) {
+            set.add(pretty);
+        }
     }
 });
 
 // 3. Live (unsaved) teacher block rows
-document.querySelectorAll(".teacher-block-row").forEach(row => {
-    const h = row.querySelector(".teacher-block-horse")?.value?.trim().toLowerCase();
-    const keyRaw = row.querySelector(".teacher-block-key")?.value?.trim();
+            document.querySelectorAll(".teacher-block-row").forEach(row => {
+                const h = row.querySelector(".teacher-block-horse")?.value?.trim().toLowerCase();
+                const keyRaw = row.querySelector(".teacher-block-key")?.value?.trim();
 
-if (h && h === key && keyRaw) {
-
-    console.log("LIVE TB RAW:", keyRaw,
-                "PRETTY:", extractPrettyTime(keyRaw));
-
-    set.add(extractPrettyTime(keyRaw));
-}
-
-});
+                if (h && h === key && keyRaw) {
+                    const raw = keyRaw.split("_")[1];   // extract actual time segment
+                    set.add(extractPrettyTime(raw));    // convert to full range
+                }
+            });
 
     // 4. Rider lesson rows in DOM (live)
     document.querySelectorAll('tbody tr').forEach(row => {
@@ -2196,6 +2243,18 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
     if ($select.length) hideTooltip($select);
   });
 
+// ⭐ NEW: Hover support for Select2 widget (Select2 steals mouseenter from <td>)
+$(document).on('mouseenter.horseTooltip', '.select2-container', function () {
+    const $select = $(this).prev('select[name^="horse_"]');
+    if ($select.length) positionAndShow($select);
+});
+
+$(document).on('mouseleave.horseTooltip', '.select2-container', function () {
+    const $select = $(this).prev('select[name^="horse_"]');
+    if ($select.length) hideTooltip($select);
+});
+
+
   $(document).on('select2:open.horseTooltip', 'select.compact-horse', function () {
     positionAndShow($(this));
   });
@@ -2224,6 +2283,27 @@ $tip.html('<strong>' + title + '</strong>' + body + teacherHtml);
   });
 })();
 </script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    $(".teacher-clone-row .clone-horse").each(function() {
+        $(this).select2({
+            width: '120px',
+            dropdownAutoWidth: false,
+            allowClear: true
+        });
+
+        const box = $(this).next('.select2');
+        box.css({ width: '120px', minWidth: '120px' });
+        box.find('.select2-selection').css({ width: '120px', minWidth: '120px' });
+    });
+});
+
+</script>
+
+
 
 <script>
 function buildCloneRow(horseList, lessonId, startTime) {
@@ -2260,29 +2340,63 @@ function buildCloneRow(horseList, lessonId, startTime) {
     teacher.style.flex = "0 0 120px";
     notes.style.flex = "0 0 200px";
 
-    setTimeout(() => {
-        const sel = $(row).find('.clone-horse');
-        sel.select2({
-            width: 'resolve',
-            dropdownAutoWidth: false,
-            allowClear: true
-        });
-        const box = sel.next('.select2');
-        box.css({ width: '120px', minWidth: '120px' });
-        box.find('.select2-selection').css({ width: '120px', minWidth: '120px' });
-    }, 10);
+setTimeout(() => {
+    const sel = $(row).find('.clone-horse');
+
+    sel.select2({
+        width: 'style',
+        dropdownAutoWidth: false,
+        allowClear: true
+    });
+
+    // FORCE the width on the Select2 wrapper
+    const box = sel.next('.select2');
+    box.css({
+        width: '120px',
+        minWidth: '120px'
+    });
+
+    box.find('.select2-selection').css({
+        width: '120px',
+        minWidth: '120px'
+    });
+}, 10);
 
     return row;
 }
 
 document.addEventListener('click', function (e) {
 
-    // DELETE
-    if (e.target.classList.contains('clone-delete-btn')) {
-        const row = e.target.closest('.teacher-clone-row');
-        if (row) row.remove();
+
+    // DELETE (REAL)
+    if (e.target.classList.contains("clone-delete-btn")) {
+        const row = e.target.closest(".teacher-clone-row");
+        const tbId = row.dataset.id;
+
+        if (!tbId) {
+            console.warn("Clone row missing ID");
+            row.remove();  // remove visually anyway
+            return;
+        }
+
+        fetch("/delete_teacher_clone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: tbId })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === "deleted") {
+                row.remove();
+            } else {
+                console.error("Delete failed:", res);
+            }
+        })
+        .catch(err => console.error("Delete error:", err));
+
         return;
     }
+
 
     // SAVE
     if (e.target.classList.contains('clone-save-btn')) {
@@ -3021,120 +3135,6 @@ document.addEventListener('submit', function(e) {
 
 
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-function setTooltipForElement($container, horseName) {
-    const clientTimes = window.horseSchedule?.[horseName] || [];
-    const teacherItems = window.teacherHorseUsage?.[horseName] || [];
-
-    // OLD SYSTEM teacher blocks (teacher_horse)
-    const teacherBlocksOld = teacherItems.filter(
-        item => typeof item === "object" && item.type === "teacher"
-    );
-
-    // NEW SYSTEM teacher blocks (TeacherBlock table)
-    const teacherBlocksNew = (window.savedTeacherBlocks || [])
-        .filter(b => b.horse === horseName)
-        .map(b => ({
-            block_key: b.block_key,
-            teacher: b.teacher_name,
-            notes: b.notes
-        }));
-
-    let html = `<strong>${horseName}</strong>`;
-
-    // Client lessons
-    if (clientTimes.length > 0) {
-        html += clientTimes.map(t => `<div>• ${t}</div>`).join('');
-    }
-
-    // Old teacher_horse blocks
-    if (teacherBlocksOld.length > 0) {
-        html += `<div style="margin-top:4px;"><em>Teacher blocks:</em></div>`;
-        html += teacherBlocksOld.map(tb => {
-            let line = `• ${tb.block_key}`;
-            if (tb.teacher) line += ` — ${tb.teacher}`;
-            if (tb.notes) line += ` (${tb.notes})`;
-            return `<div>${line}</div>`;
-        }).join('');
-    }
-
-    // NEW TeacherBlock entries
-    if (teacherBlocksNew.length > 0) {
-        html += `<div style="margin-top:4px;"><em>Teacher blocks:</em></div>`;
-        html += teacherBlocksNew.map(tb => {
-            let line = `• ${tb.block_key}`;
-            if (tb.teacher) line += ` — ${tb.teacher}`;
-            if (tb.notes) line += ` (${tb.notes})`;
-            return `<div>${line}</div>`;
-        }).join('');
-    }
-
-    if (
-        clientTimes.length === 0 &&
-        teacherBlocksOld.length === 0 &&
-        teacherBlocksNew.length === 0
-    ) {
-        html += `<div><em>No other bookings today</em></div>`;
-    }
-
-    const $tooltip = $container.find('.tooltip-box').first();
-    if ($tooltip.length) {
-        $tooltip.html(html);
-
-        $container.off('mouseenter.tooltip mouseleave.tooltip');
-
-        $container.on('mouseenter.tooltip', function () {
-            $tooltip.css({ visibility: 'visible', opacity: 1 });
-        });
-
-        $container.on('mouseleave.tooltip', function () {
-            $tooltip.css({ visibility: 'hidden', opacity: 0 });
-        });
-    }
-}
-
-if (window.jQuery) {
-    $('.horse-cell').each(function () {
-        const $c = $(this);
-        const sel = $c.find('select.compact-horse').first();
-        const horseName = sel.length
-            ? sel.val()
-            : $c.find('.horse-print-only').text().trim();
-
-        if (horseName) {
-            setTooltipForElement($c, horseName);
-        }
-
-        sel.on('change', function () {
-            const name = $(this).val();
-            setTooltipForElement($c, name);
-        });
-    });
-}
-
-// -------------------------------
-// RESTORED: SHOW ALL LESSONS BUTTON
-// -------------------------------
-const toggle = document.getElementById('toggle-all-lessons');
-
-if (toggle) {
-    const applyState = function (showDetails) {
-        document.querySelectorAll('.lesson-block').forEach(function (block) {
-            block.classList.toggle('collapsed', !showDetails);
-        });
-    };
-
-    applyState(toggle.checked);
-
-    toggle.addEventListener('change', function (e) {
-        applyState(e.target.checked);
-    });
-}
-
-});
-</script>
 
 
 

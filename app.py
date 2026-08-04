@@ -3749,6 +3749,7 @@ def create_app():
                 "att": getattr(l, "attendance", False),
                 "teacher": getattr(l, "teacher", "") or "",
                 "horse": getattr(l, "horse", "") or "",
+                "lesson_id": l.lesson_id
             })
 
         # -----------------------------
@@ -3783,12 +3784,30 @@ def create_app():
             })
 
         # -----------------------------
+        # LOAD TEACHER BLOCKS
+        # -----------------------------
+        teacher_blocks = TeacherBlock.query.filter_by(date=date).all()
+
+        teacher_blocks_json = [
+            {
+                "id": tb.id,
+                "date": tb.date,
+                "block_key": tb.block_key,
+                "horse": tb.horse,
+                "teacher_name": tb.teacher_name,
+                "notes": tb.notes
+            }
+            for tb in teacher_blocks
+        ]
+
+        # -----------------------------
         # RENDER TEMPLATE
         # -----------------------------
         return render_template(
             "horse_print.html",
             date=pretty_date,
-            grouped=grouped
+            grouped=grouped,
+            teacher_blocks=teacher_blocks_json
         )
 
 
@@ -4411,7 +4430,27 @@ def create_app():
     def pdf_for_date(date):
         # 1. Render the HTML using the existing lessons_by_date logic
         with app.test_request_context(f"/lessons_by_date?date={date}"):
-            html = lessons_by_date()
+            ctx = build_lessons_context(selected_date, selected_date_str)
+            html = render_template(
+                "lessons_by_date.html",
+                grouped_lessons=ctx["grouped_lessons"],
+                selected_date=selected_date_str,
+                weekday_int=selected_date.weekday(),
+                horse_list=ctx["horse_list"],
+                horse_schedule=ctx["horse_schedule"],
+                teacher_names=ctx["teacher_names"],
+                block_tag_lookup=ctx["block_tag_lookup"],
+                client_horse_history=ctx["client_horse_history"],
+                invoice_clients=ctx["invoice_clients"],
+                clients=ctx["clients"],
+                teacher_times=teacher_times_map(),
+                teacher_horse_usage=ctx["teacher_horse_usage"],
+                times=ctx["times"],
+                get_static_teachers=get_static_teachers,
+                client_lookup=ctx["client_lookup"],
+                slot_map=ctx["slot_map"],
+                teacher_blocks=ctx["teacher_blocks"]   # ⭐ REQUIRED FOR CLONED TEACHER ROWS
+            )
 
         # 2. Generate PDF using Chromium
         with sync_playwright() as p:
@@ -4595,6 +4634,8 @@ def create_app():
         for h, usage_times in teacher_horse_usage.items():
             teacher_horse_usage[h] = sorted(set(usage_times))
 
+        teacher_blocks = db.session.query(TeacherBlock).filter_by(date=selected_date_str).all()
+
         # Build slot_map
         slot_rows = (
             db.session.query(TeacherSlot)
@@ -4618,6 +4659,7 @@ def create_app():
             "client_lookup": client_lookup,
             "clients": clients,
             "teacher_horse_usage": teacher_horse_usage,
+            "teacher_blocks": teacher_blocks,
             "slot_map": slot_map,
             "merged_tags": merged_tags,             
         }
@@ -4680,7 +4722,8 @@ def create_app():
                 "id": tb.id,
                 "horse": tb.horse,
                 "teacher_name": tb.teacher_name,
-                "notes": tb.notes
+                "notes": tb.notes,
+                "block_key": tb.block_key
             })
 
         # Detach ORM objects
@@ -4725,7 +4768,7 @@ def create_app():
         # ⭐ Attach clones to lesson rows (your new logic)
         for lr in lesson_rows:
             start = lr.time_frame.split(" - ")[0].strip()
-            block_key = f"{selected_date_str}_{start}"
+            block_key = f"{selected_date_str}_{start}_{lr.lesson_id}"
             lr.clones = clone_lookup.get(block_key, [])
 
         # ⭐ Build lesson_rows_map (your new logic)
@@ -4756,9 +4799,9 @@ def create_app():
             merged_tags=ctx["merged_tags"],
             norm_timerange_key=norm_timerange_key,
             grid_overrides=grid_overrides,
-            teacher_blocks=teacher_blocks_json,
             is_processable_day=is_processable_day,
-            lesson_rows_map=lesson_rows_map
+            lesson_rows_map=lesson_rows_map,
+            teacher_blocks=teacher_blocks_json
         )
 
 
@@ -8345,50 +8388,55 @@ Cherbon Waters Admin
 
     @app.route("/save_teacher_blocks", methods=["POST"])
     def save_teacher_blocks():
-        data = request.get_json()
-        date = data.get("date")
-        incoming = data.get("teacher_blocks", [])
+        try:
+            data = request.get_json()
+            date = data.get("date")
+            incoming = data.get("teacher_blocks", [])
 
-        # Load existing rows for this date
-        existing = TeacherBlock.query.filter_by(date=date).all()
-        existing_by_id = {tb.id: tb for tb in existing}
+            # Load existing rows for this date
+            existing = TeacherBlock.query.filter_by(date=date).all()
+            existing_by_id = {tb.id: tb for tb in existing}
 
-        incoming_ids = []
+            incoming_ids = []
 
-        # Process incoming rows
-        for item in incoming:
-            tb_id = item.get("id")
+            # Process incoming rows
+            for item in incoming:
+                tb_id = item.get("id")
 
-            if tb_id and tb_id in existing_by_id:
-                # Update existing
-                tb = existing_by_id[tb_id]
-                tb.block_key = item["block_key"]
-                tb.horse = item["horse"]
-                tb.teacher_name = item["teacher_name"]
-                tb.notes = item["notes"]
-                incoming_ids.append(tb_id)
+                if tb_id and tb_id in existing_by_id:
+                    # Update existing
+                    tb = existing_by_id[tb_id]
+                    tb.block_key = item["block_key"]
+                    tb.horse = item["horse"]
+                    tb.teacher_name = item["teacher_name"]
+                    tb.notes = item["notes"]
+                    incoming_ids.append(tb_id)
 
-            else:
-                # Insert new
-                tb = TeacherBlock(
-                    date=date,
-                    block_key=item["block_key"],
-                    horse=item["horse"],
-                    teacher_name=item["teacher_name"],
-                    notes=item["notes"]
-                )
-                db.session.add(tb)
-                db.session.flush()  # get ID
-                incoming_ids.append(tb.id)
+                else:
+                    # Insert new
+                    tb = TeacherBlock(
+                        date=date,
+                        block_key=item["block_key"],
+                        horse=item["horse"],
+                        teacher_name=item["teacher_name"],
+                        notes=item["notes"]
+                    )
+                    db.session.add(tb)
+                    db.session.flush()  # get ID
+                    incoming_ids.append(tb.id)
 
-        # Delete rows removed in UI
-        for tb in existing:
-            if tb.id not in incoming_ids:
-                db.session.delete(tb)
+            # Delete rows removed in UI
+            for tb in existing:
+                if tb.id not in incoming_ids:
+                    db.session.delete(tb)
 
-        db.session.commit()
+            db.session.commit()
+            return jsonify({"status": "ok"})
 
-        return jsonify({"status": "ok"})
+        except Exception as e:
+            print("DB ERROR:", e)
+            db.session.rollback()
+            return jsonify({"error": str(e)}), 500
 
     @app.route('/manage_teacher_times', methods=['GET'])
     def manage_teacher_times():
@@ -8508,10 +8556,14 @@ Cherbon Waters Admin
 
 
     def get_start_from_block_key(block_key):
-        # 1. Extract the first segment before "_"
-        raw = block_key.split("_")[0]
+        parts = block_key.split("_")
+        if len(parts) < 2:
+            return ""
 
-        # 2. Extract digits
+        # The second segment ALWAYS contains the real start time
+        raw = parts[1]
+
+        # Extract digits from the time segment
         digits = "".join(ch for ch in raw if ch.isdigit())
         if len(digits) < 4:
             return ""
@@ -8519,7 +8571,7 @@ Cherbon Waters Admin
         hhmm = digits[:4]
         formatted = hhmm[:2] + ":" + hhmm[2:]
 
-        # 3. Look up the real timerange in the times table
+        # Look up the real timerange in the times table
         all_times = Time.query.all()
         for t in all_times:
             t_digits = "".join(ch for ch in t.timerange if ch.isdigit())
@@ -8644,9 +8696,13 @@ Cherbon Waters Admin
                 base = t.replace("*", "")
                 if horse in schedule and base in schedule[horse]:
                     existing = schedule[horse][base]
+
+                    # If lesson exists (e.g., "10:15" or "10:15T"), append "*"
                     if existing:
-                        schedule[horse][base] = existing + "*"
+                        if "*" not in existing:
+                            schedule[horse][base] = existing + "*"
                     else:
+                        # Empty cell → insert teacher block time directly
                         schedule[horse][base] = t
 
             # --- Build TXT output ---
@@ -8778,7 +8834,12 @@ Cherbon Waters Admin
                 base = t.replace("*", "")
                 if horse in schedule and base in schedule[horse]:
                     existing = schedule[horse][base]
-                    schedule[horse][base] = existing + "*" if existing else t
+
+                    if existing:
+                        if "*" not in existing:
+                            schedule[horse][base] = existing + "*"
+                    else:
+                        schedule[horse][base] = t
 
             # --- Excel output ---
             out_dir = "/home/schedule_exports"
@@ -9851,6 +9912,7 @@ Cherbon Waters Admin
 
     @app.route('/save_teacher_clone', methods=['POST'])
     def save_teacher_clone():
+        print("ROUTE HIT")   # ← ALWAYS HERE
         data = request.get_json() or {}
 
         lesson_id = data.get("lesson_id")
@@ -9870,7 +9932,8 @@ Cherbon Waters Admin
         if not start_time:
             start_time = lesson.time_frame.split(" - ")[0].strip()
 
-        block_key = f"{selected_date_str}_{start_time}"
+        block_key = f"{selected_date_str}_{start_time}_{lesson_id}"
+
 
         tb = TeacherBlock(
             date=selected_date_str,
@@ -9894,6 +9957,28 @@ Cherbon Waters Admin
                 "notes": notes
             }
         }
+
+    @app.route("/delete_teacher_clone", methods=["POST"])
+    def delete_teacher_clone():
+        data = request.get_json()
+        tb_id = data.get("id")
+
+        if not tb_id:
+            return {"error": "Missing id"}, 400
+
+        tb = TeacherBlock.query.get(tb_id)
+        if not tb:
+            return {"error": "Not found"}, 404
+
+        try:
+            db.session.delete(tb)
+            db.session.commit()
+            return {"status": "deleted"}
+        except Exception as e:
+            print("DB DELETE ERROR:", e)
+            db.session.rollback()
+            return {"error": str(e)}, 500
+
 
     @app.route("/admin/weekly_summary")
     def admin_weekly_summary():
