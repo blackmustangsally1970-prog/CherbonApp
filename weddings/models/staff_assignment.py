@@ -1,5 +1,5 @@
 from extensions import db
-from models import Employee  # make sure this import exists
+from cherbonapp.models import Account  # NEW unified account model
 
 class WeddingStaffAssignment(db.Model):
     __tablename__ = 'wedding_staff_assignment'
@@ -7,10 +7,12 @@ class WeddingStaffAssignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     wedding_id = db.Column(db.Integer, db.ForeignKey('wedding.id'), nullable=False)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+
+    # 🔥 NEW FIELD: unified account foreign key
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
 
     role = db.Column(db.String(50))  # coordinator, wait, bar, floater, admin
     notes = db.Column(db.Text)
 
-    # ⭐ THIS LINE MAKES {{ s.employee.full_name }} WORK
-    employee = db.relationship("Employee", backref="wedding_assignments")
+    # 🔥 NEW RELATIONSHIP: link to Account instead of Employee
+    account = db.relationship("Account", backref="wedding_assignments")
