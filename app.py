@@ -9560,9 +9560,9 @@ Cherbon Waters Admin
 
             row = (
                 EmployeeHours.query
-                .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+                .join(AccountEmployeeMap, AccountEmployeeMap.account_id == EmployeeHours.account_id)
                 .filter(
-                    AccountEmployeeMap.account_id == acc_id,
+                    EmployeeHours.account_id == acc_id,
                     EmployeeHours.date == d
                 )
                 .first()
@@ -9600,12 +9600,7 @@ Cherbon Waters Admin
             return "Not found", 404
 
         # FIX: resolve correct account_id via mapping table
-        acc = (
-            Account.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.account_id == Account.id)
-            .filter(AccountEmployeeMap.employee_id == row.employee_id)
-            .first()
-        )
+        acc = Account.query.get(row.account_id)
 
         return render_template("admin_edit_hours.html", acc=acc, row=row)
 
@@ -9631,9 +9626,8 @@ Cherbon Waters Admin
         # Load rows for this week using ACCOUNT ID → FIXED JOIN
         rows = (
             EmployeeHours.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
             .filter(
-                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.account_id == acc_id,
                 EmployeeHours.date >= start_of_week,
                 EmployeeHours.date <= end_of_week
             )
@@ -9679,12 +9673,7 @@ Cherbon Waters Admin
         db.session.commit()
 
         # FIX: resolve correct account_id via mapping table
-        acc = (
-            Account.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.account_id == Account.id)
-            .filter(AccountEmployeeMap.employee_id == row.employee_id)
-            .first()
-        )
+        acc = Account.query.get(row.account_id)
 
         return redirect(f"/admin/employeehours/day/{day}/{acc.id}")
 
@@ -9741,13 +9730,13 @@ Cherbon Waters Admin
         # Load existing row using ACCOUNT → EMPLOYEE mapping
         row = (
             EmployeeHours.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
             .filter(
-                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.account_id == acc_id,
                 EmployeeHours.date == d
             )
             .first()
         )
+
 
         # Make stored datetimes timezone-aware
         if row:
@@ -9782,7 +9771,7 @@ Cherbon Waters Admin
                         .filter_by(account_id=acc_id)
                         .first()
                     ).employee_id
-                    row = EmployeeHours(employee_id=emp_id, date=d)
+                    row = EmployeeHours(account_id=acc_id, date=d)
                     db.session.add(row)
 
                 field_map = {
@@ -10048,13 +10037,13 @@ Cherbon Waters Admin
                 # FIXED: correct join + correct employee_id mapping
                 row = (
                     EmployeeHours.query
-                    .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
                     .filter(
-                        AccountEmployeeMap.account_id == acc.id,
+                        EmployeeHours.account_id == acc.id,
                         EmployeeHours.date == day
                     )
                     .first()
                 )
+
 
                 if row:
                     work = timedelta()
@@ -10118,9 +10107,8 @@ Cherbon Waters Admin
         # Load rows using ACCOUNT → EMPLOYEE mapping
         rows = (
             EmployeeHours.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
             .filter(
-                AccountEmployeeMap.account_id == acc.id,
+                EmployeeHours.account_id == acc.id,
                 EmployeeHours.date >= start_of_week,
                 EmployeeHours.date <= end_of_week
             )
@@ -10170,23 +10158,19 @@ Cherbon Waters Admin
         d = datetime.strptime(date, "%Y-%m-%d").date()
 
         # Resolve employee_id from account_id
-        mapping = AccountEmployeeMap.query.filter_by(account_id=acc_id).first()
-        if not mapping:
-            return "Mapping not found", 400
-
-        emp_id = mapping.employee_id
-
-        # Load row using employee_id
         row = (
             EmployeeHours.query
-            .filter_by(employee_id=emp_id, date=d)
+            .filter(
+                EmployeeHours.account_id == acc_id,
+                EmployeeHours.date == d
+            )
             .first()
         )
 
-        # Create row if missing
         if not row:
-            row = EmployeeHours(employee_id=emp_id, date=d)
+            row = EmployeeHours(account_id=acc_id, date=d)
             db.session.add(row)
+
 
         time_str = request.form.get("time")
         notes = request.form.get("notes", "")
@@ -10303,10 +10287,9 @@ Cherbon Waters Admin
 
             row = (
                 EmployeeHours.query
-                .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
                 .filter(
-                        AccountEmployeeMap.account_id == acc_id,
-                        EmployeeHours.date == d
+                    EmployeeHours.account_id == acc_id,
+                    EmployeeHours.date == d
                 )
                 .first()
             )
@@ -10351,9 +10334,8 @@ Cherbon Waters Admin
         # Load row using ACCOUNT → EMPLOYEE mapping
         row = (
             EmployeeHours.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
             .filter(
-                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.account_id == acc_id,
                 EmployeeHours.date == selected_date
             )
             .first()
@@ -10379,7 +10361,7 @@ Cherbon Waters Admin
                 .first()
             ).employee_id
 
-            row = EmployeeHours(employee_id=emp_id, date=selected_date)
+            row = EmployeeHours(account_id=acc_id, date=selected_date)
             db.session.add(row)
 
         # Already started?
@@ -10407,9 +10389,8 @@ Cherbon Waters Admin
         # Load row using ACCOUNT → EMPLOYEE mapping
         row = (
             EmployeeHours.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
             .filter(
-                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.account_id == acc_id,
                 EmployeeHours.date == selected_date
             )
             .first()
@@ -10435,7 +10416,7 @@ Cherbon Waters Admin
                 .first()
             ).employee_id
 
-            row = EmployeeHours(employee_id=emp_id, date=selected_date)
+            row = EmployeeHours(account_id=acc_id, date=selected_date)
             db.session.add(row)
 
         # Must have sign-in first
@@ -10468,9 +10449,8 @@ Cherbon Waters Admin
         # Load row using ACCOUNT → EMPLOYEE mapping
         row = (
             EmployeeHours.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
             .filter(
-                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.account_id == acc_id,
                 EmployeeHours.date == selected_date
             )
             .first()
@@ -10524,9 +10504,8 @@ Cherbon Waters Admin
         # Load row using ACCOUNT → EMPLOYEE mapping
         row = (
             EmployeeHours.query
-            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
             .filter(
-                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.account_id == acc_id,
                 EmployeeHours.date == selected_date
             )
             .first()
@@ -10552,7 +10531,7 @@ Cherbon Waters Admin
                 .first()
             ).employee_id
 
-            row = EmployeeHours(employee_id=emp_id, date=selected_date)
+            row = EmployeeHours(account_id=acc_id, date=selected_date)
             db.session.add(row)
 
         # Must have sign-in first
