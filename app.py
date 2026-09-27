@@ -9727,7 +9727,6 @@ Cherbon Waters Admin
         except:
             return "Invalid date", 400
 
-        # Load existing row using ACCOUNT → EMPLOYEE mapping
         row = (
             EmployeeHours.query
             .filter(
@@ -9737,8 +9736,6 @@ Cherbon Waters Admin
             .first()
         )
 
-
-        # Make stored datetimes timezone-aware
         if row:
             row.sign_in = make_aware(row.sign_in)
             row.break_start = make_aware(row.break_start)
@@ -9766,11 +9763,6 @@ Cherbon Waters Admin
                 dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
 
                 if not row:
-                    emp_id = (
-                        AccountEmployeeMap.query
-                        .filter_by(account_id=acc_id)
-                        .first()
-                    ).employee_id
                     row = EmployeeHours(account_id=acc_id, date=d)
                     db.session.add(row)
 
@@ -9802,12 +9794,7 @@ Cherbon Waters Admin
             dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
 
             if not row:
-                emp_id = (
-                    AccountEmployeeMap.query
-                    .filter_by(account_id=acc_id)
-                    .first()
-                ).employee_id
-                row = EmployeeHours(employee_id=emp_id, date=d)
+                row = EmployeeHours(account_id=acc_id, date=d)
                 db.session.add(row)
 
             now = datetime.now(ZoneInfo("Australia/Brisbane"))
@@ -10157,7 +10144,6 @@ Cherbon Waters Admin
         acc_id = session["account_id"]
         d = datetime.strptime(date, "%Y-%m-%d").date()
 
-        # Resolve employee_id from account_id
         row = (
             EmployeeHours.query
             .filter(
@@ -10170,7 +10156,6 @@ Cherbon Waters Admin
         if not row:
             row = EmployeeHours(account_id=acc_id, date=d)
             db.session.add(row)
-
 
         time_str = request.form.get("time")
         notes = request.form.get("notes", "")
