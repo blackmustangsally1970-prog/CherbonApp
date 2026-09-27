@@ -9550,10 +9550,15 @@ Cherbon Waters Admin
         for i in range(7):
             d = start_of_week + timedelta(days=i)
 
-            row = EmployeeHours.query.filter_by(
-                account_id=acc_id,
-                date=d
-            ).first()
+            row = (
+                EmployeeHours.query
+                .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+                .filter(
+                    AccountEmployeeMap.account_id == acc_id,
+                    EmployeeHours.date == d
+                )
+                .first()
+            )
 
             # IDENTICAL STATUS LOGIC
             if d > today:
@@ -9580,14 +9585,19 @@ Cherbon Waters Admin
             is_last_week=True
         )
 
-
     @app.route("/admin/employees/hours/<int:row_id>/edit")
     def admin_edit_hours(row_id):
         row = EmployeeHours.query.get(row_id)
         if not row:
             return "Not found", 404
 
-        acc = Account.query.get(row.account_id)
+        # FIX: resolve correct account_id via mapping table
+        acc = (
+            Account.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.account_id == Account.id)
+            .filter(AccountEmployeeMap.employee_id == row.employee_id)
+            .first()
+        )
 
         return render_template("admin_edit_hours.html", acc=acc, row=row)
 
@@ -9610,12 +9620,18 @@ Cherbon Waters Admin
         start_of_week = date.fromisocalendar(year, current_week, 1)
         end_of_week = start_of_week + timedelta(days=6)
 
-        # Load rows for this week using ACCOUNT ID
-        rows = EmployeeHours.query.filter(
-            EmployeeHours.account_id == acc_id,
-            EmployeeHours.date >= start_of_week,
-            EmployeeHours.date <= end_of_week
-        ).order_by(EmployeeHours.date.asc()).all()
+        # Load rows for this week using ACCOUNT ID → FIXED JOIN
+        rows = (
+            EmployeeHours.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+            .filter(
+                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.date >= start_of_week,
+                EmployeeHours.date <= end_of_week
+            )
+            .order_by(EmployeeHours.date.asc())
+            .all()
+        )
 
         return render_template(
             "admin_employee_hours_list.html",
@@ -9654,7 +9670,15 @@ Cherbon Waters Admin
 
         db.session.commit()
 
-        return redirect(f"/admin/employeehours/day/{day}/{row.account_id}")
+        # FIX: resolve correct account_id via mapping table
+        acc = (
+            Account.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.account_id == Account.id)
+            .filter(AccountEmployeeMap.employee_id == row.employee_id)
+            .first()
+        )
+
+        return redirect(f"/admin/employeehours/day/{day}/{acc.id}")
 
     @app.route("/admin/employees/<int:acc_id>/reset_pin", methods=["POST"])
     def admin_reset_pin(acc_id):
@@ -9706,8 +9730,16 @@ Cherbon Waters Admin
         except:
             return "Invalid date", 400
 
-        # Load existing row using ACCOUNT ID
-        row = EmployeeHours.query.filter_by(account_id=acc_id, date=d).first()
+        # Load existing row using ACCOUNT → EMPLOYEE mapping
+        row = (
+            EmployeeHours.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+            .filter(
+                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.date == d
+            )
+            .first()
+        )
 
         # Make stored datetimes timezone-aware
         if row:
@@ -9716,24 +9748,18 @@ Cherbon Waters Admin
             row.break_end = make_aware(row.break_end)
             row.sign_out = make_aware(row.sign_out)
 
-        # Determine editability rules
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
         is_today = (d == today)
 
-        # Incomplete if missing sign_in OR sign_out OR row doesn't exist
         is_incomplete = (not row) or (not row.sign_in) or (not row.sign_out)
-
-        # Editable if today OR past incomplete
         is_future = d > today
         editable = (not is_future) and (is_today or is_incomplete)
 
         if request.method == "POST":
 
-            # Backend safety: block editing completed past days
             if not editable:
                 return "This day is complete and cannot be edited", 403
 
-            # If user already confirmed, skip checks and save
             if request.form.get("confirmed") == "1":
                 action = request.form.get("action")
                 time_str = request.form.get("corrected_time") or request.form.get("time")
@@ -9743,7 +9769,12 @@ Cherbon Waters Admin
                 dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
 
                 if not row:
-                    row = EmployeeHours(account_id=acc_id, date=d)
+                    emp_id = (
+                        AccountEmployeeMap.query
+                        .filter_by(account_id=acc_id)
+                        .first()
+                    ).employee_id
+                    row = EmployeeHours(employee_id=emp_id, date=d)
                     db.session.add(row)
 
                 field_map = {
@@ -9757,7 +9788,6 @@ Cherbon Waters Admin
                 if field:
                     setattr(row, field, dt)
 
-                # Record submission time
                 if action == "finish":
                     row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
 
@@ -9767,7 +9797,6 @@ Cherbon Waters Admin
                 db.session.commit()
                 return redirect(f"/employeehours/day?date={date_str}")
 
-            # Normal POST (validation required)
             action = request.form.get("action")
             time_str = request.form.get("time")
             notes = request.form.get("notes", "")
@@ -9775,16 +9804,16 @@ Cherbon Waters Admin
             t = datetime.strptime(time_str, "%H:%M").time()
             dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
 
-            # Create row if missing
             if not row:
-                row = EmployeeHours(account_id=acc_id, date=d)
+                emp_id = (
+                    AccountEmployeeMap.query
+                    .filter_by(account_id=acc_id)
+                    .first()
+                ).employee_id
+                row = EmployeeHours(employee_id=emp_id, date=d)
                 db.session.add(row)
 
             now = datetime.now(ZoneInfo("Australia/Brisbane"))
-
-            # ============================================================
-            #  VALIDATION LOGIC (UNCHANGED)
-            # ============================================================
 
             if action == "start":
                 if dt > now + timedelta(hours=6):
@@ -9839,10 +9868,6 @@ Cherbon Waters Admin
                 hours_str = f"{int(hours)}h {int((hours % 1) * 60)}m"
 
                 return f"CONFIRM_SHIFT::{t.strftime('%I:%M %p')}::{hours_str}", 200
-
-            # ============================================================
-            #  END VALIDATION
-            # ============================================================
 
             field_map = {
                 "start": "sign_in",
@@ -9962,20 +9987,14 @@ Cherbon Waters Admin
         fy_param = request.args.get("fy", None)
         week_param = request.args.get("week", None)
 
-        # Determine Monday of current week
         monday = today - timedelta(days=today.weekday())
         week_end = monday + timedelta(days=6)
 
-        # FY of the current week (default FY)
         current_fy = week_end.year if week_end >= date(week_end.year, 7, 1) else week_end.year - 1
-
-        # Use selected FY if provided
         fy = int(fy_param) if fy_param else current_fy
 
-        # Build weeks for selected FY
         weeks = build_fy_weeks(fy)
 
-        # Determine default week inside selected FY
         if week_param:
             week_num = int(week_param)
         else:
@@ -9985,12 +10004,9 @@ Cherbon Waters Admin
                     week_num = w["week_number"]
                     found = True
                     break
-
-            # If today is outside this FY → default to WK1
             if not found:
                 week_num = 1
 
-        # Clamp week number
         if week_num < 1:
             week_num = 1
         if week_num > len(weeks):
@@ -10000,14 +10016,18 @@ Cherbon Waters Admin
         start_of_week = selected["start"]
         end_of_week = selected["end"]
 
-        # FY list for dropdown
         fy_years = [fy - 1, fy, fy + 1]
 
         # -----------------------------
         # ACCOUNT WEEKLY SUMMARY
         # -----------------------------
-        accounts = Account.query.filter(Account.role.in_(["staff", "admin"])) \
-                       .order_by(Account.full_name.asc()).all()
+        accounts = (
+            Account.query
+            .filter(Account.role.in_(["staff", "admin"]))
+            .order_by(Account.full_name.asc())
+            .all()
+        )
+
         summary = []
 
         for acc in accounts:
@@ -10016,18 +10036,24 @@ Cherbon Waters Admin
 
             for i in range(7):
                 day = start_of_week + timedelta(days=i)
-                row = EmployeeHours.query.filter_by(account_id=acc.id, date=day).first()
+
+                # FIXED: correct join + correct employee_id mapping
+                row = (
+                    EmployeeHours.query
+                    .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+                    .filter(
+                        AccountEmployeeMap.account_id == acc.id,
+                        EmployeeHours.date == day
+                    )
+                    .first()
+                )
 
                 if row:
-                    # -----------------------------
-                    # MIDNIGHT ROLLOVER FIX
-                    # -----------------------------
                     work = timedelta()
                     if row.sign_in and row.sign_out:
                         sign_in = row.sign_in
                         sign_out = row.sign_out
 
-                        # If sign_out is past midnight → add 24 hours
                         if sign_out < sign_in:
                             sign_out = sign_out + timedelta(days=1)
 
@@ -10081,12 +10107,18 @@ Cherbon Waters Admin
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
 
-        # Load rows using ACCOUNT ID (DB column still "employee_id")
-        rows = EmployeeHours.query.filter(
-            EmployeeHours.account_id == acc.id,
-            EmployeeHours.date >= start_of_week,
-            EmployeeHours.date <= end_of_week
-        ).order_by(EmployeeHours.date.asc()).all()
+        # Load rows using ACCOUNT → EMPLOYEE mapping
+        rows = (
+            EmployeeHours.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+            .filter(
+                AccountEmployeeMap.account_id == acc.id,
+                EmployeeHours.date >= start_of_week,
+                EmployeeHours.date <= end_of_week
+            )
+            .order_by(EmployeeHours.date.asc())
+            .all()
+        )
 
         # Calculate totals
         total_work = timedelta()
@@ -10094,7 +10126,14 @@ Cherbon Waters Admin
 
         for r in rows:
             if r.sign_in and r.sign_out:
-                total_work += (r.sign_out - r.sign_in)
+                sign_in = r.sign_in
+                sign_out = r.sign_out
+
+                # Midnight rollover
+                if sign_out < sign_in:
+                    sign_out = sign_out + timedelta(days=1)
+
+                total_work += (sign_out - sign_in)
 
             if r.break_start and r.break_end:
                 total_break += (r.break_end - r.break_start)
@@ -10122,10 +10161,23 @@ Cherbon Waters Admin
         acc_id = session["account_id"]
         d = datetime.strptime(date, "%Y-%m-%d").date()
 
-        # Load row using ACCOUNT ID (DB column still "employee_id")
-        row = Hours.query.filter_by(account_id=acc_id, date=d).first()
+        # Resolve employee_id from account_id
+        mapping = AccountEmployeeMap.query.filter_by(account_id=acc_id).first()
+        if not mapping:
+            return "Mapping not found", 400
+
+        emp_id = mapping.employee_id
+
+        # Load row using employee_id
+        row = (
+            EmployeeHours.query
+            .filter_by(employee_id=emp_id, date=d)
+            .first()
+        )
+
+        # Create row if missing
         if not row:
-            row = Hours(account_id=acc_id, date=d)
+            row = EmployeeHours(employee_id=emp_id, date=d)
             db.session.add(row)
 
         time_str = request.form.get("time")
@@ -10240,7 +10292,16 @@ Cherbon Waters Admin
 
         for i in range(7):
             d = start_of_week + timedelta(days=i)
-            row = EmployeeHours.query.filter_by(account_id=acc_id, date=d).first()
+
+            row = (
+                EmployeeHours.query
+                .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+                .filter(
+                        AccountEmployeeMap.account_id == acc_id,
+                        EmployeeHours.date == d
+                )
+                .first()
+            )
 
             if d > today:
                 status = "future"
@@ -10279,8 +10340,16 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        # Load row using ACCOUNT ID (DB column still "employee_id")
-        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
+        # Load row using ACCOUNT → EMPLOYEE mapping
+        row = (
+            EmployeeHours.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+            .filter(
+                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.date == selected_date
+            )
+            .first()
+        )
 
         # 🔒 BLOCK IF DAY COMPLETE
         if row and row.sign_out:
@@ -10294,9 +10363,15 @@ Cherbon Waters Admin
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot start work in the future"}), 400
 
-        # Create row if missing
+        # Create row if missing (correct employee_id)
         if not row:
-            row = EmployeeHours(account_id=acc_id, date=selected_date)
+            emp_id = (
+                AccountEmployeeMap.query
+                .filter_by(account_id=acc_id)
+                .first()
+            ).employee_id
+
+            row = EmployeeHours(employee_id=emp_id, date=selected_date)
             db.session.add(row)
 
         # Already started?
@@ -10321,8 +10396,16 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        # Load row using ACCOUNT ID (DB column still "employee_id")
-        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
+        # Load row using ACCOUNT → EMPLOYEE mapping
+        row = (
+            EmployeeHours.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+            .filter(
+                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.date == selected_date
+            )
+            .first()
+        )
 
         # 🔒 BLOCK IF DAY COMPLETE
         if row and row.sign_out:
@@ -10336,9 +10419,15 @@ Cherbon Waters Admin
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot start break in the future"}), 400
 
-        # Create row if missing
+        # Create row if missing (correct employee_id)
         if not row:
-            row = EmployeeHours(account_id=acc_id, date=selected_date)
+            emp_id = (
+                AccountEmployeeMap.query
+                .filter_by(account_id=acc_id)
+                .first()
+            ).employee_id
+
+            row = EmployeeHours(employee_id=emp_id, date=selected_date)
             db.session.add(row)
 
         # Must have sign-in first
@@ -10350,7 +10439,7 @@ Cherbon Waters Admin
             return jsonify({"error": "Break already started"}), 400
 
         row.break_start = selected_dt
-        row.break_end = None  # reset if needed
+        row.break_end = None
         db.session.commit()
 
         return jsonify({"status": "ok"})
@@ -10368,8 +10457,16 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        # Load row using ACCOUNT ID (DB column still "employee_id")
-        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
+        # Load row using ACCOUNT → EMPLOYEE mapping
+        row = (
+            EmployeeHours.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+            .filter(
+                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.date == selected_date
+            )
+            .first()
+        )
 
         # 🔒 BLOCK IF DAY COMPLETE
         if row and row.sign_out:
@@ -10416,38 +10513,56 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        # Load row using ACCOUNT ID (DB column still "employee_id")
-        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
+        # Load row using ACCOUNT → EMPLOYEE mapping
+        row = (
+            EmployeeHours.query
+            .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+            .filter(
+                AccountEmployeeMap.account_id == acc_id,
+                EmployeeHours.date == selected_date
+            )
+            .first()
+        )
 
         # 🔒 BLOCK IF DAY COMPLETE
         if row and row.sign_out:
-            return jsonify({"error": "Day is already complete"}), 403
+            return jsonify({"error": "Day is complete and cannot be edited"}), 403
 
         # Must be same day
         if selected_dt.date() != selected_date:
-            return jsonify({"error": "Finish Work must be on the same day"}), 400
+            return jsonify({"error": "Finish must be on the same day"}), 400
 
         # Cannot finish in future
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot finish work in the future"}), 400
 
-        # Must have a row
+        # Create row if missing (correct employee_id)
         if not row:
-            return jsonify({"error": "Cannot finish work before starting work"}), 400
+            emp_id = (
+                AccountEmployeeMap.query
+                .filter_by(account_id=acc_id)
+                .first()
+            ).employee_id
+
+            row = EmployeeHours(employee_id=emp_id, date=selected_date)
+            db.session.add(row)
 
         # Must have sign-in first
         if not row.sign_in:
-            return jsonify({"error": "Cannot finish work before starting work"}), 400
+            return jsonify({"error": "Cannot finish before starting work"}), 400
 
-        # Break end must be valid if break started
-        if row.break_start and not row.break_end:
-            return jsonify({"error": "Cannot finish work while break is still active"}), 400
+        # Handle midnight rollover
+        if selected_dt >= row.sign_in:
+            end_dt = selected_dt
+        else:
+            overnight_dt = selected_dt + timedelta(days=1)
+            if overnight_dt <= row.sign_in + timedelta(hours=16):
+                end_dt = overnight_dt
+            else:
+                return jsonify({"error": "Finish time cannot be before start time"}), 400
 
-        # Finish must be after sign-in
-        if selected_dt < row.sign_in:
-            return jsonify({"error": "Finish Work cannot be before Start Work"}), 400
-
-        row.sign_out = selected_dt
+        row.sign_out = end_dt
+        row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
         db.session.commit()
 
         return jsonify({"status": "ok"})
@@ -10601,9 +10716,25 @@ Cherbon Waters Admin
             return "Invalid date", 400
 
         # Check if row already exists
-        row = EmployeeHours.query.filter_by(account_id=acc_id, date=d).first()
+        row = (
+                EmployeeHours.query
+                .join(AccountEmployeeMap, AccountEmployeeMap.employee_id == EmployeeHours.employee_id)
+                .filter(
+                        AccountEmployeeMap.account_id == acc_id,
+                        EmployeeHours.date == d
+                )
+                .first()
+        )
+
         if not row:
-            row = EmployeeHours(account_id=acc_id, date=d)
+            # Need the employee_id from the mapping table
+            emp_id = (
+                    AccountEmployeeMap.query
+                    .filter_by(account_id=acc_id)
+                    .first()
+            ).employee_id
+
+            row = EmployeeHours(employee_id=emp_id, date=d)
             db.session.add(row)
             db.session.commit()
 
