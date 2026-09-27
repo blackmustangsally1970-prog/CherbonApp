@@ -627,6 +627,17 @@ class LegacyAccountMap(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
 
 
+class AccountEmployeeMap(db.Model):
+    __tablename__ = "account_employee_map"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # The STAFF account (employee)
+    employee_id = db.Column(db.Integer, db.ForeignKey("account.id"), nullable=False)
+
+    # The LOGIN account (PIN user)
+    account_id = db.Column(db.Integer, db.ForeignKey("account.id"), nullable=False)
+
     # ❌ Do NOT define relationships unless you have foreign keys like client_id, horse_id, etc.
     # Remove these:
     # client = db.relationship('Client', backref='lessons')
