@@ -1,4 +1,6 @@
 from extensions import db
+from flask_migrate import Migrate
+
 from flask import (
     Flask, render_template, request, redirect, url_for,
     send_file, make_response, after_this_request, flash,
@@ -1423,6 +1425,9 @@ def create_app():
     def load_user(user_id):
         return Users.query.get(int(user_id))
 
+    # ⭐ ADD THIS RIGHT HERE
+    db.init_app(app)
+    Migrate(app, db)
 
 
     app.config["PROPAGATE_EXCEPTIONS"] = True
