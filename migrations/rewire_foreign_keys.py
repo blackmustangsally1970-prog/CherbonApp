@@ -1,6 +1,6 @@
 from extensions import db
 from models import LegacyAccountMap, Account
-from weddings.models.wedding_staff_assignment import WeddingStaffAssignment
+from weddings.models.staff_assignment import WeddingStaffAssignment
 from weddings.models.job_list_instance import JobListInstance
 from weddings.models.wedding import Wedding
 
