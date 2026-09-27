@@ -27,6 +27,7 @@ from datetime import datetime
 # ⭐ GLOBAL MODEL IMPORTS — required for wrappers + global functions
 from models import (
     Account,
+    AccountEmployeeMap,
     BlockoutDate,
     BlockoutRange,
     Client,
@@ -60,6 +61,7 @@ from models import (
     Employee,
     EmployeeHours
 )
+
 
 # Core libs
 import os
