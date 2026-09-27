@@ -10169,6 +10169,10 @@ Cherbon Waters Admin
         employees = Account.query.filter_by(role="staff").all()
         return render_template("admin_employees.html", employees=employees)
 
+    @app.route("/admin/employees")
+    def admin_employees():
+        employees = Account.query.order_by(Account.full_name.asc()).all()
+        return render_template("admin_employees.html", employees=employees)
 
     @app.route("/admin/employees/add", methods=["GET", "POST"])
     def admin_add_employee():
