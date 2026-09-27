@@ -1458,7 +1458,7 @@ def create_app():
 
     # print("IncomingSubmission columns:", IncomingSubmission.__table__.columns.keys())  # <-- remove or wrap
     
-    db.init_app(app)
+    
 
     # ⭐ NOW import + register wedding blueprints
     from weddings.routes.bookings import bookings_bp
