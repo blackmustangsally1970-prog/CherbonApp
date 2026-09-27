@@ -1,8 +1,8 @@
 from extensions import db
-from cherbonapp.models import LegacyAccountMap, Account
-from cherbonapp.weddings.models.wedding_staff_assignment import WeddingStaffAssignment
-from cherbonapp.weddings.models.job_list_instance import JobListInstance
-from cherbonapp.weddings.models.wedding import Wedding
+from models import LegacyAccountMap, Account
+from weddings.models.wedding_staff_assignment import WeddingStaffAssignment
+from weddings.models.job_list_instance import JobListInstance
+from weddings.models.wedding import Wedding
 
 
 def map_id(legacy_table, legacy_id):

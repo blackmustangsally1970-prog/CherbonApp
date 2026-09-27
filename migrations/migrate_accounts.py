@@ -1,5 +1,5 @@
 from extensions import db
-from cherbonapp.models import Account, LegacyAccountMap
+from models import Account, LegacyAccountMap
 from models import Users, Employee, Caterer   # your legacy models
 
 def migrate_accounts():
