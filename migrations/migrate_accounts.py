@@ -1,6 +1,6 @@
 from extensions import db
 from models import Account, LegacyAccountMap
-from models import Users, Employee, Caterer   # your legacy models
+from models import Users, Employee   # your legacy models
 
 def migrate_accounts():
     print("Starting migration...")
