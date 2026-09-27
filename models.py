@@ -211,14 +211,21 @@ class Employee(db.Model):
 
 class EmployeeHours(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"))
+
+    # UPDATED: link to Account instead of Employee
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"))
+
     date = db.Column(db.Date)
     sign_in = db.Column(db.DateTime)
     break_start = db.Column(db.DateTime)
     break_end = db.Column(db.DateTime)
     sign_out = db.Column(db.DateTime)
+
     auto_prompted = db.Column(db.Boolean, default=False)
-    employee = db.relationship("Employee", backref="hours")
+
+    # UPDATED: relationship to Account
+    account = db.relationship("Account", backref="hours")
+
     submitted_at = db.Column(db.DateTime)
 
     corrected = db.Column(db.Boolean, default=False)

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ date.strftime("%A %-d %B %Y") }}</title>
+    <title>{{ date.strftime("%A") }} {{ date.day }} {{ date.strftime("%B %Y") }}</title>
     <style>
         body { font-family: Arial; background:#f5f5f5; padding:40px; }
         h2 { font-size:32px; margin-bottom:25px; }
@@ -65,35 +65,35 @@
 </head>
 <body>
 
-<h2>{{ date.strftime("%A %-d %B %Y") }}</h2>
+<h2>{{ date.strftime("%A") }} {{ date.day }} {{ date.strftime("%B %Y") }}</h2>
 
 <div class="box">
 
     <div class="row">
         <strong>Start:</strong>
         <span class="{{ 'status-green' if row and row.sign_in else 'status-yellow' }}">
-            {{ row.sign_in.strftime("%-I:%M %p") if row and row.sign_in else "—" }}
+            {{ row.sign_in.strftime("%I:%M %p") if row and row.sign_in else "—" }}
         </span>
     </div>
 
     <div class="row">
         <strong>Break Start:</strong>
         <span class="{{ 'status-green' if row and row.break_start else 'status-yellow' }}">
-            {{ row.break_start.strftime("%-I:%M %p") if row and row.break_start else "—" }}
+            {{ row.break_start.strftime("%I:%M %p") if row and row.break_start else "—" }}
         </span>
     </div>
 
     <div class="row">
         <strong>Break End:</strong>
         <span class="{{ 'status-green' if row and row.break_end else 'status-yellow' }}">
-            {{ row.break_end.strftime("%-I:%M %p") if row and row.break_end else "—" }}
+            {{ row.break_end.strftime("%I:%M %p") if row and row.break_end else "—" }}
         </span>
     </div>
 
     <div class="row">
         <strong>Finish:</strong>
         <span class="{{ 'status-green' if row and row.sign_out else 'status-yellow' }}">
-            {{ row.sign_out.strftime("%-I:%M %p") if row and row.sign_out else "—" }}
+            {{ row.sign_out.strftime("%I:%M %p") if row and row.sign_out else "—" }}
         </span>
     </div>
 

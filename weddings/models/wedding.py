@@ -1,4 +1,3 @@
-from cherbonapp.models import Account  # add this at the top of the file
 from datetime import datetime
 from extensions import db
 
@@ -32,14 +31,11 @@ class Wedding(db.Model):
     start_time = db.Column(db.String(50))
     other_information = db.Column(db.Text)
 
-
     # ============================
     # CATERER DETAILS
     # ============================
-    caterer_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
-
-    # Relationship to unified Account model
-    caterer = db.relationship("Account")
+    caterer_id = db.Column(db.Integer, db.ForeignKey('caterer.id'))
+    caterer = db.relationship("Caterer")
 
     # ============================
     # SUBMISSION METADATA

@@ -26,6 +26,7 @@ from datetime import datetime
 
 # ⭐ GLOBAL MODEL IMPORTS — required for wrappers + global functions
 from models import (
+    Account,
     BlockoutDate,
     BlockoutRange,
     Client,
@@ -9456,460 +9457,6 @@ Cherbon Waters Admin
         return redirect(url_for('upgrade_items_list'))
 
 
-    @app.route("/employeehours/lastweek")
-    def employee_last_week():
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return redirect("/employeehours")
-
-        emp = Employee.query.get(emp_id)
-
-        # ⭐ Use the SAME timezone as main week route
-        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
-
-        # ⭐ This week's Monday
-        this_monday = today - timedelta(days=today.weekday())
-
-        # ⭐ Last week's Monday
-        start_of_week = this_monday - timedelta(days=7)
-        end_of_week = start_of_week + timedelta(days=6)
-
-        days = []
-
-        for i in range(7):
-            d = start_of_week + timedelta(days=i)
-
-            row = EmployeeHours.query.filter_by(
-                employee_id=emp_id,
-                date=d
-            ).first()
-
-            # ⭐ IDENTICAL STATUS LOGIC
-            if d > today:
-                status = "future"
-            elif row and row.sign_in and row.sign_out:
-                status = "complete"
-            elif row and row.sign_in and not row.sign_out:
-                status = "incomplete"
-            elif d == today:
-                status = "today"
-            else:
-                status = "incomplete"
-
-            days.append({
-                "date": d,
-                "status": status
-            })
-
-        return render_template(
-            "employee_week_view.html",
-            days=days,
-            today=today,
-            emp=emp,
-            is_last_week=True
-        )
-
-
-        @app.route("/admin/employees/new", methods=["POST"])
-        def create_employee():
-            name = request.form.get("full_name")
-            if not name:
-                return "Missing name", 400
-
-            import secrets
-            setup_code = "CW-" + secrets.token_hex(3).upper()
-
-            emp = Employee(full_name=name, setup_code=setup_code)
-            db.session.add(emp)
-            db.session.commit()
-
-            return {"status": "ok", "setup_code": setup_code}
-
-
-        @app.route("/admin/employees/<int:emp_id>/hours")
-        def admin_employee_hours_list(emp_id):
-            emp = Employee.query.get_or_404(emp_id)
-
-            # Determine which week to show
-            today = date.today()
-            current_week = int(request.args.get("week", 0))
-
-            # If no week provided → default to current week
-            if current_week == 0:
-                current_week = today.isocalendar().week
-
-            # Compute Monday of that ISO week
-            year = today.year
-            start_of_week = date.fromisocalendar(year, current_week, 1)
-            end_of_week = start_of_week + timedelta(days=6)
-
-            # Load rows for this week
-            rows = EmployeeHours.query.filter(
-                EmployeeHours.employee_id == emp_id,
-                EmployeeHours.date >= start_of_week,
-                EmployeeHours.date <= end_of_week
-            ).order_by(EmployeeHours.date.asc()).all()
-
-            return render_template(
-                "admin_employee_hours_list.html",
-                emp=emp,
-                rows=rows,
-                current_week=current_week,
-                start_of_week=start_of_week,
-                end_of_week=end_of_week
-            )
-
-    @app.route("/admin/employees/hours/<int:row_id>/edit")
-    def admin_edit_hours(row_id):
-        row = EmployeeHours.query.get(row_id)
-        if not row:
-            return "Not found", 404
-
-        emp = Employee.query.get(row.employee_id)
-
-        return render_template("admin_edit_hours.html", emp=emp, row=row)
-
-
-    @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
-    def admin_edit_hours_post(row_id):
-        row = EmployeeHours.query.get_or_404(row_id)
-
-        day = row.date
-
-        def merge(dt_date, time_str):
-            if not time_str:
-                return None
-            hour, minute = map(int, time_str.split(":"))
-            return datetime(dt_date.year, dt_date.month, dt_date.day, hour, minute)
-
-        sign_in_str = request.form.get("sign_in", "")
-        break_start_str = request.form.get("break_start", "")
-        break_end_str = request.form.get("break_end", "")
-        sign_out_str = request.form.get("sign_out", "")
-
-        row.sign_in = merge(day, sign_in_str)
-        row.break_start = merge(day, break_start_str)
-        row.break_end = merge(day, break_end_str)
-        row.sign_out = merge(day, sign_out_str)
-
-        row.corrected = True
-        row.corrected_at = datetime.now()
-
-        db.session.commit()
-
-        return redirect(f"/admin/employeehours/day/{day}/{row.employee_id}")
-
-    @app.route("/admin/employees/<int:emp_id>/reset_pin", methods=["POST"])
-    def admin_reset_pin(emp_id):
-        emp = Employee.query.get_or_404(emp_id)
-
-        import secrets
-        hex_code = secrets.token_hex(3).upper()
-        setup_code = f"CW-{hex_code}"
-
-        emp.setup_code = setup_code
-        db.session.commit()
-
-        reset_link = f"https://cherbonapp.click/employeehours?code={setup_code}"
-
-        send_sms_clicksend(
-            emp.phone,
-            f"Your Cherbon Waters login reset code is {setup_code}\n"
-            f"Tap to set your PIN:\n{reset_link}",
-            app.config["EQUESTRIAN_SENDER"]
-        )
-
-        flash(f"SMS sent to {emp.phone}", "success")
-        return redirect(url_for("admin_employees"))
-
-    @app.route("/employeehours/day", methods=["GET", "POST"])
-    def employeehours_day_view():
-
-        def make_aware(x):
-            if x is None:
-                return None
-            if x.tzinfo is None:
-                return datetime(
-                    x.year, x.month, x.day,
-                    x.hour, x.minute, x.second,
-                    tzinfo=ZoneInfo("Australia/Brisbane")
-                )
-            return x
-
-        emp_id = session.get("employee_id")
-        if not emp_id:
-            return redirect("/employeehours")
-
-        date_str = request.args.get("date")
-        if not date_str:
-            return "Missing date", 400
-
-        try:
-            d = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except:
-            return "Invalid date", 400
-
-        # Load existing row if any
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
-
-        # Make stored datetimes timezone-aware
-        if row:
-            row.sign_in = make_aware(row.sign_in)
-            row.break_start = make_aware(row.break_start)
-            row.break_end = make_aware(row.break_end)
-            row.sign_out = make_aware(row.sign_out)
-
-        # Determine editability rules
-        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
-        is_today = (d == today)
-
-        # Incomplete if missing sign_in OR sign_out OR row doesn't exist
-        is_incomplete = (not row) or (not row.sign_in) or (not row.sign_out)
-
-        # Editable if today OR past incomplete
-        is_future = d > today
-        editable = (not is_future) and (is_today or is_incomplete)
-
-        if request.method == "POST":
-
-            # Backend safety: block editing completed past days
-            if not editable:
-                return "This day is complete and cannot be edited", 403
-
-            # If user already confirmed, skip checks and save
-            if request.form.get("confirmed") == "1":
-                action = request.form.get("action")
-                time_str = request.form.get("corrected_time") or request.form.get("time")
-                notes = request.form.get("notes", "")
-
-                t = datetime.strptime(time_str, "%H:%M").time()
-                dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
-
-                if not row:
-                    row = EmployeeHours(employee_id=emp_id, date=d)
-                    db.session.add(row)
-
-                field_map = {
-                    "start": "sign_in",
-                    "break_start": "break_start",
-                    "break_end": "break_end",
-                    "finish": "sign_out"
-                }
-
-                field = field_map.get(action)
-                if field:
-                    setattr(row, field, dt)
-
-                # ⭐ RECORD SUBMISSION TIME
-                if action == "finish":
-                    row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
-
-                if notes:
-                    row.notes = notes
-
-                db.session.commit()
-                return redirect(f"/employeehours/day?date={date_str}")
-
-            # Normal POST (validation required)
-            action = request.form.get("action")
-            time_str = request.form.get("time")
-            notes = request.form.get("notes", "")
-
-            # Convert time string to datetime
-            t = datetime.strptime(time_str, "%H:%M").time()
-            dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
-
-            # Create row if missing
-            if not row:
-                row = EmployeeHours(employee_id=emp_id, date=d)
-                db.session.add(row)
-
-            now = datetime.now(ZoneInfo("Australia/Brisbane"))
-
-            # ============================================================
-            #  ACE'S FULL COMBINED VALIDATION LOGIC
-            # ============================================================
-
-            # 1) SUSPICIOUS AM/PM CHECK (SIGN-IN ONLY)
-            if action == "start":
-
-                # If selected time is more than 6 hours in the future → AM/PM mistake
-                if dt > now + timedelta(hours=6):
-                    return f"Suspicious time: {t.strftime('%I:%M %p')}. Check AM/PM.", 400
-
-                # WRONG-DAY CHECK (signing in for a past day)
-                if d < now.date():
-                    if dt.time() > time(18, 0):
-                        return f"You're signing in for {d.strftime('%A')}. {t.strftime('%I:%M %p')} looks incorrect.", 400
-
-                # AUTO-CORRECT SUGGESTION (NEW FRONTEND FORMAT)
-                if t.hour >= 18:  # 6 PM or later
-                    alt_hour = (t.hour - 12) if t.hour > 12 else t.hour
-                    alt_time = time(alt_hour, t.minute)
-                    alt_str = alt_time.strftime("%I:%M %p")
-                    alt_24 = alt_time.strftime("%H:%M")  # for hidden corrected_time field
-
-                    message = f"Did you mean {alt_str} instead of {t.strftime('%I:%M %p')}?"
-                    return f"{message}::{alt_24}", 200
-
-            # 2) BREAK START VALIDATION
-            if action == "break_start":
-                if not row.sign_in:
-                    return "You must start work before starting a break.", 400
-                if dt <= row.sign_in:
-                    return "Break start must be after your start time.", 400
-
-            # 3) BREAK END VALIDATION
-            if action == "break_end":
-                if not row.break_start:
-                    return "You must start your break before ending it.", 400
-                if dt <= row.break_start:
-                    return "Break end must be after break start.", 400
-
-            # 4) FINISH VALIDATION (WITH OVERNIGHT SHIFT SUPPORT)
-            if action == "finish":
-                if not row.sign_in:
-                    return "You must start work before finishing.", 400
-
-                # SAME-DAY FINISH
-                if dt >= row.sign_in:
-                    end_dt = dt
-                else:
-                    # POSSIBLE OVERNIGHT SHIFT
-                    overnight_dt = dt + timedelta(days=1)
-                    if overnight_dt <= row.sign_in + timedelta(hours=16):
-                        end_dt = overnight_dt
-                    else:
-                        return "Finish time cannot be before start time.", 400
-
-                # ---------------------------------------------------
-                #   BREAK‑DEDUCTED SHIFT HOURS (THE REAL FIX)
-                # ---------------------------------------------------
-                shift_seconds = (end_dt - row.sign_in).total_seconds()
-
-                break_seconds = 0
-                if row.break_start and row.break_end:
-                    break_seconds = (row.break_end - row.break_start).total_seconds()
-
-                paid_seconds = shift_seconds - break_seconds
-
-                hours = paid_seconds / 3600
-                hours_str = f"{int(hours)}h {int((hours % 1) * 60)}m"
-
-                return f"CONFIRM_SHIFT::{t.strftime('%I:%M %p')}::{hours_str}", 200
-
-            # ============================================================
-            #  END VALIDATION
-            # ============================================================
-
-            # Map actions to fields
-            field_map = {
-                "start": "sign_in",
-                "break_start": "break_start",
-                "break_end": "break_end",
-                "finish": "sign_out"
-            }
-
-            field = field_map.get(action)
-            if field:
-                setattr(row, field, dt)
-
-            # ⭐ RECORD SUBMISSION TIME
-            if action == "finish":
-                row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
-
-            if notes:
-                row.notes = notes
-
-            db.session.commit()
-            return redirect(f"/employeehours/day?date={date_str}")
-
-        return render_template(
-            "employee_day_view.html",
-            date=d,
-            row=row,
-            editable=editable,
-            is_today=is_today,
-            is_incomplete=is_incomplete,
-            is_future=is_future
-        )
-
-    @app.route("/employeehours/login", methods=["POST"])
-    def employeehours_login():
-        pin = request.form.get("pin", "").strip()
-
-        if not pin or not pin.isdigit() or len(pin) != 6:
-            return {"error": "Invalid PIN format"}, 400
-
-        from werkzeug.security import check_password_hash
-
-        # Find employee by PIN hash
-        emp = None
-        for e in Employee.query.all():
-            if e.pin_hash and check_password_hash(e.pin_hash, pin):
-                emp = e
-                break
-
-        # If no employee matches this PIN → failure
-        if not emp:
-            return {"error": "Incorrect PIN"}, 400
-
-        # BLOCK INACTIVE EMPLOYEES
-        if not emp.active:
-            return {"error": "Inactive employee"}, 403
-
-        # Check lockout
-        now = datetime.now()
-        if emp.locked_until and emp.locked_until > now:
-            remaining = int((emp.locked_until - now).total_seconds() // 60)
-            return {"error": f"Account locked. Try again in {remaining} minutes."}, 403
-
-        # If PIN matches, reset failures
-        emp.pin_failures = 0
-        emp.locked_until = None
-        db.session.commit()
-
-        # Start session
-        session["employee_id"] = emp.id
-
-        return {"status": "ok"}
-
-    @app.route("/admin/employees/<int:emp_id>/unlock", methods=["POST"])
-    def admin_unlock_employee(emp_id):
-        emp = Employee.query.get_or_404(emp_id)
-
-        emp.pin_failures = 0
-        emp.locked_until = None
-
-        db.session.commit()
-
-        return {"status": "ok"}
-
-    @app.route("/admin/employees/<int:emp_id>/force_logout", methods=["POST"])
-    def admin_force_logout(emp_id):
-        # If the employee is currently logged in, remove their session
-        if session.get("employee_id") == emp_id:
-            session.pop("employee_id", None)
-
-        return {"status": "ok"}
-
-    @app.route("/admin/lockouts/clear", methods=["POST"])
-    def admin_clear_all_lockouts():
-        employees = Employee.query.all()
-        for emp in employees:
-            emp.pin_failures = 0
-            emp.locked_until = None
-
-        db.session.commit()
-        return {"status": "ok"}
-
-
-    @app.route("/admin/lockouts")
-    def admin_lockouts():
-        locked = Employee.query.filter(Employee.locked_until != None).all()
-        return render_template("admin_lockouts.html", locked=locked)
-
-
     @app.route('/save_teacher_clone', methods=['POST'])
     def save_teacher_clone():
         print("ROUTE HIT")   # ← ALWAYS HERE
@@ -9980,6 +9527,431 @@ Cherbon Waters Admin
             return {"error": str(e)}, 500
 
 
+    @app.route("/employeehours/lastweek")
+    def employee_last_week():
+        acc_id = session.get("account_id")
+        if not acc_id:
+            return redirect("/employeehours")
+
+        acc = Account.query.get(acc_id)
+
+        # Use the SAME timezone as main week route
+        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
+
+        # This week's Monday
+        this_monday = today - timedelta(days=today.weekday())
+
+        # Last week's Monday
+        start_of_week = this_monday - timedelta(days=7)
+        end_of_week = start_of_week + timedelta(days=6)
+
+        days = []
+
+        for i in range(7):
+            d = start_of_week + timedelta(days=i)
+
+            row = EmployeeHours.query.filter_by(
+                account_id=acc_id,
+                date=d
+            ).first()
+
+            # IDENTICAL STATUS LOGIC
+            if d > today:
+                status = "future"
+            elif row and row.sign_in and row.sign_out:
+                status = "complete"
+            elif row and row.sign_in and not row.sign_out:
+                status = "incomplete"
+            elif d == today:
+                status = "today"
+            else:
+                status = "incomplete"
+
+            days.append({
+                "date": d,
+                "status": status
+            })
+
+        return render_template(
+            "employee_week_view.html",
+            days=days,
+            today=today,
+            acc=acc,
+            is_last_week=True
+        )
+
+
+    @app.route("/admin/employees/hours/<int:row_id>/edit")
+    def admin_edit_hours(row_id):
+        row = EmployeeHours.query.get(row_id)
+        if not row:
+            return "Not found", 404
+
+        acc = Account.query.get(row.account_id)
+
+        return render_template("admin_edit_hours.html", acc=acc, row=row)
+
+
+
+    @app.route("/admin/employees/<int:acc_id>/hours")
+    def admin_employee_hours_list(acc_id):
+        acc = Account.query.get_or_404(acc_id)
+
+        # Determine which week to show
+        today = date.today()
+        current_week = int(request.args.get("week", 0))
+
+        # If no week provided → default to current week
+        if current_week == 0:
+            current_week = today.isocalendar().week
+
+        # Compute Monday of that ISO week
+        year = today.year
+        start_of_week = date.fromisocalendar(year, current_week, 1)
+        end_of_week = start_of_week + timedelta(days=6)
+
+        # Load rows for this week using ACCOUNT ID
+        rows = EmployeeHours.query.filter(
+            EmployeeHours.account_id == acc_id,
+            EmployeeHours.date >= start_of_week,
+            EmployeeHours.date <= end_of_week
+        ).order_by(EmployeeHours.date.asc()).all()
+
+        return render_template(
+            "admin_employee_hours_list.html",
+            acc=acc,
+            rows=rows,
+            current_week=current_week,
+            start_of_week=start_of_week,
+            end_of_week=end_of_week
+        )
+
+
+    @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
+    def admin_edit_hours_post(row_id):
+        row = EmployeeHours.query.get_or_404(row_id)
+
+        day = row.date
+
+        def merge(dt_date, time_str):
+            if not time_str:
+                return None
+            hour, minute = map(int, time_str.split(":"))
+            return datetime(dt_date.year, dt_date.month, dt_date.day, hour, minute)
+
+        sign_in_str = request.form.get("sign_in", "")
+        break_start_str = request.form.get("break_start", "")
+        break_end_str = request.form.get("break_end", "")
+        sign_out_str = request.form.get("sign_out", "")
+
+        row.sign_in = merge(day, sign_in_str)
+        row.break_start = merge(day, break_start_str)
+        row.break_end = merge(day, break_end_str)
+        row.sign_out = merge(day, sign_out_str)
+
+        row.corrected = True
+        row.corrected_at = datetime.now()
+
+        db.session.commit()
+
+        return redirect(f"/admin/employeehours/day/{day}/{row.account_id}")
+
+    @app.route("/admin/employees/<int:acc_id>/reset_pin", methods=["POST"])
+    def admin_reset_pin(acc_id):
+        emp = Account.query.get_or_404(acc_id)
+
+        import secrets
+        hex_code = secrets.token_hex(3).upper()
+        setup_code = f"CW-{hex_code}"
+
+        emp.setup_code = setup_code
+        db.session.commit()
+
+        reset_link = f"https://cherbonapp.click/employeehours?code={setup_code}"
+
+        send_sms_clicksend(
+            emp.phone,
+            f"Your Cherbon Waters login reset code is {setup_code}\n"
+            f"Tap to set your PIN:\n{reset_link}",
+            app.config["EQUESTRIAN_SENDER"]
+        )
+
+        flash(f"SMS sent to {emp.phone}", "success")
+        return redirect(url_for("admin_employee_hours"))
+
+    @app.route("/employeehours/day", methods=["GET", "POST"])
+    def employeehours_day_view():
+
+        def make_aware(x):
+            if x is None:
+                return None
+            if x.tzinfo is None:
+                return datetime(
+                    x.year, x.month, x.day,
+                    x.hour, x.minute, x.second,
+                    tzinfo=ZoneInfo("Australia/Brisbane")
+                )
+            return x
+
+        acc_id = session.get("account_id")
+        if not acc_id:
+            return redirect("/employeehours")
+
+        date_str = request.args.get("date")
+        if not date_str:
+            return "Missing date", 400
+
+        try:
+            d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except:
+            return "Invalid date", 400
+
+        # Load existing row using ACCOUNT ID
+        row = EmployeeHours.query.filter_by(account_id=acc_id, date=d).first()
+
+        # Make stored datetimes timezone-aware
+        if row:
+            row.sign_in = make_aware(row.sign_in)
+            row.break_start = make_aware(row.break_start)
+            row.break_end = make_aware(row.break_end)
+            row.sign_out = make_aware(row.sign_out)
+
+        # Determine editability rules
+        today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
+        is_today = (d == today)
+
+        # Incomplete if missing sign_in OR sign_out OR row doesn't exist
+        is_incomplete = (not row) or (not row.sign_in) or (not row.sign_out)
+
+        # Editable if today OR past incomplete
+        is_future = d > today
+        editable = (not is_future) and (is_today or is_incomplete)
+
+        if request.method == "POST":
+
+            # Backend safety: block editing completed past days
+            if not editable:
+                return "This day is complete and cannot be edited", 403
+
+            # If user already confirmed, skip checks and save
+            if request.form.get("confirmed") == "1":
+                action = request.form.get("action")
+                time_str = request.form.get("corrected_time") or request.form.get("time")
+                notes = request.form.get("notes", "")
+
+                t = datetime.strptime(time_str, "%H:%M").time()
+                dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
+
+                if not row:
+                    row = EmployeeHours(account_id=acc_id, date=d)
+                    db.session.add(row)
+
+                field_map = {
+                    "start": "sign_in",
+                    "break_start": "break_start",
+                    "break_end": "break_end",
+                    "finish": "sign_out"
+                }
+
+                field = field_map.get(action)
+                if field:
+                    setattr(row, field, dt)
+
+                # Record submission time
+                if action == "finish":
+                    row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
+
+                if notes:
+                    row.notes = notes
+
+                db.session.commit()
+                return redirect(f"/employeehours/day?date={date_str}")
+
+            # Normal POST (validation required)
+            action = request.form.get("action")
+            time_str = request.form.get("time")
+            notes = request.form.get("notes", "")
+
+            t = datetime.strptime(time_str, "%H:%M").time()
+            dt = datetime.combine(d, t, tzinfo=ZoneInfo("Australia/Brisbane"))
+
+            # Create row if missing
+            if not row:
+                row = EmployeeHours(account_id=acc_id, date=d)
+                db.session.add(row)
+
+            now = datetime.now(ZoneInfo("Australia/Brisbane"))
+
+            # ============================================================
+            #  VALIDATION LOGIC (UNCHANGED)
+            # ============================================================
+
+            if action == "start":
+                if dt > now + timedelta(hours=6):
+                    return f"Suspicious time: {t.strftime('%I:%M %p')}. Check AM/PM.", 400
+
+                if d < now.date():
+                    if dt.time() > time(18, 0):
+                        return f"You're signing in for {d.strftime('%A')}. {t.strftime('%I:%M %p')} looks incorrect.", 400
+
+                if t.hour >= 18:
+                    alt_hour = (t.hour - 12) if t.hour > 12 else t.hour
+                    alt_time = time(alt_hour, t.minute)
+                    alt_str = alt_time.strftime("%I:%M %p")
+                    alt_24 = alt_time.strftime("%H:%M")
+                    message = f"Did you mean {alt_str} instead of {t.strftime('%I:%M %p')}?"
+                    return f"{message}::{alt_24}", 200
+
+            if action == "break_start":
+                if not row.sign_in:
+                    return "You must start work before starting a break.", 400
+                if dt <= row.sign_in:
+                    return "Break start must be after your start time.", 400
+
+            if action == "break_end":
+                if not row.break_start:
+                    return "You must start your break before ending it.", 400
+                if dt <= row.break_start:
+                    return "Break end must be after break start.", 400
+
+            if action == "finish":
+                if not row.sign_in:
+                    return "You must start work before finishing.", 400
+
+                if dt >= row.sign_in:
+                    end_dt = dt
+                else:
+                    overnight_dt = dt + timedelta(days=1)
+                    if overnight_dt <= row.sign_in + timedelta(hours=16):
+                        end_dt = overnight_dt
+                    else:
+                        return "Finish time cannot be before start time.", 400
+
+                shift_seconds = (end_dt - row.sign_in).total_seconds()
+
+                break_seconds = 0
+                if row.break_start and row.break_end:
+                    break_seconds = (row.break_end - row.break_start).total_seconds()
+
+                paid_seconds = shift_seconds - break_seconds
+
+                hours = paid_seconds / 3600
+                hours_str = f"{int(hours)}h {int((hours % 1) * 60)}m"
+
+                return f"CONFIRM_SHIFT::{t.strftime('%I:%M %p')}::{hours_str}", 200
+
+            # ============================================================
+            #  END VALIDATION
+            # ============================================================
+
+            field_map = {
+                "start": "sign_in",
+                "break_start": "break_start",
+                "break_end": "break_end",
+                "finish": "sign_out"
+            }
+
+            field = field_map.get(action)
+            if field:
+                setattr(row, field, dt)
+
+            if action == "finish":
+                row.submitted_at = datetime.now(ZoneInfo("Australia/Brisbane"))
+
+            if notes:
+                row.notes = notes
+
+            db.session.commit()
+            return redirect(f"/employeehours/day?date={date_str}")
+
+        return render_template(
+            "employee_day_view.html",
+            date=d,
+            row=row,
+            editable=editable,
+            is_today=is_today,
+            is_incomplete=is_incomplete,
+            is_future=is_future
+        )
+
+
+    @app.route("/employeehours/login", methods=["POST"])
+    def employeehours_login():
+        pin = request.form.get("pin", "").strip()
+
+        if not pin or not pin.isdigit() or len(pin) != 6:
+            return {"error": "Invalid PIN format"}, 400
+
+        from werkzeug.security import check_password_hash
+
+        # Find STAFF account by PIN hash
+        acc = None
+        for a in Account.query.filter(Account.pin_hash.isnot(None)).all():
+            if a.pin_hash and check_password_hash(a.pin_hash, pin):
+                acc = a
+                break
+
+        if not acc:
+            return {"error": "Incorrect PIN"}, 400
+
+        # BLOCK INACTIVE STAFF
+        if not acc.active:
+            return {"error": "Inactive staff member"}, 403
+
+        # Check lockout
+        now = datetime.now()
+        if acc.locked_until and acc.locked_until > now:
+            remaining = int((acc.locked_until - now).total_seconds() // 60)
+            return {"error": f"Account locked. Try again in {remaining} minutes."}, 403
+
+        # Reset failures
+        acc.pin_failures = 0
+        acc.locked_until = None
+        db.session.commit()
+
+        # Start session
+        session["account_id"] = acc.id
+
+        return {"status": "ok"}
+
+
+
+    @app.route("/admin/employees/<int:acc_id>/unlock", methods=["POST"])
+    def admin_unlock_employee(acc_id):
+        acc = Account.query.get_or_404(acc_id)
+
+        acc.pin_failures = 0
+        acc.locked_until = None
+
+        db.session.commit()
+
+        return {"status": "ok"}
+
+    @app.route("/admin/employees/<int:acc_id>/force_logout", methods=["POST"])
+    def admin_force_logout(acc_id):
+        # If the account is currently logged in, remove their session
+        if session.get("account_id") == acc_id:
+            session.pop("account_id", None)
+
+        return {"status": "ok"}
+
+    @app.route("/admin/lockouts/clear", methods=["POST"])
+    def admin_clear_all_lockouts():
+        accounts = Account.query.all()
+        for acc in accounts:
+            acc.pin_failures = 0
+            acc.locked_until = None
+
+        db.session.commit()
+        return {"status": "ok"}
+
+
+    @app.route("/admin/lockouts")
+    def admin_lockouts():
+        locked = Account.query.filter(Account.locked_until != None).all()
+        return render_template("admin_lockouts.html", locked=locked)
+
+
     @app.route("/admin/weekly_summary")
     def admin_weekly_summary():
         today = date.today()
@@ -10032,18 +10004,19 @@ Cherbon Waters Admin
         fy_years = [fy - 1, fy, fy + 1]
 
         # -----------------------------
-        # EMPLOYEE WEEKLY SUMMARY
+        # ACCOUNT WEEKLY SUMMARY
         # -----------------------------
-        employees = Employee.query.order_by(Employee.full_name.asc()).all()
+        accounts = Account.query.filter(Account.role.in_(["staff", "admin"])) \
+                       .order_by(Account.full_name.asc()).all()
         summary = []
 
-        for emp in employees:
+        for acc in accounts:
             week_rows = []
             running_total = timedelta()
 
             for i in range(7):
                 day = start_of_week + timedelta(days=i)
-                row = EmployeeHours.query.filter_by(employee_id=emp.id, date=day).first()
+                row = EmployeeHours.query.filter_by(account_id=acc.id, date=day).first()
 
                 if row:
                     # -----------------------------
@@ -10079,7 +10052,7 @@ Cherbon Waters Admin
                 })
 
             summary.append({
-                "emp": emp,
+                "acc": acc,
                 "week_rows": week_rows,
                 "week_total": running_total
             })
@@ -10097,19 +10070,20 @@ Cherbon Waters Admin
 
     @app.route("/employeehours/summary")
     def employee_weekly_summary():
-        emp_id = session.get("employee_id")
-        if not emp_id:
+        acc_id = session.get("account_id")
+        if not acc_id:
             return redirect("/employeehours")
 
-        emp = Employee.query.get(emp_id)
+        acc = Account.query.get(acc_id)
 
         # Determine current week (Mon–Sun)
         today = date.today()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
 
+        # Load rows using ACCOUNT ID (DB column still "employee_id")
         rows = EmployeeHours.query.filter(
-            EmployeeHours.employee_id == emp.id,
+            EmployeeHours.account_id == acc.id,
             EmployeeHours.date >= start_of_week,
             EmployeeHours.date <= end_of_week
         ).order_by(EmployeeHours.date.asc()).all()
@@ -10129,7 +10103,7 @@ Cherbon Waters Admin
 
         return render_template(
             "employee_weekly_summary.html",
-            emp=emp,
+            acc=acc,
             rows=rows,
             start_of_week=start_of_week,
             end_of_week=end_of_week,
@@ -10142,15 +10116,16 @@ Cherbon Waters Admin
 
     @app.route("/employeehours/action/<action>/<date>", methods=["POST"])
     def employee_action(action, date):
-        if "emp_id" not in session:
+        if "account_id" not in session:
             return redirect("/employeehours")
 
-        emp_id = session["emp_id"]
+        acc_id = session["account_id"]
         d = datetime.strptime(date, "%Y-%m-%d").date()
 
-        row = Hours.query.filter_by(employee_id=emp_id, date=d).first()
+        # Load row using ACCOUNT ID (DB column still "employee_id")
+        row = Hours.query.filter_by(account_id=acc_id, date=d).first()
         if not row:
-            row = Hours(employee_id=emp_id, date=d)
+            row = Hours(account_id=acc_id, date=d)
             db.session.add(row)
 
         time_str = request.form.get("time")
@@ -10176,22 +10151,11 @@ Cherbon Waters Admin
         db.session.commit()
         return redirect("/employeehours/week")
 
-
-
-
-
-
-    @app.route("/admin/employeehours")
-    def admin_employee_hours():
-        rows = EmployeeHours.query.order_by(EmployeeHours.date.desc()).all()
-        return render_template("admin_employee_hours.html", rows=rows)
-
-
-    @app.route("/admin/employees/deactivate/<int:emp_id>", methods=["POST"])
-    def admin_deactivate_employee(emp_id):
-        emp = Employee.query.get(emp_id)
-        if emp:
-            emp.active = False
+    @app.route("/admin/employees/deactivate/<int:acc_id>", methods=["POST"])
+    def admin_deactivate_employee(acc_id):
+        acc = Account.query.get(acc_id)
+        if acc:
+            acc.active = False
             db.session.commit()
         return {"status": "ok"}
 
@@ -10200,9 +10164,9 @@ Cherbon Waters Admin
     # ADMIN: EMPLOYEE MANAGEMENT
     # -------------------------------
 
-    @app.route("/admin/employees")
-    def admin_employees():
-        employees = Employee.query.order_by(Employee.full_name).all()
+    @app.route("/admin/employeehours")
+    def admin_employee_hours():
+        employees = Account.query.filter_by(role="staff").all()
         return render_template("admin_employees.html", employees=employees)
 
 
@@ -10212,62 +10176,59 @@ Cherbon Waters Admin
             full_name = request.form["full_name"].strip()
             phone = request.form["phone"].strip()
 
-            emp = Employee(
+            acc = Account(
                 full_name=full_name,
                 phone=phone,
+                role="staff",
                 active=True
             )
 
-            db.session.add(emp)
+            db.session.add(acc)
             db.session.commit()
             flash("Employee added.", "success")
-            return redirect(url_for("admin_employees"))
+            return redirect(url_for("admin_employee_hours"))
 
         return render_template("admin_employee_add.html")
 
 
-    @app.route("/admin/employees/<int:emp_id>/edit", methods=["GET", "POST"])
-    def admin_edit_employee(emp_id):
-        emp = Employee.query.get_or_404(emp_id)
+    @app.route("/admin/employees/<int:acc_id>/edit", methods=["GET", "POST"])
+    def admin_edit_employee(acc_id):
+        acc = Account.query.get_or_404(acc_id)
 
         if request.method == "POST":
-            emp.full_name = request.form.get("full_name", "").strip()
-            emp.phone = request.form.get("phone", "").strip()
-            emp.role = request.form.get("role", "").strip()
-            emp.active = True if request.form.get("active") == "on" else False
+            acc.full_name = request.form.get("full_name", "").strip()
+            acc.phone = request.form.get("phone", "").strip()
+            acc.role = request.form.get("role", "").strip()
+            acc.active = True if request.form.get("active") == "on" else False
 
             db.session.commit()
             flash("Employee updated.", "success")
-            return redirect(url_for("admin_employees"))
+            return redirect(url_for("admin_employee_hours"))
 
-        return render_template("admin_employee_edit.html", emp=emp)
+        return render_template("admin_employee_edit.html", acc=acc)
 
-    @app.route("/admin/employees/<int:emp_id>/delete", methods=["POST"])
-    def admin_delete_employee(emp_id):
-        emp = Employee.query.get_or_404(emp_id)
+    @app.route("/admin/employees/<int:acc_id>/delete", methods=["POST"])
+    def admin_delete_employee(acc_id):
+        acc = Account.query.get_or_404(acc_id)
 
         # Soft delete — keep hours history
-        emp.active = False
-        emp.setup_code = None
-        emp.pin_hash = None
+        acc.active = False
+        acc.setup_code = None
+        acc.pin_hash = None
 
         db.session.commit()
 
         flash("Employee deactivated.", "info")
-        return redirect(url_for("admin_employees"))
+        return redirect(url_for("admin_employee_hours"))
 
-
-    @app.route("/employee/setup")
-    def employee_setup_page():
-        return render_template("employee_setup.html")
 
     @app.route("/employeehours/week")
     def employee_week_view():
-        emp_id = session.get("employee_id")
-        if not emp_id:
+        acc_id = session.get("account_id")
+        if not acc_id:
             return redirect("/employeehours")
 
-        emp = Employee.query.get(emp_id)  # ⭐ load employee for welcome message
+        acc = Account.query.get(acc_id)  # ⭐ load account for welcome message
 
         today = datetime.now(ZoneInfo("Australia/Brisbane")).date()
         start_of_week = today - timedelta(days=today.weekday())
@@ -10275,7 +10236,7 @@ Cherbon Waters Admin
 
         for i in range(7):
             d = start_of_week + timedelta(days=i)
-            row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
+            row = EmployeeHours.query.filter_by(account_id=acc_id, date=d).first()
 
             if d > today:
                 status = "future"
@@ -10297,18 +10258,15 @@ Cherbon Waters Admin
             "employee_week_view.html",
             days=days,
             today=today,
-            emp=emp,
+            acc=acc,
             is_last_week=False
         )
 
 
-
-
-
     @app.route("/employeehours/action/start", methods=["POST"])
     def action_start_work():
-        emp_id = session.get("employee_id")
-        if not emp_id:
+        acc_id = session.get("account_id")
+        if not acc_id:
             return jsonify({"error": "Not logged in"}), 401
 
         date_raw = request.form.get("date")
@@ -10317,22 +10275,27 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        # Load row using ACCOUNT ID (DB column still "employee_id")
+        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
 
         # 🔒 BLOCK IF DAY COMPLETE
         if row and row.sign_out:
             return jsonify({"error": "Day is complete and cannot be edited"}), 403
 
+        # Must be same day
         if selected_dt.date() != selected_date:
             return jsonify({"error": "Start Work must be on the same day"}), 400
 
+        # Cannot start in future
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot start work in the future"}), 400
 
+        # Create row if missing
         if not row:
-            row = EmployeeHours(employee_id=emp_id, date=selected_date)
+            row = EmployeeHours(account_id=acc_id, date=selected_date)
             db.session.add(row)
 
+        # Already started?
         if row.sign_in:
             return jsonify({"error": "Start Work already recorded"}), 400
 
@@ -10344,8 +10307,8 @@ Cherbon Waters Admin
 
     @app.route("/employeehours/action/break_start", methods=["POST"])
     def action_break_start():
-        emp_id = session.get("employee_id")
-        if not emp_id:
+        acc_id = session.get("account_id")
+        if not acc_id:
             return jsonify({"error": "Not logged in"}), 401
 
         date_raw = request.form.get("date")
@@ -10354,25 +10317,36 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        # Load row using ACCOUNT ID (DB column still "employee_id")
+        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
 
         # 🔒 BLOCK IF DAY COMPLETE
         if row and row.sign_out:
             return jsonify({"error": "Day is complete and cannot be edited"}), 403
 
-        if not row or not row.sign_in:
-            return jsonify({"error": "Start Work required first"}), 400
+        # Must be same day
+        if selected_dt.date() != selected_date:
+            return jsonify({"error": "Break Start must be on the same day"}), 400
 
-        if row.break_start:
-            return jsonify({"error": "Break Start already recorded"}), 400
-
-        if selected_dt <= row.sign_in:
-            return jsonify({"error": "Break Start must be after Start Work"}), 400
-
+        # Cannot start break in future
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot start break in the future"}), 400
 
+        # Create row if missing
+        if not row:
+            row = EmployeeHours(account_id=acc_id, date=selected_date)
+            db.session.add(row)
+
+        # Must have sign-in first
+        if not row.sign_in:
+            return jsonify({"error": "Cannot start break before starting work"}), 400
+
+        # Already on break?
+        if row.break_start and not row.break_end:
+            return jsonify({"error": "Break already started"}), 400
+
         row.break_start = selected_dt
+        row.break_end = None  # reset if needed
         db.session.commit()
 
         return jsonify({"status": "ok"})
@@ -10380,8 +10354,8 @@ Cherbon Waters Admin
 
     @app.route("/employeehours/action/break_end", methods=["POST"])
     def action_break_end():
-        emp_id = session.get("employee_id")
-        if not emp_id:
+        acc_id = session.get("account_id")
+        if not acc_id:
             return jsonify({"error": "Not logged in"}), 401
 
         date_raw = request.form.get("date")
@@ -10390,34 +10364,46 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        # Load row using ACCOUNT ID (DB column still "employee_id")
+        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
 
         # 🔒 BLOCK IF DAY COMPLETE
         if row and row.sign_out:
             return jsonify({"error": "Day is complete and cannot be edited"}), 403
 
-        if not row or not row.break_start:
-            return jsonify({"error": "Break Start required first"}), 400
+        # Must be same day
+        if selected_dt.date() != selected_date:
+            return jsonify({"error": "Break End must be on the same day"}), 400
 
+        # Cannot end break in future
+        if selected_dt > datetime.now():
+            return jsonify({"error": "Cannot end break in the future"}), 400
+
+        # Must have a row
+        if not row:
+            return jsonify({"error": "Cannot end break before starting work"}), 400
+
+        # Must have break start
+        if not row.break_start:
+            return jsonify({"error": "Cannot end break before starting break"}), 400
+
+        # Already ended?
         if row.break_end:
             return jsonify({"error": "Break End already recorded"}), 400
 
-        if selected_dt <= row.break_start:
-            return jsonify({"error": "Break End must be after Break Start"}), 400
-
-        if selected_dt > datetime.now():
-            return jsonify({"error": "Cannot end break in the future"}), 400
+        # Break end must be after break start
+        if selected_dt < row.break_start:
+            return jsonify({"error": "Break End cannot be before Break Start"}), 400
 
         row.break_end = selected_dt
         db.session.commit()
 
         return jsonify({"status": "ok"})
 
-
     @app.route("/employeehours/action/finish", methods=["POST"])
     def action_finish_work():
-        emp_id = session.get("employee_id")
-        if not emp_id:
+        acc_id = session.get("account_id")
+        if not acc_id:
             return jsonify({"error": "Not logged in"}), 401
 
         date_raw = request.form.get("date")
@@ -10426,91 +10412,87 @@ Cherbon Waters Admin
         selected_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
         selected_dt = parse_dt(time_raw)
 
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=selected_date).first()
+        # Load row using ACCOUNT ID (DB column still "employee_id")
+        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
 
-        if not row or not row.sign_in:
-            return jsonify({"error": "Start Work required first"}), 400
+        # 🔒 BLOCK IF DAY COMPLETE
+        if row and row.sign_out:
+            return jsonify({"error": "Day is already complete"}), 403
 
-        if row.sign_out:
-            return jsonify({"error": "Finish Work already recorded"}), 400
+        # Must be same day
+        if selected_dt.date() != selected_date:
+            return jsonify({"error": "Finish Work must be on the same day"}), 400
 
-        if selected_dt <= row.sign_in:
-            return jsonify({"error": "Finish Work must be after Start Work"}), 400
-
-        if row.break_end and selected_dt <= row.break_end:
-            return jsonify({"error": "Finish Work must be after Break End"}), 400
-
+        # Cannot finish in future
         if selected_dt > datetime.now():
             return jsonify({"error": "Cannot finish work in the future"}), 400
 
-        # ---------------------------------------------------------
-        #   CALCULATE PAID HOURS (BREAK DEDUCTED)
-        # ---------------------------------------------------------
-        shift_seconds = (selected_dt - row.sign_in).total_seconds()
+        # Must have a row
+        if not row:
+            return jsonify({"error": "Cannot finish work before starting work"}), 400
 
-        break_seconds = 0
-        if row.break_start and row.break_end:
-            break_seconds = (row.break_end - row.break_start).total_seconds()
+        # Must have sign-in first
+        if not row.sign_in:
+            return jsonify({"error": "Cannot finish work before starting work"}), 400
 
-        paid_seconds = shift_seconds - break_seconds
-        hours = round(paid_seconds / 3600, 2)
+        # Break end must be valid if break started
+        if row.break_start and not row.break_end:
+            return jsonify({"error": "Cannot finish work while break is still active"}), 400
 
-        # ---------------------------------------------------------
-        #   SEND CONFIRMATION BACK TO FRONTEND
-        # ---------------------------------------------------------
-        return f"CONFIRM_SHIFT::{selected_dt.strftime('%-I:%M %p')}::{hours}"
+        # Finish must be after sign-in
+        if selected_dt < row.sign_in:
+            return jsonify({"error": "Finish Work cannot be before Start Work"}), 400
+
+        row.sign_out = selected_dt
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
 
 
+    @app.route("/employeehours/day/<string:day>")
+    def employee_day_view(day):
+        acc_id = session.get("account_id")
+        if not acc_id:
+            return redirect("/employeehours")
 
-    @app.route("/admin/employeehours/day/<string:day>/<int:emp_id>")
-    def admin_override_day(day, emp_id):
         try:
             selected_date = datetime.strptime(day, "%Y-%m-%d").date()
         except:
             return "Invalid date", 400
 
-        emp = Employee.query.get_or_404(emp_id)
+        # Load ACCOUNT for welcome message
+        acc = Account.query.get(acc_id)
 
-        # Load row for that date
-        row = EmployeeHours.query.filter_by(
-            employee_id=emp_id,
-            date=selected_date
-        ).first()
+        # Load row using ACCOUNT ID (DB column still "employee_id")
+        row = EmployeeHours.query.filter_by(account_id=acc_id, date=selected_date).first()
 
-        # ⭐ If no row exists → create one automatically
-        if not row:
-            row = EmployeeHours(employee_id=emp_id, date=selected_date)
-            db.session.add(row)
-            db.session.commit()
-
-        # ⭐ Strip timezone so <input type="time"> works
+        # Strip timezone for HTML <input type="time">
         def clean_time(dt):
             if not dt:
                 return None
-            dt = dt.replace(tzinfo=None)
-            return dt
+            return dt.replace(tzinfo=None)
 
-        row.sign_in = clean_time(row.sign_in)
-        row.break_start = clean_time(row.break_start)
-        row.break_end = clean_time(row.break_end)
-        row.sign_out = clean_time(row.sign_out)
+        if row:
+            row.sign_in = clean_time(row.sign_in)
+            row.break_start = clean_time(row.break_start)
+            row.break_end = clean_time(row.break_end)
+            row.sign_out = clean_time(row.sign_out)
 
         return render_template(
-            "admin_override_day.html",
+            "employee_day_view.html",
             date=selected_date,
-            emp=emp,
-            emp_id=emp_id,
+            acc=acc,
             row=row
         )
 
-    @app.route("/admin/employees/<int:emp_id>/setup_qr")
-    def admin_employee_setup_qr(emp_id):
-        emp = Employee.query.get_or_404(emp_id)
+    @app.route("/admin/employees/<int:acc_id>/setup_qr")
+    def admin_employee_setup_qr(acc_id):
+        acc = Account.query.get_or_404(acc_id)
 
-        if not emp.setup_code:
+        if not acc.setup_code:
             return "No setup code. Reset PIN first.", 400
 
-        setup_url = f"https://cherbonapp.click/employeehours/setup?code={emp.setup_code}"
+        setup_url = f"https://cherbonapp.click/employeehours/setup?code={acc.setup_code}"
 
         import qrcode
         import base64
@@ -10523,18 +10505,19 @@ Cherbon Waters Admin
 
         return render_template(
             "admin_employee_setup_qr.html",
-            emp=emp,
+            acc=acc,
             setup_url=setup_url,
             qr_b64=qr_b64
         )
+
     @app.route("/employeehours/setup", methods=["GET", "POST"])
     def employeehours_setup():
         code = request.args.get("code") if request.method == "GET" else request.form.get("code")
         if not code:
             return "Missing setup code", 400
 
-        emp = Employee.query.filter_by(setup_code=code).first()
-        if not emp:
+        acc = Account.query.filter_by(setup_code=code).first()
+        if not acc:
             return "Invalid or expired setup code", 400
 
         if request.method == "POST":
@@ -10558,23 +10541,22 @@ Cherbon Waters Admin
 
             # Hash + save
             from werkzeug.security import generate_password_hash
-            emp.pin_hash = generate_password_hash(pin)
-            emp.setup_code = None  # one-time use
-            emp.pin_failures = 0
-            emp.locked_until = None
+            acc.pin_hash = generate_password_hash(pin)
+            acc.setup_code = None  # one-time use
+            acc.pin_failures = 0
+            acc.locked_until = None
 
             db.session.commit()
 
             return redirect("/employeehours")
 
-        return render_template("employee_setup.html", emp=emp, code=code)
-
+        return render_template("employee_setup.html", acc=acc, code=code)
 
 
     @app.route("/employeehours")
     def employeehours_login_page():
         # Already logged in → go to week view
-        if "employee_id" in session:
+        if "account_id" in session:
             return redirect("/employeehours/week")
 
         # If a setup code is in the URL → go to setup page
@@ -10584,8 +10566,6 @@ Cherbon Waters Admin
 
         # Otherwise show PIN login page
         return render_template("employee_pin_login.html")
-
-
 
     @app.route("/admin/corrections")
     def admin_corrections():
@@ -10602,14 +10582,13 @@ Cherbon Waters Admin
 
     @app.route("/admin/employeehours/day")
     def admin_day_redirect():
-        emp_id = request.args.get("emp_id")
+        acc_id = request.args.get("acc_id")
         date = request.args.get("date")
-        return redirect(f"/admin/employeehours/day/{date}/{emp_id}")
-
+        return redirect(f"/admin/employeehours/day/{date}/{acc_id}")
 
     @app.route("/admin/employees/hours/create_missing", methods=["POST"])
     def admin_create_missing_day():
-        emp_id = int(request.form["emp_id"])
+        acc_id = int(request.form["acc_id"])
         date_str = request.form["date"]
 
         try:
@@ -10618,13 +10597,20 @@ Cherbon Waters Admin
             return "Invalid date", 400
 
         # Check if row already exists
-        row = EmployeeHours.query.filter_by(employee_id=emp_id, date=d).first()
+        row = EmployeeHours.query.filter_by(account_id=acc_id, date=d).first()
         if not row:
-            row = EmployeeHours(employee_id=emp_id, date=d)
+            row = EmployeeHours(account_id=acc_id, date=d)
             db.session.add(row)
             db.session.commit()
 
-        return redirect(f"/admin/employeehours/day/{d}/{emp_id}")
+        return redirect(f"/admin/employeehours/day/{d}/{acc_id}")
+
+
+    # -------------------------------
+    # END: EMPLOYEE HOURS 
+    # -------------------------------
+
+
 
     @app.route("/mark_cancelled", methods=["POST"])
     def mark_cancelled():

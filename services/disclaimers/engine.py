@@ -1,4 +1,3 @@
-from models import IncomingSubmission, Client
 from extensions import db
 from flask import url_for
 
@@ -47,6 +46,7 @@ def safe_decode_payload(raw):
 
 
 def build_conflict_context(submission_row, rider_index):
+    from models import Client
     """
     Build all data needed to render the conflict page.
     Returns a dict with rider, guardian, mobile, email, disclaimer, matches.
@@ -92,6 +92,7 @@ def build_conflict_context(submission_row, rider_index):
     }
 
 def process_conflict_resolution(submission_row, rider_index, choice, client_id):
+    from models import Client
     import json
     from datetime import datetime
     from sqlalchemy.util._collections import immutabledict
@@ -215,6 +216,7 @@ def process_conflict_resolution(submission_row, rider_index, choice, client_id):
 
 
 def process_all_fastpath():
+    from models import IncomingSubmission
     """
     Fast-path processor:
     - Finds the next unprocessed, non-ignored submission
@@ -244,6 +246,8 @@ def process_all_fastpath():
 
 
 def finalize_submission(submission_row):
+    from models import IncomingSubmission, Client
+ 
     """
     Main pipeline for processing a single submission.
     DIRTY-STATE-PROTECTED VERSION:

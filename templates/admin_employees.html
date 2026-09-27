@@ -62,12 +62,12 @@
                     Manage Hours
                 </a>
 
-                <a href="{{ url_for('admin_edit_employee', emp_id=emp.id) }}"
+                <a href="{{ url_for('admin_edit_employee', acc_id=emp.id) }}"
                    class="btn btn-sm btn-outline-primary">
                     Edit
                 </a>
 
-                <form action="{{ url_for('admin_reset_pin', emp_id=emp.id) }}"
+                <form action="{{ url_for('admin_reset_pin', acc_id=emp.id) }}"
                       method="POST"
                       onsubmit="return confirm('Send new login code to {{ emp.phone }}?');">
                     <button class="btn btn-sm btn-warning">
@@ -75,7 +75,7 @@
                     </button>
                 </form>
 
-                <form action="{{ url_for('admin_delete_employee', emp_id=emp.id) }}"
+                <form action="{{ url_for('admin_delete_employee', acc_id=emp.id) }}"
                       method="POST"
                       onsubmit="return confirm('Deactivate this employee?');">
                     <button class="btn btn-sm btn-danger">

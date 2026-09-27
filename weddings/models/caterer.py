@@ -21,4 +21,4 @@ class Caterer(db.Model):
     active = db.Column(db.Boolean, default=True)
 
     # Relationship: weddings assigned to this caterer
-    weddings = db.relationship("Wedding", backref="caterer", lazy=True)
+    weddings = db.relationship("Wedding", lazy=True)

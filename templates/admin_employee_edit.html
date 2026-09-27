@@ -14,14 +14,14 @@
     <div class="card shadow-sm">
         <div class="card-body">
 
-            <form method="POST" action="/admin/employees/{{ emp.id }}/edit">
+            <form method="POST" action="/admin/employees/{{ acc.id }}/edit">
 
                 <div class="mb-3">
                     <label class="form-label">Full Name</label>
                     <input type="text"
                            name="full_name"
                            class="form-control form-control-lg"
-                           value="{{ emp.full_name }}"
+                           value="{{ acc.full_name }}"
                            required>
                 </div>
 
@@ -30,7 +30,7 @@
                     <input type="text"
                            name="phone"
                            class="form-control form-control-lg"
-                           value="{{ emp.phone or '' }}"
+                           value="{{ acc.phone or '' }}"
                            required>
                 </div>
 
@@ -39,52 +39,50 @@
                     <input type="text"
                            name="role"
                            class="form-control form-control-lg"
-                           value="{{ emp.role or '' }}">
+                           value="{{ acc.role or '' }}">
                 </div>
 
-<div class="mb-3">
-    <label class="form-label">Categories</label>
+                <div class="mb-3">
+                    <label class="form-label">Categories</label>
 
-    <select name="categories" class="form-select" multiple size="5">
-        <option value="wedding_staff"
-            {% if emp.categories and 'wedding_staff' in emp.categories %}selected{% endif %}>
-            Wedding Staff
-        </option>
+                    <select name="categories" class="form-select" multiple size="5">
+                        <option value="wedding_staff"
+                            {% if acc.categories and 'wedding_staff' in acc.categories %}selected{% endif %}>
+                            Wedding Staff
+                        </option>
 
-        <option value="wedding_coordinator"
-            {% if emp.categories and 'wedding_coordinator' in emp.categories %}selected{% endif %}>
-            Wedding Coordinator
-        </option>
+                        <option value="wedding_coordinator"
+                            {% if acc.categories and 'wedding_coordinator' in acc.categories %}selected{% endif %}>
+                            Wedding Coordinator
+                        </option>
 
-        <option value="equestrian_teacher"
-            {% if emp.categories and 'equestrian_teacher' in emp.categories %}selected{% endif %}>
-            Equestrian Teacher
-        </option>
+                        <option value="equestrian_teacher"
+                            {% if acc.categories and 'equestrian_teacher' in acc.categories %}selected{% endif %}>
+                            Equestrian Teacher
+                        </option>
 
-        <option value="equestrian_strapper"
-            {% if emp.categories and 'equestrian_strapper' in emp.categories %}selected{% endif %}>
-            Equestrian Strapper
-        </option>
+                        <option value="equestrian_strapper"
+                            {% if acc.categories and 'equestrian_strapper' in acc.categories %}selected{% endif %}>
+                            Equestrian Strapper
+                        </option>
 
-        <option value="admin"
-            {% if emp.categories and 'admin' in emp.categories %}selected{% endif %}>
-            Admin
-        </option>
-    </select>
+                        <option value="admin"
+                            {% if acc.categories and 'admin' in acc.categories %}selected{% endif %}>
+                            Admin
+                        </option>
+                    </select>
 
-    <small class="text-muted">
-        Hold CTRL to select multiple categories.
-    </small>
-</div>
-
-
+                    <small class="text-muted">
+                        Hold CTRL to select multiple categories.
+                    </small>
+                </div>
 
                 <div class="form-check mb-3">
                     <input class="form-check-input"
                            type="checkbox"
                            name="active"
                            id="activeCheck"
-                           {% if emp.active %}checked{% endif %}>
+                           {% if acc.active %}checked{% endif %}>
                     <label class="form-check-label" for="activeCheck">
                         Active
                     </label>
@@ -97,7 +95,7 @@
             </form>
 
             <form method="POST"
-                  action="/admin/employees/{{ emp.id }}/delete"
+                  action="/admin/employees/{{ acc.id }}/delete"
                   onsubmit="return confirm('Delete this employee? This cannot be undone.');">
 
                 <button class="btn btn-danger w-100 btn-lg mt-3">

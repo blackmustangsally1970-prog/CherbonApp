@@ -1,5 +1,4 @@
 from extensions import db
-from cherbonapp.models import Account  # NEW unified account model
 
 class WeddingStaffAssignment(db.Model):
     __tablename__ = 'wedding_staff_assignment'

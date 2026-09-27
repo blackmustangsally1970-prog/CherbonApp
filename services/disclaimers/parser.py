@@ -1,7 +1,5 @@
 from sqlalchemy import func
 from extensions import db
-from models import Client
-
 
 
 def extract_number(value):
@@ -169,7 +167,9 @@ def parse_jotform_payload(payload, forced_submission_id=None, mode="full"):
 
         rider["rider_index"] = idx + 1
 
+
         if mode == "full":
+            from models import Client
             compact = name.replace(" ", "").replace("-", "")
             like_pattern = f"%{compact}%"
 

@@ -1,5 +1,5 @@
 from extensions import db
-from cherbonapp.models import Account  # unified account model
+
 
 class JobListInstance(db.Model):
     __tablename__ = 'job_list_instance'
