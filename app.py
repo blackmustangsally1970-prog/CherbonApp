@@ -79,7 +79,7 @@ import tempfile
 import time
 import subprocess
 import unicodedata
-import openpyxlf
+import openpyxl
 import requests
 import base64
 
