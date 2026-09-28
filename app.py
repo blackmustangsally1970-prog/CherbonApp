@@ -79,7 +79,7 @@ import tempfile
 import time
 import subprocess
 import unicodedata
-import openpyxl
+import openpyxlf
 import requests
 import base64
 
@@ -10202,7 +10202,15 @@ Cherbon Waters Admin
 
     @app.route("/admin/employees")
     def admin_employees():
-        employees = Account.query.order_by(Account.full_name.asc()).all()
+        employees = (
+            Account.query
+            .filter(
+                Account.role == "staff",
+                Account.active == True
+            )
+            .order_by(Account.full_name.asc())
+            .all()
+        )
         return render_template("admin_employees.html", employees=employees)
 
     @app.route("/admin/employees/add", methods=["GET", "POST"])
