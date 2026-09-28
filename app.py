@@ -10007,7 +10007,7 @@ Cherbon Waters Admin
         # -----------------------------
         accounts = (
             Account.query
-            .filter(Account.role.in_(["staff", "admin"]))
+            .filter(Account.role == "staff")
             .order_by(Account.full_name.asc())
             .all()
         )
