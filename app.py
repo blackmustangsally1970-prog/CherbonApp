@@ -10007,11 +10007,13 @@ Cherbon Waters Admin
         # -----------------------------
         accounts = (
             Account.query
-            .filter(Account.role == "staff")
+            .filter(
+                Account.role == "staff",
+                Account.active == True
+            )
             .order_by(Account.full_name.asc())
             .all()
         )
-
         summary = []
 
         for acc in accounts:
