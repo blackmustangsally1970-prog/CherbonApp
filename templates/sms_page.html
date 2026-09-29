@@ -87,11 +87,12 @@ www.cherbonwaters.com.au/term-courses
     {% endfor %}
 </table>
 
+
 <!-- SENDING MODAL -->
 <div id="sendingModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.6); z-index:9999; 
-            display:flex; align-items:center; justify-content:center;">
+            background:rgba(0,0,0,0.6); z-index:9999;
+            align-items:center; justify-content:center;">
     <div style="background:white; padding:25px; border-radius:10px; text-align:center;
                 width:300px; box-shadow:0 0 10px rgba(0,0,0,0.4);">
         <h3>Sending SMS…</h3>
@@ -111,9 +112,7 @@ www.cherbonwaters.com.au/term-courses
 </style>
 
 
-
-
-
+<!-- UPDATED SENDSMS WITH CONFIRMATION + LOG -->
 <script>
 function sendSMS() {
     const message = document.getElementById("sms_message").value;
@@ -122,6 +121,19 @@ function sendSMS() {
     document.querySelectorAll("input[name='sms_include']:checked").forEach(cb => {
         ids.push(cb.value);
     });
+
+    const count = ids.length;
+
+    if (count === 0) {
+        alert("No riders selected.");
+        return;
+    }
+
+    // CONFIRMATION POPUP
+    const ok = confirm(`Are you sure? You are about to send ${count} SMS messages.`);
+    if (!ok) {
+        return; // user cancelled
+    }
 
     // SHOW SENDING MODAL
     document.getElementById("sendingModal").style.display = "flex";
@@ -140,7 +152,22 @@ function sendSMS() {
         document.getElementById("sendingModal").style.display = "none";
 
         if (res.success) {
-            alert("SMS sent successfully!");
+
+            // BUILD LOG
+            let log = "SMS Delivery Log:\n\n";
+
+            if (res.results && res.results.length > 0) {
+                res.results.forEach(item => {
+                    if (item.success) {
+                        log += `✔ Sent to rider ID ${item.id}\n`;
+                    } else {
+                        log += `✖ Rider ID ${item.id} — ${item.error}\n`;
+                    }
+                });
+            }
+
+            alert(log);
+
         } else {
             alert("SMS failed: " + (res.error || "Unknown error"));
         }
@@ -173,4 +200,3 @@ function updateCharCount() {
 // Run once on page load
 updateCharCount();
 </script>
-
