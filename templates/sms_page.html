@@ -7,15 +7,12 @@
 <!-- YEAR + TERM SELECTOR -->
 <div style="margin-bottom: 20px;">
     <form method="get" action="{{ url_for('sms_next_term') }}" style="display:flex; gap:10px; align-items:center;">
-
-        <!-- YEAR DROPDOWN -->
         <select name="year" class="form-control" style="width:120px;">
             {% for y in range(2024, 2031) %}
                 <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
             {% endfor %}
         </select>
 
-        <!-- TERM DROPDOWN -->
         <select name="term" class="form-control" style="width:120px;">
             {% for t in [1,2,3,4] %}
                 <option value="{{ t }}" {% if t == selected_term %}selected{% endif %}>Term {{ t }}</option>
@@ -45,7 +42,6 @@ www.cherbonwaters.com.au/term-courses
     <button class="menu-btn" onclick="sendSMS()">📤 Send SMS</button>
 </div>
 
-
 <!-- RIDER LIST -->
 <h3>Riders (A from previous term + B from selected term)</h3>
 
@@ -53,7 +49,6 @@ www.cherbonwaters.com.au/term-courses
     <button class="menu-btn" onclick="selectAll()">Select All</button>
     <button class="menu-btn" onclick="unselectAll()">Unselect All</button>
 </div>
-
 
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; margin-top:10px;">
     <tr>
@@ -87,7 +82,6 @@ www.cherbonwaters.com.au/term-courses
     {% endfor %}
 </table>
 
-
 <!-- SENDING MODAL -->
 <div id="sendingModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -111,26 +105,23 @@ www.cherbonwaters.com.au/term-courses
 }
 </style>
 
-
 <!-- DELIVERY LOG MODAL -->
 <div id="logModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(0,0,0,0.6); z-index:9999;
             align-items:center; justify-content:center;">
     <div style="background:white; padding:25px; border-radius:10px; text-align:left;
-                width:400px; max-height:70%; overflow-y:auto;
+                width:450px; max-height:70%; overflow-y:auto;
                 box-shadow:0 0 10px rgba(0,0,0,0.4);">
         <h3>SMS Delivery Log</h3>
         <pre id="logContent" style="white-space:pre-wrap; font-size:14px;"></pre>
+
         <button class="menu-btn" onclick="closeLog()">Close</button>
+        <button class="menu-btn" onclick="exportCSV()">Download CSV</button>
     </div>
 </div>
 
-
-
-
-
-<!-- UPDATED SENDSMS WITH CONFIRMATION + LOG -->
+<!-- SEND SMS SCRIPT -->
 <script>
 function sendSMS() {
     const message = document.getElementById("sms_message").value;
@@ -147,46 +138,43 @@ function sendSMS() {
         return;
     }
 
-    // CONFIRMATION POPUP
     const ok = confirm(`Are you sure? You are about to send ${count} SMS messages.`);
-    if (!ok) {
-        return; // user cancelled
-    }
+    if (!ok) return;
 
-    // SHOW SENDING MODAL
     document.getElementById("sendingModal").style.display = "flex";
 
     fetch("/send_sms", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            rider_ids: ids,
-            message: message
-        })
+        body: JSON.stringify({ rider_ids: ids, message: message })
     })
     .then(r => r.json())
     .then(res => {
-        // HIDE MODAL
         document.getElementById("sendingModal").style.display = "none";
 
         if (res.success) {
 
-            // BUILD LOG
+            // SORT ALPHABETICALLY
+            let sorted = [...res.results].sort((a, b) => {
+                const nameA = (a.rider_name || "").toLowerCase();
+                const nameB = (b.rider_name || "").toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+
+            window.lastResults = sorted;
+
             let log = "SMS Delivery Log:\n\n";
 
-            if (res.results && res.results.length > 0) {
-                res.results.forEach(item => {
-                    if (item.success) {
-                        log += `✔ Sent to rider ID ${item.id}\n`;
-                    } else {
-                        log += `✖ Rider ID ${item.id} — ${item.error}\n`;
-                    }
-                });
-            }
+            sorted.forEach(item => {
+                if (item.success) {
+                    log += `✔ ${item.rider_name} — ${item.mobile}\n`;
+                } else {
+                    log += `✖ ${item.rider_name} — ${item.error}\n`;
+                }
+            });
 
-    // SHOW PERSISTENT LOG MODAL
-    document.getElementById("logContent").innerText = log;
-    document.getElementById("logModal").style.display = "flex";
+            document.getElementById("logContent").innerText = log;
+            document.getElementById("logModal").style.display = "flex";
 
         } else {
             alert("SMS failed: " + (res.error || "Unknown error"));
@@ -205,6 +193,34 @@ function closeLog() {
 }
 </script>
 
+<script>
+function exportCSV() {
+    const results = window.lastResults || [];
+    if (!results.length) {
+        alert("No results to export.");
+        return;
+    }
+
+    let csv = "rider_name,mobile,status\n";
+
+    results.forEach(item => {
+        const name = item.rider_name || "";
+        const mobile = item.mobile || "";
+        const status = item.success ? "sent" : item.error;
+        csv += `"${name}","${mobile}","${status}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sms_delivery_log.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+</script>
 
 <script>
 function selectAll() {
@@ -216,13 +232,10 @@ function unselectAll() {
 }
 </script>
 
-
 <script>
 function updateCharCount() {
     const msg = document.getElementById("sms_message").value;
     document.getElementById("char_count").innerText = msg.length;
 }
-
-// Run once on page load
 updateCharCount();
 </script>

@@ -3865,18 +3865,33 @@ def create_app():
             # Load the course submission
             sub = CourseFormSubmission.query.get(submission_id)
             if not sub:
-                results.append({"id": submission_id, "error": "Submission not found"})
+                results.append({
+                    "id": submission_id,
+                    "rider_name": None,
+                    "mobile": None,
+                    "error": "Submission not found"
+                })
                 continue
 
             # Load the client (contact details)
             client = Client.query.filter(Client.full_name == sub.rider_name).first()
             if not client:
-                results.append({"id": submission_id, "error": "Client not found"})
+                results.append({
+                    "id": submission_id,
+                    "rider_name": sub.rider_name,
+                    "mobile": None,
+                    "error": "Client not found"
+                })
                 continue
 
             mobile = client.mobile
             if not mobile:
-                results.append({"id": submission_id, "error": "No mobile number"})
+                results.append({
+                    "id": submission_id,
+                    "rider_name": sub.rider_name,
+                    "mobile": None,
+                    "error": "No mobile number"
+                })
                 continue
 
             # Build ClickSend message
@@ -3885,6 +3900,14 @@ def create_app():
                 "from": app.config['EQUESTRIAN_SENDER'],
                 "body": message,
                 "to": mobile
+            })
+
+            # SUCCESS ENTRY
+            results.append({
+                "id": submission_id,
+                "rider_name": sub.rider_name,
+                "mobile": mobile,
+                "success": True
             })
 
         if not sms_list:
