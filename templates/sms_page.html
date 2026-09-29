@@ -49,6 +49,12 @@ www.cherbonwaters.com.au/term-courses
 <!-- RIDER LIST -->
 <h3>Riders (A from previous term + B from selected term)</h3>
 
+<div style="margin:10px 0;">
+    <button class="menu-btn" onclick="selectAll()">Select All</button>
+    <button class="menu-btn" onclick="unselectAll()">Unselect All</button>
+</div>
+
+
 <table border="1" cellpadding="6" cellspacing="0" style="width:100%; margin-top:10px;">
     <tr>
         <th>Rider</th>
@@ -108,6 +114,18 @@ function sendSMS() {
     });
 }
 </script>
+
+
+<script>
+function selectAll() {
+    document.querySelectorAll("input[name='sms_include']").forEach(cb => cb.checked = true);
+}
+
+function unselectAll() {
+    document.querySelectorAll("input[name='sms_include']").forEach(cb => cb.checked = false);
+}
+</script>
+
 
 <script>
 function updateCharCount() {

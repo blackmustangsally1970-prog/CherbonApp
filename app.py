@@ -3624,53 +3624,66 @@ def create_app():
             prev_term = 4
             prev_year -= 1
 
-        # A riders from previous term (ALL courses)
-        a_raw = CourseFormSubmission.query.filter(
+        # --- Helper object for template ---
+        class RiderObj:
+            def __init__(self, id, rider_name, guardian_name, mobile, term_status):
+                self.id = id
+                self.rider_name = rider_name
+                self.guardian_name = guardian_name
+                self.mobile = mobile
+                self.term_status = term_status
+
+        # --- A riders from previous term ---
+        a_raw = CourseFormSubmission.query.with_entities(
+            CourseFormSubmission.id,
+            CourseFormSubmission.rider_name,
+            CourseFormSubmission.guardian_name,
+            CourseFormSubmission.mobile,
+            CourseFormSubmission.term_status
+        ).filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
             CourseFormSubmission.term_status == 'A',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # Dedupe by rider_name
-        a_names = {}
-        for r in a_raw:
-            a_names[r.rider_name] = r
-        a_riders = list(a_names.values())
+        a_riders = [RiderObj(*r) for r in a_raw]
 
-        # B riders from selected term (ALL courses)
-        b_raw = CourseFormSubmission.query.filter(
+        # --- B riders from selected term ---
+        b_raw = CourseFormSubmission.query.with_entities(
+            CourseFormSubmission.id,
+            CourseFormSubmission.rider_name,
+            CourseFormSubmission.guardian_name,
+            CourseFormSubmission.mobile,
+            CourseFormSubmission.term_status
+        ).filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
             CourseFormSubmission.term_status == 'B',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # Dedupe by rider_name
-        b_names = {}
-        for r in b_raw:
-            b_names[r.rider_name] = r
-        b_riders = list(b_names.values())
+        b_riders = [RiderObj(*r) for r in b_raw]
 
-        # Riders already booked in NEXT TERM
-        already_booked = CourseFormSubmission.query.filter(
+        # --- Riders already booked in NEXT TERM ---
+        already_booked = CourseFormSubmission.query.with_entities(
+            CourseFormSubmission.id
+        ).filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
             CourseFormSubmission.ignore_jotform.is_(False)
-        ).with_entities(CourseFormSubmission.rider_name).all()
+        ).all()
 
-        already_booked_names = {r.rider_name for r in already_booked}
+        already_booked_ids = {r.id for r in already_booked}
 
-        # Filter out riders already booked for next term
-        filtered = []
-        for r in a_riders + b_riders:
-            if r.rider_name not in already_booked_names:
-                filtered.append(r)
+        # --- Combine A + B, filter out already booked ---
+        combined = a_riders + b_riders
+        filtered = [r for r in combined if r.id not in already_booked_ids]
 
-        # Final dedupe by rider_name
+        # --- Final dedupe by ID ---
         unique = {}
         for r in filtered:
-            unique[r.rider_name] = r
+            unique[r.id] = r
 
         riders = list(unique.values())
         riders.sort(key=lambda r: r.rider_name)
