@@ -3633,7 +3633,7 @@ def create_app():
                 self.mobile = mobile
                 self.term_status = term_status
 
-        # --- A riders ---
+        # --- A riders (previous term) ---
         a_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
@@ -3649,7 +3649,7 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        # --- B riders ---
+        # --- B riders (selected term) ---
         b_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
@@ -3679,12 +3679,11 @@ def create_app():
         # --- Combine A + B ---
         combined = a_raw + b_raw
 
-        # --- Dedupe by rider_name (correct) ---
+        # --- Dedupe by rider_name (B overrides A) ---
         unique = {}
         for id, rider_name, guardian_name, mobile, term_status in combined:
             if rider_name in already_booked_names:
                 continue
-            # Keep the latest submission (B overrides A)
             unique[rider_name] = RiderObj(id, rider_name, guardian_name, mobile, term_status)
 
         riders = list(unique.values())
@@ -3859,33 +3858,44 @@ def create_app():
         if not rider_ids or not message:
             return {"error": "Missing rider IDs or message"}, 400
 
-        # Load riders
-        riders = CourseFormSubmission.query.filter(
-            CourseFormSubmission.id.in_(rider_ids)
-        ).all()
-
-        # Build ClickSend payload
+        results = []
         sms_list = []
-        for r in riders:
-            if not r.mobile:
+
+        for submission_id in rider_ids:
+            # Load the course submission
+            sub = CourseFormSubmission.query.get(submission_id)
+            if not sub:
+                results.append({"id": submission_id, "error": "Submission not found"})
                 continue
 
+            # Load the client (contact details)
+            client = Client.query.filter(Client.full_name == sub.rider_name).first()
+            if not client:
+                results.append({"id": submission_id, "error": "Client not found"})
+                continue
+
+            mobile = client.mobile
+            if not mobile:
+                results.append({"id": submission_id, "error": "No mobile number"})
+                continue
+
+            # Build ClickSend message
             sms_list.append({
                 "source": "python",
-                "from": "Cherbon",
+                "from": app.config['EQUESTRIAN_SENDER'],
                 "body": message,
-                "to": r.mobile
+                "to": mobile
             })
 
         if not sms_list:
             return {"error": "No valid mobile numbers"}, 400
 
-        # Send SMS via ClickSend
+        # --- SEND SMS VIA CLICKSEND ---
         import requests
         import base64
 
-        username = CLICK_SEND_USERNAME
-        api_key = CLICK_SEND_API_KEY
+        username = app.config['CLICK_SEND_USERNAME']
+        api_key = app.config['CLICK_SEND_API_KEY']
 
         auth = base64.b64encode(f"{username}:{api_key}".encode()).decode()
 
@@ -3899,7 +3909,7 @@ def create_app():
             print("SMS ERROR:", response.text)
             return {"error": "SMS failed", "details": response.text}, 500
 
-        return {"success": True}, 200
+        return {"success": True, "results": results}, 200
 
 
     @app.route('/terms')
