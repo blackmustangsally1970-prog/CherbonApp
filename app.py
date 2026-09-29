@@ -3634,12 +3634,14 @@ def create_app():
                 self.term_status = term_status
 
         # --- A riders from previous term ---
-        a_raw = CourseFormSubmission.query.with_entities(
+        a_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
-            CourseFormSubmission.guardian_name,
-            CourseFormSubmission.mobile,
+            Client.guardian_name,
+            Client.mobile,
             CourseFormSubmission.term_status
+        ).join(
+            Client, Client.full_name == CourseFormSubmission.rider_name
         ).filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
@@ -3650,12 +3652,14 @@ def create_app():
         a_riders = [RiderObj(*r) for r in a_raw]
 
         # --- B riders from selected term ---
-        b_raw = CourseFormSubmission.query.with_entities(
+        b_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
-            CourseFormSubmission.guardian_name,
-            CourseFormSubmission.mobile,
+            Client.guardian_name,
+            Client.mobile,
             CourseFormSubmission.term_status
+        ).join(
+            Client, Client.full_name == CourseFormSubmission.rider_name
         ).filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
