@@ -3633,7 +3633,7 @@ def create_app():
                 self.mobile = mobile
                 self.term_status = term_status
 
-        # --- A riders from previous term ---
+        # --- A riders ---
         a_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
@@ -3649,9 +3649,7 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        a_riders = [RiderObj(*r) for r in a_raw]
-
-        # --- B riders from selected term ---
+        # --- B riders ---
         b_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
@@ -3667,27 +3665,27 @@ def create_app():
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        b_riders = [RiderObj(*r) for r in b_raw]
-
-        # --- Riders already booked in NEXT TERM ---
+        # --- Already booked (any status) ---
         already_booked = CourseFormSubmission.query.with_entities(
-            CourseFormSubmission.id
+            CourseFormSubmission.rider_name
         ).filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        already_booked_ids = {r.id for r in already_booked}
+        already_booked_names = {r.rider_name for r in already_booked}
 
-        # --- Combine A + B, filter out already booked ---
-        combined = a_riders + b_riders
-        filtered = [r for r in combined if r.id not in already_booked_ids]
+        # --- Combine A + B ---
+        combined = a_raw + b_raw
 
-        # --- Final dedupe by ID ---
+        # --- Dedupe by rider_name (correct) ---
         unique = {}
-        for r in filtered:
-            unique[r.id] = r
+        for id, rider_name, guardian_name, mobile, term_status in combined:
+            if rider_name in already_booked_names:
+                continue
+            # Keep the latest submission (B overrides A)
+            unique[rider_name] = RiderObj(id, rider_name, guardian_name, mobile, term_status)
 
         riders = list(unique.values())
         riders.sort(key=lambda r: r.rider_name)
