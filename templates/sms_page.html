@@ -87,6 +87,33 @@ www.cherbonwaters.com.au/term-courses
     {% endfor %}
 </table>
 
+<!-- SENDING MODAL -->
+<div id="sendingModal"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.6); z-index:9999; 
+            display:flex; align-items:center; justify-content:center;">
+    <div style="background:white; padding:25px; border-radius:10px; text-align:center;
+                width:300px; box-shadow:0 0 10px rgba(0,0,0,0.4);">
+        <h3>Sending SMS…</h3>
+        <p>Please wait, this may take a moment.</p>
+        <div class="spinner"
+             style="margin:20px auto; width:40px; height:40px; border:5px solid #ccc;
+                    border-top-color:#007bff; border-radius:50%; animation:spin 1s linear infinite;">
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+</style>
+
+
+
+
+
 <script>
 function sendSMS() {
     const message = document.getElementById("sms_message").value;
@@ -95,6 +122,9 @@ function sendSMS() {
     document.querySelectorAll("input[name='sms_include']:checked").forEach(cb => {
         ids.push(cb.value);
     });
+
+    // SHOW SENDING MODAL
+    document.getElementById("sendingModal").style.display = "flex";
 
     fetch("/send_sms", {
         method: "POST",
@@ -106,11 +136,18 @@ function sendSMS() {
     })
     .then(r => r.json())
     .then(res => {
+        // HIDE MODAL
+        document.getElementById("sendingModal").style.display = "none";
+
         if (res.success) {
             alert("SMS sent successfully!");
         } else {
             alert("SMS failed: " + (res.error || "Unknown error"));
         }
+    })
+    .catch(err => {
+        document.getElementById("sendingModal").style.display = "none";
+        alert("SMS failed: " + err);
     });
 }
 </script>
