@@ -112,6 +112,24 @@ www.cherbonwaters.com.au/term-courses
 </style>
 
 
+<!-- DELIVERY LOG MODAL -->
+<div id="logModal"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.6); z-index:9999;
+            align-items:center; justify-content:center;">
+    <div style="background:white; padding:25px; border-radius:10px; text-align:left;
+                width:400px; max-height:70%; overflow-y:auto;
+                box-shadow:0 0 10px rgba(0,0,0,0.4);">
+        <h3>SMS Delivery Log</h3>
+        <pre id="logContent" style="white-space:pre-wrap; font-size:14px;"></pre>
+        <button class="menu-btn" onclick="closeLog()">Close</button>
+    </div>
+</div>
+
+
+
+
+
 <!-- UPDATED SENDSMS WITH CONFIRMATION + LOG -->
 <script>
 function sendSMS() {
@@ -166,7 +184,9 @@ function sendSMS() {
                 });
             }
 
-            alert(log);
+    // SHOW PERSISTENT LOG MODAL
+    document.getElementById("logContent").innerText = log;
+    document.getElementById("logModal").style.display = "flex";
 
         } else {
             alert("SMS failed: " + (res.error || "Unknown error"));
@@ -176,6 +196,12 @@ function sendSMS() {
         document.getElementById("sendingModal").style.display = "none";
         alert("SMS failed: " + err);
     });
+}
+</script>
+
+<script>
+function closeLog() {
+    document.getElementById("logModal").style.display = "none";
 }
 </script>
 
