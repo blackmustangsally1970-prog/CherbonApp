@@ -3894,8 +3894,8 @@ def create_app():
         import requests
         import base64
 
-        username = app.config['CLICK_SEND_USERNAME']
-        api_key = app.config['CLICK_SEND_API_KEY']
+        username = app.config['CLICKSEND_USERNAME']
+        api_key = app.config['CLICKSEND_API_KEY']
 
         auth = base64.b64encode(f"{username}:{api_key}".encode()).decode()
 
@@ -3910,7 +3910,6 @@ def create_app():
             return {"error": "SMS failed", "details": response.text}, 500
 
         return {"success": True, "results": results}, 200
-
 
     @app.route('/terms')
     def terms():
