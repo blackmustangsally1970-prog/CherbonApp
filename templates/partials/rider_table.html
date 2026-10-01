@@ -22,7 +22,9 @@
             <th class="col-horse2" style="width:12ch;">Horse 2</th>
             <th class="col-horse3" style="width:12ch;">Horse 3</th> 
             <th style="width:70ch;">Notes</th>
+            {% if false %}
             <th style="width:57ch;">Cherbon Notes</th>
+            {% endif %}
             <th style="width:6ch;">FT/W</th>
             <th style="width:6ch;">Freq</th>
             <th style="width:10ch;">Week</th>
@@ -137,6 +139,7 @@
                     </td>
 
                     <!-- CHERBON NOTES -->
+                    {% if false %}
                     <td style="width:50ch; max-width:50ch; white-space:normal;">
                         <textarea
                             data-id="{{ r.id }}"
@@ -145,6 +148,7 @@
                             onchange="updateField({{ r.id }}, 'cherbon_notes', this.value)"
                         >{{ r.cherbon_notes or '' }}</textarea>
                     </td>
+                   {% endif %}
 
                     <!-- FT/W -->
                     <td style="width:6ch; white-space:nowrap;">
