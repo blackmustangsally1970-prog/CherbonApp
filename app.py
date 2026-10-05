@@ -2969,6 +2969,10 @@ def create_app():
         )
 
 
+   # ============================================================
+   # COURSE SMS 
+   # ============================================================
+
     @app.route('/sms_selected_riders/<course_code>', methods=['POST'])
     def sms_selected_riders(course_code):
         data = request.get_json()
@@ -2990,6 +2994,11 @@ def create_app():
             message = f"Hi, {name}'s course details are ready to view.\nPDF: {pdf_link}"
 
             try:
+                print("DEBUG SENDER:", app.config['EQUESTRIAN_SENDER'])
+                print("DEBUG MOBILE:", mobile)
+                print("DEBUG NAME:", name)
+                print("DEBUG RIDER_ID:", rider_id)
+
                 send_sms_clicksend(
                     mobile,
                     message,
