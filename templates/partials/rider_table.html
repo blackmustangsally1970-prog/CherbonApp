@@ -78,9 +78,16 @@
                         <span class="sms-area" style="margin-left:6px;">
                             <input type="checkbox"
                                    class="sms-select"
-                                   data-mobile="{{ client.mobile if client else '' }}"
-                                   data-name="{{ client.full_name if client else '' }}"
                                    data-id="{{ r.id }}"
+                                   data-name="{{ r.rider_name }}"
+                                   data-mobile="{{
+                                        client.mobile
+                                        or client.phone
+                                        or client.mobile2
+                                        or client.guardian_contact
+                                        or r.mobile
+                                        or ''
+                                   }}"
                                    title="Include in SMS send">
                         </span>
 
