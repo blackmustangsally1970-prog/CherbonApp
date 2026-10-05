@@ -123,6 +123,9 @@ class GroupPricing(db.Model):
 class CourseFormSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.client_id'))
+    client = db.relationship('Client')
+
     # JotForm submission ID (dedupe key)
     jotform_id = db.Column(db.String(50), unique=True)
 
