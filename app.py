@@ -3688,11 +3688,12 @@ def create_app():
 
         b_riders = build_rider_objects(b_raw)
 
-        # Riders already booked in NEXT TERM
+        # Riders already booked in NEXT TERM (only A or B)
         already_booked_ids = {
             r.id for r in CourseFormSubmission.query.filter(
                 CourseFormSubmission.term_year == selected_year,
                 CourseFormSubmission.term_number == selected_term,
+                CourseFormSubmission.term_status.in_(["A", "B"]),
                 CourseFormSubmission.ignore_jotform.is_(False)
             ).all()
         }
