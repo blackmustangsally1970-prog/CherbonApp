@@ -74,7 +74,7 @@ class SmsLog(db.Model):
     __tablename__ = "sms_log"
 
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, nullable=False)
+    client_id = db.Column(db.Integer, nullable=True)
     guardian = db.Column(db.String(255))
     mobile = db.Column(db.String(50))
     message_body = db.Column(db.Text, nullable=False)
