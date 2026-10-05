@@ -3652,8 +3652,8 @@ def create_app():
         a_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
-            Clients.guardian_name,
-            Clients.mobile,
+            Client.guardian_name,
+            Client.mobile,
             CourseFormSubmission.term_status
         ).join(Clients, Clients.id == CourseFormSubmission.client_id).filter(
             CourseFormSubmission.term_year == prev_year,
@@ -3668,8 +3668,8 @@ def create_app():
         b_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
-            Clients.guardian_name,
-            Clients.mobile,
+            Client.guardian_name,
+            Client.mobile,
             CourseFormSubmission.term_status
         ).join(Clients, Clients.id == CourseFormSubmission.client_id).filter(
             CourseFormSubmission.term_year == selected_year,
