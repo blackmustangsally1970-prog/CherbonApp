@@ -3705,7 +3705,6 @@ def create_app():
         # Deduplicate by rider name
         unique = {r.rider_name: r for r in filtered}
         riders = list(unique.values())
-        riders.sort(key=lambda r: r.rider_name)
 
         return render_template(
             "sms_page.html",
@@ -3873,50 +3872,39 @@ def create_app():
         rider_ids = data.get("rider_ids", [])
         message = data.get("message", "").strip()
 
-        if not rider_ids or not message:
-            return {"error": "Missing rider IDs or message"}, 400
+        if not message:
+            return jsonify({"success": False, "error": "Message is empty"}), 400
 
-        # Load riders
-        riders = CourseFormSubmission.query.filter(
-            CourseFormSubmission.id.in_(rider_ids)
-        ).all()
+        results = []
 
-        # Build ClickSend payload
-        sms_list = []
-        for r in riders:
-            if not r.mobile:
+        for rid in rider_ids:
+            # We must fetch the RiderObj fields from the DB manually
+            submission = CourseFormSubmission.query.get(rid)
+            if not submission:
+                results.append({"id": rid, "status": "not_found"})
                 continue
 
-            sms_list.append({
-                "source": "python",
-                "from": "Cherbon",
-                "body": message,
-                "to": r.mobile
-            })
+            # Lookup client for guardian + mobile
+            client = Client.query.filter(
+                Client.full_name.ilike(submission.rider_name)
+            ).first()
 
-        if not sms_list:
-            return {"error": "No valid mobile numbers"}, 400
+            if not client or not client.mobile:
+                results.append({"id": rid, "status": "no_mobile"})
+                continue
 
-        # Send SMS via ClickSend
-        import requests
-        import base64
+            mobile = client.mobile
+            guardian = client.guardian_name or ""
+            rider_name = submission.rider_name
 
-        username = CLICK_SEND_USERNAME
-        api_key = CLICK_SEND_API_KEY
+            # SEND SMS HERE (ClickSend or your provider)
+            try:
+                send_sms_clicksend(mobile, message)  # your existing function
+                results.append({"id": rid, "status": "sent"})
+            except Exception as e:
+                results.append({"id": rid, "status": "error", "detail": str(e)})
 
-        auth = base64.b64encode(f"{username}:{api_key}".encode()).decode()
-
-        response = requests.post(
-            "https://rest.clicksend.com/v3/sms/send",
-            json={"messages": sms_list},
-            headers={"Authorization": f"Basic {auth}"}
-        )
-
-        if response.status_code != 200:
-            print("SMS ERROR:", response.text)
-            return {"error": "SMS failed", "details": response.text}, 500
-
-        return {"success": True}, 200
+        return jsonify({"success": True, "results": results})
 
 
     @app.route('/terms')
