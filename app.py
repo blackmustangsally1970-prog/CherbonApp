@@ -3705,6 +3705,7 @@ def create_app():
         # Deduplicate by rider name
         unique = {r.rider_name: r for r in filtered}
         riders = list(unique.values())
+        riders.sort(key=lambda r: r.rider_name.lower())
 
         return render_template(
             "sms_page.html",
