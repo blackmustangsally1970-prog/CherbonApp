@@ -3878,13 +3878,11 @@ def create_app():
         results = []
 
         for rid in rider_ids:
-            # We must fetch the RiderObj fields from the DB manually
             submission = CourseFormSubmission.query.get(rid)
             if not submission:
                 results.append({"id": rid, "status": "not_found"})
                 continue
 
-            # Lookup client for guardian + mobile
             client = Client.query.filter(
                 Client.full_name.ilike(submission.rider_name)
             ).first()
@@ -3897,15 +3895,18 @@ def create_app():
             guardian = client.guardian_name or ""
             rider_name = submission.rider_name
 
-            # SEND SMS HERE (ClickSend or your provider)
+            sender_number = app.config['EQUESTRIAN_SENDER']
+
             try:
-                send_sms_clicksend(mobile, message)  # your existing function
-                results.append({"id": rid, "status": "sent"})
+                ok = send_sms_clicksend(mobile, message, sender_number)
+                if ok:
+                    results.append({"id": rid, "status": "sent"})
+                else:
+                    results.append({"id": rid, "status": "error"})
             except Exception as e:
                 results.append({"id": rid, "status": "error", "detail": str(e)})
 
         return jsonify({"success": True, "results": results})
-
 
     @app.route('/terms')
     def terms():
