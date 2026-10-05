@@ -3639,7 +3639,7 @@ def create_app():
             prev_term = 4
             prev_year -= 1
 
-        # --- Helper object for template ---
+        # Helper object for template
         class RiderObj:
             def __init__(self, id, rider_name, guardian_name, mobile, term_status):
                 self.id = id
@@ -3648,14 +3648,14 @@ def create_app():
                 self.mobile = mobile
                 self.term_status = term_status
 
-        # --- A riders from previous term ---
-        a_raw = CourseFormSubmission.query.with_entities(
+        # A riders from previous term
+        a_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
-            CourseFormSubmission.guardian_name,
-            CourseFormSubmission.mobile,
+            Clients.guardian_name,
+            Clients.mobile,
             CourseFormSubmission.term_status
-        ).filter(
+        ).join(Clients, Clients.id == CourseFormSubmission.client_id).filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
             CourseFormSubmission.term_status == 'A',
@@ -3664,14 +3664,14 @@ def create_app():
 
         a_riders = [RiderObj(*r) for r in a_raw]
 
-        # --- B riders from selected term ---
-        b_raw = CourseFormSubmission.query.with_entities(
+        # B riders from selected term
+        b_raw = db.session.query(
             CourseFormSubmission.id,
             CourseFormSubmission.rider_name,
-            CourseFormSubmission.guardian_name,
-            CourseFormSubmission.mobile,
+            Clients.guardian_name,
+            Clients.mobile,
             CourseFormSubmission.term_status
-        ).filter(
+        ).join(Clients, Clients.id == CourseFormSubmission.client_id).filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
             CourseFormSubmission.term_status == 'B',
@@ -3680,7 +3680,7 @@ def create_app():
 
         b_riders = [RiderObj(*r) for r in b_raw]
 
-        # --- Riders already booked in NEXT TERM ---
+        # Riders already booked in NEXT TERM
         already_booked = CourseFormSubmission.query.with_entities(
             CourseFormSubmission.id
         ).filter(
@@ -3691,11 +3691,11 @@ def create_app():
 
         already_booked_ids = {r.id for r in already_booked}
 
-        # --- Combine A + B, filter out already booked ---
+        # Combine A + B, filter out already booked
         combined = a_riders + b_riders
         filtered = [r for r in combined if r.id not in already_booked_ids]
 
-        # --- Final dedupe by ID ---
+        # Final dedupe by ID
         unique = {}
         for r in filtered:
             unique[r.id] = r
