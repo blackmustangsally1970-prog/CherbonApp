@@ -3014,6 +3014,7 @@ def create_app():
 
         return jsonify({
             "success": True if sent > 0 else False,
+            "message": f"SMS sent to {sent} rider(s).",
             "sent": sent,
             "errors": errors
         })
