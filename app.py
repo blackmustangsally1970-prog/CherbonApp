@@ -2975,16 +2975,18 @@ def create_app():
         riders = data.get("riders", [])
 
         sent = 0
+        errors = []
+
         for rider in riders:
             mobile = rider.get('mobile')
             name   = rider.get('name')
-            rider_id = rider.get('id')   # <-- correct filename key
+            rider_id = rider.get('rider_id') or rider.get('id')
 
             if not mobile or not rider_id:
+                errors.append(f"Missing mobile or rider_id for {name}")
                 continue
 
             pdf_link = f"https://cherbonapp.click/static/pdfs/{course_code}_{rider_id}.pdf"
-
             message = f"Hi, {name}'s course details are ready to view.\nPDF: {pdf_link}"
 
             try:
@@ -2995,7 +2997,6 @@ def create_app():
                 )
                 sent += 1
 
-                # ⭐ NEW: Log SMS with rider_name
                 log = SmsLog(
                     client_id=None,
                     guardian=None,
@@ -3009,8 +3010,13 @@ def create_app():
 
             except Exception as e:
                 print("SMS ERROR:", e)
+                errors.append(str(e))
 
-        return jsonify({"message": f"SMS sent to {sent} rider(s)."})
+        return jsonify({
+            "success": True if sent > 0 else False,
+            "sent": sent,
+            "errors": errors
+        })
 
     @app.route('/view_sms_logs')
     def view_sms_logs():
