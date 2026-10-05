@@ -2975,6 +2975,7 @@ def create_app():
 
     @app.route('/sms_selected_riders/<course_code>', methods=['POST'])
     def sms_selected_riders(course_code):
+        print("SMS ROUTE HIT:", course_code, "RAW JSON:", request.get_json())
         data = request.get_json()
         riders = data.get("riders", [])
 

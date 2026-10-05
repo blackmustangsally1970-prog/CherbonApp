@@ -493,11 +493,11 @@
                 </button>
             {% endif %}
 
-            <button class="sms-btn"
-                    onclick="smsCourseRiders('{{ course_code }}')"
-                    style="padding:6px 10px; border-radius:6px;">
-                📩 SMS Selected
-            </button>
+<button class="sms-btn"
+        onclick="smsCourseRiders('{{ c.course_code }}')"
+        style="padding:6px 10px; border-radius:6px;">
+    📩 SMS Selected
+</button>
 
             <button onclick="generateLessons('{{ c.course_code }}')"
                     style="padding:6px 10px; border-radius:6px;">
@@ -954,41 +954,64 @@ window.checkLessonsForTerm = function (course_code) {
             .catch(err => console.log("load_riders error", err));
     }
 
-    function smsCourseRiders(courseCode) {
-        const grid = document.getElementById("grid-" + courseCode);
-        const selected = [];
+function smsCourseRiders(courseCode) {
 
-        grid.querySelectorAll(".sms-select:checked").forEach(cb => {
-            selected.push({
-                mobile: cb.dataset.mobile,
-                name: cb.dataset.name,
-                rider_id: cb.dataset.id
-            });
-        });
+    console.log(">>> smsCourseRiders CALLED with courseCode =", courseCode);
 
-        if (selected.length === 0) {
-            alert("No riders selected.");
-            return;
-        }
+    const gridId = "grid-" + courseCode;
+    const grid = document.getElementById(gridId);
 
-        if (!confirm("Send SMS with PDF link to " + selected.length + " rider(s)?")) {
-            return;
-        }
+    console.log(">>> GRID ELEMENT =", grid);
 
-        fetch("/sms_selected_riders/" + courseCode, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ riders: selected })
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-        })
-        .catch(err => {
-            console.error("SMS error:", err);
-            alert("SMS failed — check console.");
-        });
+    if (!grid) {
+        alert("Grid not found for course: " + courseCode);
+        console.error(">>> ERROR: grid-" + courseCode + " does NOT exist.");
+        return;
     }
+
+    const selected = [];
+
+    grid.querySelectorAll(".sms-select:checked").forEach(cb => {
+        const payload = {
+            mobile: cb.dataset.mobile,
+            name: cb.dataset.name,
+            rider_id: cb.dataset.id
+        };
+        console.log(">>> SELECTED RIDER:", payload);
+        selected.push(payload);
+    });
+
+    console.log(">>> TOTAL SELECTED =", selected.length);
+
+    if (selected.length === 0) {
+        alert("No riders selected.");
+        return;
+    }
+
+    if (!confirm("Send SMS with PDF link to " + selected.length + " rider(s)?")) {
+        return;
+    }
+
+    console.log(">>> SENDING FETCH TO /sms_selected_riders/" + courseCode);
+
+    fetch("/sms_selected_riders/" + courseCode, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ riders: selected })
+    })
+    .then(response => {
+        console.log(">>> FETCH RESPONSE STATUS =", response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log(">>> FETCH JSON =", data);
+        alert(data.message);
+    })
+    .catch(err => {
+        console.error(">>> SMS ERROR:", err);
+        alert("SMS failed — check console.");
+    });
+}
 
     function attachMasterCheckboxHandlers(grid) {
         const masterLessons = grid.querySelector('.master-select-lessons');
