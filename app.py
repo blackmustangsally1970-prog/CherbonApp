@@ -3877,11 +3877,16 @@ def create_app():
 
         results = []
 
+        # Build rider list (for sorting + display)
+        riders = []
+
         for rid in rider_ids:
             submission = CourseFormSubmission.query.get(rid)
             if not submission:
                 results.append({"id": rid, "status": "not_found"})
                 continue
+
+            riders.append(submission)
 
             client = Client.query.filter(
                 Client.full_name.ilike(submission.rider_name)
@@ -3892,9 +3897,6 @@ def create_app():
                 continue
 
             mobile = client.mobile
-            guardian = client.guardian_name or ""
-            rider_name = submission.rider_name
-
             sender_number = app.config['EQUESTRIAN_SENDER']
 
             try:
@@ -3906,7 +3908,19 @@ def create_app():
             except Exception as e:
                 results.append({"id": rid, "status": "error", "detail": str(e)})
 
-        return jsonify({"success": True, "results": results})
+        # ⭐ SORT RIDERS ALPHABETICALLY
+        riders.sort(key=lambda r: r.rider_name.lower())
+
+        return jsonify({
+            "success": True,
+            "results": results,
+            "riders": [
+                {
+                    "id": r.id,
+                    "rider_name": r.rider_name
+                } for r in riders
+            ]
+        })
 
     @app.route('/terms')
     def terms():
