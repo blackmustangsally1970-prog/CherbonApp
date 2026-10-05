@@ -3001,7 +3001,6 @@ def create_app():
                     client_id=None,
                     guardian=None,
                     mobile=mobile,
-                    rider_name=name,
                     message_body=message,
                     sent_at=datetime.now()
                 )
