@@ -3639,7 +3639,6 @@ def create_app():
             prev_term = 4
             prev_year -= 1
 
-        # Helper object for template
         class RiderObj:
             def __init__(self, id, rider_name, guardian_name, mobile, term_status):
                 self.id = id
@@ -3648,58 +3647,61 @@ def create_app():
                 self.mobile = mobile
                 self.term_status = term_status
 
+        def build_rider_objects(rows):
+            riders = []
+            for r in rows:
+                client = Client.query.filter(
+                    Client.full_name.ilike(r.rider_name)
+                ).first()
+
+                if not client:
+                    continue
+
+                riders.append(
+                    RiderObj(
+                        r.id,
+                        r.rider_name,
+                        client.guardian_name,
+                        client.mobile,
+                        r.term_status
+                    )
+                )
+            return riders
+
         # A riders from previous term
-        a_raw = db.session.query(
-            CourseFormSubmission.id,
-            CourseFormSubmission.rider_name,
-            Client.guardian_name,
-            Client.mobile,
-            CourseFormSubmission.term_status
-        ).join(Client, Client.client_id == CourseFormSubmission.client_id).filter(
+        a_raw = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
             CourseFormSubmission.term_status == 'A',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        a_riders = [RiderObj(*r) for r in a_raw]
+        a_riders = build_rider_objects(a_raw)
 
         # B riders from selected term
-        b_raw = db.session.query(
-            CourseFormSubmission.id,
-            CourseFormSubmission.rider_name,
-            Client.guardian_name,
-            Client.mobile,
-            CourseFormSubmission.term_status
-        ).join(Client, Client.client_id == CourseFormSubmission.client_id).filter(
+        b_raw = CourseFormSubmission.query.filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
             CourseFormSubmission.term_status == 'B',
             CourseFormSubmission.ignore_jotform.is_(False)
         ).all()
 
-        b_riders = [RiderObj(*r) for r in b_raw]
+        b_riders = build_rider_objects(b_raw)
 
         # Riders already booked in NEXT TERM
-        already_booked = CourseFormSubmission.query.with_entities(
-            CourseFormSubmission.id
-        ).filter(
-            CourseFormSubmission.term_year == selected_year,
-            CourseFormSubmission.term_number == selected_term,
-            CourseFormSubmission.ignore_jotform.is_(False)
-        ).all()
+        already_booked_ids = {
+            r.id for r in CourseFormSubmission.query.filter(
+                CourseFormSubmission.term_year == selected_year,
+                CourseFormSubmission.term_number == selected_term,
+                CourseFormSubmission.ignore_jotform.is_(False)
+            ).all()
+        }
 
-        already_booked_ids = {r.id for r in already_booked}
-
-        # Combine A + B, filter out already booked
         combined = a_riders + b_riders
         filtered = [r for r in combined if r.id not in already_booked_ids]
 
-        # Final dedupe by ID
-        unique = {}
-        for r in filtered:
-            unique[r.id] = r
-
+        # Deduplicate
+        unique = {r.id: r for r in filtered}
         riders = list(unique.values())
         riders.sort(key=lambda r: r.rider_name)
 
