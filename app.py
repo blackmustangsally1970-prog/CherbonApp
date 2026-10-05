@@ -3688,9 +3688,9 @@ def create_app():
 
         b_riders = build_rider_objects(b_raw)
 
-        # Riders already booked in NEXT TERM (ALL statuses)
-        already_booked_ids = {
-            r.id for r in CourseFormSubmission.query.filter(
+        # All riders already in selected term (ANY status) by NAME
+        booked_names = {
+            r.rider_name for r in CourseFormSubmission.query.filter(
                 CourseFormSubmission.term_year == selected_year,
                 CourseFormSubmission.term_number == selected_term,
                 CourseFormSubmission.ignore_jotform.is_(False)
@@ -3698,10 +3698,12 @@ def create_app():
         }
 
         combined = a_riders + b_riders
-        filtered = [r for r in combined if r.id not in already_booked_ids]
 
-        # Deduplicate
-        unique = {r.id: r for r in filtered}
+        # Remove anyone who appears in selected term at all (by name)
+        filtered = [r for r in combined if r.rider_name not in booked_names]
+
+        # Deduplicate by rider name
+        unique = {r.rider_name: r for r in filtered}
         riders = list(unique.values())
         riders.sort(key=lambda r: r.rider_name)
 
