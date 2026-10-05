@@ -3655,7 +3655,7 @@ def create_app():
             Client.guardian_name,
             Client.mobile,
             CourseFormSubmission.term_status
-        ).join(Clients, Clients.id == CourseFormSubmission.client_id).filter(
+        ).join(Client, Client.client_id == CourseFormSubmission.client_id).filter(
             CourseFormSubmission.term_year == prev_year,
             CourseFormSubmission.term_number == prev_term,
             CourseFormSubmission.term_status == 'A',
@@ -3671,7 +3671,7 @@ def create_app():
             Client.guardian_name,
             Client.mobile,
             CourseFormSubmission.term_status
-        ).join(Clients, Clients.id == CourseFormSubmission.client_id).filter(
+        ).join(Client, Client.client_id == CourseFormSubmission.client_id).filter(
             CourseFormSubmission.term_year == selected_year,
             CourseFormSubmission.term_number == selected_term,
             CourseFormSubmission.term_status == 'B',
