@@ -5604,6 +5604,27 @@ def create_app():
         return redirect(url_for('client_view', client=client_id))
 
 
+    @app.route("/waitstaff/pricing")
+    def waitstaff_pricing():
+        rows = WaitStaffPricing.query.order_by(WaitStaffPricing.guest_count).all()
+        return render_template("Waitstaff_pricing.html", rows=rows)
+
+
+    @app.route("/waitstaff/pricing/edit/<int:id>", methods=["GET", "POST"])
+    def waitstaff_pricing_edit(id):
+        row = WaitStaffPricing.query.get_or_404(id)
+
+        if request.method == "POST":
+            row.guest_count = int(request.form.get("guest_count"))
+            row.cost = float(request.form.get("cost"))
+
+            db.session.commit()
+            return redirect(url_for("waitstaff_pricing"))
+
+        return render_template("Waitstaff_pricing_edit.html", row=row)
+
+
+
     @app.route("/wedding/dashboard")
     def wedding_dashboard():
         return render_template("Wedding_dashboard.html")
