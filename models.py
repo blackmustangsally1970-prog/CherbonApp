@@ -71,6 +71,20 @@ class FixedExpenses(db.Model):
     kitchen_hand = db.Column(db.Float)
     kitchen_hand_gst = db.Column(db.Boolean)
 
+    # ⭐ NEW FIXED EXPENSES
+    max = db.Column(db.Numeric(10,2))
+    max_gst = db.Column(db.Boolean)
+
+    stephen = db.Column(db.Numeric(10,2))
+    stephen_gst = db.Column(db.Boolean)
+
+    bar_staff = db.Column(db.Numeric(10,2))
+    bar_staff_gst = db.Column(db.Boolean)
+
+    wedding_coordinator = db.Column(db.Numeric(10,2))
+    wedding_coordinator_gst = db.Column(db.Boolean)
+
+
 
 class FormulaExpenses(db.Model):
     __tablename__ = "formula_expenses"

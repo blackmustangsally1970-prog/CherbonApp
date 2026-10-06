@@ -5669,6 +5669,10 @@ def create_app():
                 ("morning_setup", fixed.morning_setup, fixed.morning_setup_gst),
                 ("mowing", fixed.mowing, fixed.mowing_gst),
                 ("kitchen_hand", fixed.kitchen_hand, fixed.kitchen_hand_gst),
+                ("max", fixed.max, fixed.max_gst),
+                ("stephen", fixed.stephen, fixed.stephen_gst),
+                ("bar_staff", fixed.bar_staff, fixed.bar_staff_gst),
+                ("wedding_coordinator", fixed.wedding_coordinator, fixed.wedding_coordinator_gst),
             ]
 
             total_net = 0
@@ -5783,6 +5787,18 @@ def create_app():
             fixed.kitchen_hand = float(request.form.get("kitchen_hand") or 0)
             fixed.kitchen_hand_gst = bool(request.form.get("kitchen_hand_gst"))
 
+            fixed.bar_staff = Decimal(request.form.get("bar_staff") or 0)
+            fixed.bar_staff_gst = "bar_staff_gst" in request.form
+ 
+            fixed.wedding_coordinator = Decimal(request.form.get("wedding_coordinator") or 0)
+            fixed.wedding_coordinator_gst = "wedding_coordinator_gst" in request.form
+
+            fixed.max = Decimal(request.form.get("max") or 0)
+            fixed.max_gst = "max_gst" in request.form
+
+            fixed.stephen = Decimal(request.form.get("stephen") or 0)
+            fixed.stephen_gst = "stephen_gst" in request.form
+
             # Formula expenses
             formula.drinks_per_head = float(request.form.get("drinks_per_head") or 6)
             formula.decorator_per_head = float(request.form.get("decorator_per_head") or 14.50)
@@ -5875,6 +5891,10 @@ def create_app():
                 ("morning_setup", fixed.morning_setup, fixed.morning_setup_gst),
                 ("mowing", fixed.mowing, fixed.mowing_gst),
                 ("kitchen_hand", fixed.kitchen_hand, fixed.kitchen_hand_gst),
+                (fixed.max, fixed.max_gst),
+                (fixed.stephen, fixed.stephen_gst),
+                (fixed.bar_staff, fixed.bar_staff_gst),
+                (fixed.wedding_coordinator, fixed.wedding_coordinator_gst),
             ]
 
             fixed_net = 0
