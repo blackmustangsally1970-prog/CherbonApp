@@ -1,54 +1,64 @@
 <div class="container mt-4">
 
     <!-- BACK TO MAIN MENU -->
-    <div class="back-btn-container no-print">
+    <div class="back-btn-container no-print mb-3">
         <a href="{{ url_for('dashboard') }}" class="back-btn">← Back to Menu</a>
     </div>
 
-
     <h2>Wedding P&L Dashboard</h2>
-    <p class="text-muted">
-        Central hub for all wedding financial tools and configuration.
-    </p>
 
-    <div class="mt-4" style="max-width:500px;">
 
-        <!-- Large Button -->
-        <a href="/wedding/config" class="btn btn-primary btn-lg w-100 mb-3" 
-           style="padding:20px; font-size:1.3rem; display:block; text-align:left;">
-            💒 Master Configuration
-            <div class="text-muted small">Fixed + formula expenses</div>
-        </a>
+    <style>
+        /* SUPER MASSIVE iPhone menu buttons (same as main menu) */
+        .menu-btn {
+            display: block;
+            width: 100%;
+            background: #dce6ff;
+            border: 4px solid #4a6bff;
+            padding: 40px 28px;
+            border-radius: 18px;
+            font-size: 34px;
+            font-weight: 900;
+            color: #001a66;
+            text-decoration: none;
+            text-align: center;
+            box-sizing: border-box;
+            margin-bottom: 28px;
+            letter-spacing: 1px;
+            line-height: 1.35;
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
 
-        <a href="/wedding/pl/summary" class="btn btn-success btn-lg w-100 mb-3" 
-           style="padding:20px; font-size:1.3rem; display:block; text-align:left;">
-            📊 P&L Summary Table
-            <div class="text-muted small">Profit & margin for all guest tiers</div>
-        </a>
+        .menu-btn:hover {
+            background: #c7d6ff;
+            transform: scale(1.04);
+            text-decoration: none;
+        }
 
-        <a href="/wedding/pricing" class="btn btn-warning btn-lg w-100 mb-3" 
-           style="padding:20px; font-size:1.3rem; display:block; text-align:left;">
-            💰 Wedding Pricing Table
-            <div class="text-muted small">Income per wedding type</div>
-        </a>
+        /* Desktop override */
+        @media (min-width: 800px) {
+            .menu-btn {
+                padding: 20px 18px !important;
+                font-size: 20px !important;
+                border-radius: 10px !important;
+                margin-bottom: 16px !important;
+            }
+        }
+    </style>
 
-        <a href="/wedding/waitstaff" class="btn btn-info btn-lg w-100 mb-3" 
-           style="padding:20px; font-size:1.3rem; display:block; text-align:left;">
-            🧑‍🍳 Wait Staff Pricing
-            <div class="text-muted small">Cost per guest count</div>
-        </a>
+    <div class="mt-4" style="max-width:500px; margin:auto;">
 
-        <a href="/wedding/types" class="btn btn-secondary btn-lg w-100 mb-3" 
-           style="padding:20px; font-size:1.3rem; display:block; text-align:left;">
-            📘 Wedding Types
-            <div class="text-muted small">Descriptions + rules</div>
-        </a>
+        <a href="/wedding/config" class="menu-btn">💒 Master Configuration</a>
 
-        <a href="/wedding/reports" class="btn btn-dark btn-lg w-100 mb-3" 
-           style="padding:20px; font-size:1.3rem; display:block; text-align:left;">
-            📈 Reports
-            <div class="text-muted small">Future: summaries, exports, trends</div>
-        </a>
+        <a href="/wedding/pl/summary" class="menu-btn">📊 P&L Summary Table</a>
+
+        <a href="/wedding/pricing" class="menu-btn">💰 Wedding Pricing Table</a>
+
+        <a href="/wedding/waitstaff" class="menu-btn">🧑‍🍳 Wait Staff Pricing</a>
+
+        <a href="/wedding/types" class="menu-btn">📘 Wedding Types</a>
+
+        <a href="/wedding/reports" class="menu-btn">📈 Reports</a>
 
     </div>
 
