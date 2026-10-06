@@ -5891,10 +5891,10 @@ def create_app():
                 ("morning_setup", fixed.morning_setup, fixed.morning_setup_gst),
                 ("mowing", fixed.mowing, fixed.mowing_gst),
                 ("kitchen_hand", fixed.kitchen_hand, fixed.kitchen_hand_gst),
-                (fixed.max, fixed.max_gst),
-                (fixed.stephen, fixed.stephen_gst),
-                (fixed.bar_staff, fixed.bar_staff_gst),
-                (fixed.wedding_coordinator, fixed.wedding_coordinator_gst),
+                ("max", fixed.max, fixed.max_gst),
+                ("stephen", fixed.stephen, fixed.stephen_gst),
+                ("bar_staff", fixed.bar_staff, fixed.bar_staff_gst),
+                ("wedding_coordinator", fixed.wedding_coordinator, fixed.wedding_coordinator_gst),
             ]
 
             fixed_net = 0
