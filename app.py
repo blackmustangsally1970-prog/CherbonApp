@@ -5628,15 +5628,21 @@ def create_app():
             # Decorator
             decorator = gc * formula.decorator_per_head
 
-            # Caterer
+            # Caterer (GST inclusive)
             if wt == "AD":
-                caterer = gc * formula.caterer_ad_under_60 if gc <= 60 else formula.caterer_ad_over_60
+                if gc <= 60:
+                    caterer = gc * 62.00
+                else:
+                    caterer = (60 * 62.00) + ((gc - 60) * 55.50)
+
             elif wt == "EA":
-                caterer = gc * formula.caterer_ea_under_60 if gc <= 60 else gc * formula.caterer_ea_over_60
+                if gc <= 60:
+                    caterer = gc * 72.50
+                else:
+                    caterer = (60 * 72.50) + ((gc - 60) * 68.25)
+
             elif wt == "RAJ":
                 caterer = gc * formula.caterer_raj
-            else:
-                caterer = 0
 
             # Wait staff
             ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
