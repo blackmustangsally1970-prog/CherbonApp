@@ -5626,7 +5626,6 @@ def create_app():
         if request.method == "POST":
             row.wedding_type = request.form.get("wedding_type")
             row.guest_min = int(request.form.get("guest_min"))
-            row.guest_max = int(request.form.get("guest_max"))
             row.total_price = float(request.form.get("total_price"))
 
             db.session.commit()
