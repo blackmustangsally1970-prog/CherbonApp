@@ -5817,7 +5817,6 @@ def create_app():
         fixed = FixedExpenses.query.get(1)
         formula = FormulaExpenses.query.get(1)
 
-        # Guest tiers
         tiers = (
             db.session.query(WeddingPricing.guest_min)
             .distinct()
@@ -5827,7 +5826,6 @@ def create_app():
         guest_counts = [t[0] for t in tiers]
 
         def calc_net(amount, gst_flag=True):
-            """Convert GST-inclusive amount to net, or return full amount if GST-free."""
             if amount is None:
                 return 0
             if gst_flag:
@@ -5881,7 +5879,6 @@ def create_app():
             for amount, gst_flag in fixed_items:
                 fixed_net += calc_net(amount, gst_flag)
 
-            # Total net expenses
             total_net_expenses = (
                 drinks_net +
                 decorator_net +
@@ -5890,7 +5887,6 @@ def create_app():
                 fixed_net
             )
 
-            # Income lookup (correct tier)
             pricing = WeddingPricing.query.filter(
                 WeddingPricing.wedding_type == wt,
                 WeddingPricing.guest_min <= gc,
@@ -5900,18 +5896,27 @@ def create_app():
             income = pricing.total_price if pricing else 0
             net_income = calc_net(income, True)
 
-            # Net profit
             net_profit = net_income - total_net_expenses
 
-            return net_income, total_net_expenses, net_profit
+            # 🔹 breakdown for hover
+            breakdown_text = (
+                f"Drinks (net): ${drinks_net:.2f}\n"
+                f"Decorator (net): ${decorator_net:.2f}\n"
+                f"Caterer (net): ${caterer_net:.2f}\n"
+                f"Waitstaff (net): ${waitstaff_net:.2f}\n"
+                f"Fixed (net): ${fixed_net:.2f}\n"
+                f"-------------------------\n"
+                f"Total Net Expenses: ${total_net_expenses:.2f}"
+            )
 
-        # Build rows for template
+            return net_income, total_net_expenses, net_profit, breakdown_text
+
         rows = []
         for gc in guest_counts:
 
-            ad_income, ad_expenses, ad_profit = build_scenario("AD", gc)
-            ea_income, ea_expenses, ea_profit = build_scenario("EA", gc)
-            raj_income, raj_expenses, raj_profit = build_scenario("RAJ", gc)
+            ad_income, ad_expenses, ad_profit, ad_breakdown = build_scenario("AD", gc)
+            ea_income, ea_expenses, ea_profit, ea_breakdown = build_scenario("EA", gc)
+            raj_income, raj_expenses, raj_profit, raj_breakdown = build_scenario("RAJ", gc)
 
             rows.append({
                 "guests": gc,
@@ -5927,6 +5932,10 @@ def create_app():
                 "ad_profit": ad_profit,
                 "ea_profit": ea_profit,
                 "raj_profit": raj_profit,
+
+                "ad_breakdown": ad_breakdown,
+                "ea_breakdown": ea_breakdown,
+                "raj_breakdown": raj_breakdown,
             })
 
         return render_template("Wedding_PL_summary.html", rows=rows)

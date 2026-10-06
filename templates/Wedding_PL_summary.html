@@ -16,6 +16,7 @@
         table.excel-grid td {
             border: 1px solid #999 !important;
             padding: 6px 8px !important;
+            white-space: nowrap;
         }
         table.excel-grid tr:nth-child(even) {
             background-color: #f2f2f2 !important;
@@ -27,8 +28,10 @@
             background-color: #e8e8e8 !important;
             font-weight: bold;
         }
-        h3 {
-            margin-top: 40px;
+
+        /* Tooltip formatting */
+        td[title] {
+            cursor: help;
         }
     </style>
 
@@ -56,7 +59,7 @@
     </table>
 
     <!-- TABLE 2: NET EXPENSES -->
-    <h3>Net Expenses (after GST removed)</h3>
+    <h3>Net Expenses (hover to see breakdown)</h3>
     <table class="excel-grid">
         <thead>
             <tr>
@@ -70,9 +73,19 @@
             {% for r in rows %}
             <tr>
                 <td>{{ r.guests }}</td>
-                <td>${{ r.ad_expenses | round(2) }}</td>
-                <td>${{ r.ea_expenses | round(2) }}</td>
-                <td>${{ r.raj_expenses | round(2) }}</td>
+
+                <!-- Tooltip: replace newlines with HTML line breaks -->
+                <td title="{{ r.ad_breakdown | replace('\n', '&#10;') }}">
+                    ${{ r.ad_expenses | round(2) }}
+                </td>
+
+                <td title="{{ r.ea_breakdown | replace('\n', '&#10;') }}">
+                    ${{ r.ea_expenses | round(2) }}
+                </td>
+
+                <td title="{{ r.raj_breakdown | replace('\n', '&#10;') }}">
+                    ${{ r.raj_expenses | round(2) }}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
