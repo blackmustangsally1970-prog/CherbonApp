@@ -21,6 +21,80 @@ class Account(db.Model):
     pin_failures = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime)
 
+class FixedExpenses(db.Model):
+    __tablename__ = "fixed_expenses"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    cold_room = db.Column(db.Float)
+    cold_room_gst = db.Column(db.Boolean)
+
+    water = db.Column(db.Float)
+    water_gst = db.Column(db.Boolean)
+
+    electricity = db.Column(db.Float)
+    electricity_gst = db.Column(db.Boolean)
+
+    gas = db.Column(db.Float)
+    gas_gst = db.Column(db.Boolean)
+
+    waste = db.Column(db.Float)
+    waste_gst = db.Column(db.Boolean)
+
+    advertising = db.Column(db.Float)
+    advertising_gst = db.Column(db.Boolean)
+
+    marq_maint = db.Column(db.Float)
+    marq_maint_gst = db.Column(db.Boolean)
+
+    essentials = db.Column(db.Float)
+    essentials_gst = db.Column(db.Boolean)
+
+    insurance = db.Column(db.Float)
+    insurance_gst = db.Column(db.Boolean)
+
+    rates = db.Column(db.Float)
+    rates_gst = db.Column(db.Boolean)
+
+    admin = db.Column(db.Float)
+    admin_gst = db.Column(db.Boolean)
+
+    clean_setup = db.Column(db.Float)
+    clean_setup_gst = db.Column(db.Boolean)
+
+    morning_setup = db.Column(db.Float)
+    morning_setup_gst = db.Column(db.Boolean)
+
+    mowing = db.Column(db.Float)
+    mowing_gst = db.Column(db.Boolean)
+
+    kitchen_hand = db.Column(db.Float)
+    kitchen_hand_gst = db.Column(db.Boolean)
+
+
+class FormulaExpenses(db.Model):
+    __tablename__ = "formula_expenses"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    drinks_per_head = db.Column(db.Float, default=6)
+    decorator_per_head = db.Column(db.Float, default=14.50)
+
+    caterer_ad_under_60 = db.Column(db.Float, default=62)
+    caterer_ad_over_60 = db.Column(db.Float, default=455.50)
+
+    caterer_ea_under_60 = db.Column(db.Float, default=72.50)
+    caterer_ea_over_60 = db.Column(db.Float, default=68.25)
+
+    caterer_raj = db.Column(db.Float, default=44)
+
+
+class WaitStaffPricing(db.Model):
+    __tablename__ = "wait_staff_pricing"
+
+    id = db.Column(db.Integer, primary_key=True)
+    guest_count = db.Column(db.Integer, unique=True)
+    cost = db.Column(db.Float)
 
 class WeddingPricing(db.Model):
     __tablename__ = 'wedding_pricing'
@@ -32,47 +106,161 @@ class WeddingPricing(db.Model):
     total_price = db.Column(db.Float)
 
 class WeddingExpensesTemplate(db.Model):
-    __tablename__ = 'wedding_expenses_template'
-
     id = db.Column(db.Integer, primary_key=True)
 
+    # Core
     wedding_type = db.Column(db.String(10))
     guest_count = db.Column(db.Integer)
 
+    # GST-eligible expenses
     cold_room = db.Column(db.Float)
+    cold_room_gst = db.Column(db.Boolean)
+
     water = db.Column(db.Float)
+    water_gst = db.Column(db.Boolean)
+
     electricity = db.Column(db.Float)
+    electricity_gst = db.Column(db.Boolean)
+
     gas = db.Column(db.Float)
+    gas_gst = db.Column(db.Boolean)
+
     waste = db.Column(db.Float)
+    waste_gst = db.Column(db.Boolean)
+
     advertising = db.Column(db.Float)
+    advertising_gst = db.Column(db.Boolean)
+
     marq_maint = db.Column(db.Float)
+    marq_maint_gst = db.Column(db.Boolean)
+
     essentials = db.Column(db.Float)
+    essentials_gst = db.Column(db.Boolean)
+
     insurance = db.Column(db.Float)
+    insurance_gst = db.Column(db.Boolean)
+
     rates = db.Column(db.Float)
-    drinks = db.Column(db.Float)
+    rates_gst = db.Column(db.Boolean)
+
     admin = db.Column(db.Float)
+    admin_gst = db.Column(db.Boolean)
+
     clean_setup = db.Column(db.Float)
+    clean_setup_gst = db.Column(db.Boolean)
+
     morning_setup = db.Column(db.Float)
+    morning_setup_gst = db.Column(db.Boolean)
+
+    mowing = db.Column(db.Float)
+    mowing_gst = db.Column(db.Boolean)
+
+    kitchen_hand = db.Column(db.Float)
+    kitchen_hand_gst = db.Column(db.Boolean)
+
+    decorator = db.Column(db.Float)
+    decorator_gst = db.Column(db.Boolean)
+
+    drinks = db.Column(db.Float)
+    drinks_gst = db.Column(db.Boolean)
+
+    caterer = db.Column(db.Float)
+    caterer_gst = db.Column(db.Boolean)
+
+    # STAFF — always NO GST
+    wait_staff = db.Column(db.Float)
     bar_staff = db.Column(db.Float)
     coordinator = db.Column(db.Float)
-    mowing = db.Column(db.Float)
-    decorator = db.Column(db.Float)
-    wait_staff = db.Column(db.Float)
-    kitchen_hand = db.Column(db.Float)
-    non_gst_expenses = db.Column(db.Float)
 
-    def total_expenses(self):
-        fields = [
-            self.cold_room, self.water, self.electricity, self.gas, self.waste,
-            self.advertising, self.marq_maint, self.essentials, self.insurance,
-            self.rates, self.drinks, self.admin, self.clean_setup,
-            self.morning_setup, self.bar_staff, self.coordinator, self.mowing,
-            self.decorator, self.wait_staff, self.kitchen_hand,
-            self.non_gst_expenses
+    def calc_auto_fields(self):
+        gc = self.guest_count or 0
+        wt = (self.wedding_type or "").upper()
+
+        # Drinks
+        self.drinks = gc * 6
+
+        # Caterer
+        if wt == "AD":
+            if gc <= 60:
+                self.caterer = gc * 62
+            else:
+                self.caterer = 455.50
+        elif wt == "EA":
+            if gc <= 60:
+                self.caterer = gc * 72.50
+            else:
+                self.caterer = gc * 68.25
+        elif wt == "RAJ":
+            self.caterer = gc * 44
+        else:
+            self.caterer = 0
+
+        # Decorator
+        self.decorator = gc * 14.50
+
+        # Wait staff (lookup)
+        WAIT_STAFF_TABLE = {
+            40: 888.40,
+            50: 888.40,
+            60: 888.40,
+            70: 1184.50,
+            80: 1184.50,
+            90: 1480.64,
+            100: 1480.64,
+            110: 1777.00,
+            120: 2072.00,
+            130: 2368.00,
+            140: 2368.00,
+            150: 2664.00,
+            160: 2664.00,
+            170: 2960.00,
+            180: 2960.00,
+            190: 3256.00,
+            200: 3256.00,
+            225: 3848.00,
+            250: 4144.00,
+        }
+        self.wait_staff = WAIT_STAFF_TABLE.get(gc, 0)
+
+    def _calc_gst_split(self, amount, gst_flag):
+        amount = amount or 0
+        if gst_flag:
+            gst = amount / 11
+            net = amount - gst
+        else:
+            gst = 0
+            net = amount
+        return net, gst
+
+    def total_expenses_breakdown(self):
+        self.calc_auto_fields()
+
+        gst_fields = [
+            'cold_room','water','electricity','gas','waste','advertising','marq_maint','essentials',
+            'insurance','rates','admin','clean_setup','morning_setup','mowing','kitchen_hand',
+            'decorator','drinks','caterer'
         ]
-        return sum([float(x) for x in fields if x is not None])
+        staff_fields = ['wait_staff','bar_staff','coordinator']
 
+        total_net = 0
+        total_gst = 0
 
+        for f in gst_fields:
+            amount = getattr(self, f) or 0
+            gst_flag = getattr(self, f + "_gst") or False
+            net, gst = self._calc_gst_split(amount, gst_flag)
+            total_net += net
+            total_gst += gst
+
+        for f in staff_fields:
+            amount = getattr(self, f) or 0
+            total_net += amount  # no GST
+
+        return {
+            "net": total_net,
+            "gst": total_gst,
+            "total": total_net + total_gst,
+        }
 
 
 class DailyEvent(db.Model):

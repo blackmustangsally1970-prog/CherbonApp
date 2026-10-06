@@ -63,8 +63,14 @@ from models import (
     Employee,
     WeddingPricing,
     WeddingExpensesTemplate,
+    FixedExpenses, 
+    FormulaExpenses,  
+    WaitStaffPricing, 
     EmployeeHours
 )
+
+from models import FixedExpenses, FormulaExpenses, WaitStaffPricing, WeddingPricing
+
 
 
 # Core libs
@@ -204,6 +210,98 @@ def build_comparison_table(wedding_type, setup):
         })
 
     return rows
+
+def build_scenario(wt):
+    # Clone base setup but override wedding_type
+    tmp = WeddingExpensesTemplate(
+        wedding_type=wt,
+        guest_count=setup.guest_count,
+
+        cold_room=setup.cold_room,
+        cold_room_gst=setup.cold_room_gst,
+
+        water=setup.water,
+        water_gst=setup.water_gst,
+
+        electricity=setup.electricity,
+        electricity_gst=setup.electricity_gst,
+
+        gas=setup.gas,
+        gas_gst=setup.gas_gst,
+
+        waste=setup.waste,
+        waste_gst=setup.waste_gst,
+
+        advertising=setup.advertising,
+        advertising_gst=setup.advertising_gst,
+
+        marq_maint=setup.marq_maint,
+        marq_maint_gst=setup.marq_maint_gst,
+
+        essentials=setup.essentials,
+        essentials_gst=setup.essentials_gst,
+
+        insurance=setup.insurance,
+        insurance_gst=setup.insurance_gst,
+
+        rates=setup.rates,
+        rates_gst=setup.rates_gst,
+
+        admin=setup.admin,
+        admin_gst=setup.admin_gst,
+
+        clean_setup=setup.clean_setup,
+        clean_setup_gst=setup.clean_setup_gst,
+
+        morning_setup=setup.morning_setup,
+        morning_setup_gst=setup.morning_setup_gst,
+
+        mowing=setup.mowing,
+        mowing_gst=setup.mowing_gst,
+
+        kitchen_hand=setup.kitchen_hand,
+        kitchen_hand_gst=setup.kitchen_hand_gst,
+
+        # GST flags for auto-calculated fields
+        decorator_gst=setup.decorator_gst,
+        drinks_gst=setup.drinks_gst,
+        caterer_gst=setup.caterer_gst,
+
+        # Staff (no GST)
+        wait_staff=0,   # auto
+        bar_staff=setup.bar_staff,
+        coordinator=setup.coordinator,
+    )
+
+    # Auto-calc drinks, caterer, decorator, wait staff
+    tmp.calc_auto_fields()
+
+    # GST + NET breakdown
+    breakdown = tmp.total_expenses_breakdown()
+
+    # Income lookup
+    pricing = WeddingPricing.query.filter(
+        WeddingPricing.wedding_type == wt,
+        WeddingPricing.guest_min <= tmp.guest_count,
+        WeddingPricing.guest_max >= tmp.guest_count
+    ).first()
+
+    income = pricing.total_price if pricing else 0
+
+    # Profit + margin
+    profit = income - breakdown["total"]
+    margin = (profit / income * 100) if income > 0 else 0
+
+    return {
+        "type": wt,
+        "guest_count": tmp.guest_count,
+        "income": income,
+        "expenses_net": breakdown["net"],
+        "expenses_gst": breakdown["gst"],
+        "expenses_total": breakdown["total"],
+        "profit": profit,
+        "margin": margin,
+    }
 
 
 def create_thumbnail(input_path, output_path):
@@ -5597,6 +5695,205 @@ def create_app():
         flash(f"Name updated from '{old_name}' to '{new_name}'.", "success")
         return redirect(url_for('client_view', client=client_id))
 
+
+    @app.route("/wedding/dashboard")
+    def wedding_dashboard():
+        return render_template("Wedding_dashboard.html")
+
+
+    @app.route("/wedding/pl/view", methods=["GET", "POST"])
+    def wedding_pl_view():
+        if request.method == "POST":
+            wedding_type = request.form.get("wedding_type")
+            guest_count = int(request.form.get("guest_count") or 0)
+        else:
+            wedding_type = None
+            guest_count = None
+
+        fixed = FixedExpenses.query.get(1)
+        formula = FormulaExpenses.query.get(1)
+
+        def build_scenario(wt, gc):
+            # Drinks
+            drinks = gc * formula.drinks_per_head
+
+            # Decorator
+            decorator = gc * formula.decorator_per_head
+
+            # Caterer
+            if wt == "AD":
+                caterer = gc * formula.caterer_ad_under_60 if gc <= 60 else formula.caterer_ad_over_60
+            elif wt == "EA":
+                caterer = gc * formula.caterer_ea_under_60 if gc <= 60 else gc * formula.caterer_ea_over_60
+            elif wt == "RAJ":
+                caterer = gc * formula.caterer_raj
+            else:
+                caterer = 0
+
+            # Wait staff
+            ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
+            wait_staff_cost = ws.cost if ws else 0
+
+            # GST split helper
+            def split(amount, gst_flag):
+                if gst_flag:
+                    gst = amount / 11
+                    net = amount - gst
+                else:
+                    gst = 0
+                    net = amount
+                return net, gst
+
+            # Fixed expenses GST split
+            fixed_items = [
+                ("cold_room", fixed.cold_room, fixed.cold_room_gst),
+                ("water", fixed.water, fixed.water_gst),
+                ("electricity", fixed.electricity, fixed.electricity_gst),
+                ("gas", fixed.gas, fixed.gas_gst),
+                ("waste", fixed.waste, fixed.waste_gst),
+                ("advertising", fixed.advertising, fixed.advertising_gst),
+                ("marq_maint", fixed.marq_maint, fixed.marq_maint_gst),
+                ("essentials", fixed.essentials, fixed.essentials_gst),
+                ("insurance", fixed.insurance, fixed.insurance_gst),
+                ("rates", fixed.rates, fixed.rates_gst),
+                ("admin", fixed.admin, fixed.admin_gst),
+                ("clean_setup", fixed.clean_setup, fixed.clean_setup_gst),
+                ("morning_setup", fixed.morning_setup, fixed.morning_setup_gst),
+                ("mowing", fixed.mowing, fixed.mowing_gst),
+                ("kitchen_hand", fixed.kitchen_hand, fixed.kitchen_hand_gst),
+            ]
+
+            total_net = 0
+            total_gst = 0
+
+            for name, amount, gst_flag in fixed_items:
+                net, gst = split(amount or 0, gst_flag)
+                total_net += net
+                total_gst += gst
+
+            # Auto-calculated GST items
+            auto_items = [
+                ("decorator", decorator, False),  # GST flag for auto items can be added later
+                ("drinks", drinks, False),
+                ("caterer", caterer, False),
+            ]
+
+            for name, amount, gst_flag in auto_items:
+                net, gst = split(amount or 0, gst_flag)
+                total_net += net
+                total_gst += gst
+
+            # Staff (no GST)
+            total_net += wait_staff_cost
+
+            # Income lookup
+            pricing = WeddingPricing.query.filter(
+                WeddingPricing.wedding_type == wt,
+                WeddingPricing.guest_min <= gc,
+                WeddingPricing.guest_max >= gc
+            ).first()
+
+            income = pricing.total_price if pricing else 0
+
+            # Profit + margin
+            total_expenses = total_net + total_gst
+            profit = income - total_expenses
+            margin = (profit / income * 100) if income > 0 else 0
+
+            return {
+                "type": wt,
+                "guest_count": gc,
+                "income": income,
+                "expenses_net": total_net,
+                "expenses_gst": total_gst,
+                "expenses_total": total_expenses,
+                "profit": profit,
+                "margin": margin,
+            }
+
+        scenario_AD = build_scenario("AD", guest_count) if guest_count else None
+        scenario_EA = build_scenario("EA", guest_count) if guest_count else None
+        scenario_RAJ = build_scenario("RAJ", guest_count) if guest_count else None
+
+        return render_template(
+            "Wedding_PL_viewer.html",
+            scenario_AD=scenario_AD,
+            scenario_EA=scenario_EA,
+            scenario_RAJ=scenario_RAJ,
+        )
+
+
+
+    @app.route("/wedding/config", methods=["GET", "POST"])
+    def wedding_config():
+        fixed = FixedExpenses.query.get(1)
+        formula = FormulaExpenses.query.get(1)
+
+        if request.method == "POST":
+            # Fixed expenses
+            fixed.cold_room = float(request.form.get("cold_room") or 0)
+            fixed.cold_room_gst = bool(request.form.get("cold_room_gst"))
+
+            fixed.water = float(request.form.get("water") or 0)
+            fixed.water_gst = bool(request.form.get("water_gst"))
+
+            fixed.electricity = float(request.form.get("electricity") or 0)
+            fixed.electricity_gst = bool(request.form.get("electricity_gst"))
+
+            fixed.gas = float(request.form.get("gas") or 0)
+            fixed.gas_gst = bool(request.form.get("gas_gst"))
+
+            fixed.waste = float(request.form.get("waste") or 0)
+            fixed.waste_gst = bool(request.form.get("waste_gst"))
+
+            fixed.advertising = float(request.form.get("advertising") or 0)
+            fixed.advertising_gst = bool(request.form.get("advertising_gst"))
+
+            fixed.marq_maint = float(request.form.get("marq_maint") or 0)
+            fixed.marq_maint_gst = bool(request.form.get("marq_maint_gst"))
+
+            fixed.essentials = float(request.form.get("essentials") or 0)
+            fixed.essentials_gst = bool(request.form.get("essentials_gst"))
+
+            fixed.insurance = float(request.form.get("insurance") or 0)
+            fixed.insurance_gst = bool(request.form.get("insurance_gst"))
+
+            fixed.rates = float(request.form.get("rates") or 0)
+            fixed.rates_gst = bool(request.form.get("rates_gst"))
+
+            fixed.admin = float(request.form.get("admin") or 0)
+            fixed.admin_gst = bool(request.form.get("admin_gst"))
+
+            fixed.clean_setup = float(request.form.get("clean_setup") or 0)
+            fixed.clean_setup_gst = bool(request.form.get("clean_setup_gst"))
+
+            fixed.morning_setup = float(request.form.get("morning_setup") or 0)
+            fixed.morning_setup_gst = bool(request.form.get("morning_setup_gst"))
+
+            fixed.mowing = float(request.form.get("mowing") or 0)
+            fixed.mowing_gst = bool(request.form.get("mowing_gst"))
+
+            fixed.kitchen_hand = float(request.form.get("kitchen_hand") or 0)
+            fixed.kitchen_hand_gst = bool(request.form.get("kitchen_hand_gst"))
+
+            # Formula expenses
+            formula.drinks_per_head = float(request.form.get("drinks_per_head") or 6)
+            formula.decorator_per_head = float(request.form.get("decorator_per_head") or 14.50)
+
+            formula.caterer_ad_under_60 = float(request.form.get("caterer_ad_under_60") or 62)
+            formula.caterer_ad_over_60 = float(request.form.get("caterer_ad_over_60") or 455.50)
+
+            formula.caterer_ea_under_60 = float(request.form.get("caterer_ea_under_60") or 72.50)
+            formula.caterer_ea_over_60 = float(request.form.get("caterer_ea_over_60") or 68.25)
+
+            formula.caterer_raj = float(request.form.get("caterer_raj") or 44)
+
+            db.session.commit()
+            return redirect(url_for("wedding_config"))
+
+        return render_template("Wedding_config.html", fixed=fixed, formula=formula)
+
+
     @app.route("/wedding/pl/setup/save", methods=["POST"])
     def wedding_pl_setup_save():
         data = request.form.to_dict()
@@ -5611,36 +5908,15 @@ def create_app():
     def wedding_pl_setup():
         return render_template("Wedding_PL_setup.html")
 
+    @app.route("/wedding/pl/input", methods=["GET", "POST"])
+    def wedding_pl_input():
+        if request.method == "POST":
+            wedding_type = request.form.get("wedding_type")
+            guest_count = request.form.get("guest_count")
+            return redirect(f"/wedding/pl/view?type={wedding_type}&guests={guest_count}")
 
-    @app.route("/wedding/pl/view")
-    def wedding_pl_view():
+        return render_template("Wedding_PL_input.html")
 
-        wedding_type = request.args.get("type")
-        guest_count = int(request.args.get("guests"))
-
-        setup = WeddingExpensesTemplate.query.order_by(WeddingExpensesTemplate.id.desc()).first()
-
-        total_price = get_price_for(wedding_type, guest_count)
-
-        total_income = total_price
-        total_expenses = setup.total_expenses()
-        gst = total_income * 0.10
-        net_profit = total_income - total_expenses
-        margin = round((net_profit / total_income) * 100, 2)
-
-        comparison = build_comparison_table(wedding_type, setup)
-
-        return render_template(
-            "Wedding_PL_viewer.html",
-            wedding_type=wedding_type,
-            guest_count=guest_count,
-            total_income=round(total_income, 2),
-            total_expenses=round(total_expenses, 2),
-            gst=round(gst, 2),
-            net_profit=round(net_profit, 2),
-            margin=margin,
-            comparison=comparison
-        )
 
 
     @app.route("/export_clients_xlsx")

@@ -1,0 +1,28 @@
+<div class="container mt-4">
+
+    <h2>Wedding P&L Input</h2>
+    <p class="text-muted">
+        Select wedding type and guest count to generate the full P&L comparison.
+    </p>
+
+    <form method="POST" class="mt-3">
+
+        <div class="mb-3">
+            <label class="form-label">Wedding Type</label>
+            <select name="wedding_type" class="form-select" required style="max-width:300px;">
+                <option value="AD">Alt Drop / Buffet (AD)</option>
+                <option value="EA">Elegant Affair (EA)</option>
+                <option value="RAJ">Raj</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Guest Count</label>
+            <input type="number" name="guest_count" class="form-control" required style="max-width:200px;" min="1">
+        </div>
+
+        <button class="btn btn-primary mt-3">View P&L</button>
+
+    </form>
+
+</div>

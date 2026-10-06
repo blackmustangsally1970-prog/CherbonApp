@@ -1,132 +1,70 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Wedding P&L Viewer</title>
+<div class="container mt-4">
 
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-    }
+    <h2>Wedding P&L Viewer</h2>
+    <p class="text-muted">
+        Full comparison of AD, EA and RAJ using fixed + formula expenses.
+    </p>
 
-    h2 {
-      margin-bottom: 20px;
-    }
+    {% if scenario_AD %}
+    <div class="row mt-4">
 
-    .section {
-      margin-top: 30px;
-      padding: 20px;
-      background: #eef2ff;
-      border: 2px solid #4a6bff;
-      border-radius: 12px;
-    }
+        <!-- AD -->
+        <div class="col-md-4 mb-4">
+            <h4>AD</h4>
+            <table class="table table-bordered table-sm">
+                <tr><th>Guests</th><td>{{ scenario_AD.guest_count }}</td></tr>
+                <tr><th>Income</th><td>${{ scenario_AD.income | round(2) }}</td></tr>
+                <tr><th>Expenses (Net)</th><td>${{ scenario_AD.expenses_net | round(2) }}</td></tr>
+                <tr><th>Expenses GST</th><td>${{ scenario_AD.expenses_gst | round(2) }}</td></tr>
+                <tr><th>Total Expenses</th><td>${{ scenario_AD.expenses_total | round(2) }}</td></tr>
+                <tr><th>Profit</th>
+                    <td class="{% if scenario_AD.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        <strong>${{ scenario_AD.profit | round(2) }}</strong>
+                    </td>
+                </tr>
+                <tr><th>Margin</th><td><strong>{{ scenario_AD.margin | round(2) }}%</strong></td></tr>
+            </table>
+        </div>
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 18px;
-    }
+        <!-- EA -->
+        <div class="col-md-4 mb-4">
+            <h4>EA</h4>
+            <table class="table table-bordered table-sm">
+                <tr><th>Guests</th><td>{{ scenario_EA.guest_count }}</td></tr>
+                <tr><th>Income</th><td>${{ scenario_EA.income | round(2) }}</td></tr>
+                <tr><th>Expenses (Net)</th><td>${{ scenario_EA.expenses_net | round(2) }}</td></tr>
+                <tr><th>Expenses GST</th><td>${{ scenario_EA.expenses_gst | round(2) }}</td></tr>
+                <tr><th>Total Expenses</th><td>${{ scenario_EA.expenses_total | round(2) }}</td></tr>
+                <tr><th>Profit</th>
+                    <td class="{% if scenario_EA.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        <strong>${{ scenario_EA.profit | round(2) }}</strong>
+                    </td>
+                </tr>
+                <tr><th>Margin</th><td><strong>{{ scenario_EA.margin | round(2) }}%</strong></td></tr>
+            </table>
+        </div>
 
-    th, td {
-      border: 2px solid #4a6bff;
-      padding: 12px;
-      text-align: left;
-    }
+        <!-- RAJ -->
+        <div class="col-md-4 mb-4">
+            <h4>RAJ</h4>
+            <table class="table table-bordered table-sm">
+                <tr><th>Guests</th><td>{{ scenario_RAJ.guest_count }}</td></tr>
+                <tr><th>Income</th><td>${{ scenario_RAJ.income | round(2) }}</td></tr>
+                <tr><th>Expenses (Net)</th><td>${{ scenario_RAJ.expenses_net | round(2) }}</td></tr>
+                <tr><th>Expenses GST</th><td>${{ scenario_RAJ.expenses_gst | round(2) }}</td></tr>
+                <tr><th>Total Expenses</th><td>${{ scenario_RAJ.expenses_total | round(2) }}</td></tr>
+                <tr><th>Profit</th>
+                    <td class="{% if scenario_RAJ.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        <strong>${{ scenario_RAJ.profit | round(2) }}</strong>
+                    </td>
+                </tr>
+                <tr><th>Margin</th><td><strong>{{ scenario_RAJ.margin | round(2) }}%</strong></td></tr>
+            </table>
+        </div>
 
-    th {
-      background: #dce6ff;
-      font-weight: bold;
-    }
-
-    .warning {
-      color: #cc0000;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-  </style>
-</head>
-
-<body>
-
-<!-- ⭐ DAILY QUOTE BAR -->
-<div id="daily-quote" style="
-    padding: 12px;
-    margin-bottom: 16px;
-    background: #f0f8ff;
-    border-left: 4px solid #4a90e2;
-    font-size: 16px;
-    font-style: italic;
-    color: #333;
-">
-    Loading wisdom…
-</div>
-
-<h2>Wedding P&L Viewer</h2>
-
-<div class="section">
-    <h3>{{ wedding_type }} — {{ guest_count }} Guests</h3>
-
-    <p><strong>Total Income:</strong> ${{ total_income }}</p>
-    <p><strong>Total Expenses:</strong> ${{ total_expenses }}</p>
-    <p><strong>GST (10%):</strong> ${{ gst }}</p>
-    <p><strong>Net Profit:</strong> ${{ net_profit }}</p>
-    <p><strong>Margin:</strong> {{ margin }}%</p>
-
-    {% if net_profit < 0 %}
-        <p class="warning">⚠️ Warning: Negative profit</p>
-    {% elif margin < 10 %}
-        <p class="warning">⚠️ Warning: Margin below 10%</p>
+    </div>
+    {% else %}
+        <p class="text-muted">Enter wedding type + guest count to view P&L.</p>
     {% endif %}
+
 </div>
-
-<div class="section">
-    <h3>Guest Count Comparison</h3>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Guests</th>
-                <th>Income</th>
-                <th>Expenses</th>
-                <th>GST</th>
-                <th>Net Profit</th>
-                <th>Margin %</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in comparison %}
-            <tr>
-                <td>{{ row.guests }}</td>
-                <td>${{ row.income }}</td>
-                <td>${{ row.expenses }}</td>
-                <td>${{ row.gst }}</td>
-                <td>${{ row.net_profit }}</td>
-                <td>{{ row.margin }}%</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<!-- ⭐ QUOTE SCRIPT -->
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const quotes = [
-        "“The only way to do great work is to love what you do.” — Steve Jobs",
-        "“Success is not final, failure is not fatal: it is the courage to continue that counts.” — Winston Churchill",
-        "“It always seems impossible until it’s done.” — Nelson Mandela",
-        "“Act as if what you do makes a difference. It does.” — William James",
-        "“In the middle of difficulty lies opportunity.” — Albert Einstein"
-    ];
-
-    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-    document.getElementById("daily-quote").textContent = randomQuote;
-
-});
-</script>
-
-</body>
-</html>
