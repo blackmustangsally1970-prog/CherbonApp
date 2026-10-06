@@ -5829,118 +5829,91 @@ def create_app():
         guest_counts = [t[0] for t in tiers]
 
         def build_scenario(wt, gc):
-            # Drinks (GST-inclusive → treat as GST-free)
+
+            # Drinks (GST inclusive → convert to net)
             drinks = gc * formula.drinks_per_head
+            drinks_net = drinks - (drinks / 11)
 
-            # Decorator (GST-inclusive → treat as GST-free)
+            # Decorator (GST inclusive → convert to net)
             decorator = gc * formula.decorator_per_head
+            decorator_net = decorator - (decorator / 11)
 
-            # Caterer (GST-inclusive → treat as GST-free)
+            # Caterer (GST inclusive → convert to net)
             if wt == "AD":
-                if gc <= 60:
-                    caterer = gc * 62.00
-                else:
-                    caterer = gc * 55.50
-
+                caterer = gc * (62.00 if gc <= 60 else 55.50)
             elif wt == "EA":
-                if gc <= 60:
-                    caterer = gc * 72.50
-                else:
-                    caterer = gc * 68.25
-
+                caterer = gc * (72.50 if gc <= 60 else 68.25)
             elif wt == "RAJ":
                 caterer = gc * formula.caterer_raj
 
-            else:
-                caterer = 0
+            caterer_net = caterer - (caterer / 11)
 
-            # Wait staff (GST-free)
+            # Waitstaff (GST-free)
             ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
-            wait_staff_cost = ws.cost if ws else 0
+            waitstaff_net = ws.cost if ws else 0
 
-            # GST split helper
-            def split(amount, gst_flag):
-                if gst_flag:
-                    gst = amount / 11
-                    net = amount - gst
-                else:
-                    gst = 0
-                    net = amount
-                return net, gst
-
-            # Fixed expenses (some GST, some not)
+            # Fixed expenses (GST flag decides net conversion)
             fixed_items = [
-                ("cold_room", fixed.cold_room, fixed.cold_room_gst),
-                ("water", fixed.water, fixed.water_gst),
-                ("electricity", fixed.electricity, fixed.electricity_gst),
-                ("gas", fixed.gas, fixed.gas_gst),
-                ("waste", fixed.waste, fixed.waste_gst),
-                ("advertising", fixed.advertising, fixed.advertising_gst),
-                ("marq_maint", fixed.marq_maint, fixed.marq_maint_gst),
-                ("essentials", fixed.essentials, fixed.essentials_gst),
-                ("insurance", fixed.insurance, fixed.insurance_gst),
-                ("rates", fixed.rates, fixed.rates_gst),
-                ("admin", fixed.admin, fixed.admin_gst),
-                ("clean_setup", fixed.clean_setup, fixed.clean_setup_gst),
-                ("morning_setup", fixed.morning_setup, fixed.morning_setup_gst),
-                ("mowing", fixed.mowing, fixed.mowing_gst),
-                ("kitchen_hand", fixed.kitchen_hand, fixed.kitchen_hand_gst),
+                (fixed.cold_room, fixed.cold_room_gst),
+                (fixed.water, fixed.water_gst),
+                (fixed.electricity, fixed.electricity_gst),
+                (fixed.gas, fixed.gas_gst),
+                (fixed.waste, fixed.waste_gst),
+                (fixed.advertising, fixed.advertising_gst),
+                (fixed.marq_maint, fixed.marq_maint_gst),
+                (fixed.essentials, fixed.essentials_gst),
+                (fixed.insurance, fixed.insurance_gst),
+                (fixed.rates, fixed.rates_gst),
+                (fixed.admin, fixed.admin_gst),
+                (fixed.clean_setup, fixed.clean_setup_gst),
+                (fixed.morning_setup, fixed.morning_setup_gst),
+                (fixed.mowing, fixed.mowing_gst),
+                (fixed.kitchen_hand, fixed.kitchen_hand_gst),
             ]
 
-            total_net = 0
-            total_gst = 0
+            fixed_net = 0
+            for amount, gst_flag in fixed_items:
+                if amount is None:
+                    continue
 
-            # Add fixed expenses
-            for name, amount, gst_flag in fixed_items:
-                net, gst = split(amount or 0, gst_flag)
-                total_net += net
-                total_gst += gst
+                if gst_flag:
+                    # GST inclusive → convert to net
+                    fixed_net += amount - (amount / 11)
+                else:
+                    # GST free → full amount
+                    fixed_net += amount
 
-            # Add drinks, decorator, caterer (all GST-inclusive → GST-free)
-            auto_items = [
-                ("decorator", decorator, False),
-                ("drinks", drinks, False),
-                ("caterer", caterer, False),
-            ]
+            # Total net expenses
+            total_net_expenses = (
+                drinks_net +
+                decorator_net +
+                caterer_net +
+                waitstaff_net +
+                fixed_net
+            )
 
-            for name, amount, gst_flag in auto_items:
-                net, gst = split(amount or 0, gst_flag)
-                total_net += net
-                total_gst += gst
-
-            # Add waitstaff (GST-free)
-            total_net += wait_staff_cost
-
-            # Income lookup
+            # Income lookup (GST inclusive → convert to net)
             pricing = WeddingPricing.query.filter(
                 WeddingPricing.wedding_type == wt,
                 WeddingPricing.guest_min == gc
             ).first()
 
             income = pricing.total_price if pricing else 0
+            net_income = income - (income / 11)
 
-            # Final totals
-            total_expenses = total_net + total_gst
-            profit = income - total_expenses
-            margin = (profit / income * 100) if income > 0 else 0
+            # Net profit (bottom line)
+            net_profit = net_income - total_net_expenses
 
-            return profit, margin
+            return net_profit
 
         # Build summary rows
         rows = []
         for gc in guest_counts:
-            ad_profit, ad_margin = build_scenario("AD", gc)
-            ea_profit, ea_margin = build_scenario("EA", gc)
-            raj_profit, raj_margin = build_scenario("RAJ", gc)
-
             rows.append({
                 "guests": gc,
-                "ad_profit": ad_profit,
-                "ad_margin": ad_margin,
-                "ea_profit": ea_profit,
-                "ea_margin": ea_margin,
-                "raj_profit": raj_profit,
-                "raj_margin": raj_margin,
+                "ad_profit": build_scenario("AD", gc),
+                "ea_profit": build_scenario("EA", gc),
+                "raj_profit": build_scenario("RAJ", gc),
             })
 
         return render_template("Wedding_PL_summary.html", rows=rows)

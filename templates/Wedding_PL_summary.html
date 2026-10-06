@@ -2,41 +2,49 @@
 
     <h2>Wedding P&L Summary Table</h2>
     <p class="text-muted">
-        Auto-generated profit & margin for all guest tiers across AD, EA and RAJ.
+        Net profit (net income less net expenses) for all guest tiers across AD, EA and RAJ.
     </p>
 
-    <table class="table table-bordered table-sm mt-4 table-striped">
-        <thead class="table-light">
+    <style>
+        /* Excel-style grid */
+        table.excel-grid {
+            border-collapse: collapse !important;
+            width: 100%;
+        }
+        table.excel-grid th,
+        table.excel-grid td {
+            border: 1px solid #999 !important;
+            padding: 6px 8px !important;
+        }
+        table.excel-grid tr:nth-child(even) {
+            background-color: #f2f2f2 !important;
+        }
+        table.excel-grid tr:nth-child(odd) {
+            background-color: #ffffff !important;
+        }
+        table.excel-grid thead th {
+            background-color: #e8e8e8 !important;
+            font-weight: bold;
+        }
+    </style>
+
+    <table class="excel-grid mt-4">
+        <thead>
             <tr>
                 <th>Guests</th>
-                <th>AD Profit</th>
-                <th>AD Margin</th>
-                <th>EA Profit</th>
-                <th>EA Margin</th>
-                <th>RAJ Profit</th>
-                <th>RAJ Margin</th>
+                <th>AD Net Profit</th>
+                <th>EA Net Profit</th>
+                <th>RAJ Net Profit</th>
             </tr>
         </thead>
 
         <tbody>
             {% for r in rows %}
-            <tr class="{% if loop.index % 2 == 0 %}table-secondary{% endif %}">
+            <tr>
                 <td>{{ r.guests }}</td>
-
-                <td class="{% if r.ad_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                    ${{ r.ad_profit | round(2) }}
-                </td>
-                <td>{{ r.ad_margin | round(2) }}%</td>
-
-                <td class="{% if r.ea_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                    ${{ r.ea_profit | round(2) }}
-                </td>
-                <td>{{ r.ea_margin | round(2) }}%</td>
-
-                <td class="{% if r.raj_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                    ${{ r.raj_profit | round(2) }}
-                </td>
-                <td>{{ r.raj_margin | round(2) }}%</td>
+                <td>${{ r.ad_profit | round(2) }}</td>
+                <td>${{ r.ea_profit | round(2) }}</td>
+                <td>${{ r.raj_profit | round(2) }}</td>
             </tr>
             {% endfor %}
         </tbody>
