@@ -1,10 +1,9 @@
 <div class="container mt-4">
 
     <!-- BACK TO MAIN MENU -->
-    <div class="back-btn-container no-print">
+    <div class="back-btn-container no-print mb-3">
         <a href="{{ url_for('dashboard') }}" class="back-btn">← Back to Menu</a>
     </div>
-
 
     <h2>Wedding Master Configuration</h2>
     <p class="text-muted">
@@ -20,9 +19,12 @@
         <div class="mb-3">
             <label class="form-label">{{ label }}</label>
             <div class="d-flex align-items-center gap-3">
-                <input type="number" step="0.01" name="{{ name }}" value="{{ value }}" class="form-control" style="max-width:200px;">
+                <input type="number" step="0.01" name="{{ name }}"
+                       value="{{ '%.2f'|format(value) }}"
+                       class="form-control" style="max-width:200px;">
                 <label class="form-check-label">
-                    <input type="checkbox" name="{{ name }}_gst" class="form-check-input" {% if gst_flag %}checked{% endif %}>
+                    <input type="checkbox" name="{{ name }}_gst" class="form-check-input"
+                           {% if gst_flag %}checked{% endif %}>
                     GST
                 </label>
             </div>
@@ -51,30 +53,31 @@
         {{ gst_row("Bar Staff", "bar_staff", fixed.bar_staff, fixed.bar_staff_gst) }}
         {{ gst_row("Wedding Coordinator", "wedding_coordinator", fixed.wedding_coordinator, fixed.wedding_coordinator_gst) }}
 
-<hr>
-<h4>Formula Expenses (Per‑Head / Rules)</h4>
+        <hr>
+        <h4>Formula Expenses (Per‑Head / Rules)</h4>
 
-{% macro formula_row(label, name, value) %}
-<div class="mb-3">
-    <label class="form-label">{{ label }}</label>
-    <div class="d-flex align-items-center gap-3">
-        <input type="number" step="0.01" name="{{ name }}" 
-               value="{{ '{:g}'.format(value) }}" 
-               class="form-control" style="max-width:200px;">
-    </div>
-</div>
-{% endmacro %}
+        {% macro formula_row(label, name, value) %}
+        <div class="mb-3">
+            <label class="form-label">{{ label }}</label>
+            <div class="d-flex align-items-center gap-3">
+                <input type="number" step="0.01" name="{{ name }}"
+                       value="{{ '%.2f'|format(value) }}"
+                       class="form-control" style="max-width:200px;">
+            </div>
+        </div>
+        {% endmacro %}
 
-{{ formula_row("Drinks Per Head", "drinks_per_head", formula.drinks_per_head) }}
-{{ formula_row("Decorator Per Head", "decorator_per_head", formula.decorator_per_head) }}
+        {{ formula_row("Drinks Per Head", "drinks_per_head", formula.drinks_per_head) }}
+        {{ formula_row("Decorator Per Head", "decorator_per_head", formula.decorator_per_head) }}
 
-{{ formula_row("Caterer AD (Under 60 Guests)", "caterer_ad_under_60", formula.caterer_ad_under_60) }}
-{{ formula_row("Caterer AD (Over 60 Guests)", "caterer_ad_over_60", formula.caterer_ad_over_60) }}
+        {{ formula_row("Caterer AD (Under 60 Guests)", "caterer_ad_under_60", formula.caterer_ad_under_60) }}
+        {{ formula_row("Caterer AD (Over 60 Guests)", "caterer_ad_over_60", formula.caterer_ad_over_60) }}
 
-{{ formula_row("Caterer EA (Under 60 Guests)", "caterer_ea_under_60", formula.caterer_ea_under_60) }}
-{{ formula_row("Caterer EA (Over 60 Guests)", "caterer_ea_over_60", formula.caterer_ea_over_60) }}
+        {{ formula_row("Caterer EA (Under 60 Guests)", "caterer_ea_under_60", formula.caterer_ea_under_60) }}
+        {{ formula_row("Caterer EA (Over 60 Guests)", "caterer_ea_over_60", formula.caterer_ea_over_60) }}
 
-{{ formula_row("Caterer RAJ (Per Head)", "caterer_raj", formula.caterer_raj) }}
+        {{ formula_row("Caterer RAJ (Per Head)", "caterer_raj", formula.caterer_raj) }}
+
         <button class="btn btn-primary mt-3">Save Configuration</button>
 
     </form>
