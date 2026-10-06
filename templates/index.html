@@ -175,6 +175,8 @@
     <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
   </li>
 
+
+
   <!-- ⭐ WEDDINGS MENU -->
   {% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
   <li>
@@ -182,6 +184,14 @@
   </li>
   {% endif %}
   <!-- ⭐ END WEDDINGS MENU -->
+
+  <li>
+    <a href="/wedding/pl/setup" class="menu-btn">💒 Wedding PL Setup</a>
+  </li>
+
+  <li>
+    <a href="/wedding/pl/view?type=AD&guests=100" class="menu-btn">📊 Wedding PL Viewer</a>
+  </li>
 
   <li>
     <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>

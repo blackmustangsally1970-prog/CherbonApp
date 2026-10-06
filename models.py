@@ -22,6 +22,59 @@ class Account(db.Model):
     locked_until = db.Column(db.DateTime)
 
 
+class WeddingPricing(db.Model):
+    __tablename__ = 'wedding_pricing'
+
+    id = db.Column(db.Integer, primary_key=True)
+    wedding_type = db.Column(db.String(10))
+    guest_min = db.Column(db.Integer)
+    guest_max = db.Column(db.Integer)
+    total_price = db.Column(db.Float)
+
+class WeddingExpensesTemplate(db.Model):
+    __tablename__ = 'wedding_expenses_template'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    wedding_type = db.Column(db.String(10))
+    guest_count = db.Column(db.Integer)
+
+    cold_room = db.Column(db.Float)
+    water = db.Column(db.Float)
+    electricity = db.Column(db.Float)
+    gas = db.Column(db.Float)
+    waste = db.Column(db.Float)
+    advertising = db.Column(db.Float)
+    marq_maint = db.Column(db.Float)
+    essentials = db.Column(db.Float)
+    insurance = db.Column(db.Float)
+    rates = db.Column(db.Float)
+    drinks = db.Column(db.Float)
+    admin = db.Column(db.Float)
+    clean_setup = db.Column(db.Float)
+    morning_setup = db.Column(db.Float)
+    bar_staff = db.Column(db.Float)
+    coordinator = db.Column(db.Float)
+    mowing = db.Column(db.Float)
+    decorator = db.Column(db.Float)
+    wait_staff = db.Column(db.Float)
+    kitchen_hand = db.Column(db.Float)
+    non_gst_expenses = db.Column(db.Float)
+
+    def total_expenses(self):
+        fields = [
+            self.cold_room, self.water, self.electricity, self.gas, self.waste,
+            self.advertising, self.marq_maint, self.essentials, self.insurance,
+            self.rates, self.drinks, self.admin, self.clean_setup,
+            self.morning_setup, self.bar_staff, self.coordinator, self.mowing,
+            self.decorator, self.wait_staff, self.kitchen_hand,
+            self.non_gst_expenses
+        ]
+        return sum([float(x) for x in fields if x is not None])
+
+
+
+
 class DailyEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)

@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wedding P&L Viewer</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .section {
+      margin-top: 30px;
+      padding: 20px;
+      background: #eef2ff;
+      border: 2px solid #4a6bff;
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    th, td {
+      border: 2px solid #4a6bff;
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #dce6ff;
+      font-weight: bold;
+    }
+
+    .warning {
+      color: #cc0000;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ⭐ DAILY QUOTE BAR -->
+<div id="daily-quote" style="
+    padding: 12px;
+    margin-bottom: 16px;
+    background: #f0f8ff;
+    border-left: 4px solid #4a90e2;
+    font-size: 16px;
+    font-style: italic;
+    color: #333;
+">
+    Loading wisdom…
+</div>
+
+<h2>Wedding P&L Viewer</h2>
+
+<div class="section">
+    <h3>{{ wedding_type }} — {{ guest_count }} Guests</h3>
+
+    <p><strong>Total Income:</strong> ${{ total_income }}</p>
+    <p><strong>Total Expenses:</strong> ${{ total_expenses }}</p>
+    <p><strong>GST (10%):</strong> ${{ gst }}</p>
+    <p><strong>Net Profit:</strong> ${{ net_profit }}</p>
+    <p><strong>Margin:</strong> {{ margin }}%</p>
+
+    {% if net_profit < 0 %}
+        <p class="warning">⚠️ Warning: Negative profit</p>
+    {% elif margin < 10 %}
+        <p class="warning">⚠️ Warning: Margin below 10%</p>
+    {% endif %}
+</div>
+
+<div class="section">
+    <h3>Guest Count Comparison</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Guests</th>
+                <th>Income</th>
+                <th>Expenses</th>
+                <th>GST</th>
+                <th>Net Profit</th>
+                <th>Margin %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in comparison %}
+            <tr>
+                <td>{{ row.guests }}</td>
+                <td>${{ row.income }}</td>
+                <td>${{ row.expenses }}</td>
+                <td>${{ row.gst }}</td>
+                <td>${{ row.net_profit }}</td>
+                <td>{{ row.margin }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ⭐ QUOTE SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const quotes = [
+        "“The only way to do great work is to love what you do.” — Steve Jobs",
+        "“Success is not final, failure is not fatal: it is the courage to continue that counts.” — Winston Churchill",
+        "“It always seems impossible until it’s done.” — Nelson Mandela",
+        "“Act as if what you do makes a difference. It does.” — William James",
+        "“In the middle of difficulty lies opportunity.” — Albert Einstein"
+    ];
+
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+    document.getElementById("daily-quote").textContent = randomQuote;
+
+});
+</script>
+
+</body>
+</html>

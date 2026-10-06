@@ -61,6 +61,8 @@ from models import (
     TrailRideSubmission,
     Users,
     Employee,
+    WeddingPricing,
+    WeddingExpensesTemplate,
     EmployeeHours
 )
 
@@ -163,6 +165,45 @@ def get_static_teacher_time():
         TeacherTime.weekday,
         TeacherTime.time
     ).all()
+
+
+# -------------------------
+# HELPERS
+# -------------------------
+
+def get_price_for(wedding_type, guest_count):
+    rows = WeddingPricing.query.filter_by(wedding_type=wedding_type).all()
+    for r in rows:
+        if r.guest_min <= guest_count <= r.guest_max:
+            return r.total_price
+    return None
+
+def build_comparison_table(wedding_type, setup):
+    guest_tiers = [40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200,225,250]
+
+    rows = []
+
+    for guests in guest_tiers:
+        price = get_price_for(wedding_type, guests)
+        if price is None:
+            continue
+
+        income = price
+        expenses = setup.total_expenses()
+        gst = income * 0.10
+        net_profit = income - expenses
+        margin = round((net_profit / income) * 100, 2)
+
+        rows.append({
+            "guests": guests,
+            "income": round(income, 2),
+            "expenses": round(expenses, 2),
+            "gst": round(gst, 2),
+            "net_profit": round(net_profit, 2),
+            "margin": margin
+        })
+
+    return rows
 
 
 def create_thumbnail(input_path, output_path):
@@ -5556,6 +5597,51 @@ def create_app():
         flash(f"Name updated from '{old_name}' to '{new_name}'.", "success")
         return redirect(url_for('client_view', client=client_id))
 
+    @app.route("/wedding/pl/setup/save", methods=["POST"])
+    def wedding_pl_setup_save():
+        data = request.form.to_dict()
+
+        db.session.add(WeddingExpensesTemplate(**data))
+        db.session.commit()
+
+        return redirect("/wedding/pl/setup")
+
+
+    @app.route("/wedding/pl/setup")
+    def wedding_pl_setup():
+        return render_template("Wedding_PL_setup.html")
+
+
+    @app.route("/wedding/pl/view")
+    def wedding_pl_view():
+
+        wedding_type = request.args.get("type")
+        guest_count = int(request.args.get("guests"))
+
+        setup = WeddingExpensesTemplate.query.order_by(WeddingExpensesTemplate.id.desc()).first()
+
+        total_price = get_price_for(wedding_type, guest_count)
+
+        total_income = total_price
+        total_expenses = setup.total_expenses()
+        gst = total_income * 0.10
+        net_profit = total_income - total_expenses
+        margin = round((net_profit / total_income) * 100, 2)
+
+        comparison = build_comparison_table(wedding_type, setup)
+
+        return render_template(
+            "Wedding_PL_viewer.html",
+            wedding_type=wedding_type,
+            guest_count=guest_count,
+            total_income=round(total_income, 2),
+            total_expenses=round(total_expenses, 2),
+            gst=round(gst, 2),
+            net_profit=round(net_profit, 2),
+            margin=margin,
+            comparison=comparison
+        )
+
 
     @app.route("/export_clients_xlsx")
     @login_required
@@ -5624,7 +5710,6 @@ def create_app():
         result = unique[:10]
 
         return jsonify(result)
-
     
     @app.route('/send_invite', methods=['POST'])
     def send_invite():
