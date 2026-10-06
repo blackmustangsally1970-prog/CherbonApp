@@ -5736,11 +5736,20 @@ def create_app():
             decorator = gc * formula.decorator_per_head
             decorator_net = calc_net(decorator, True)
 
+
             # Caterer (GST inclusive)
             if wt == "AD":
-                caterer = gc * (62.00 if gc <= 60 else 55.50)
+                if gc <= 60:
+                    caterer = gc * 62.00
+                else:
+                    caterer = (60 * 62.00) + ((gc - 60) * 55.50)
+
             elif wt == "EA":
-                caterer = gc * (72.50 if gc <= 60 else 68.25)
+                if gc <= 60:
+                    caterer = gc * 72.50
+                else:
+                    caterer = (60 * 72.50) + ((gc - 60) * 68.25)
+
             elif wt == "RAJ":
                 caterer = gc * formula.caterer_raj
 
