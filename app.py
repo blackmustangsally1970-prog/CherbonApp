@@ -69,7 +69,7 @@ from models import (
     EmployeeHours
 )
 
-from models import FixedExpenses, FormulaExpenses, WaitStaffPricing, WeddingPricing
+
 
 
 
@@ -5609,7 +5609,30 @@ def create_app():
         return render_template("Wedding_dashboard.html")
 
 
+    @app.route("/wedding/pricing")
+    def wedding_pricing():
+        rows = WeddingPricing.query.order_by(
+            WeddingPricing.wedding_type,
+            WeddingPricing.guest_min
+        ).all()
 
+        return render_template("Wedding_pricing.html", rows=rows)
+
+
+    @app.route("/wedding/pricing/edit/<int:id>", methods=["GET", "POST"])
+    def wedding_pricing_edit(id):
+        row = WeddingPricing.query.get_or_404(id)
+
+        if request.method == "POST":
+            row.wedding_type = request.form.get("wedding_type")
+            row.guest_min = int(request.form.get("guest_min"))
+            row.guest_max = int(request.form.get("guest_max"))
+            row.total_price = float(request.form.get("total_price"))
+
+            db.session.commit()
+            return redirect(url_for("wedding_pricing"))
+
+        return render_template("Wedding_pricing_edit.html", row=row)
 
     @app.route("/wedding/config", methods=["GET", "POST"])
     def wedding_config():

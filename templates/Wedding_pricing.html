@@ -1,0 +1,68 @@
+<div class="container mt-4">
+
+    <div class="back-btn-container no-print">
+        <a href="{{ url_for('dashboard') }}" class="back-btn">← Back to Menu</a>
+    </div>
+
+
+    <div class="mb-3">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            ⬅ Back to Main Menu
+        </a>
+    </div>
+
+    <h2>Wedding Pricing Table</h2>
+    <p class="text-muted">Edit pricing tiers for AD, EA and RAJ weddings.</p>
+
+    <style>
+        /* Excel-style grid */
+        table.excel-grid {
+            border-collapse: collapse !important;
+            width: 100%;
+            margin-top: 20px;
+        }
+        table.excel-grid th,
+        table.excel-grid td {
+            border: 1px solid #999 !important;
+            padding: 6px 8px !important;
+            white-space: nowrap;
+        }
+        table.excel-grid tr:nth-child(even) {
+            background-color: #f2f2f2 !important;
+        }
+        table.excel-grid tr:nth-child(odd) {
+            background-color: #ffffff !important;
+        }
+        table.excel-grid thead th {
+            background-color: #e8e8e8 !important;
+            font-weight: bold;
+        }
+    </style>
+
+    <table class="excel-grid">
+        <thead>
+            <tr>
+                <th>Wedding Type</th>
+                <th>Guest Min</th>
+                <th>Total Price</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ r.wedding_type }}</td>
+                <td>{{ r.guest_min }}</td>
+                <td>${{ r.total_price | round(2) }}</td>
+                <td>
+                    <a href="{{ url_for('wedding_pricing_edit', id=r.id) }}"
+                       class="btn btn-sm btn-warning">
+                        Edit
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
