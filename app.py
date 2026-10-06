@@ -5915,7 +5915,7 @@ def create_app():
             guest_count = request.form.get("guest_count")
             return redirect(f"/wedding/pl/view?type={wedding_type}&guests={guest_count}")
 
-        return render_template("Wedding_PL_input.html")
+        return render_template("wedding_PL_input.html")
 
 
 
