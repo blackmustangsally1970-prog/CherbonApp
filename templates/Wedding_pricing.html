@@ -47,7 +47,7 @@
             <tr>
                 <td>{{ r.wedding_type }}</td>
                 <td>{{ r.guest_min }}</td>
-                <td>${{ r.total_price | round(2) }}</td>
+                <td>${{ "{:g}".format(r.total_price) }}</td>
                 <td>
                     <a href="{{ url_for('wedding_pricing_edit', id=r.id) }}"
                        class="btn btn-sm btn-warning">
