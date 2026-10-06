@@ -211,98 +211,6 @@ def build_comparison_table(wedding_type, setup):
 
     return rows
 
-def build_scenario(wt):
-    # Clone base setup but override wedding_type
-    tmp = WeddingExpensesTemplate(
-        wedding_type=wt,
-        guest_count=setup.guest_count,
-
-        cold_room=setup.cold_room,
-        cold_room_gst=setup.cold_room_gst,
-
-        water=setup.water,
-        water_gst=setup.water_gst,
-
-        electricity=setup.electricity,
-        electricity_gst=setup.electricity_gst,
-
-        gas=setup.gas,
-        gas_gst=setup.gas_gst,
-
-        waste=setup.waste,
-        waste_gst=setup.waste_gst,
-
-        advertising=setup.advertising,
-        advertising_gst=setup.advertising_gst,
-
-        marq_maint=setup.marq_maint,
-        marq_maint_gst=setup.marq_maint_gst,
-
-        essentials=setup.essentials,
-        essentials_gst=setup.essentials_gst,
-
-        insurance=setup.insurance,
-        insurance_gst=setup.insurance_gst,
-
-        rates=setup.rates,
-        rates_gst=setup.rates_gst,
-
-        admin=setup.admin,
-        admin_gst=setup.admin_gst,
-
-        clean_setup=setup.clean_setup,
-        clean_setup_gst=setup.clean_setup_gst,
-
-        morning_setup=setup.morning_setup,
-        morning_setup_gst=setup.morning_setup_gst,
-
-        mowing=setup.mowing,
-        mowing_gst=setup.mowing_gst,
-
-        kitchen_hand=setup.kitchen_hand,
-        kitchen_hand_gst=setup.kitchen_hand_gst,
-
-        # GST flags for auto-calculated fields
-        decorator_gst=setup.decorator_gst,
-        drinks_gst=setup.drinks_gst,
-        caterer_gst=setup.caterer_gst,
-
-        # Staff (no GST)
-        wait_staff=0,   # auto
-        bar_staff=setup.bar_staff,
-        coordinator=setup.coordinator,
-    )
-
-    # Auto-calc drinks, caterer, decorator, wait staff
-    tmp.calc_auto_fields()
-
-    # GST + NET breakdown
-    breakdown = tmp.total_expenses_breakdown()
-
-    # Income lookup
-    pricing = WeddingPricing.query.filter(
-        WeddingPricing.wedding_type == wt,
-        WeddingPricing.guest_min <= tmp.guest_count,
-        WeddingPricing.guest_max >= tmp.guest_count
-    ).first()
-
-    income = pricing.total_price if pricing else 0
-
-    # Profit + margin
-    profit = income - breakdown["total"]
-    margin = (profit / income * 100) if income > 0 else 0
-
-    return {
-        "type": wt,
-        "guest_count": tmp.guest_count,
-        "income": income,
-        "expenses_net": breakdown["net"],
-        "expenses_gst": breakdown["gst"],
-        "expenses_total": breakdown["total"],
-        "profit": profit,
-        "margin": margin,
-    }
-
 
 def create_thumbnail(input_path, output_path):
     # PDF → JPG
@@ -5921,23 +5829,32 @@ def create_app():
         guest_counts = [t[0] for t in tiers]
 
         def build_scenario(wt, gc):
-            # Drinks
+            # Drinks (GST-inclusive → treat as GST-free)
             drinks = gc * formula.drinks_per_head
 
-            # Decorator
+            # Decorator (GST-inclusive → treat as GST-free)
             decorator = gc * formula.decorator_per_head
 
-            # Caterer
+            # Caterer (GST-inclusive → treat as GST-free)
             if wt == "AD":
-                caterer = gc * formula.caterer_ad_under_60 if gc <= 60 else formula.caterer_ad_over_60
+                if gc <= 60:
+                    caterer = gc * 62.00
+                else:
+                    caterer = gc * 55.50
+
             elif wt == "EA":
-                caterer = gc * formula.caterer_ea_under_60 if gc <= 60 else gc * formula.caterer_ea_over_60
+                if gc <= 60:
+                    caterer = gc * 72.50
+                else:
+                    caterer = gc * 68.25
+
             elif wt == "RAJ":
                 caterer = gc * formula.caterer_raj
+
             else:
                 caterer = 0
 
-            # Wait staff
+            # Wait staff (GST-free)
             ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
             wait_staff_cost = ws.cost if ws else 0
 
@@ -5951,7 +5868,7 @@ def create_app():
                     net = amount
                 return net, gst
 
-            # Fixed expenses GST split
+            # Fixed expenses (some GST, some not)
             fixed_items = [
                 ("cold_room", fixed.cold_room, fixed.cold_room_gst),
                 ("water", fixed.water, fixed.water_gst),
@@ -5973,12 +5890,13 @@ def create_app():
             total_net = 0
             total_gst = 0
 
+            # Add fixed expenses
             for name, amount, gst_flag in fixed_items:
                 net, gst = split(amount or 0, gst_flag)
                 total_net += net
                 total_gst += gst
 
-            # Auto-calculated GST-free items
+            # Add drinks, decorator, caterer (all GST-inclusive → GST-free)
             auto_items = [
                 ("decorator", decorator, False),
                 ("drinks", drinks, False),
@@ -5990,7 +5908,7 @@ def create_app():
                 total_net += net
                 total_gst += gst
 
-            # Staff (no GST)
+            # Add waitstaff (GST-free)
             total_net += wait_staff_cost
 
             # Income lookup
@@ -6001,7 +5919,7 @@ def create_app():
 
             income = pricing.total_price if pricing else 0
 
-            # Profit + margin
+            # Final totals
             total_expenses = total_net + total_gst
             profit = income - total_expenses
             margin = (profit / income * 100) if income > 0 else 0
@@ -6026,7 +5944,6 @@ def create_app():
             })
 
         return render_template("Wedding_PL_summary.html", rows=rows)
-
 
 
     @app.route("/wedding/pl/setup")

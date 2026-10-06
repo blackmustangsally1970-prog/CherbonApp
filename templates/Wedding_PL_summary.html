@@ -5,7 +5,7 @@
         Auto-generated profit & margin for all guest tiers across AD, EA and RAJ.
     </p>
 
-    <table class="table table-bordered table-sm mt-4">
+    <table class="table table-bordered table-sm mt-4 table-striped">
         <thead class="table-light">
             <tr>
                 <th>Guests</th>
@@ -20,7 +20,7 @@
 
         <tbody>
             {% for r in rows %}
-            <tr>
+            <tr class="{% if loop.index % 2 == 0 %}table-secondary{% endif %}">
                 <td>{{ r.guests }}</td>
 
                 <td class="{% if r.ad_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
