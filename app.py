@@ -5843,9 +5843,9 @@ def create_app():
         guest_counts = [t[0] for t in tiers]
 
         def calc_net(amount, gst_flag=True):
-            """Convert GST-inclusive amount to net, or return full amount if GST-free."""
             if amount is None:
                 amount = 0
+            amount = float(amount)
             if gst_flag:
                 return amount - (amount / 11)
             return amount
@@ -5872,7 +5872,8 @@ def create_app():
 
             # Waitstaff (GST-free)
             ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
-            waitstaff_net = ws.cost if ws else 0
+            waitstaff_net = float(ws.cost) if ws else 0.0
+
 
             # Fixed expenses (GST flags)
             fixed_items = [
@@ -5897,7 +5898,7 @@ def create_app():
                 ("wedding_coordinator", fixed.wedding_coordinator, fixed.wedding_coordinator_gst),
             ]
 
-            fixed_net = 0
+            fixed_net = 0.0
             for name, amount, gst_flag in fixed_items:
                 fixed_net += calc_net(amount, gst_flag)
 
@@ -5917,7 +5918,7 @@ def create_app():
                 WeddingPricing.guest_max >= gc
             ).first()
 
-            income = pricing.total_price if pricing else 0
+            income = float(pricing.total_price) if pricing else 0.0
             net_income = calc_net(income, True)
 
             # Net profit
