@@ -5904,6 +5904,131 @@ def create_app():
         return redirect("/wedding/pl/setup")
 
 
+    @app.route("/wedding/pl/summary")
+    def wedding_pl_summary():
+
+        fixed = FixedExpenses.query.get(1)
+        formula = FormulaExpenses.query.get(1)
+
+        # Get all guest tiers from pricing table
+        tiers = (
+            db.session.query(WeddingPricing.guest_min)
+            .distinct()
+            .order_by(WeddingPricing.guest_min)
+            .all()
+        )
+
+        guest_counts = [t[0] for t in tiers]
+
+        def build_scenario(wt, gc):
+            # Drinks
+            drinks = gc * formula.drinks_per_head
+
+            # Decorator
+            decorator = gc * formula.decorator_per_head
+
+            # Caterer
+            if wt == "AD":
+                caterer = gc * formula.caterer_ad_under_60 if gc <= 60 else formula.caterer_ad_over_60
+            elif wt == "EA":
+                caterer = gc * formula.caterer_ea_under_60 if gc <= 60 else gc * formula.caterer_ea_over_60
+            elif wt == "RAJ":
+                caterer = gc * formula.caterer_raj
+            else:
+                caterer = 0
+
+            # Wait staff
+            ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
+            wait_staff_cost = ws.cost if ws else 0
+
+            # GST split helper
+            def split(amount, gst_flag):
+                if gst_flag:
+                    gst = amount / 11
+                    net = amount - gst
+                else:
+                    gst = 0
+                    net = amount
+                return net, gst
+
+            # Fixed expenses GST split
+            fixed_items = [
+                ("cold_room", fixed.cold_room, fixed.cold_room_gst),
+                ("water", fixed.water, fixed.water_gst),
+                ("electricity", fixed.electricity, fixed.electricity_gst),
+                ("gas", fixed.gas, fixed.gas_gst),
+                ("waste", fixed.waste, fixed.waste_gst),
+                ("advertising", fixed.advertising, fixed.advertising_gst),
+                ("marq_maint", fixed.marq_maint, fixed.marq_maint_gst),
+                ("essentials", fixed.essentials, fixed.essentials_gst),
+                ("insurance", fixed.insurance, fixed.insurance_gst),
+                ("rates", fixed.rates, fixed.rates_gst),
+                ("admin", fixed.admin, fixed.admin_gst),
+                ("clean_setup", fixed.clean_setup, fixed.clean_setup_gst),
+                ("morning_setup", fixed.morning_setup, fixed.morning_setup_gst),
+                ("mowing", fixed.mowing, fixed.mowing_gst),
+                ("kitchen_hand", fixed.kitchen_hand, fixed.kitchen_hand_gst),
+            ]
+
+            total_net = 0
+            total_gst = 0
+
+            for name, amount, gst_flag in fixed_items:
+                net, gst = split(amount or 0, gst_flag)
+                total_net += net
+                total_gst += gst
+
+            # Auto-calculated GST-free items
+            auto_items = [
+                ("decorator", decorator, False),
+                ("drinks", drinks, False),
+                ("caterer", caterer, False),
+            ]
+
+            for name, amount, gst_flag in auto_items:
+                net, gst = split(amount or 0, gst_flag)
+                total_net += net
+                total_gst += gst
+
+            # Staff (no GST)
+            total_net += wait_staff_cost
+
+            # Income lookup
+            pricing = WeddingPricing.query.filter(
+                WeddingPricing.wedding_type == wt,
+                WeddingPricing.guest_min == gc
+            ).first()
+
+            income = pricing.total_price if pricing else 0
+
+            # Profit + margin
+            total_expenses = total_net + total_gst
+            profit = income - total_expenses
+            margin = (profit / income * 100) if income > 0 else 0
+
+            return profit, margin
+
+        # Build summary rows
+        rows = []
+        for gc in guest_counts:
+            ad_profit, ad_margin = build_scenario("AD", gc)
+            ea_profit, ea_margin = build_scenario("EA", gc)
+            raj_profit, raj_margin = build_scenario("RAJ", gc)
+
+            rows.append({
+                "guests": gc,
+                "ad_profit": ad_profit,
+                "ad_margin": ad_margin,
+                "ea_profit": ea_profit,
+                "ea_margin": ea_margin,
+                "raj_profit": raj_profit,
+                "raj_margin": raj_margin,
+            })
+
+        return render_template("Wedding_PL_summary.html", rows=rows)
+
+
+
     @app.route("/wedding/pl/setup")
     def wedding_pl_setup():
         return render_template("Wedding_PL_setup.html")
