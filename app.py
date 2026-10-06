@@ -5817,27 +5817,34 @@ def create_app():
         fixed = FixedExpenses.query.get(1)
         formula = FormulaExpenses.query.get(1)
 
-        # Get all guest tiers from pricing table
+        # Guest tiers
         tiers = (
             db.session.query(WeddingPricing.guest_min)
             .distinct()
             .order_by(WeddingPricing.guest_min)
             .all()
         )
-
         guest_counts = [t[0] for t in tiers]
+
+        def calc_net(amount, gst_flag=True):
+            """Convert GST-inclusive amount to net, or return full amount if GST-free."""
+            if amount is None:
+                return 0
+            if gst_flag:
+                return amount - (amount / 11)
+            return amount
 
         def build_scenario(wt, gc):
 
-            # Drinks (GST inclusive → convert to net)
+            # Drinks (GST inclusive)
             drinks = gc * formula.drinks_per_head
-            drinks_net = drinks - (drinks / 11)
+            drinks_net = calc_net(drinks, True)
 
-            # Decorator (GST inclusive → convert to net)
+            # Decorator (GST inclusive)
             decorator = gc * formula.decorator_per_head
-            decorator_net = decorator - (decorator / 11)
+            decorator_net = calc_net(decorator, True)
 
-            # Caterer (GST inclusive → convert to net)
+            # Caterer (GST inclusive)
             if wt == "AD":
                 caterer = gc * (62.00 if gc <= 60 else 55.50)
             elif wt == "EA":
@@ -5845,13 +5852,13 @@ def create_app():
             elif wt == "RAJ":
                 caterer = gc * formula.caterer_raj
 
-            caterer_net = caterer - (caterer / 11)
+            caterer_net = calc_net(caterer, True)
 
             # Waitstaff (GST-free)
             ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
             waitstaff_net = ws.cost if ws else 0
 
-            # Fixed expenses (GST flag decides net conversion)
+            # Fixed expenses
             fixed_items = [
                 (fixed.cold_room, fixed.cold_room_gst),
                 (fixed.water, fixed.water_gst),
@@ -5872,15 +5879,7 @@ def create_app():
 
             fixed_net = 0
             for amount, gst_flag in fixed_items:
-                if amount is None:
-                    continue
-
-                if gst_flag:
-                    # GST inclusive → convert to net
-                    fixed_net += amount - (amount / 11)
-                else:
-                    # GST free → full amount
-                    fixed_net += amount
+                fixed_net += calc_net(amount, gst_flag)
 
             # Total net expenses
             total_net_expenses = (
@@ -5891,28 +5890,43 @@ def create_app():
                 fixed_net
             )
 
-            # Income lookup (GST inclusive → convert to net)
+            # Income lookup (correct tier)
             pricing = WeddingPricing.query.filter(
                 WeddingPricing.wedding_type == wt,
-                WeddingPricing.guest_min == gc
+                WeddingPricing.guest_min <= gc,
+                WeddingPricing.guest_max >= gc
             ).first()
 
             income = pricing.total_price if pricing else 0
-            net_income = income - (income / 11)
+            net_income = calc_net(income, True)
 
-            # Net profit (bottom line)
+            # Net profit
             net_profit = net_income - total_net_expenses
 
-            return net_profit
+            return net_income, total_net_expenses, net_profit
 
-        # Build summary rows
+        # Build rows for template
         rows = []
         for gc in guest_counts:
+
+            ad_income, ad_expenses, ad_profit = build_scenario("AD", gc)
+            ea_income, ea_expenses, ea_profit = build_scenario("EA", gc)
+            raj_income, raj_expenses, raj_profit = build_scenario("RAJ", gc)
+
             rows.append({
                 "guests": gc,
-                "ad_profit": build_scenario("AD", gc),
-                "ea_profit": build_scenario("EA", gc),
-                "raj_profit": build_scenario("RAJ", gc),
+
+                "ad_income": ad_income,
+                "ea_income": ea_income,
+                "raj_income": raj_income,
+
+                "ad_expenses": ad_expenses,
+                "ea_expenses": ea_expenses,
+                "raj_expenses": raj_expenses,
+
+                "ad_profit": ad_profit,
+                "ea_profit": ea_profit,
+                "raj_profit": raj_profit,
             })
 
         return render_template("Wedding_PL_summary.html", rows=rows)

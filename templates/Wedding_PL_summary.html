@@ -1,8 +1,8 @@
 <div class="container mt-4">
 
-    <h2>Wedding P&L Summary Table</h2>
+    <h2>Wedding P&L Summary</h2>
     <p class="text-muted">
-        Net profit (net income less net expenses) for all guest tiers across AD, EA and RAJ.
+        Net income (after GST removed), net expenses and net profit for all guest tiers.
     </p>
 
     <style>
@@ -10,6 +10,7 @@
         table.excel-grid {
             border-collapse: collapse !important;
             width: 100%;
+            margin-bottom: 40px;
         }
         table.excel-grid th,
         table.excel-grid td {
@@ -26,18 +27,68 @@
             background-color: #e8e8e8 !important;
             font-weight: bold;
         }
+        h3 {
+            margin-top: 40px;
+        }
     </style>
 
-    <table class="excel-grid mt-4">
+    <!-- TABLE 1: NET INCOME -->
+    <h3>Net Income (after GST removed)</h3>
+    <table class="excel-grid">
         <thead>
             <tr>
                 <th>Guests</th>
-                <th>AD Net </th>
-                <th>EA Net </th>
-                <th>RAJ Net </th>
+                <th>AD Net Income</th>
+                <th>EA Net Income</th>
+                <th>RAJ Net Income</th>
             </tr>
         </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ r.guests }}</td>
+                <td>${{ r.ad_income | round(2) }}</td>
+                <td>${{ r.ea_income | round(2) }}</td>
+                <td>${{ r.raj_income | round(2) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
+    <!-- TABLE 2: NET EXPENSES -->
+    <h3>Net Expenses (after GST removed)</h3>
+    <table class="excel-grid">
+        <thead>
+            <tr>
+                <th>Guests</th>
+                <th>AD Net Expenses</th>
+                <th>EA Net Expenses</th>
+                <th>RAJ Net Expenses</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ r.guests }}</td>
+                <td>${{ r.ad_expenses | round(2) }}</td>
+                <td>${{ r.ea_expenses | round(2) }}</td>
+                <td>${{ r.raj_expenses | round(2) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- TABLE 3: NET PROFIT -->
+    <h3>Net Profit (bottom line)</h3>
+    <table class="excel-grid">
+        <thead>
+            <tr>
+                <th>Guests</th>
+                <th>AD Net Profit</th>
+                <th>EA Net Profit</th>
+                <th>RAJ Net Profit</th>
+            </tr>
+        </thead>
         <tbody>
             {% for r in rows %}
             <tr>
