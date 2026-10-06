@@ -5644,6 +5644,8 @@ def create_app():
             elif wt == "RAJ":
                 caterer = gc * formula.caterer_raj
 
+            print(f"[DEBUG] wt={wt}, gc={gc}, caterer_gross={caterer}")
+
             # Wait staff
             ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
             wait_staff_cost = ws.cost if ws else 0
