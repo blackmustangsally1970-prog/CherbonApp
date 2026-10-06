@@ -5694,7 +5694,6 @@ def create_app():
             # Staff (no GST)
             total_net += wait_staff_cost
 
-            # Income lookup
             pricing = WeddingPricing.query.filter(
                 WeddingPricing.wedding_type == wt,
                 WeddingPricing.guest_min <= gc,
