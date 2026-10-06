@@ -1,12 +1,33 @@
 <div class="container mt-4">
 
+    <!-- BACK TO MAIN MENU -->
+    <div class="mb-3">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            ⬅ Back to Main Menu
+        </a>
+    </div>
+
     <h2>Wedding P&L Summary</h2>
     <p class="text-muted">
         Net income (after GST removed), net expenses and net profit for all guest tiers.
     </p>
 
+    <!-- TOGGLE BUTTON -->
+    <button class="btn btn-secondary mb-3" onclick="toggleSections()">
+        Hide/Show Net Income & Net Expenses
+    </button>
+
+    <script>
+        function toggleSections() {
+            const income = document.getElementById("net-income-section");
+            const expenses = document.getElementById("net-expenses-section");
+
+            income.style.display = (income.style.display === "none") ? "" : "none";
+            expenses.style.display = (expenses.style.display === "none") ? "" : "none";
+        }
+    </script>
+
     <style>
-        /* Excel-style grid */
         table.excel-grid {
             border-collapse: collapse !important;
             width: 100%;
@@ -28,68 +49,69 @@
             background-color: #e8e8e8 !important;
             font-weight: bold;
         }
-
-        /* Tooltip formatting */
         td[title] {
             cursor: help;
         }
     </style>
 
     <!-- TABLE 1: NET INCOME -->
-    <h3>Net Income (after GST removed)</h3>
-    <table class="excel-grid">
-        <thead>
-            <tr>
-                <th>Guests</th>
-                <th>AD Net Income</th>
-                <th>EA Net Income</th>
-                <th>RAJ Net Income</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in rows %}
-            <tr>
-                <td>{{ r.guests }}</td>
-                <td>${{ r.ad_income | round(2) }}</td>
-                <td>${{ r.ea_income | round(2) }}</td>
-                <td>${{ r.raj_income | round(2) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div id="net-income-section">
+        <h3>Net Income (after GST removed)</h3>
+        <table class="excel-grid">
+            <thead>
+                <tr>
+                    <th>Guests</th>
+                    <th>AD Net Income</th>
+                    <th>EA Net Income</th>
+                    <th>RAJ Net Income</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td>{{ r.guests }}</td>
+                    <td>${{ r.ad_income | round(2) }}</td>
+                    <td>${{ r.ea_income | round(2) }}</td>
+                    <td>${{ r.raj_income | round(2) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <!-- TABLE 2: NET EXPENSES -->
-    <h3>Net Expenses (hover to see breakdown)</h3>
-    <table class="excel-grid">
-        <thead>
-            <tr>
-                <th>Guests</th>
-                <th>AD Net Expenses</th>
-                <th>EA Net Expenses</th>
-                <th>RAJ Net Expenses</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in rows %}
-            <tr>
-                <td>{{ r.guests }}</td>
+    <div id="net-expenses-section">
+        <h3>Net Expenses (hover to see breakdown)</h3>
+        <table class="excel-grid">
+            <thead>
+                <tr>
+                    <th>Guests</th>
+                    <th>AD Net Expenses</th>
+                    <th>EA Net Expenses</th>
+                    <th>RAJ Net Expenses</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td>{{ r.guests }}</td>
 
-                <!-- Tooltip: replace newlines with HTML line breaks -->
-                <td title="{{ r.ad_breakdown | replace('\n', '&#10;') }}">
-                    ${{ r.ad_expenses | round(2) }}
-                </td>
+                    <td title="{{ r.ad_breakdown | replace('\n', '&#10;') }}">
+                        ${{ r.ad_expenses | round(2) }}
+                    </td>
 
-                <td title="{{ r.ea_breakdown | replace('\n', '&#10;') }}">
-                    ${{ r.ea_expenses | round(2) }}
-                </td>
+                    <td title="{{ r.ea_breakdown | replace('\n', '&#10;') }}">
+                        ${{ r.ea_expenses | round(2) }}
+                    </td>
 
-                <td title="{{ r.raj_breakdown | replace('\n', '&#10;') }}">
-                    ${{ r.raj_expenses | round(2) }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    <td title="{{ r.raj_breakdown | replace('\n', '&#10;') }}">
+                        ${{ r.raj_expenses | round(2) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <!-- TABLE 3: NET PROFIT -->
     <h3>Net Profit (bottom line)</h3>
