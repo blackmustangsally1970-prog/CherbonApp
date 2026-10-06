@@ -1,36 +1,63 @@
 <div class="container mt-4">
 
-    <div class="mb-3">
-        <a href="{{ url_for('wedding_pricing') }}" class="btn btn-secondary">
-            ⬅ Back to Pricing Table
+    <div class="back-btn-container no-print mb-3">
+        <a href="{{ url_for('wedding_pricing') }}" class="btn btn-outline-primary">
+            ← Back to Pricing Table
         </a>
     </div>
 
-    <h2>Edit Pricing Tier</h2>
-    <p class="text-muted">Modify the values and click Save.</p>
-
-    <form method="POST">
-
-        <div class="mb-3">
-            <label class="form-label">Wedding Type</label>
-            <input type="text" name="wedding_type" class="form-control"
-                   value="{{ row.wedding_type }}" required>
+    <div class="card shadow-sm" style="max-width: 650px; margin: auto;">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Edit Pricing Tier</h4>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Guest Min</label>
-            <input type="number" name="guest_min" class="form-control"
-                   value="{{ row.guest_min }}" required>
+        <div class="card-body">
+
+            <p class="text-muted">Modify the values and click Save.</p>
+
+            <style>
+                .edit-input {
+                    width: 100%;
+                    height: 60px;              /* DOUBLE SIZE */
+                    font-size: 1.3rem;         /* Bigger text */
+                    padding: 10px 14px;
+                }
+                .edit-label {
+                    font-weight: bold;
+                    margin-bottom: 6px;
+                }
+            </style>
+
+            <form method="POST">
+
+                <div class="mb-4">
+                    <label class="edit-label">Wedding Type</label>
+                    <input type="text" name="wedding_type"
+                           class="form-control edit-input"
+                           value="{{ row.wedding_type }}" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="edit-label">Guest Min</label>
+                    <input type="number" name="guest_min"
+                           class="form-control edit-input"
+                           value="{{ row.guest_min }}" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="edit-label">Total Price ($)</label>
+                    <input type="number" step="0.01" name="total_price"
+                           class="form-control edit-input"
+                           value="{{ '{:g}'.format(row.total_price) }}" required>
+                </div>
+
+                <button class="btn btn-success btn-lg w-100 mt-3">
+                    💾 Save Changes
+                </button>
+
+            </form>
+
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Total Price</label>
-            <input type="number" step="0.01" name="total_price"
-                   class="form-control" value="{{ row.total_price }}" required>
-        </div>
-
-        <button class="btn btn-success btn-lg">Save Changes</button>
-
-    </form>
+    </div>
 
 </div>
