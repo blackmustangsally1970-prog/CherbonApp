@@ -5817,6 +5817,7 @@ def create_app():
         fixed = FixedExpenses.query.get(1)
         formula = FormulaExpenses.query.get(1)
 
+        # Guest tiers
         tiers = (
             db.session.query(WeddingPricing.guest_min)
             .distinct()
@@ -5826,8 +5827,9 @@ def create_app():
         guest_counts = [t[0] for t in tiers]
 
         def calc_net(amount, gst_flag=True):
+            """Convert GST-inclusive amount to net, or return full amount if GST-free."""
             if amount is None:
-                return 0
+                amount = 0
             if gst_flag:
                 return amount - (amount / 11)
             return amount
@@ -5856,29 +5858,30 @@ def create_app():
             ws = WaitStaffPricing.query.filter_by(guest_count=gc).first()
             waitstaff_net = ws.cost if ws else 0
 
-            # Fixed expenses
+            # Fixed expenses (GST flags)
             fixed_items = [
-                (fixed.cold_room, fixed.cold_room_gst),
-                (fixed.water, fixed.water_gst),
-                (fixed.electricity, fixed.electricity_gst),
-                (fixed.gas, fixed.gas_gst),
-                (fixed.waste, fixed.waste_gst),
-                (fixed.advertising, fixed.advertising_gst),
-                (fixed.marq_maint, fixed.marq_maint_gst),
-                (fixed.essentials, fixed.essentials_gst),
-                (fixed.insurance, fixed.insurance_gst),
-                (fixed.rates, fixed.rates_gst),
-                (fixed.admin, fixed.admin_gst),
-                (fixed.clean_setup, fixed.clean_setup_gst),
-                (fixed.morning_setup, fixed.morning_setup_gst),
-                (fixed.mowing, fixed.mowing_gst),
-                (fixed.kitchen_hand, fixed.kitchen_hand_gst),
+                ("cold_room", fixed.cold_room, fixed.cold_room_gst),
+                ("water", fixed.water, fixed.water_gst),
+                ("electricity", fixed.electricity, fixed.electricity_gst),
+                ("gas", fixed.gas, fixed.gas_gst),
+                ("waste", fixed.waste, fixed.waste_gst),
+                ("advertising", fixed.advertising, fixed.advertising_gst),
+                ("marq_maint", fixed.marq_maint, fixed.marq_maint_gst),
+                ("essentials", fixed.essentials, fixed.essentials_gst),
+                ("insurance", fixed.insurance, fixed.insurance_gst),
+                ("rates", fixed.rates, fixed.rates_gst),
+                ("admin", fixed.admin, fixed.admin_gst),
+                ("clean_setup", fixed.clean_setup, fixed.clean_setup_gst),
+                ("morning_setup", fixed.morning_setup, fixed.morning_setup_gst),
+                ("mowing", fixed.mowing, fixed.mowing_gst),
+                ("kitchen_hand", fixed.kitchen_hand, fixed.kitchen_hand_gst),
             ]
 
             fixed_net = 0
-            for amount, gst_flag in fixed_items:
+            for name, amount, gst_flag in fixed_items:
                 fixed_net += calc_net(amount, gst_flag)
 
+            # Total net expenses
             total_net_expenses = (
                 drinks_net +
                 decorator_net +
@@ -5887,6 +5890,7 @@ def create_app():
                 fixed_net
             )
 
+            # Income lookup (correct tier)
             pricing = WeddingPricing.query.filter(
                 WeddingPricing.wedding_type == wt,
                 WeddingPricing.guest_min <= gc,
@@ -5896,9 +5900,10 @@ def create_app():
             income = pricing.total_price if pricing else 0
             net_income = calc_net(income, True)
 
+            # Net profit
             net_profit = net_income - total_net_expenses
 
-            # 🔹 breakdown for hover
+            # Breakdown for hover tooltip
             breakdown_text = (
                 f"Drinks (net): ${drinks_net:.2f}\n"
                 f"Decorator (net): ${decorator_net:.2f}\n"
@@ -5911,6 +5916,7 @@ def create_app():
 
             return net_income, total_net_expenses, net_profit, breakdown_text
 
+        # Build rows for template
         rows = []
         for gc in guest_counts:
 
