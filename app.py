@@ -9983,7 +9983,7 @@ Cherbon Waters Admin
             is_last_week=True
         )
 
-    @app.route("/admin/employees/hours/<int:row_id>/edit")
+    @app.route("/admin/accounts/hours/<int:row_id>/edit")
     def admin_edit_hours(row_id):
         row = EmployeeHours.query.get(row_id)
         if not row:
@@ -10587,7 +10587,12 @@ Cherbon Waters Admin
 
     @app.route("/admin/employeehours")
     def admin_employee_hours():
-        employees = Account.query.filter_by(role="staff").all()
+        employees = (
+            Account.query
+            .filter_by(role="staff")
+            .order_by(Account.full_name.asc())
+            .all()
+        )
         return render_template("admin_employees.html", employees=employees)
 
     @app.route("/admin/employees")

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ emp.full_name }} — Hours</title>
+    <title>{{ acc.full_name }} — Hours</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,11 +63,11 @@
 </head>
 <body>
 
-<h2>Hours for {{ emp.full_name }}</h2>
+<h2>Hours for {{ acc.full_name }}</h2>
 
-
-<form method="GET" action="/admin/employeehours/day" style="margin-bottom:25px;">
-    <input type="hidden" name="emp_id" value="{{ emp.id }}">
+<!-- Jump to Date -->
+<form method="GET" action="/admin/accounthours/day" style="margin-bottom:25px;">
+    <input type="hidden" name="acc_id" value="{{ acc.id }}">
 
     <label style="font-size:18px; font-weight:bold;">Jump to Date</label>
     <input type="date" name="date" required
@@ -78,10 +78,11 @@
     </button>
 </form>
 
+<!-- Week Navigation -->
 <div style="margin-bottom:25px; display:flex; gap:15px; align-items:center;">
 
     <button class="edit-btn"
-            onclick="window.location.href='/admin/employees/{{ emp.id }}/hours?week={{ current_week - 1 }}'">
+            onclick="window.location.href='/admin/accounts/{{ acc.id }}/hours?week={{ current_week - 1 }}'">
         ← Previous Week
     </button>
 
@@ -90,23 +91,21 @@
     </div>
 
     <button class="edit-btn"
-            onclick="window.location.href='/admin/employees/{{ emp.id }}/hours?week={{ current_week + 1 }}'">
+            onclick="window.location.href='/admin/accounts/{{ acc.id }}/hours?week={{ current_week + 1 }}'">
         Next Week →
     </button>
 
 </div>
 
-
-
+<!-- Daily Entries -->
 {% for r in rows %}
     <div class="entry">
         <div class="date">
             {{ r.date.strftime('%A %d %B %Y') }}
         </div>
 
-        <!-- ⭐ NEW: Edit Day button -->
         <button class="edit-btn"
-                onclick="window.location.href='/admin/employeehours/day/{{ r.date.strftime('%Y-%m-%d') }}/{{ emp.id }}'">
+                onclick="window.location.href='/admin/accounthours/day/{{ r.date.strftime('%Y-%m-%d') }}/{{ acc.id }}'">
             Edit Day
         </button>
     </div>
@@ -115,7 +114,6 @@
 <button class="back-btn" onclick="window.location.href='/admin/weekly_summary'">
     Back to Weekly Summary
 </button>
-
 
 </body>
 </html>
