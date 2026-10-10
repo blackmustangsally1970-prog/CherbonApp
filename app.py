@@ -10012,7 +10012,7 @@ Cherbon Waters Admin
 
 
     @app.route("/admin/edit_hours/<int:row_id>", methods=["GET", "POST"])
-    def admin_edit_hours(row_id):
+    def admin_edit_hours_edit(row_id):
         row = EmployeeHours.query.get_or_404(row_id)
         acc = row.account
 
@@ -10039,39 +10039,6 @@ Cherbon Waters Admin
             row=row
         )
 
-
-
-    @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
-    def admin_edit_hours_post(row_id):
-        row = EmployeeHours.query.get_or_404(row_id)
-
-        day = row.date
-
-        def merge(dt_date, time_str):
-            if not time_str:
-                return None
-            hour, minute = map(int, time_str.split(":"))
-            return datetime(dt_date.year, dt_date.month, dt_date.day, hour, minute)
-
-        sign_in_str = request.form.get("sign_in", "")
-        break_start_str = request.form.get("break_start", "")
-        break_end_str = request.form.get("break_end", "")
-        sign_out_str = request.form.get("sign_out", "")
-
-        row.sign_in = merge(day, sign_in_str)
-        row.break_start = merge(day, break_start_str)
-        row.break_end = merge(day, break_end_str)
-        row.sign_out = merge(day, sign_out_str)
-
-        row.corrected = True
-        row.corrected_at = datetime.now()
-
-        db.session.commit()
-
-        # FIX: resolve correct account_id via mapping table
-        acc = Account.query.get(row.account_id)
-
-        return redirect(f"/admin/accounts/{acc.id}/hours")
 
     @app.route("/admin/employees/hours/<int:row_id>/edit")
     def admin_edit_hours(row_id):
