@@ -11109,18 +11109,21 @@ Cherbon Waters Admin
     def admin_employee_yearly_summary(acc_id):
         acc = Account.query.get_or_404(acc_id)
 
+        # Convert timedelta → decimal hours
+        def to_decimal_hours(td):
+            return round(td.total_seconds() / 3600, 2)
+
         # Determine FY
         fy_param = request.args.get("fy")
         today = date.today()
 
-        # Use your FY detection logic
         monday = today - timedelta(days=today.weekday())
         week_end = monday + timedelta(days=6)
         current_fy = week_end.year if week_end >= date(week_end.year, 7, 1) else week_end.year - 1
 
         fy = int(fy_param) if fy_param else current_fy
 
-        # Build FY weeks (52 or 53 depending on your rules)
+        # Build FY weeks
         weeks = build_fy_weeks(fy)
 
         yearly_rows = []
@@ -11165,9 +11168,9 @@ Cherbon Waters Admin
                 "week_number": w["week_number"],
                 "start": start_of_week,
                 "end": end_of_week,
-                "work": week_work,
-                "break": week_break,
-                "net": net
+                "work": to_decimal_hours(week_work),
+                "break": to_decimal_hours(week_break),
+                "net": to_decimal_hours(net)
             })
 
         return render_template(
@@ -11176,14 +11179,100 @@ Cherbon Waters Admin
             fy=fy,
             weeks=weeks,
             yearly_rows=yearly_rows,
-            yearly_total=yearly_total
+            yearly_total=to_decimal_hours(yearly_total)
         )
+
 
 
     @app.route("/admin/yearly/all")
     def admin_yearly_all():
         employees = Account.query.order_by(Account.full_name).all()
         return render_template("admin_yearly_all.html", employees=employees)
+
+
+    @app.route("/admin/employees/<int:acc_id>/yearly_summary.txt")
+    def admin_employee_yearly_summary_txt(acc_id):
+        acc = Account.query.get_or_404(acc_id)
+
+        def to_decimal_hours(td):
+            return round(td.total_seconds() / 3600, 2)
+
+        fy_param = request.args.get("fy")
+        today = date.today()
+
+        monday = today - timedelta(days=today.weekday())
+        week_end = monday + timedelta(days=6)
+        current_fy = week_end.year if week_end >= date(week_end.year, 7, 1) else week_end.year - 1
+
+        fy = int(fy_param) if fy_param else current_fy
+
+        weeks = build_fy_weeks(fy)
+
+        lines = []
+        yearly_total = timedelta()
+
+        lines.append(f"Yearly Summary for {acc.full_name} — FY {fy}")
+        lines.append("--------------------------------------------------")
+        lines.append("Week | Start       | End         | Work | Break | Net")
+
+        for w in weeks:
+            start_of_week = w["start"]
+            end_of_week = w["end"]
+
+            rows = (
+                EmployeeHours.query
+                .filter(
+                    EmployeeHours.account_id == acc.id,
+                    EmployeeHours.date >= start_of_week,
+                    EmployeeHours.date <= end_of_week
+                )
+                .order_by(EmployeeHours.date.asc())
+                .all()
+            )
+
+            week_work = timedelta()
+            week_break = timedelta()
+
+            for r in rows:
+                if r.sign_in and r.sign_out:
+                    sign_in = r.sign_in
+                    sign_out = r.sign_out
+
+                    if sign_out < sign_in:
+                        sign_out = sign_out + timedelta(days=1)
+
+                    week_work += (sign_out - sign_in)
+
+                if r.break_start and r.break_end:
+                    week_break += (r.break_end - r.break_start)
+
+            net = week_work - week_break
+            yearly_total += net
+
+            lines.append(
+                f"{w['week_number']:>4} | "
+                f"{start_of_week} | "
+                f"{end_of_week} | "
+                f"{to_decimal_hours(week_work):>5} | "
+                f"{to_decimal_hours(week_break):>5} | "
+                f"{to_decimal_hours(net):>5}"
+            )
+
+        lines.append("--------------------------------------------------")
+        lines.append(f"TOTAL NET HOURS: {to_decimal_hours(yearly_total)}")
+
+        txt_data = "\n".join(lines)
+
+        return Response(
+            txt_data,
+            mimetype="text/plain",
+            headers={
+                "Content-Disposition": f"attachment; filename=yearly_summary_{acc.id}_FY{fy}.txt"
+            }
+        )
+
+
+
 
 
     # -------------------------------

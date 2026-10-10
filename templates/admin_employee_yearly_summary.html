@@ -1,4 +1,14 @@
+<button class="back-btn" onclick="window.location.href='/employees'">
+    Employee Menu
+</button>
+
 <h1>{{ acc.full_name }} – FY {{ fy }} Yearly Summary</h1>
+
+<a href="{{ url_for('admin_employee_yearly_summary_txt', acc_id=acc.id, fy=fy) }}"
+   class="menu-btn-small">
+    📄 Download TXT
+</a>
+
 
 <table border="1" cellpadding="8" cellspacing="0">
     <tr>
