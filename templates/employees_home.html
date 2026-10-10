@@ -92,9 +92,11 @@
     👥 Manage Employees
 </a>
 
-<a href="{{ url_for('admin_employee_yearly_summary', acc_id=acc.id) }}" class="menu-btn">
-    📅 Yearly Summary (52 Weeks)
+{% for e in employees %}
+<a href="{{ url_for('admin_employee_yearly_summary', acc_id=e.id) }}" class="menu-btn">
+    📅 {{ e.full_name }} – Yearly Summary
 </a>
+{% endfor %}
 
 <a href="{{ url_for('admin_weekly_summary') }}" class="menu-btn">
     📊 Weekly Summary

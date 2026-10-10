@@ -11058,10 +11058,10 @@ Cherbon Waters Admin
 
         return render_template("admin_corrections.html", rows=rows)
 
-
     @app.route("/employees")
     def employees_home():
-        return render_template("employees_home.html")
+        employees = Account.query.order_by(Account.full_name).all()
+        return render_template("employees_home.html", employees=employees)
 
     @app.route("/admin/employeehours/day")
     def admin_day_redirect():
