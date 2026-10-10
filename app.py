@@ -9983,18 +9983,7 @@ Cherbon Waters Admin
             is_last_week=True
         )
 
-    @app.route("/admin/accounts/hours/<int:row_id>/edit")
-    def admin_edit_hours(row_id):
-        row = EmployeeHours.query.get(row_id)
-        if not row:
-            return "Not found", 404
-
-        # FIX: resolve correct account_id via mapping table
-        acc = Account.query.get(row.account_id)
-
-        return render_template("admin_edit_hours.html", acc=acc, row=row)
-
-
+@app.route("/admin/accounts/hours/<int:row_id>/edit")
 
     @app.route("/admin/employees/<int:acc_id>/hours")
     def admin_employee_hours_list(acc_id):
