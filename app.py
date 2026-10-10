@@ -9984,27 +9984,17 @@ Cherbon Waters Admin
         )
 
     @app.route("/admin/employees/<int:acc_id>/hours")
-    def admin_employee_hours_list(acc_id):
+    def admin_employee_hours(acc_id):
         acc = Account.query.get_or_404(acc_id)
 
-        # Determine which week to show
-        today = date.today()
-        current_week = int(request.args.get("week", 0))
+        today = datetime.date.today()
+        start_of_week = today - datetime.timedelta(days=today.weekday())
+        end_of_week = start_of_week + datetime.timedelta(days=6)
 
-        # If no week provided → default to current week
-        if current_week == 0:
-            current_week = today.isocalendar().week
-
-        # Compute Monday of that ISO week
-        year = today.year
-        start_of_week = date.fromisocalendar(year, current_week, 1)
-        end_of_week = start_of_week + timedelta(days=6)
-
-        # Load rows for this week using ACCOUNT ID → FIXED JOIN
         rows = (
             EmployeeHours.query
             .filter(
-                EmployeeHours.account_id == acc_id,
+                EmployeeHours.account_id == acc.id,
                 EmployeeHours.date >= start_of_week,
                 EmployeeHours.date <= end_of_week
             )
@@ -10013,14 +10003,12 @@ Cherbon Waters Admin
         )
 
         return render_template(
-            "admin_employee_hours_list.html",
+            "admin_employee_hours.html",
             acc=acc,
             rows=rows,
-            current_week=current_week,
             start_of_week=start_of_week,
             end_of_week=end_of_week
         )
-
 
     @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
     def admin_edit_hours_post(row_id):
