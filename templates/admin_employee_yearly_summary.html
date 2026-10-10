@@ -1,0 +1,23 @@
+<h1>{{ acc.full_name }} – FY {{ fy }} Yearly Summary</h1>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th>Week</th>
+        <th>Dates</th>
+        <th>Total Work</th>
+        <th>Total Break</th>
+        <th>Net Hours</th>
+    </tr>
+
+    {% for w in yearly_rows %}
+    <tr>
+        <td>WK{{ w.week_number }}</td>
+        <td>{{ w.start.strftime("%d %b") }} – {{ w.end.strftime("%d %b") }}</td>
+        <td>{{ w.work }}</td>
+        <td>{{ w.break }}</td>
+        <td>{{ w.net }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Total for FY: {{ yearly_total }}</h2>

@@ -87,16 +87,13 @@
 
 <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
 
-<h1>Employee Tools</h1>
 
 <a href="{{ url_for('admin_employee_hours_list') }}" class="menu-btn">
     👥 Manage Employees
 </a>
 
-
-
-<a href="{{ url_for('admin_corrections') }}" class="menu-btn">
-    📝 Corrections Log
+<a href="{{ url_for('admin_employee_yearly_summary', acc_id=acc.id) }}" class="menu-btn">
+    📅 Yearly Summary (52 Weeks)
 </a>
 
 <a href="{{ url_for('admin_weekly_summary') }}" class="menu-btn">

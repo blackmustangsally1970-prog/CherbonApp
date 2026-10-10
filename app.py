@@ -11105,6 +11105,82 @@ Cherbon Waters Admin
         return redirect(f"/admin/employeehours/day/{d}/{acc_id}")
 
 
+    @app.route("/admin/employees/<int:acc_id>/yearly_summary")
+    def admin_employee_yearly_summary(acc_id):
+        acc = Account.query.get_or_404(acc_id)
+
+        # Determine FY
+        fy_param = request.args.get("fy")
+        today = date.today()
+
+        # Use your FY detection logic
+        monday = today - timedelta(days=today.weekday())
+        week_end = monday + timedelta(days=6)
+        current_fy = week_end.year if week_end >= date(week_end.year, 7, 1) else week_end.year - 1
+
+        fy = int(fy_param) if fy_param else current_fy
+
+        # Build FY weeks (52 or 53 depending on your rules)
+        weeks = build_fy_weeks(fy)
+
+        yearly_rows = []
+        yearly_total = timedelta()
+
+        for w in weeks:
+            start_of_week = w["start"]
+            end_of_week = w["end"]
+
+            rows = (
+                EmployeeHours.query
+                .filter(
+                    EmployeeHours.account_id == acc.id,
+                    EmployeeHours.date >= start_of_week,
+                    EmployeeHours.date <= end_of_week
+                )
+                .order_by(EmployeeHours.date.asc())
+                .all()
+            )
+
+            week_work = timedelta()
+            week_break = timedelta()
+
+            for r in rows:
+                if r.sign_in and r.sign_out:
+                    sign_in = r.sign_in
+                    sign_out = r.sign_out
+
+                    # Midnight rollover
+                    if sign_out < sign_in:
+                        sign_out = sign_out + timedelta(days=1)
+
+                    week_work += (sign_out - sign_in)
+
+                if r.break_start and r.break_end:
+                    week_break += (r.break_end - r.break_start)
+
+            net = week_work - week_break
+            yearly_total += net
+
+            yearly_rows.append({
+                "week_number": w["week_number"],
+                "start": start_of_week,
+                "end": end_of_week,
+                "work": week_work,
+                "break": week_break,
+                "net": net
+            })
+
+        return render_template(
+            "admin_employee_yearly_summary.html",
+            acc=acc,
+            fy=fy,
+            weeks=weeks,
+            yearly_rows=yearly_rows,
+            yearly_total=yearly_total
+        )
+
+
+
 
 
     # -------------------------------
