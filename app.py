@@ -11099,9 +11099,6 @@ Cherbon Waters Admin
         return redirect(f"/admin/employeehours/day/{d}/{acc_id}")
 
 
-    @app.route("/employees")
-    def employees_home():
-        return render_template("employees_home.html")
 
 
     # -------------------------------
