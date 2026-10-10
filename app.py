@@ -10070,6 +10070,8 @@ Cherbon Waters Admin
         flash(f"SMS sent to {emp.phone}", "success")
         return redirect(url_for("admin_employee_hours"))
 
+
+
     @app.route("/employeehours/day", methods=["GET", "POST"])
     def employeehours_day_view():
 
@@ -10201,11 +10203,12 @@ Cherbon Waters Admin
                 if not row.sign_in:
                     return "You must start work before finishing.", 400
 
+                # ⭐ FIXED: allow up to 18 hours raw shift (handles 6:50 AM → 12:30 AM)
                 if dt >= row.sign_in:
                     end_dt = dt
                 else:
                     overnight_dt = dt + timedelta(days=1)
-                    if overnight_dt <= row.sign_in + timedelta(hours=16):
+                    if overnight_dt <= row.sign_in + timedelta(hours=18):
                         end_dt = overnight_dt
                     else:
                         return "Finish time cannot be before start time.", 400
@@ -10252,6 +10255,9 @@ Cherbon Waters Admin
             is_incomplete=is_incomplete,
             is_future=is_future
         )
+
+
+
 
 
     @app.route("/employeehours/login", methods=["POST"])
