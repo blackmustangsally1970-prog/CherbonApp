@@ -10566,7 +10566,7 @@ Cherbon Waters Admin
     # -------------------------------
 
     @app.route("/admin/employeehours")
-    def admin_employee_hours():
+    def admin_employee_hours_list():
         employees = (
             Account.query
             .filter_by(role="staff")
@@ -10574,6 +10574,7 @@ Cherbon Waters Admin
             .all()
         )
         return render_template("admin_employees.html", employees=employees)
+
 
     @app.route("/admin/employees")
     def admin_employees():
