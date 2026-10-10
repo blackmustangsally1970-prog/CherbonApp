@@ -10065,7 +10065,14 @@ Cherbon Waters Admin
         # FIX: resolve correct account_id via mapping table
         acc = Account.query.get(row.account_id)
 
-        return redirect(f"/admin/employeehours/day/{day}/{acc.id}")
+        return redirect(f"/admin/accounts/{acc.id}/hours")
+
+    @app.route("/admin/employees/hours/<int:row_id>/edit")
+    def admin_edit_hours(row_id):
+        row = EmployeeHours.query.get_or_404(row_id)
+        acc = Account.query.get(row.account_id)
+        return render_template("admin_edit_hours.html", acc=acc, row=row)
+
 
     @app.route("/admin/employees/<int:acc_id>/reset_pin", methods=["POST"])
     def admin_reset_pin(acc_id):

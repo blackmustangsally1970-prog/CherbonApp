@@ -163,68 +163,72 @@
         {{ item.acc.full_name }} — {{ "%.2f"|format(weekly_total) }} hrs
     </div>
 
-    <table id="tbl{{ item.acc.id }}" class="emp-table">
-        <tr>
-            <th>Date</th>
-            <th>Start</th>
-            <th>Break Start</th>
-            <th>Break End</th>
-            <th>Finish</th>
-            <th>Day Total</th>
-            <th>Running Total</th>
-            <th>Finish Submitted</th>
-            <th>Edit</th> <!-- ⭐ NEW COLUMN -->
-        </tr>
+<table id="tbl{{ item.acc.id }}" class="emp-table">
+    <tr>
+        <th>Date</th>
+        <th>Start</th>
+        <th>Break Start</th>
+        <th>Break End</th>
+        <th>Finish</th>
+        <th>Day Total</th>
+        <th>Running Total</th>
+        <th>Finish Submitted</th>
+        <th>Edit</th>
+    </tr>
 
-        {% for d in item.week_rows %}
-            <tr {% if d.date.weekday() == 6 %} style="background:#d4f8d4;" {% endif %}>
-                <td>{{ d.date.strftime("%a %d/%m") }}</td>
+    {% for d in item.week_rows %}
+        <tr {% if d.date.weekday() == 6 %} style="background:#d4f8d4;" {% endif %}>
+            <td>{{ d.date.strftime("%a %d/%m") }}</td>
 
-                <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
-                <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
-                <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
-                <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
+            <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
+            <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
+            <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
+            <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
 
-                <td>
-                    {% if d.net %}
-                        {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
-                    {% endif %}
-                </td>
-
-                <td>
-                    {% if d.running_total %}
-                        {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
-                    {% endif %}
-                </td>
-
-                {% set submitted = d.row.submitted_at if d.row else None %}
-                {% set finish = d.row.sign_out if d.row else None %}
-
-                {% if submitted and finish %}
-                    {% set submitted_naive = submitted.replace(tzinfo=None) %}
-                    {% set finish_naive = finish.replace(tzinfo=None) %}
-                    {% set delay = (submitted_naive - finish_naive).total_seconds() %}
-                {% else %}
-                    {% set delay = 0 %}
+            <td>
+                {% if d.net %}
+                    {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
                 {% endif %}
+            </td>
 
-                <td {% if delay > 14400 %} style="background:#ffe5e5;" {% endif %}>
-                    {% if submitted %}
-                        {{ submitted.strftime("%a %d/%m %I:%M %p") }}
-                    {% endif %}
-                </td>
+            <td>
+                {% if d.running_total %}
+                    {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
+                {% endif %}
+            </td>
 
-                <!-- ⭐ EDIT BUTTON -->
-                <td>
-                    <button class="edit-small-btn"
+            {% set submitted = d.row.submitted_at if d.row else None %}
+            {% set finish = d.row.sign_out if d.row else None %}
+
+            {% if submitted and finish %}
+                {% set submitted_naive = submitted.replace(tzinfo=None) %}
+                {% set finish_naive = finish.replace(tzinfo=None) %}
+                {% set delay = (submitted_naive - finish_naive).total_seconds() %}
+            {% else %}
+                {% set delay = 0 %}
+            {% endif %}
+
+            <td {% if delay > 14400 %} style="background:#ffe5e5;" {% endif %}>
+                {% if submitted %}
+                    {{ submitted.strftime("%a %d/%m %I:%M %p") }}
+                {% endif %}
+            </td>
+
+            <!-- ⭐ EDIT BUTTON (GUARDED + CORRECT ROUTE) -->
+            <td>
+                {% if d.row %}
+                    <button class="edit-small-btn" type="button"
                         onclick="window.location.href='/admin/employees/hours/{{ d.row.id }}/edit'">
                         Edit
                     </button>
-                </td>
+                {% else %}
+                    <span style="color:#888;">—</span>
+                {% endif %}
+            </td>
 
-            </tr>
-        {% endfor %}
-    </table>
+        </tr>
+    {% endfor %}
+</table>
 
 {% endfor %}
 
