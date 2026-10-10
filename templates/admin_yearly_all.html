@@ -1,0 +1,7 @@
+<h1>Yearly Summary – All Employees</h1>
+
+{% for e in employees %}
+<a href="{{ url_for('admin_employee_yearly_summary', acc_id=e.id) }}" class="menu-btn">
+    📅 {{ e.full_name }}
+</a>
+{% endfor %}

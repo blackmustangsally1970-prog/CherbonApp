@@ -11180,7 +11180,10 @@ Cherbon Waters Admin
         )
 
 
-
+    @app.route("/admin/yearly/all")
+    def admin_yearly_all():
+        employees = Account.query.order_by(Account.full_name).all()
+        return render_template("admin_yearly_all.html", employees=employees)
 
 
     # -------------------------------
