@@ -11213,7 +11213,7 @@ Cherbon Waters Admin
 
         lines.append(f"Yearly Summary for {acc.full_name} — FY {fy}")
         lines.append("--------------------------------------------------")
-        lines.append("Week | Start       | End         | Work | Break | Net")
+        lines.append("Week | Start      | End        | Work  | Break  | Net")
 
         for w in weeks:
             start_of_week = w["start"]

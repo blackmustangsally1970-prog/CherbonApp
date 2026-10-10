@@ -1,7 +1,69 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Yearly Summary – All Employees</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { margin-bottom: 30px; }
+
+    .menu-btn {
+      display: block;
+      width: 100%;
+      background: #dce6ff;
+      border: 4px solid #4a6bff;
+      padding: 40px 28px;
+      border-radius: 18px;
+      font-size: 34px;
+      font-weight: 900;
+      color: #001a66;
+      text-decoration: none;
+      text-align: center;
+      box-sizing: border-box;
+      letter-spacing: 1px;
+      line-height: 1.35;
+      transition: background 0.2s ease, transform 0.1s ease;
+      margin-bottom: 32px; /* EXTRA SPACE */
+    }
+
+    .menu-btn:hover {
+      background: #c7d6ff;
+      transform: scale(1.04);
+      text-decoration: none;
+    }
+
+    @media (min-width: 800px) {
+      .menu-btn {
+        padding: 20px 18px !important;
+        font-size: 20px !important;
+        border-radius: 10px !important;
+        margin-bottom: 20px !important; /* EXTRA SPACE ON DESKTOP */
+      }
+    }
+
+    .container {
+      max-width: 900px;   /* NICE WIDTH */
+      margin: 0 auto;     /* CENTERED */
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<button class="back-btn" onclick="window.location.href='/employees'">
+    Employee Menu
+</button>
+
+
 <h1>Yearly Summary – All Employees</h1>
 
-{% for e in employees %}
-<a href="{{ url_for('admin_employee_yearly_summary', acc_id=e.id) }}" class="menu-btn">
-    📅 {{ e.full_name }}
-</a>
-{% endfor %}
+<div class="container">
+  {% for e in employees %}
+    <a href="{{ url_for('admin_employee_yearly_summary', acc_id=e.id) }}" class="menu-btn">
+        📅 {{ e.full_name }}
+    </a>
+  {% endfor %}
+</div>
+
+</body>
+</html>
