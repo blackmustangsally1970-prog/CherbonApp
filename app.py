@@ -9983,8 +9983,6 @@ Cherbon Waters Admin
             is_last_week=True
         )
 
-@app.route("/admin/accounts/hours/<int:row_id>/edit")
-
     @app.route("/admin/employees/<int:acc_id>/hours")
     def admin_employee_hours_list(acc_id):
         acc = Account.query.get_or_404(acc_id)
