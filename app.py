@@ -11186,7 +11186,16 @@ Cherbon Waters Admin
 
     @app.route("/admin/yearly/all")
     def admin_yearly_all():
-        employees = Account.query.order_by(Account.full_name).all()
+        employees = (
+            Account.query
+            .filter(
+                Account.role == "staff",
+                Account.active == True
+            )
+            .order_by(Account.full_name)
+            .all()
+        )
+
         return render_template("admin_yearly_all.html", employees=employees)
 
 
@@ -11213,7 +11222,7 @@ Cherbon Waters Admin
 
         lines.append(f"Yearly Summary for {acc.full_name} — FY {fy}")
         lines.append("--------------------------------------------------")
-        lines.append("Week | Start      | End        | Work  | Break  | Net")
+        lines.append("Week | Start      | End        | Work  | Break | Net")
 
         for w in weeks:
             start_of_week = w["start"]
