@@ -10010,6 +10010,37 @@ Cherbon Waters Admin
             end_of_week=end_of_week
         )
 
+
+    @app.route("/admin/edit_hours/<int:row_id>", methods=["GET", "POST"])
+    def admin_edit_hours(row_id):
+        row = EmployeeHours.query.get_or_404(row_id)
+        acc = row.account
+
+        if request.method == "POST":
+            def parse_dt(field):
+                val = request.form.get(field)
+                return datetime.strptime(val, "%Y-%m-%dT%H:%M") if val else None
+
+            row.sign_in = parse_dt("sign_in")
+            row.break_start = parse_dt("break_start")
+            row.break_end = parse_dt("break_end")
+            row.sign_out = parse_dt("sign_out")
+
+            row.corrected = True
+            row.corrected_at = datetime.now()
+
+            db.session.commit()
+
+            return redirect(f"/admin/employees/{acc.id}/hours")
+
+        return render_template(
+            "admin_edit_hours.html",
+            acc=acc,
+            row=row
+        )
+
+
+
     @app.route("/admin/employees/hours/<int:row_id>/edit", methods=["POST"])
     def admin_edit_hours_post(row_id):
         row = EmployeeHours.query.get_or_404(row_id)
