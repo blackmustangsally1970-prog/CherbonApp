@@ -9586,6 +9586,63 @@ Cherbon Waters Admin
         return render_template("phone_lookup.html", client=client, number=number)
 
 
+    @app.route("/client/<int:client_id>/change_lesson_type_group", methods=["POST"])
+    def change_lesson_type_group(client_id):
+
+        VALID_TYPES = [
+            "Arena", "Roundyard", "Trail Ride", "Go Gallop",
+            "Party", "Comp", "Camp"
+        ]
+
+        VALID_GROUP_PRIV = [
+            "CC", "CT", "G", "GT", "IC", "J",
+            "P", "P2", "P3", "P4",
+            "SP1", "SP2", "SP3", "SP4", "SP5"
+        ]
+
+        target_date = request.form.get("target_date")
+        old_type = request.form.get("old_type")
+        new_type = request.form.get("new_type")
+        new_group_priv = request.form.get("new_group_priv")
+
+        # Validate new type
+        if new_type and new_type not in VALID_TYPES:
+            flash("Invalid lesson type selected.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        # Validate new group_priv
+        if new_group_priv and new_group_priv not in VALID_GROUP_PRIV:
+            flash("Invalid Group Priv selected.", "danger")
+            return redirect(url_for("client_view", client_id=client_id))
+
+        # Get client name (lessons.client stores the name)
+        client_obj = Client.query.get(client_id)
+        client_name = client_obj.full_name
+
+        # Perform update
+        db.session.execute(
+            text("""
+                UPDATE lessons
+                SET lesson_type = COALESCE(:new_type, lesson_type),
+                    group_priv = COALESCE(:new_group_priv, group_priv)
+                WHERE client = :client_name
+                  AND lesson_date = :target_date
+                  AND lesson_type = :old_type
+            """),
+            {
+                "new_type": new_type,
+                "new_group_priv": new_group_priv,
+                "client_name": client_name,
+                "target_date": target_date,
+                "old_type": old_type
+            }
+        )
+
+        db.session.commit()
+        return redirect(url_for("client_view", client_id=client_id))
+
+
+
     @app.route('/import_lessons_xlsx', methods=['GET', 'POST'])
     def import_lessons_xlsx():
 

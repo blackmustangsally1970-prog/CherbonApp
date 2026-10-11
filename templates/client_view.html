@@ -529,6 +529,7 @@ input[type="number"] {
                 <option value="change-price">Change Price From Cutoff</option>
                 <option value="change-time">Change Time for this Day only</option>
                 <option value="change-horse-specific">Change Horse X → Y From Cutoff</option>
+                <option value="change-type-or-group">Change Lesson Type / Group Priv (Single Date)</option>
             </optgroup>
         </select>
     </div>
@@ -717,6 +718,72 @@ input[type="number"] {
             </button>
         </div>
     </form>
+
+<!-- CHANGE LESSON TYPE / GROUP PRIV (Single Date) -->
+<form id="form-change-type-or-group" class="action-form"
+      action="{{ url_for('change_lesson_type_group', client_id=client_obj.client_id) }}"
+      method="post">
+
+    <input type="hidden" name="mode" value="change-type-or-group">
+    <input type="hidden" name="group_priv">
+    <input type="hidden" name="cutoff_date">
+
+    <label>Target Date:</label>
+    <input type="date" name="target_date" style="width:160px;">
+
+    <label>Old Type:</label>
+    <select name="old_type" style="width:180px;">
+        <option value=""></option>
+        <option>Arena</option>
+        <option>Roundyard</option>
+        <option>Trail Ride</option>
+        <option>Go Gallop</option>
+        <option>Party</option>
+        <option>Comp</option>
+        <option>Camp</option>
+    </select>
+
+    <label>New Type (optional):</label>
+    <select name="new_type" style="width:180px;">
+        <option value=""></option>
+        <option>Arena</option>
+        <option>Roundyard</option>
+        <option>Trail Ride</option>
+        <option>Go Gallop</option>
+        <option>Party</option>
+        <option>Comp</option>
+        <option>Camp</option>
+    </select>
+
+    <label>New Group Priv (optional):</label>
+    <select name="new_group_priv" style="width:180px;">
+        <option value=""></option>
+        <option>CC</option>
+        <option>CT</option>
+        <option>G</option>
+        <option>GT</option>
+        <option>IC</option>
+        <option>J</option>
+        <option>P</option>
+        <option>P2</option>
+        <option>P3</option>
+        <option>P4</option>
+        <option>SP1</option>
+        <option>SP2</option>
+        <option>SP3</option>
+        <option>SP4</option>
+        <option>SP5</option>
+    </select>
+
+    <div class="action-buttons">
+        <button type="button"
+                class="btn btn-secondary btn-sm open-confirm"
+                data-target="form-change-type-or-group">
+            Change Lesson Type / Group Priv (Single Date)
+        </button>
+    </div>
+</form>
+
 
 </div>
 {% endif %}
