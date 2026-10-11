@@ -1584,7 +1584,7 @@ def create_app():
 
             hashed = generate_password_hash(password)
 
-            u = Users(
+            u = Account(
                 username=username,
                 full_name=full_name,
                 role=role,
