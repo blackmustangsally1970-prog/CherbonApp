@@ -22,18 +22,18 @@ hub_bp = Blueprint('hub', __name__, url_prefix='/weddings')
 # MASTER PAGE – ALL WEDDINGS
 # ---------------------------------------------------------
 @hub_bp.route('/')
-@admin_required
+@login_required
 def weddings_master():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
 
     weddings = Wedding.query.order_by(
         Wedding.wedding_date.asc(),
         Wedding.start_time.asc()
     ).all()
 
-    return render_template(
-        'weddings/master.html',
-        weddings=weddings
-    )
+    return render_template('weddings/master.html', weddings=weddings)
 
 # ---------------------------------------------------------
 # CREATE HOLD (ADMIN ONLY)
