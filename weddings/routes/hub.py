@@ -36,6 +36,23 @@ def weddings_master():
 
     return render_template('weddings/master.html', weddings=weddings)
 
+
+@hub_bp.route('/<int:wedding_id>/hub')
+@login_required
+def wedding_hub(wedding_id):
+
+    w = Wedding.query.get_or_404(wedding_id)
+
+    # Optional: restrict access
+    if current_user.role not in ['admin', 'management', 'coordinator', 'manager']:
+        abort(403)
+
+    return render_template('weddings/hub.html', wedding=w)
+
+
+
+
+
 # ---------------------------------------------------------
 # CREATE HOLD (ADMIN ONLY)
 # ---------------------------------------------------------
