@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cherbon Waters – Wedding Dashboard</title>
+
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+
+        .top-actions { margin-bottom: 20px; }
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .btn:hover { background: #0056b3; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #f5f5f5; }
+
+        .status-hold { color: #c97a00; font-weight: 600; }
+        .status-approved { color: #008000; font-weight: 600; }
+        .status-pending_admin { color: #0066cc; font-weight: 600; }
+        .status-cancelled { color: #b00000; font-weight: 600; }
+
+        .hold-yes { color: #c97a00; font-weight: 600; }
+        .hold-no { color: #666; }
+    </style>
+</head>
+
+<body>
+
+<h1>Cherbon Waters – Wedding Dashboard</h1>
+
+<div class="top-actions">
+    <a href="{{ url_for('hub.create_hold') }}" class="btn">Create Hold</a>
+    <a href="{{ url_for('hub.incoming_queue') }}" class="btn">Incoming T&C Submissions</a>
+    <a href="#" class="btn">Incoming T&C Submissions</a>
+    <a href="#" class="btn">Add Manual Booking</a>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Bride & Groom</th>
+            <th>Event Type</th>
+            <th>Guests</th>
+            <th>Status</th>
+            <th>Hold</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for w in weddings %}
+        <tr>
+            <td>{{ w.wedding_date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ w.start_time }}</td>
+
+            <td>
+                {{ w.bride_name or '' }} & {{ w.groom_name or '' }}
+            </td>
+
+            <td>{{ w.event_type or '-' }}</td>
+
+            <td>{{ w.est_guests or '-' }}</td>
+
+            <td class="status-{{ (w.booking_status or '').lower() }}">
+                {{ w.booking_status or 'unknown' }}
+            </td>
+
+            <td>
+                {% if w.is_hold %}
+                    <span class="hold-yes">YES ({{ w.hold_name or 'Hold' }})</span>
+                {% else %}
+                    <span class="hold-no">-</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}" class="btn">
+                    Open
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

@@ -12,12 +12,16 @@ class Caterer(db.Model):
     login_email = db.Column(db.String(120), unique=True)
     password_hash = db.Column(db.String(200))
 
-    # Contact details (new)
+    # Operational contact emails (NEW)
+    email = db.Column(db.String(120))        # main email for notifications
+    cc_email = db.Column(db.String(120))     # optional CC email
+
+    # Contact details
     phone = db.Column(db.String(50))
     contact_name = db.Column(db.String(120))
     notes = db.Column(db.Text)
 
-    # Status (new)
+    # Status
     active = db.Column(db.Boolean, default=True)
 
     # Relationship: weddings assigned to this caterer

@@ -1,369 +1,660 @@
-<div class="tc-item">
-    <div class="tc-item-title">1. Appointments for Viewings, Meetings & Rehearsals</div>
+<style>
+/* Container */
+.event-details {
+    max-width: 700px;
+    margin: auto;
+    padding: 20px 0;
+    font-family: Arial, sans-serif;
+}
 
-    <p>
-        Cherbon Waters is viewed strictly by appointment. After your initial viewing and booking confirmation,
-        any additional viewings or personal meetings may incur a fee. Rehearsals are held on Thursdays during
-        business hours (45 minutes allocated) and also incur a fee. All celebrants, photographers, parents,
-        and other parties wishing to view the gardens must attend during the rehearsal time, as multiple
-        viewing appointments are not available.
-    </p>
+/* Headings */
+.event-details h2,
+.event-details h3 {
+    margin-top: 25px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
 
-    <input type="checkbox" name="tc_1" required> I acknowledge and agree
+/* Form rows */
+.form-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+/* Labels */
+.form-row label {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+/* Unified styling for ALL inputs + selects */
+.form-row input,
+.form-row select {
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #000;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+
+/* Force time input to behave EXACTLY like a normal input */
+.form-row input[type="time"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+    
+/* Checkbox group */
+.checkbox-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+
+</style>
+
+<div class="event-details">
+
+    <h2>Wedding & Client Details</h2>
+
+    <div class="form-row">
+        <label>Event Date</label>
+        <input type="date" name="event_date" required>
+    </div>
+
+    <h3>Bride / Groom 1</h3>
+
+    <div class="form-row">
+        <label>Full Name</label>
+        <input type="text" name="bg1_name" required>
+    </div>
+
+    <div class="form-row">
+        <label>Mobile</label>
+        <input type="text" name="bg1_mobile" required>
+    </div>
+
+    <div class="form-row">
+        <label>Email</label>
+        <input type="email" name="bg1_email" required>
+    </div>
+
+    <h3>Bride / Groom 2</h3>
+
+    <div class="form-row">
+        <label>Full Name</label>
+        <input type="text" name="bg2_name" required>
+    </div>
+
+    <div class="form-row">
+        <label>Mobile</label>
+        <input type="text" name="bg2_mobile" required>
+    </div>
+
+    <div class="form-row">
+        <label>Email</label>
+        <input type="email" name="bg2_email" required>
+    </div>
+
+    <h3>Event Type</h3>
+
+    <div class="form-row">
+        <select name="event_type" required>
+            <option value="">Select event type...</option>
+            <option>Ceremony & Reception</option>
+            <option>Garden Hire & Reception</option>
+            <option>Reception Only</option>
+            <option>Engagement or Other Party</option>
+            <option>Ceremony Only – 2½ Hours</option>
+            <option>Ceremony Only – Extended Time</option>
+        </select>
+    </div>
+
+<h3>Start Time Request</h3>
+
+<div class="form-row">
+    <select name="start_time_request" required>
+
+        <!-- Midnight to 11:45 PM -->
+        <option value="00:00">12:00 am</option>
+        <option value="00:15">12:15 am</option>
+        <option value="00:30">12:30 am</option>
+        <option value="00:45">12:45 am</option>
+
+        <option value="01:00">1:00 am</option>
+        <option value="01:15">1:15 am</option>
+        <option value="01:30">1:30 am</option>
+        <option value="01:45">1:45 am</option>
+
+        <option value="02:00">2:00 am</option>
+        <option value="02:15">2:15 am</option>
+        <option value="02:30">2:30 am</option>
+        <option value="02:45">2:45 am</option>
+
+        <option value="03:00">3:00 am</option>
+        <option value="03:15">3:15 am</option>
+        <option value="03:30">3:30 am</option>
+        <option value="03:45">3:45 am</option>
+
+        <option value="04:00">4:00 am</option>
+        <option value="04:15">4:15 am</option>
+        <option value="04:30">4:30 am</option>
+        <option value="04:45">4:45 am</option>
+
+        <option value="05:00">5:00 am</option>
+        <option value="05:15">5:15 am</option>
+        <option value="05:30">5:30 am</option>
+        <option value="05:45">5:45 am</option>
+
+        <option value="06:00">6:00 am</option>
+        <option value="06:15">6:15 am</option>
+        <option value="06:30">6:30 am</option>
+        <option value="06:45">6:45 am</option>
+
+        <option value="07:00">7:00 am</option>
+        <option value="07:15">7:15 am</option>
+        <option value="07:30">7:30 am</option>
+        <option value="07:45">7:45 am</option>
+
+        <option value="08:00">8:00 am</option>
+        <option value="08:15">8:15 am</option>
+        <option value="08:30">8:30 am</option>
+        <option value="08:45">8:45 am</option>
+
+        <option value="09:00">9:00 am</option>
+        <option value="09:15">9:15 am</option>
+        <option value="09:30">9:30 am</option>
+        <option value="09:45">9:45 am</option>
+
+        <option value="10:00">10:00 am</option>
+        <option value="10:15">10:15 am</option>
+        <option value="10:30">10:30 am</option>
+        <option value="10:45">10:45 am</option>
+
+        <option value="11:00">11:00 am</option>
+        <option value="11:15">11:15 am</option>
+        <option value="11:30">11:30 am</option>
+        <option value="11:45">11:45 am</option>
+
+        <option value="12:00">12:00 pm</option>
+        <option value="12:15">12:15 pm</option>
+        <option value="12:30">12:30 pm</option>
+        <option value="12:45">12:45 pm</option>
+
+        <option value="13:00">1:00 pm</option>
+        <option value="13:15">1:15 pm</option>
+        <option value="13:30">1:30 pm</option>
+        <option value="13:45">1:45 pm</option>
+
+        <option value="14:00">2:00 pm</option>
+        <option value="14:15">2:15 pm</option>
+        <option value="14:30">2:30 pm</option>
+        <option value="14:45">2:45 pm</option>
+
+        <option value="15:00" selected>3:00 pm</option>
+        <option value="15:15">3:15 pm</option>
+        <option value="15:30">3:30 pm</option>
+        <option value="15:45">3:45 pm</option>
+
+        <option value="16:00">4:00 pm</option>
+        <option value="16:15">4:15 pm</option>
+        <option value="16:30">4:30 pm</option>
+        <option value="16:45">4:45 pm</option>
+
+        <option value="17:00">5:00 pm</option>
+        <option value="17:15">5:15 pm</option>
+        <option value="17:30">5:30 pm</option>
+        <option value="17:45">5:45 pm</option>
+
+        <option value="18:00">6:00 pm</option>
+        <option value="18:15">6:15 pm</option>
+        <option value="18:30">6:30 pm</option>
+        <option value="18:45">6:45 pm</option>
+
+        <option value="19:00">7:00 pm</option>
+        <option value="19:15">7:15 pm</option>
+        <option value="19:30">7:30 pm</option>
+        <option value="19:45">7:45 pm</option>
+
+        <option value="20:00">8:00 pm</option>
+        <option value="20:15">8:15 pm</option>
+        <option value="20:30">8:30 pm</option>
+        <option value="20:45">8:45 pm</option>
+
+        <option value="21:00">9:00 pm</option>
+        <option value="21:15">9:15 pm</option>
+        <option value="21:30">9:30 pm</option>
+        <option value="21:45">9:45 pm</option>
+
+        <option value="22:00">10:00 pm</option>
+        <option value="22:15">10:15 pm</option>
+        <option value="22:30">10:30 pm</option>
+        <option value="22:45">10:45 pm</option>
+
+        <option value="23:00">11:00 pm</option>
+        <option value="23:15">11:15 pm</option>
+        <option value="23:30">11:30 pm</option>
+        <option value="23:45">11:45 pm</option>
+
+    </select>
 </div>
 
-<div class="tc-item">
-    <div class="tc-item-title">2. Booking Confirmations</div>
+<h3>Estimated Guests</h3>
 
-    <p>
-        I understand that my booking is only confirmed once Cherbon Waters has received both the booking fee
-        and a signed copy of these Terms & Conditions. The booking fee is non‑refundable and must be paid
-        within the required timeframe. I acknowledge that ceremony‑only bookings must be paid in full upon
-        booking, and alternative payment arrangements must be approved by management. I understand that my
-        booking is not secure until all required items are received.
-    </p>
-
-    <input type="checkbox" name="tc_2" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">3. Cancellation Policy</div>
-
-    <p>
-        I understand that Cherbon Waters does not provide refunds for any payments made, regardless of the
-        reason for cancellation. I acknowledge that if I change my booking from a Ceremony & Reception to a
-        Ceremony‑only, I will not receive a refund for the difference, nor can the difference be applied to
-        optional extras or other services.
-    </p>
-
-    <input type="checkbox" name="tc_3" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">4. Postponements, Cancellations & Changes to Booking</div>
-
-    <p>
-        I understand that I may postpone my wedding date once, provided I give at least 6 months’ notice.
-        The new date must be within 12 months of the original booking and a transfer fee of $500 applies. If the
-        new date falls in a new financial year, I acknowledge that the pricing applicable to that year
-        will apply.
-    </p>
-
-    <p>
-        I acknowledge that if I provide less than 6 months’ notice, my booking fee will be forfeited.
-        If I postpone, cancel, or change my booking after submitting final guest numbers (35 days prior)
-        or after making final payment (28 days prior), all monies paid will be forfeited, as the event
-        has already been costed, scheduled, and prepared.
-    </p>
-
-    <input type="checkbox" name="tc_4" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">5. Time Slots</div>
-
-    <p>
-        I understand that arrival and departure times must be strictly followed to ensure fairness for all
-        events held on the same day. I acknowledge that Cherbon Waters may invoice for extended usage if
-        these times are exceeded. I also understand that extending the event past 10pm will incur an
-        additional fee.
-    </p>
-
-    <input type="checkbox" name="tc_5" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">6. Catering & Decorations</div>
-
-    <p>
-        I understand that for ceremony‑only bookings, no outside food or beverage is permitted, except for
-        one bottle of sparkling wine for photos. For receptions, any outside food items (such as wedding
-        cakes or edible bonbonniere) must be supplied by a licensed food vendor. I acknowledge that babies
-        and toddlers not requiring a meal or seat are not charged, and that Cherbon Waters does not supply
-        high chairs.
-    </p>
-
-    <p>
-        I understand that wedding cakes may only be delivered to the marquee one hour before the reception,
-        and if the cake is being served as dessert, it must be appropriately sized. I acknowledge that no
-        price reduction applies when supplying my own cake as dessert.
-    </p>
-
-    <p>
-        I understand that natural rose petals and bubbles are permitted, but confetti, rice, dried, preserved or
-        fake petals, and similar items are not allowed (except rice for traditional cultural Indian weddings).
-    </p>
-
-    <input type="checkbox" name="tc_6" required> I acknowledge and agree
-</div>
-
-
-<div class="tc-item">
-    <div class="tc-item-title">7. Service of Alcohol & Drinks</div>
-
-    <p>
-        I understand that all alcohol and drinks at Cherbon Waters are served by bar staff only. Table
-        service (including table glassware) is available only by prior arrangement with management and may
-        incur additional charges.
-    </p>
-
-    <p>
-        I acknowledge that Cherbon Waters is a BYO venue. Spirits are only permitted inside the marquee,
-        must be premixed for service efficiency, and will incur a corkage fee to cover glassware and
-        additional staffing. Spirits are only served after entrée has been served.
-    </p>
-
-    <p>
-        I understand that all drinks — including alcohol, soft drinks, water, and ice — must be delivered
-        cold on the morning of the wedding. I acknowledge that any opened drinks must be consumed or
-        discarded before leaving the premises in accordance with liquor licensing laws, and that Responsible
-        Service of Alcohol standards apply at all times.
-    </p>
-
-    <input type="checkbox" name="tc_7" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">8. Music</div>
-
-    <p>
-        I understand that all music played at Cherbon Waters must remain under the venue’s maximum volume
-        limit of 80db and with minimal bass, in accordance with local noise restriction laws. I acknowledge that
-        my entertainer must be informed of these requirements.
-    </p>
-
-    <p>
-        I accept that Cherbon Waters reserves the right to request volume adjustments at any time, and if
-        these requirements are not met, the wedding manager may turn the music off to comply with legal
-        obligations.
-    </p>
-
-    <input type="checkbox" name="tc_8" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">9. Smoking</div>
-
-    <p>
-        I understand that smoking is only permitted in the designated smoking areas provided by Cherbon Waters.
-        I acknowledge that smoking is not allowed inside any buildings, the gazebo, or the marquee.
-    </p>
-
-    <input type="checkbox" name="tc_9" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">10. Safety</div>
-
-    <p>
-        I understand that Cherbon Waters is a working property and that all guests are responsible for their
-        own safety while onsite. I acknowledge that the paddock fences are electrified and that guests must
-        not touch or climb any fencing or enter restricted areas at any time.
-    </p>
-
-    <p>
-        I understand that children must be supervised by an adult at all times, including during the ceremony,
-        reception, and photo sessions. I acknowledge that Cherbon Waters is not liable for injuries resulting
-        from failure to follow safety instructions or from unsupervised children.
-    </p>
-
-    <input type="checkbox" name="tc_10" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">11. External Suppliers</div>
-
-    <p>
-        I understand that all external suppliers (including photographers, videographers, entertainers,
-        decorators, hire companies, and cultural vendors) must follow Cherbon Waters’ access, delivery,
-        setup, and pack‑down requirements. I acknowledge that suppliers may only access the property at the
-        times approved by the wedding manager.
-    </p>
-
-    <p>
-        I understand that any hired items, decorations, or equipment brought in by external suppliers must
-        be delivered and removed on the same day, unless prior written approval has been given. I acknowledge
-        that Cherbon Waters is not responsible for lost, damaged, or uncollected supplier items.
-    </p>
-
-    <p>
-        I acknowledge that suppliers who remain onsite during the reception (such as photographers,
-        videographers, DJs, and musicians) will require a vendor meal, which will be charged at the
-        applicable rate.
-    </p>
-
-    <input type="checkbox" name="tc_11" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">12. Transport</div>
-
-    <p>
-        I understand that vehicles cannot be left onsite overnight under any circumstances. I acknowledge
-        that all cars, hire vehicles, and guest transport must depart the property at the conclusion of the
-        event, unless prior written approval has been granted by management.
-    </p>
-
-    <input type="checkbox" name="tc_12" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">13. Behaviour & Damages</div>
-
-    <p>
-        I understand that I am responsible for the behaviour of all guests, children, and suppliers attending
-        my wedding. I acknowledge that any abusive, unsafe, or inappropriate behaviour may result in guests
-        being asked to leave the property.
-    </p>
-
-    <p>
-        I accept full responsibility for any damage caused to Cherbon Waters property, equipment, gardens,
-        furniture, or facilities by myself, my guests, or my suppliers. I understand that repair or replacement
-        costs will be invoiced directly to me.
-    </p>
-
-    <input type="checkbox" name="tc_13" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">14. Photography</div>
-
-    <p>
-        I understand that photography is permitted only in the designated garden and ceremony areas of
-        Cherbon Waters. I acknowledge that paddocks, animal areas, and any restricted zones are strictly
-        off‑limits for photos due to safety and operational requirements.
-    </p>
-
-    <p>
-        I accept that my photographer and videographer must follow all instructions given by the wedding
-        manager and must not enter any unsafe or unauthorised areas at any time.
-    </p>
-
-    <input type="checkbox" name="tc_14" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">15. Animals</div>
-
-    <p>
-        I understand that no animals are permitted at Cherbon Waters under any circumstances, including pets
-        belonging to guests or suppliers. I acknowledge that this rule is in place for safety reasons and to
-        protect the property, livestock, and gardens.
-    </p>
-
-    <input type="checkbox" name="tc_15" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">16. Drones</div>
-
-    <p>
-        I understand that drones are not permitted at Cherbon Waters under any circumstances. I acknowledge
-        that this rule applies to all guests, suppliers, and contractors, regardless of licensing or
-        certification, due to safety, privacy, and livestock protection requirements.
-    </p>
-
-    <input type="checkbox" name="tc_16" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">17. Fireworks</div>
-
-    <p>
-        I understand that fireworks, sparklers, pyrotechnics, smoke cannons, and any similar ignition or
-        explosive devices are not permitted at Cherbon Waters under any circumstances. I acknowledge that
-        this rule is in place for safety, livestock protection, and insurance compliance.
-    </p>
-
-    <input type="checkbox" name="tc_17" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">18. Candles & Open Flames</div>
-
-    <p>
-        I understand that candles, open flames, oil burners, sparklers, and any similar ignition sources are
-        not permitted at Cherbon Waters under any circumstances. I acknowledge that this rule is in place to
-        comply with fire safety regulations and to protect the marquee, gardens, and surrounding property.
-    </p>
-
-    <input type="checkbox" name="tc_18" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">19. Stables & Horse Areas</div>
-
-    <p>
-        I understand that the stables, horse yards, and all animal areas are strictly off‑limits to guests,
-        children, and suppliers at all times. I acknowledge that these areas are part of a working equestrian
-        facility and may only be accessed by authorised Cherbon Waters staff.
-    </p>
-
-    <p>
-        I accept that entering these areas without permission poses significant safety risks and may result
-        in guests being asked to leave the property.
-    </p>
-
-    <input type="checkbox" name="tc_19" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">20. House Access</div>
-
-    <p>
-        I understand that the private residence at Cherbon Waters is strictly off‑limits. I acknowledge that
-        no guests, suppliers, or contractors may approach, enter, or use any part of the house, verandas, or
-        surrounding private areas at any time.
-    </p>
-
-    <input type="checkbox" name="tc_20" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">21. Shed Access</div>
-
-    <p>
-        I understand that the shed and all surrounding work areas are strictly off‑limits to guests,
-        children, and suppliers at all times. I acknowledge that these areas contain machinery, tools,
-        and equipment and may only be accessed by authorised Cherbon Waters staff.
-    </p>
-
-    <input type="checkbox" name="tc_21" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">22. Arena Access</div>
-
-    <p>
-        I understand that the equestrian arena is strictly off‑limits to all guests, children, and suppliers
-        at all times. I acknowledge that this area is part of a working equestrian facility and may only be
-        accessed by authorised Cherbon Waters staff.
-    </p>
-
-    <input type="checkbox" name="tc_22" required> I acknowledge and agree
-</div>
-<div class="tc-item">
-    <div class="tc-item-title">23. Dam & Water Areas</div>
-
-    <p>
-        I understand that the dam, banks, and all surrounding water areas are strictly off‑limits to guests,
-        children, and suppliers at all times. I acknowledge that these areas pose significant safety risks
-        and may only be accessed by authorised Cherbon Waters staff.
-    </p>
-
-    <input type="checkbox" name="tc_23" required> I acknowledge and agree
-</div>
-
-<div class="tc-item">
-    <div class="tc-item-title">24. Carpark Paddock Access</div>
-
-    <p>
-        I understand that the carpark paddock and all fenced areas surrounding the carpark are strictly
-        off‑limits to guests, children, and suppliers at all times. I acknowledge that these areas may contain
-        livestock and electrified fencing and may only be accessed by authorised Cherbon Waters staff.
-    </p>
-
-    <input type="checkbox" name="tc_24" required> I acknowledge and agree
+<div class="form-row">
+    <input type="number" name="est_guests" min="10" max="300" value="50" required>
 </div>
 
 
+    <h3>Menu Service (Early Indicator)</h3>
+
+    <div class="form-row">
+        <select name="menu_service">
+            <option value="">Select menu option...</option>
+            <option>Indian Buffet</option>
+            <option>Alternate Drop / Buffet Menu</option>
+            <option>Other (please specify)</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label>If “Other”, please specify</label>
+        <input type="text" name="menu_other">
+    </div>
+
+    <h3>All‑Inclusive Options</h3>
+
+    <div class="checkbox-group">
+        <label><input type="checkbox" name="inc_celebrant"> Celebrant</label>
+        <label><input type="checkbox" name="inc_limo"> Limo Hire</label>
+        <label><input type="checkbox" name="inc_photographer"> Photographer</label>
+    </div>
+
+<h3>Other Information</h3>
+
+<div class="form-row">
+    <textarea name="other_information" rows="4" placeholder="Please tell us anything specific or unique about your event..."></textarea>
+</div>
+
+
+</div>
+
+
+<div class="tc-step active">
+    <div class="tc-item">
+        <div class="tc-item-title">1. Appointments for Viewings, Meetings & Rehearsals</div>
+
+        <p>
+            I understand that Cherbon Waters is viewed strictly by appointment. After my initial viewing and booking
+            confirmation, any additional viewings or personal meetings may incur a fee.
+        </p>
+
+        <p>
+            I acknowledge that rehearsals are held on Thursdays during business hours, with a 45‑minute allocation,
+            and also incur a fee. I accept that all celebrants, photographers, parents, and other parties wishing to
+            view the gardens must attend during the rehearsal time, as multiple viewing appointments are not offered.
+        </p>
+
+        <input type="checkbox" name="tc_1" required> I acknowledge and agree
+    </div>
+</div>
+
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">2. Booking Confirmations</div>
+
+        <p>
+            I understand that my booking is only confirmed once Cherbon Waters has received both the booking fee
+            and a signed copy of these Terms & Conditions. I acknowledge that the booking fee is non‑refundable
+            and must be paid within the required timeframe.
+        </p>
+
+        <p>
+            I accept that ceremony‑only bookings must be paid in full at the time of booking, and that any
+            alternative payment arrangements must be approved by management. I understand that my booking is not
+            secure until all required items have been received.
+        </p>
+
+        <input type="checkbox" name="tc_2" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">3. Cancellation Policy</div>
+
+        <p>
+            I understand that Cherbon Waters does not provide refunds for any payments made, regardless of the
+            reason for cancellation. I acknowledge that if I change my booking from a Ceremony & Reception to a
+            Ceremony‑only, I will not receive a refund for the difference, nor can the difference be applied to
+            optional extras or other services.
+        </p>
+
+        <input type="checkbox" name="tc_3" required> I acknowledge and agree
+    </div>
+</div>
+
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">4. Postponements, Cancellations & Changes to Booking</div>
+
+        <p>
+            I understand that I may postpone my wedding date once, provided I give at least 6 months’ notice.
+            The new date must be within 12 months of the original booking, and a transfer fee of $500 applies.
+            If the new date falls in a new financial year, I acknowledge that the pricing for that year will apply.
+        </p>
+
+        <p>
+            I acknowledge that if I provide less than 6 months’ notice, my booking fee will be forfeited.
+            I understand that if I postpone, cancel, or change my booking after submitting final guest numbers
+            (35 days prior) or after making final payment (28 days prior), all monies paid will be forfeited,
+            as the event has already been costed, scheduled, and prepared.
+        </p>
+
+        <input type="checkbox" name="tc_4" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">5. Time Slots</div>
+
+        <p>
+            I understand that arrival and departure times must be strictly followed to ensure fairness for all
+            events held on the same day. I acknowledge that Cherbon Waters may invoice for extended usage if
+            these times are exceeded.
+        </p>
+
+        <p>
+            I accept that extending the event past 10pm will incur an additional fee.
+        </p>
+
+        <input type="checkbox" name="tc_5" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">6. Catering & Decorations</div>
+
+        <p>
+            I understand that for ceremony‑only bookings, no outside food or beverage is permitted, except for
+            one bottle of sparkling wine for photos. For receptions, any outside food items (such as wedding
+            cakes or edible bonbonniere) must be supplied by a licensed food vendor. I acknowledge that babies
+            and toddlers not requiring a meal or seat are not charged, and that Cherbon Waters does not supply
+            high chairs.
+        </p>
+
+        <p>
+            I understand that wedding cakes may only be delivered to the marquee one hour before the reception,
+            and that if the cake is being served as dessert, it must be appropriately sized. I acknowledge that
+            no price reduction applies when supplying my own cake as dessert.
+        </p>
+
+        <p>
+            I understand that natural rose petals and bubbles are permitted, but confetti, rice, dried, preserved,
+            or fake petals, and similar items are not allowed (except rice for traditional cultural Indian weddings).
+        </p>
+
+        <input type="checkbox" name="tc_6" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">7. Service of Alcohol & Drinks</div>
+
+        <p>
+            I understand that all alcohol and drinks at Cherbon Waters are served by bar staff only. I acknowledge
+            that table service (including table glassware) is available only by prior arrangement with management
+            and may incur additional charges.
+        </p>
+
+        <p>
+            I accept that Cherbon Waters is a BYO venue. Spirits are only permitted inside the marquee, must be
+            premixed for service efficiency, and will incur a corkage fee to cover glassware and additional
+            staffing. I understand that spirits are only served after entrée has been served.
+        </p>
+
+        <p>
+            I acknowledge that all drinks — including alcohol, soft drinks, water, and ice — must be delivered
+            cold on the morning of the wedding. I understand that any opened drinks must be consumed or discarded
+            before leaving the premises in accordance with liquor licensing laws, and that Responsible Service of
+            Alcohol standards apply at all times.
+        </p>
+
+        <input type="checkbox" name="tc_7" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">8. Music</div>
+
+        <p>
+            I understand that all music played at Cherbon Waters must remain under the venue’s maximum volume
+            limit of 80db and with minimal bass, in accordance with local noise restriction laws. I acknowledge
+            that my entertainer must be informed of these requirements.
+        </p>
+
+        <p>
+            I accept that Cherbon Waters reserves the right to request volume adjustments at any time, and that
+            if these requirements are not met, the wedding manager may turn the music off to comply with legal
+            obligations.
+        </p>
+
+        <input type="checkbox" name="tc_8" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">9. Smoking</div>
+
+        <p>
+            I understand that smoking is only permitted in the designated smoking areas provided by Cherbon Waters.
+            I acknowledge that smoking is not allowed inside any buildings, the gazebo, or the marquee.
+        </p>
+
+        <input type="checkbox" name="tc_9" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">10. Safety</div>
+
+        <p>
+            I understand that Cherbon Waters is a working property and that all guests are responsible for their
+            own safety while onsite. I acknowledge that the paddock fences are electrified and that guests must
+            not touch or climb any fencing or enter restricted areas at any time.
+        </p>
+
+        <p>
+            I understand that children must be supervised by an adult at all times, including during the ceremony,
+            reception, and photo sessions. I acknowledge that Cherbon Waters is not liable for injuries resulting
+            from failure to follow safety instructions or from unsupervised children.
+        </p>
+
+        <input type="checkbox" name="tc_10" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">11. External Suppliers</div>
+
+        <p>
+            I understand that all external suppliers (including photographers, videographers, entertainers,
+            decorators, hire companies, and cultural vendors) must follow Cherbon Waters’ access, delivery,
+            setup, and pack‑down requirements. I acknowledge that suppliers may only access the property at
+            the times approved by the wedding manager.
+        </p>
+
+        <p>
+            I understand that any hired items, decorations, or equipment brought in by external suppliers must
+            be delivered and removed on the same day, unless prior written approval has been given. I acknowledge
+            that Cherbon Waters is not responsible for lost, damaged, or uncollected supplier items.
+        </p>
+
+        <p>
+            I acknowledge that suppliers who remain onsite during the reception (such as photographers,
+            videographers, DJs, and musicians) will require a vendor meal, which will be charged at the
+            applicable rate.
+        </p>
+
+        <input type="checkbox" name="tc_11" required> I acknowledge and agree
+    </div>
+</div>
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">12. Transport</div>
+
+        <p>
+            I understand that vehicles cannot be left onsite overnight under any circumstances. I acknowledge
+            that all cars, hire vehicles, and guest transport must depart the property at the conclusion of the
+            event, unless prior written approval has been granted by management.
+        </p>
+
+        <input type="checkbox" name="tc_12" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">13. Behaviour & Damages</div>
+
+        <p>
+            I understand that I am responsible for the behaviour of all guests, children, and suppliers attending
+            my wedding. I acknowledge that any abusive, unsafe, or inappropriate behaviour may result in guests
+            being asked to leave the property.
+        </p>
+
+        <p>
+            I accept full responsibility for any damage caused to Cherbon Waters property, equipment, gardens,
+            furniture, or facilities by myself, my guests, or my suppliers. I understand that repair or replacement
+            costs will be invoiced directly to me.
+        </p>
+
+        <input type="checkbox" name="tc_13" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">14. Photography</div>
+
+        <p>
+            I understand that photography is permitted only in the designated garden and ceremony areas of
+            Cherbon Waters. I acknowledge that paddocks, animal areas, and any restricted zones are strictly
+            off‑limits for photos due to safety and operational requirements.
+        </p>
+
+        <p>
+            I accept that my photographer and videographer must follow all instructions given by the wedding
+            manager and must not enter any unsafe or unauthorised areas at any time.
+        </p>
+
+        <input type="checkbox" name="tc_14" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">15. Animals</div>
+
+        <p>
+            I understand that no animals are permitted at Cherbon Waters under any circumstances, including pets
+            belonging to guests or suppliers. I acknowledge that this rule is in place for safety reasons and to
+            protect the property, livestock, and gardens.
+        </p>
+
+        <input type="checkbox" name="tc_15" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">16. Drones</div>
+
+        <p>
+            I understand that drones are not permitted at Cherbon Waters under any circumstances. I acknowledge
+            that this rule applies to all guests, suppliers, and contractors, regardless of licensing or
+            certification, due to safety, privacy, and livestock protection requirements.
+        </p>
+
+        <input type="checkbox" name="tc_16" required> I acknowledge and agree
+    </div>
+</div>
+
+<div class="tc-step">
+    <div class="tc-item">
+        <div class="tc-item-title">17. Fireworks</div>
+
+        <p>
+            I understand that fireworks, sparklers, pyrotechnics, smoke cannons, and any similar ignition or
+            explosive devices are not permitted at Cherbon Waters under any circumstances. I acknowledge that
+            this rule is in place for safety, livestock protection, and insurance compliance.
+        </p>
+
+        <input type="checkbox" name="tc_17" required> I acknowledge and agree
+    </div>
+</div>
+
+
+
+
+
+<div id="tc-nav">
+    <button id="tc-back" disabled>Back</button>
+    <button id="tc-next">Next</button>
+    <button id="tc-submit" style="display:none;">Submit</button>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const steps = document.querySelectorAll(".tc-step");
+    const nextBtn = document.getElementById("tc-next");
+    const backBtn = document.getElementById("tc-back");
+    const submitBtn = document.getElementById("tc-submit");
+    const stepNumber = document.getElementById("tc-step-number");
+
+    let current = 0;
+
+    function updateUI() {
+        steps.forEach((step, i) => {
+            step.classList.toggle("active", i === current);
+        });
+
+        stepNumber.textContent = current + 1;
+
+        backBtn.disabled = current === 0;
+        nextBtn.style.display = current === steps.length - 1 ? "none" : "inline-block";
+        submitBtn.style.display = current === steps.length - 1 ? "inline-block" : "none";
+    }
+
+    nextBtn.addEventListener("click", () => {
+        const checkbox = steps[current].querySelector("input[type='checkbox']");
+        if (checkbox && !checkbox.checked) {
+            alert("Please acknowledge this clause before continuing.");
+            return;
+        }
+        current++;
+        updateUI();
+    });
+
+    backBtn.addEventListener("click", () => {
+        current--;
+        updateUI();
+    });
+
+    updateUI();
+});
+</script>

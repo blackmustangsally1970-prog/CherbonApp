@@ -20,285 +20,77 @@
         <span class="meta-item"><strong>Guests:</strong> {{ wedding.est_guests }}</span>
     </div>
 
-    <!-- ⭐ CATERER SELECTOR -->
-    <div style="max-width:300px; margin: 10px 0;">
-        <form method="POST" action="/weddings/{{ wedding.id }}/set_caterer">
-            <label><strong>Caterer:</strong></label>
-            <select name="caterer_id" class="form-control">
-                {% for c in caterers %}
-                    <option value="{{ c.id }}" {% if wedding.caterer_id == c.id %}selected{% endif %}>
-                        {{ c.name }}
-                    </option>
-                {% endfor %}
-            </select>
-            <button class="btn btn-primary btn-sm mt-2">Save Caterer</button>
-        </form>
-    </div>
+{% if wedding.is_hold %}
+<div class="alert alert-warning mt-3">
+    <strong>⚠ This date is on HOLD</strong><br>
+    <strong>Name:</strong> {{ wedding.hold_name }}<br>
+    <strong>Notes:</strong> {{ wedding.hold_notes or "None" }}<br>
+    <strong>Created:</strong> {{ wedding.hold_created_at }}
 
-    <a href="/weddings/calendar" class="menu-btn-small">← Back to Calendar</a>
+    <form method="POST" action="/weddings/{{ wedding.id }}/remove_hold" class="mt-2">
+        <button class="btn btn-danger btn-sm">Remove Hold</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="hub-section">
+    <h4 class="section-title">🍽️ Event Details</h4>
+
+    <p><strong>Event Type:</strong> {{ wedding.event_type or "-" }}</p>
+    <p><strong>Estimated Guests:</strong> {{ wedding.est_guests }}</p>
+    <p><strong>Other Information:</strong> {{ wedding.other_information or "None provided" }}</p>
+    <p><strong>Menu Status:</strong> {{ wedding.menu_status or "Pending" }}</p>
+
+    <a href="/weddings/{{ wedding.id }}/menu" class="btn btn-warning btn-sm">Open Menu Page</a>
 </div>
 
-<div class="hub-nav">
-    <a href="/weddings/{{ wedding.id }}/coordinator" class="hub-nav-btn">Coordinator</a>
-    <a href="/weddings/{{ wedding.id }}/staff" class="hub-nav-btn">Staff</a>
-    <a href="/weddings/{{ wedding.id }}/staff_jobs" class="hub-nav-btn">Wait Staff</a>
-    <a href="/weddings/{{ wedding.id }}/menu" class="hub-nav-btn">Menu</a>
-    <a href="/weddings/{{ wedding.id }}/caterer" class="hub-nav-btn">Caterer</a>
-    <a href="/weddings/{{ wedding.id }}/timeline" class="hub-nav-btn">Timeline</a>
-    <a href="/weddings/{{ wedding.id }}/job_engine" class="hub-nav-btn">Jobs</a>
+<div class="hub-section">
+    <h4 class="section-title">📣 Vendor Notifications</h4>
+
+    <table class="table table-bordered table-sm">
+        <tr>
+            <th>Caterer</th>
+            <td>
+                Notified: {{ wedding.caterer_notified_at or "-" }}<br>
+                Confirmed: {{ wedding.caterer_confirmed_at or "-" }}
+            </td>
+            <td>
+                <a href="/weddings/{{ wedding.id }}/notify/caterer" class="btn btn-sm btn-primary">Notify Caterer</a>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Decorator</th>
+            <td>
+                Notified: {{ wedding.decorator_notified_at or "-" }}<br>
+                Confirmed: {{ wedding.decorator_confirmed_at or "-" }}
+            </td>
+            <td>
+                <a href="/weddings/{{ wedding.id }}/notify/decorator" class="btn btn-sm btn-primary">Notify Decorator</a>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Coordinator</th>
+            <td>
+                Notified: {{ wedding.coordinator_notified_at or "-" }}<br>
+                Confirmed: {{ wedding.coordinator_confirmed_at or "-" }}
+            </td>
+            <td>
+                <a href="/weddings/{{ wedding.id }}/notify/coordinator" class="btn btn-sm btn-primary">Notify Coordinator</a>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Staff</th>
+            <td>
+                Notified: {{ wedding.staff_notified_at or "-" }}<br>
+                Confirmed: {{ wedding.staff_confirmed_at or "-" }}
+            </td>
+            <td>
+                <a href="/weddings/{{ wedding.id }}/notify/staff" class="btn btn-sm btn-primary">Notify Staff</a>
+            </td>
+        </tr>
+    </table>
 </div>
 
-
-    <hr>
-
-    <!-- ⭐ CRM PLACEHOLDER (Future) -->
-    <div class="hub-section">
-        <h4 class="section-title">📨 Communication (CRM Coming Soon)</h4>
-        <p class="placeholder-text">
-            CRM email timeline will appear here once Microsoft 365 migration is complete.
-        </p>
-    </div>
-
-    <hr>
-
-    <!-- ⭐ OPERATIONAL OVERVIEW -->
-    <div class="hub-section">
-        <h4 class="section-title">📊 Operational Overview</h4>
-
-        <table class="table table-bordered table-sm overview-table">
-            <tr>
-                <th>Coordinator Jobs</th>
-                <td>{{ stats.coord_completed }}/{{ stats.coord_total }}</td>
-                <td><a href="/weddings/{{ wedding.id }}/coordinator" class="btn btn-sm btn-info">Open</a></td>
-            </tr>
-            <tr>
-                <th>Wait Staff Jobs</th>
-                <td>{{ stats.wait_completed }}/{{ stats.wait_total }}</td>
-                <td><a href="/weddings/{{ wedding.id }}/staff" class="btn btn-sm btn-info">Open</a></td>
-            </tr>
-            <tr>
-                <th>Menu</th>
-                <td>{{ wedding.menu_status or "Pending" }}</td>
-                <td><a href="/weddings/{{ wedding.id }}/menu" class="btn btn-sm btn-warning">Open</a></td>
-            </tr>
-            <tr>
-                <th>Timeline</th>
-                <td>{{ timeline|length }} items</td>
-                <td><a href="/weddings/{{ wedding.id }}/timeline" class="btn btn-sm btn-secondary">Open</a></td>
-            </tr>
-            <tr>
-                <th>Staff Assigned</th>
-                <td>{{ staff|length }} people</td>
-                <td><a href="/weddings/{{ wedding.id }}/staff" class="btn btn-sm btn-primary">Open</a></td>
-            </tr>
-        </table>
-    </div>
-
-    <hr>
-
-    <!-- ⭐ COORDINATOR JOBS -->
-    <div class="hub-section">
-        <h4 class="section-title">🧑‍💼 Coordinator Jobs</h4>
-
-        <table class="table table-bordered table-sm excel-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for j in coord_jobs %}
-                <tr class="excel-row">
-                    <td>{{ loop.index }}</td>
-                    <td>{{ j.description }}</td>
-                    <td>
-                        {% if j.completed %}
-                            <span class="badge bg-success">Completed</span>
-                        {% elif j.in_progress %}
-                            <span class="badge bg-warning text-dark">In Progress</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Pending</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="/weddings/{{ wedding.id }}/jobs/start/{{ j.id }}" class="btn btn-sm btn-warning">Start</a>
-                        <a href="/weddings/{{ wedding.id }}/jobs/finish/{{ j.id }}" class="btn btn-sm btn-success">Finish</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <hr>
-
-    <!-- ⭐ WAIT STAFF JOBS -->
-    <div class="hub-section">
-        <h4 class="section-title">🧑‍🍽️ Wait Staff Jobs</h4>
-
-        <table class="table table-bordered table-sm excel-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Assigned To</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for j in wait_jobs %}
-                <tr class="excel-row">
-                    <td>{{ loop.index }}</td>
-                    <td>{{ j.description }}</td>
-                    <td>
-                        {% if j.completed %}
-                            <span class="badge bg-success">Completed</span>
-                        {% elif j.in_progress %}
-                            <span class="badge bg-warning text-dark">In Progress</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Pending</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ j.assigned_name or "Unassigned" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <hr>
-
-    <!-- ⭐ MENU -->
-    <div class="hub-section">
-        <h4 class="section-title">🍽️ Menu & Guest Numbers</h4>
-
-        <p><strong>Menu Status:</strong> {{ wedding.menu_status or "Pending" }}</p>
-        <p><strong>Guest Count:</strong> {{ wedding.est_guests }}</p>
-
-        <a href="/weddings/{{ wedding.id }}/menu" class="btn btn-warning btn-sm">Open Menu Page</a>
-    </div>
-
-    <hr>
-
-    <!-- ⭐ TIMELINE -->
-    <div class="hub-section">
-        <h4 class="section-title">🕒 Timeline</h4>
-
-        <ul class="hub-list">
-            {% for t in timeline %}
-            <li class="hub-item">
-                <span class="item-main">{{ t.time }} — {{ t.content }}</span>
-                <span class="item-sub">{{ t.created_at }}</span>
-            </li>
-            {% endfor %}
-        </ul>
-
-        <a href="/weddings/{{ wedding.id }}/timeline" class="btn btn-secondary btn-sm">Manage Timeline</a>
-    </div>
-
-    <hr>
-
-    <!-- ⭐ STAFF -->
-    <div class="hub-section">
-        <h4 class="section-title">👥 Staff Assigned</h4>
-
-        <ul class="hub-list">
-            {% for s in staff %}
-            <li class="hub-item">
-                <span class="item-main">{{ s.name }}</span>
-                <span class="item-sub">{{ s.role }}</span>
-            </li>
-            {% endfor %}
-        </ul>
-
-        <a href="/weddings/{{ wedding.id }}/staff" class="btn btn-primary btn-sm">Manage Staff</a>
-    </div>
-
-    <hr>
-
-    <!-- ⭐ END OF FUNCTION -->
-    <div class="hub-section">
-        <h4 class="section-title">✔ End of Function Completion</h4>
-
-        <p>All jobs must be completed and marked with green ticks.</p>
-
-        <a href="/weddings/{{ wedding.id }}/jobs" class="btn btn-success btn-sm">Review Job Completion</a>
-    </div>
-
-</div>
-
-<style>
-.page-title { margin-bottom: 5px; }
-.page-subtitle { margin-bottom: 10px; color: #555; }
-.hub-meta { margin-bottom: 15px; }
-.meta-item { margin-right: 20px; }
-
-.hub-section { margin-bottom: 30px; }
-
-.section-title { font-weight: 600; margin-bottom: 10px; }
-
-.placeholder-text {
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px dashed #ccc;
-    color: #666;
-}
-
-.overview-table th {
-    width: 200px;
-    background: #f0f0f0;
-}
-
-.excel-table th {
-    background: #eaeaea;
-    font-weight: 600;
-}
-
-.excel-row:nth-child(even) { background: #f7f7f7; }
-.excel-row:nth-child(odd) { background: #ffffff; }
-
-.hub-list { list-style: none; padding-left: 0; }
-.hub-item { padding: 8px 0; border-bottom: 1px solid #eee; }
-.item-main { font-weight: bold; }
-.item-sub { font-size: 0.9rem; color: #666; }
-
-.menu-btn-small {
-    background: #eee;
-    padding: 8px 14px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 0.95rem;
-    color: #333;
-}
-
-.hub-nav {
-    margin: 20px 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.hub-nav-btn {
-    background: #eee;
-    padding: 10px 16px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 0.95rem;
-    color: #333;
-    border: 1px solid #ccc;
-}
-
-.hub-nav-btn:hover {
-    background: #ddd;
-}
-
-</style>
-
-</body>
-</html>

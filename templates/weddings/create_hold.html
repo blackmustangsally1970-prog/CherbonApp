@@ -1,0 +1,23 @@
+<h1>Create Hold</h1>
+
+<form method="POST">
+
+    <div class="row">
+        <label>Date:</label>
+        <input type="date" name="hold_date" required>
+    </div>
+
+    <div class="row">
+        <label>Name:</label>
+        <input type="text" name="hold_name" placeholder="John Doe" required>
+    </div>
+
+    <div class="row">
+        <label>Notes:</label>
+        <textarea name="hold_notes" rows="4"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Hold</button>
+</form>
+
+<a href="{{ url_for('hub.weddings_master') }}" class="btn btn-secondary">Back</a>

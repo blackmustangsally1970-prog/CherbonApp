@@ -7,7 +7,7 @@ class Wedding(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # ============================
-    # CLIENT INFO (CSV + JotForm)
+    # CLIENT INFO
     # ============================
     bride_name = db.Column(db.String(120))
     bride_mobile = db.Column(db.String(50))
@@ -24,12 +24,21 @@ class Wedding(db.Model):
     # EVENT DETAILS
     # ============================
     wedding_date = db.Column(db.Date, nullable=False)
-    event_type = db.Column(db.String(120))     # CO / IND / WR / etc
+    start_time = db.Column(db.String(50))
+    event_type = db.Column(db.String(120))
     options = db.Column(db.String(255))
     service = db.Column(db.String(255))
     est_guests = db.Column(db.String(50))
-    start_time = db.Column(db.String(50))
     other_information = db.Column(db.Text)
+
+    # ============================
+    # HOLD SYSTEM
+    # ============================
+    is_hold = db.Column(db.Boolean, default=False)
+    hold_name = db.Column(db.String(120))
+    hold_notes = db.Column(db.Text)
+    hold_created_at = db.Column(db.DateTime)
+    hold_expires_at = db.Column(db.DateTime)
 
     # ============================
     # CATERER DETAILS
@@ -40,15 +49,30 @@ class Wedding(db.Model):
     # ============================
     # SUBMISSION METADATA
     # ============================
-    submission_date = db.Column(db.Date)
+    submission_date = db.Column(db.DateTime)
     price_version = db.Column(db.String(50))
     tnc_version = db.Column(db.String(50))
 
     # ============================
-    # BOOKING STATUS
+    # BOOKING WORKFLOW
     # ============================
-    status = db.Column(db.String(50), default='hold')  
-    booking_source = db.Column(db.String(50))          # manual / jotform_tnc
+    booking_status = db.Column(db.String(50), default='pending_admin')
+    admin_approved_at = db.Column(db.DateTime)
+
+    # ============================
+    # VENDOR NOTIFICATIONS
+    # ============================
+    caterer_notified_at = db.Column(db.DateTime)
+    caterer_confirmed_at = db.Column(db.DateTime)
+
+    decorator_notified_at = db.Column(db.DateTime)
+    decorator_confirmed_at = db.Column(db.DateTime)
+
+    coordinator_notified_at = db.Column(db.DateTime)
+    coordinator_confirmed_at = db.Column(db.DateTime)
+
+    staff_notified_at = db.Column(db.DateTime)
+    staff_confirmed_at = db.Column(db.DateTime)
 
     # ============================
     # JOTFORM LINKS
@@ -57,7 +81,7 @@ class Wedding(db.Model):
     menu_submission_id = db.Column(db.String(120))
 
     # ============================
-    # RELATIONSHIPS (Hub)
+    # RELATIONSHIPS
     # ============================
     staff_assignments = db.relationship(
         'WeddingStaffAssignment',

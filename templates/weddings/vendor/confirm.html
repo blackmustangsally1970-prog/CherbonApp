@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Confirmation Received</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container" style="max-width: 700px; margin-top: 40px;">
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <h2 class="text-success">✔ Confirmation Received</h2>
+            <p class="text-muted">Thank you for confirming your availability.</p>
+
+            <hr>
+
+            <h4>Wedding Details</h4>
+            <p><strong>Bride & Groom:</strong> {{ wedding.bride_name }} & {{ wedding.groom_name }}</p>
+            <p><strong>Date:</strong> {{ wedding.wedding_date.strftime('%d/%m/%Y') }}</p>
+            <p><strong>Start Time:</strong> {{ wedding.start_time }}</p>
+            <p><strong>Estimated Guests:</strong> {{ wedding.est_guests }}</p>
+            <p><strong>Event Type:</strong> {{ wedding.event_type }}</p>
+
+            <hr>
+
+            <p>If you need to contact Cherbon Waters, please reply to the email you received.</p>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
