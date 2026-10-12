@@ -3,7 +3,7 @@ from datetime import datetime
 from flask_login import UserMixin
 
 
-class Account(db.Model):
+class Account(db.Model, UserMixin):
     __tablename__ = "accounts"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -20,6 +20,22 @@ class Account(db.Model):
     pin_hash = db.Column(db.String(200))
     pin_failures = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime)
+
+    # ⭐ REQUIRED BY FLASK-LOGIN ⭐
+    @property
+    def is_active(self):
+        return self.active
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return str(self.id)
 
 class FixedExpenses(db.Model):
     __tablename__ = "fixed_expenses"
