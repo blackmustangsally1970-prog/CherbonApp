@@ -1569,9 +1569,8 @@ def create_app():
 
     @app.route("/admin/users")
     def admin_users():
-        users = Users.query.order_by(Users.username.asc()).all()
+        users = Account.query.order_by(Account.username.asc()).all()
         return render_template("admin_users.html", users=users)
-
 
     @app.route("/admin/users/add", methods=["GET", "POST"])
     def admin_users_add():
@@ -1606,7 +1605,7 @@ def create_app():
 
     @app.route("/admin/users/<int:user_id>/edit", methods=["GET", "POST"])
     def admin_users_edit(user_id):
-        u = Users.query.get_or_404(user_id)
+        u = Account.query.get_or_404(user_id)
 
         if request.method == "POST":
             u.username = request.form.get("username").strip()
@@ -1623,7 +1622,7 @@ def create_app():
 
     @app.route("/admin/users/<int:user_id>/reset_password", methods=["POST"])
     def admin_users_reset_password(user_id):
-        u = Users.query.get_or_404(user_id)
+        u = Account.query.get_or_404(user_id)
 
         new_pass = request.form.get("new_password")
         if not new_pass:
@@ -1639,7 +1638,7 @@ def create_app():
 
     @app.route("/admin/users/<int:user_id>/deactivate", methods=["POST"])
     def admin_users_deactivate(user_id):
-        u = Users.query.get_or_404(user_id)
+        u = Account.query.get_or_404(user_id)
         u.active = False
         db.session.commit()
 
@@ -1649,7 +1648,7 @@ def create_app():
 
     @app.route("/admin/users/<int:user_id>/activate", methods=["POST"])
     def admin_users_activate(user_id):
-        u = Users.query.get_or_404(user_id)
+        u = Account.query.get_or_404(user_id)
         u.active = True
         db.session.commit()
 
