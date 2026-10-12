@@ -22,6 +22,7 @@ hub_bp = Blueprint('hub', __name__, url_prefix='/weddings')
 # ---------------------------------------------------------
 # MASTER PAGE – ALL WEDDINGS
 # ---------------------------------------------------------
+
 @hub_bp.route('/')
 @login_required
 def weddings_master():
@@ -29,13 +30,14 @@ def weddings_master():
     if current_user.role not in ['admin', 'management']:
         abort(403)
 
-    weddings = Wedding.query.order_by(
+    weddings = Wedding.query.filter(
+        Wedding.booking_status.notin_(["archived", "cancelled"])
+    ).order_by(
         Wedding.wedding_date.asc(),
         Wedding.start_time.asc()
     ).all()
 
     return render_template('weddings/master.html', weddings=weddings)
-
 
 @hub_bp.route('/<int:wedding_id>/hub')
 @login_required
@@ -50,7 +52,20 @@ def wedding_hub(wedding_id):
     return render_template('weddings/hub.html', wedding=w)
 
 
+@hub_bp.route('/archived')
+@login_required
+def archived_weddings():
 
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    archived = Wedding.query.filter(
+        Wedding.booking_status.in_(["archived", "cancelled"])
+    ).order_by(
+        Wedding.wedding_date.desc()
+    ).all()
+
+    return render_template('weddings/archived.html', weddings=archived)
 
 
 # ---------------------------------------------------------
@@ -92,6 +107,40 @@ def create_hold():
         return redirect(url_for('hub.weddings_master'))
 
     return render_template('weddings/create_hold.html')
+
+@hub_bp.route('/<int:wedding_id>/archive', methods=['POST'])
+@login_required
+def archive_wedding(wedding_id):
+    w = Wedding.query.get_or_404(wedding_id)
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    w.booking_status = "archived"
+    w.archived_at = datetime.now()
+
+    db.session.commit()
+
+    flash("Wedding archived successfully.", "info")
+    return redirect(url_for('hub.wedding_hub', wedding_id=wedding_id))
+
+
+@hub_bp.route('/<int:wedding_id>/cancel', methods=['POST'])
+@login_required
+def cancel_wedding(wedding_id):
+    w = Wedding.query.get_or_404(wedding_id)
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    w.booking_status = "cancelled"
+    w.cancelled_at = datetime.now()
+
+    db.session.commit()
+
+    flash("Wedding cancelled successfully.", "warning")
+    return redirect(url_for('hub.wedding_hub', wedding_id=wedding_id))
+
 
 # ---------------------------------------------------------
 # REMOVE HOLD (ADMIN ONLY)
