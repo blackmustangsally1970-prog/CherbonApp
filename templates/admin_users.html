@@ -33,10 +33,10 @@
 
         <div class="user-actions">
 
-            <a href="{{ url_for('admin_users_edit', user_id=u.user_id) }}"
+            <a href="{{ url_for('admin_users_edit', user_id=u.id) }}"
                class="btn btn-warning btn-sm action-btn">✏️ Edit</a>
 
-            <form action="{{ url_for('admin_users_reset_password', user_id=u.user_id) }}"
+            <form action="{{ url_for('admin_users_reset_password', user_id=u.id) }}"
                   method="POST" style="display:inline-block;">
                 <input type="hidden" name="new_password" value="Reset123">
                 <button class="btn btn-info btn-sm action-btn"
@@ -46,7 +46,7 @@
             </form>
 
             {% if u.active %}
-            <form action="{{ url_for('admin_users_deactivate', user_id=u.user_id) }}"
+            <form action="{{ url_for('admin_users_deactivate', user_id=u.id) }}"
                   method="POST" style="display:inline-block;">
                 <button class="btn btn-secondary btn-sm action-btn"
                         onclick="return confirm('Deactivate user?');">
@@ -54,7 +54,7 @@
                 </button>
             </form>
             {% else %}
-            <form action="{{ url_for('admin_users_activate', user_id=u.user_id) }}"
+            <form action="{{ url_for('admin_users_activate', user_id=u.id) }}"
                   method="POST" style="display:inline-block;">
                 <button class="btn btn-success btn-sm action-btn"
                         onclick="return confirm('Activate user?');">
