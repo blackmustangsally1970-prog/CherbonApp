@@ -319,7 +319,7 @@ class Receipt(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     staff_id = db.Column(db.Integer, db.ForeignKey("accounts.id"))
-    staff = db.relationship("Users")
+    staff = db.relationship("Account")
     image_path = db.Column(db.String(255))
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
