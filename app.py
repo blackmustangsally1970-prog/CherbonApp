@@ -1569,7 +1569,10 @@ def create_app():
 
     @app.route("/admin/users")
     def admin_users():
-        users = Account.query.order_by(Account.username.asc()).all()
+        users = Account.query \
+            .filter(Account.role != "staff") \
+            .order_by(Account.username.asc()) \
+            .all()
         return render_template("admin_users.html", users=users)
 
     @app.route("/admin/users/add", methods=["GET", "POST"])
