@@ -788,9 +788,12 @@ def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            user = Users.query.get(session.get("user_id"))
+            user_id = session.get("user_id")
+            user = Account.query.get(user_id) if user_id else None
+
             if not user or user.role not in roles:
                 return "Access denied", 403
+
             return f(*args, **kwargs)
         return wrapper
     return decorator
@@ -1471,7 +1474,7 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return Users.query.get(int(user_id))
+        return Account.query.get(int(user_id))
 
     # ⭐ ADD THIS RIGHT HERE
     db.init_app(app)
@@ -2042,11 +2045,11 @@ def create_app():
             username = request.form.get("user", "").strip()
             password = request.form.get("password", "").strip()
 
-            user = Users.query.filter_by(username=username, active=True).first()
+            user = Account.query.filter_by(username=username, active=True).first()
             if user and check_password_hash(user.password_hash, password):
 
                 # --- OLD SYSTEM (keeps current users working) ---
-                session["user_id"] = user.user_id
+                session["user_id"] = user.id
                 session["username"] = user.username
 
                 # --- NEW SYSTEM (Flask-Login) ---
