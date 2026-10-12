@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html>
 
-<form action="{{ url_for('hub.weddings_master') }}" method="get" style="margin-bottom: 15px;">
-    <button class="btn btn-primary">⬅ Back to Wedding Master</button>
-</form>
 
 <head>
     <title>Wedding Hub - {{ wedding.bride }} & {{ wedding.groom }}</title>
@@ -84,6 +81,36 @@
 
 <div class="container" style="margin-top: 30px; max-width: 1200px;">
 
+
+<div class="top-actions" style="margin-bottom: 20px;">
+    <a href="{{ url_for('hub.weddings_master') }}" class="btn btn-primary">⬅ Back to Wedding Master</a>
+
+
+
+    <form action="{{ url_for('hub.archive_wedding', wedding_id=wedding.id) }}"
+          method="post" style="display:inline-block;"
+          onsubmit="return confirm('Are you sure you want to ARCHIVE this wedding?');">
+        <button class="btn btn-secondary">Archive</button>
+    </form>
+
+
+    {% if wedding.booking_status not in ["postponed", "archived", "cancelled"] %}
+    <form action="{{ url_for('hub.postpone_wedding', wedding_id=wedding.id) }}"
+          method="post" style="display:inline-block;"
+          onsubmit="return confirm('Are you sure you want to POSTPONE this wedding?');">
+        <button class="btn btn-warning">Postpone</button>
+    </form>
+    {% endif %}
+
+    <form action="{{ url_for('hub.cancel_wedding', wedding_id=wedding.id) }}"
+          method="post" style="display:inline-block;"
+          onsubmit="return confirm('Are you sure you want to CANCEL this wedding?');">
+        <button class="btn btn-danger">Cancel</button>
+    </form>
+</div>
+
+
+
     <!-- HEADER -->
     <div class="hub-header">
         <h2 class="page-title">💒 Wedding Hub</h2>
@@ -94,35 +121,6 @@
             <span class="meta-item"><strong>Guests:</strong> {{ wedding.est_guests }}</span>
         </div>
     </div>
-
-<form action="{{ url_for('hub.archive_wedding', wedding_id=wedding.id) }}"
-      method="post"
-      onsubmit="return confirm('Are you sure you want to ARCHIVE this wedding?');">
-    <button class="btn btn-secondary">Archive Wedding</button>
-</form>
-
-{% if wedding.booking_status not in ["postponed", "archived", "cancelled"] %}
-<form action="{{ url_for('hub.postpone_wedding', wedding_id=wedding.id) }}"
-      method="post"
-      onsubmit="return confirm('Are you sure you want to POSTPONE this wedding?');">
-    <button class="btn btn-warning">Postpone Wedding</button>
-</form>
-{% endif %}
-
-
-{% if wedding.booking_status == "postponed" %}
-<form action="{{ url_for('hub.postponed_weddings') }}" method="get">
-    <button class="btn btn-warning">View All Postponed Weddings</button>
-</form>
-{% endif %}
-
-
-<form action="{{ url_for('hub.cancel_wedding', wedding_id=wedding.id) }}"
-      method="post"
-      onsubmit="return confirm('Are you sure you want to CANCEL this wedding?');">
-    <button class="btn btn-danger">Cancel Wedding</button>
-</form>
-
 
 
     <!-- HOLD WARNING -->
