@@ -31,7 +31,7 @@ def weddings_master():
         abort(403)
 
     weddings = Wedding.query.filter(
-        Wedding.booking_status.notin_(["archived", "cancelled"])
+        Wedding.booking_status.notin_(["archived", "cancelled", "postponed"])
     ).order_by(
         Wedding.wedding_date.asc(),
         Wedding.start_time.asc()
