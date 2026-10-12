@@ -52,6 +52,22 @@ def wedding_hub(wedding_id):
     return render_template('weddings/hub.html', wedding=w)
 
 
+@hub_bp.route('/postponed')
+@login_required
+def postponed_weddings():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    postponed = Wedding.query.filter(
+        Wedding.booking_status == "postponed"
+    ).order_by(
+        Wedding.wedding_date.asc()
+    ).all()
+
+    return render_template('weddings/postponed.html', weddings=postponed)
+
+
 @hub_bp.route('/archived')
 @login_required
 def archived_weddings():

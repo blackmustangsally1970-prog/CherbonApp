@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Archived Weddings</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container" style="margin-top: 30px;">
+
+    <h2>📁 Archived / Cancelled Weddings</h2>
+
+    <table class="table table-bordered table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Bride & Groom</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for w in weddings %}
+            <tr>
+                <td>{{ w.wedding_date.strftime('%d/%m/%Y') }}</td>
+                <td>{{ w.bride_name }} & {{ w.groom_name }}</td>
+                <td>{{ w.booking_status }}</td>
+                <td>
+                    <form action="{{ url_for('hub.restore_wedding', wedding_id=w.id) }}"
+                          method="post"
+                          onsubmit="return confirm('Restore this wedding?');">
+                        <button class="btn btn-success btn-sm">Restore</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+</body>
+</html>

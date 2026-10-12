@@ -84,7 +84,7 @@
         <h2 class="page-title">💒 Wedding Hub</h2>
         <h4 class="page-subtitle">{{ wedding.bride_name }} & {{ wedding.groom_name }} — {{ wedding.wedding_date }}</h4>
         <div class="hub-meta">
-            <span class="meta-item"><strong>Status:</strong> {{ wedding.status }}</span>
+            <span class="meta-item"><strong>Status:</strong> {{ wedding.booking_status }}</span>
             <span class="meta-item"><strong>Coordinator:</strong> {{ wedding.coordinator_name or "Not assigned" }}</span>
             <span class="meta-item"><strong>Guests:</strong> {{ wedding.est_guests }}</span>
         </div>
@@ -95,6 +95,13 @@
       onsubmit="return confirm('Are you sure you want to ARCHIVE this wedding?');">
     <button class="btn btn-secondary">Archive Wedding</button>
 </form>
+
+{% if wedding.booking_status == "postponed" %}
+<form action="{{ url_for('hub.postponed_weddings') }}" method="get">
+    <button class="btn btn-warning">View All Postponed Weddings</button>
+</form>
+{% endif %}
+
 
 <form action="{{ url_for('hub.cancel_wedding', wedding_id=wedding.id) }}"
       method="post"
