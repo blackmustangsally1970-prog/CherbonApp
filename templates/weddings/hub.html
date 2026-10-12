@@ -96,6 +96,15 @@
     <button class="btn btn-secondary">Archive Wedding</button>
 </form>
 
+{% if wedding.booking_status not in ["postponed", "archived", "cancelled"] %}
+<form action="{{ url_for('hub.postpone_wedding', wedding_id=wedding.id) }}"
+      method="post"
+      onsubmit="return confirm('Are you sure you want to POSTPONE this wedding?');">
+    <button class="btn btn-warning">Postpone Wedding</button>
+</form>
+{% endif %}
+
+
 {% if wedding.booking_status == "postponed" %}
 <form action="{{ url_for('hub.postponed_weddings') }}" method="get">
     <button class="btn btn-warning">View All Postponed Weddings</button>

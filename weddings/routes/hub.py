@@ -68,6 +68,25 @@ def postponed_weddings():
     return render_template('weddings/postponed.html', weddings=postponed)
 
 
+@hub_bp.route('/<int:wedding_id>/postpone', methods=['POST'])
+@login_required
+def postpone_wedding(wedding_id):
+    w = Wedding.query.get_or_404(wedding_id)
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    w.booking_status = "postponed"
+    w.postponed_at = datetime.now()
+
+    db.session.commit()
+
+    flash("Wedding postponed. It will appear in the Postponed Weddings list.", "warning")
+    return redirect(url_for('hub.wedding_hub', wedding_id=wedding_id))
+
+
+
+
 @hub_bp.route('/archived')
 @login_required
 def archived_weddings():
