@@ -1199,7 +1199,7 @@ def get_current_employee():
     user_id = session.get('user_id')
     if not user_id:
         return None
-    return Employee.query.filter_by(user_id=user_id).first()
+    return Employee.query.filter_by(account_id=user_id).first()
 
 def get_employee_role(employee):
     if not employee:
@@ -2457,7 +2457,7 @@ def create_app():
             # -----------------------
 
             r = Receipt(
-                staff_id=current_user.user_id,
+                staff_id=current_user.id,
                 image_path=f"receipts/raw/{filename}",
                 notes=notes,
 

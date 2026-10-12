@@ -318,7 +318,7 @@ class Receipt(db.Model):
     __tablename__ = "receipt"
 
     id = db.Column(db.Integer, primary_key=True)
-    staff_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
+    staff_id = db.Column(db.Integer, db.ForeignKey("accounts.id"))
     staff = db.relationship("Users")
     image_path = db.Column(db.String(255))
     notes = db.Column(db.Text)
