@@ -85,36 +85,33 @@
             </thead>
 
             <tbody>
-                {% for w in weddings %}
+{% for w in weddings %}
 
-                {# Normalize event_type #}
-                {% set et = (w.event_type or '').lower() %}
+{% set et = (w.event_type or '').lower() %}
 
-                {# Map event_type to CR/GHR/P/CO #}
-                {% if 'ceremony & reception' in et %}
-                    {% set et_code = 'CR' %}
-                {% elif 'garden hire & reception' in et %}
-                    {% set et_code = 'GHR' %}
-                {% elif 'party' in et %}
-                    {% set et_code = 'P' %}
-                {% elif 'ceremony only' in et %}
-                    {% set et_code = 'CO' %}
-                {% else %}
-                    {% set et_code = '-' %}
-                {% endif %}
+{% if 'ceremony & reception' in et %}
+    {% set et_code = 'CR' %}
+{% elif 'garden hire & reception' in et %}
+    {% set et_code = 'GHR' %}
+{% elif 'party' in et %}
+    {% set et_code = 'P' %}
+{% elif 'ceremony only' in et %}
+    {% set et_code = 'CO' %}
+{% else %}
+    {% set et_code = '-' %}
+{% endif %}
 
-                {# TYPE column = service ONLY #}
-                {% set type = (w.service or '-') %}
+{% set type = (w.service or '-') %}
 
-                <tr class="
-                    {% if et_code == 'CO' %}
-                        row-co
-                    {% elif 'ceremony' in et %}
-                        row-ceremony
-                    {% else %}
-                        row-other
-                    {% endif %}
-                ">
+<tr class="
+    {% if et_code == 'CO' %}
+        row-co
+    {% elif 'ceremony' in et %}
+        row-ceremony
+    {% else %}
+        row-other
+    {% endif %}
+">
 
                     <td>{{ w.wedding_date.strftime('%d/%m/%Y') }}</td>
                     <td>{{ w.start_time }}</td>
