@@ -1,177 +1,130 @@
 <!DOCTYPE html>
 <html>
-
-
 <head>
-    <title>Wedding Hub - {{ wedding.bride }} & {{ wedding.groom }}</title>
-    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <title>Wedding Hub - {{ wedding.bride_name }} & {{ wedding.groom_name }}</title>
 
-<style>
-/* SINGLE COLUMN STACKED LAYOUT */
-.hub-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    margin-top: 25px;
-}
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
-/* SECTION BOXES */
-.hub-section {
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #fafafa;
-}
+    <style>
+        .hub-card {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
 
-/* SECTION TITLES */
-.section-title {
-    margin-bottom: 15px;
-    font-weight: 600;
-    border-bottom: 2px solid #ccc;
-    padding-bottom: 6px;
-}
+        .section-title {
+            font-weight: 700;
+            font-size: 20px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 6px;
+        }
 
-/* VENDOR TABLE */
-.vendor-table th {
-    width: 150px;
-    vertical-align: middle;
-}
+        .vendor-table th {
+            width: 150px;
+        }
 
-.badge {
-    font-size: 0.85rem;
-    padding: 6px 10px;
-    margin-bottom: 4px;
-}
-
-.btn-outline-primary {
-    width: 150px;
-}
-
-/* HEADER BLOCK */
-.hub-header {
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #fff;
-    margin-bottom: 25px;
-}
-
-.hub-meta {
-    margin-top: 10px;
-}
-
-.meta-item {
-    margin-right: 20px;
-}
-
-/* MOBILE FRIENDLY */
-@media (max-width: 768px) {
-    .vendor-table th {
-        width: 120px;
-    }
-    .btn-outline-primary {
-        width: 100%;
-        margin-top: 8px;
-    }
-}
-</style>
+        .vendor-table td, .vendor-table th {
+            vertical-align: middle;
+        }
+    </style>
 </head>
 
-<body>
+<body class="bg-light">
 
-<div class="container" style="margin-top: 30px; max-width: 1200px;">
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                Wedding Hub — {{ wedding.bride_name }} & {{ wedding.groom_name }}
+            </span>
 
+            <div>
+                <a class="btn btn-outline-light btn-sm"
+                   href="{{ url_for('hub.weddings_master') }}">
+                   Back to Master
+                </a>
 
-<div class="top-actions" style="margin-bottom: 20px;">
-    <a href="{{ url_for('hub.weddings_master') }}"
-       class="btn btn-primary"
-       style="text-decoration:none;">
-       ⬅ Back to Wedding Master
-    </a>
+                <form action="{{ url_for('hub.archive_wedding', wedding_id=wedding.id) }}"
+                      method="post" style="display:inline-block;"
+                      onsubmit="return confirm('Archive this wedding?');">
+                    <button class="btn btn-outline-light btn-sm">Archive</button>
+                </form>
 
-    <form action="{{ url_for('hub.archive_wedding', wedding_id=wedding.id) }}"
-          method="post" style="display:inline-block;"
-          onsubmit="return confirm('Are you sure you want to ARCHIVE this wedding?');">
-        <button class="btn btn-secondary">Archive</button>
-    </form>
+                {% if wedding.booking_status not in ["postponed", "archived", "cancelled"] %}
+                <form action="{{ url_for('hub.postpone_wedding', wedding_id=wedding.id) }}"
+                      method="post" style="display:inline-block;"
+                      onsubmit="return confirm('Postpone this wedding?');">
+                    <button class="btn btn-outline-light btn-sm">Postpone</button>
+                </form>
+                {% endif %}
 
-    {% if wedding.booking_status not in ["postponed", "archived", "cancelled"] %}
-    <form action="{{ url_for('hub.postpone_wedding', wedding_id=wedding.id) }}"
-          method="post" style="display:inline-block;"
-          onsubmit="return confirm('Are you sure you want to POSTPONE this wedding?');">
-        <button class="btn btn-warning">Postpone</button>
-    </form>
-    {% endif %}
-
-    <form action="{{ url_for('hub.cancel_wedding', wedding_id=wedding.id) }}"
-          method="post" style="display:inline-block;"
-          onsubmit="return confirm('Are you sure you want to CANCEL this wedding?');">
-        <button class="btn btn-danger">Cancel</button>
-    </form>
-</div>
-
-
-
-    <!-- HEADER -->
-    <div class="hub-header">
-        <h2 class="page-title">💒 Wedding Hub</h2>
-        <h4 class="page-subtitle">{{ wedding.bride_name }} & {{ wedding.groom_name }} — {{ wedding.wedding_date }}</h4>
-        <div class="hub-meta">
-            <span class="meta-item"><strong>Status:</strong> {{ wedding.booking_status }}</span>
-            <span class="meta-item"><strong>Coordinator:</strong> {{ wedding.coordinator_name or "Not assigned" }}</span>
-            <span class="meta-item"><strong>Guests:</strong> {{ wedding.est_guests }}</span>
+                <form action="{{ url_for('hub.cancel_wedding', wedding_id=wedding.id) }}"
+                      method="post" style="display:inline-block;"
+                      onsubmit="return confirm('Cancel this wedding?');">
+                    <button class="btn btn-outline-light btn-sm">Cancel</button>
+                </form>
+            </div>
         </div>
-    </div>
+    </nav>
 
+    <div class="container" style="max-width: 1100px;">
 
-    <!-- HOLD WARNING -->
-    {% if wedding.is_hold %}
-    <div class="alert alert-warning mt-3">
-        <strong>⚠ This date is on HOLD</strong><br>
-        <strong>Name:</strong> {{ wedding.hold_name }}<br>
-        <strong>Notes:</strong> {{ wedding.hold_notes or "None" }}<br>
-        <strong>Created:</strong> {{ wedding.hold_created_at }}
+        <!-- HEADER CARD -->
+        <div class="hub-card">
+            <h2 class="mb-2">💒 Wedding Overview</h2>
+            <h5 class="text-muted">{{ wedding.wedding_date }}</h5>
 
-        <form method="POST" action="/weddings/{{ wedding.id }}/remove_hold" class="mt-2">
-            <button class="btn btn-danger btn-sm">Remove Hold</button>
-        </form>
-    </div>
-    {% endif %}
+            <div class="mt-3">
+                <strong>Status:</strong> {{ wedding.booking_status }}<br>
+                <strong>Coordinator:</strong> {{ wedding.coordinator_name or "Not assigned" }}<br>
+                <strong>Guests:</strong> {{ wedding.est_guests }}
+            </div>
+        </div>
 
-    <!-- VENDOR STATUS BANNER -->
-    {% set vendor_confirmed = (
-        wedding.caterer_confirmed_at and
-        wedding.decorator_confirmed_at and
-        wedding.coordinator_confirmed_at and
-        wedding.staff_confirmed_at
-    ) %}
+        <!-- HOLD WARNING -->
+        {% if wedding.is_hold %}
+        <div class="alert alert-warning">
+            <strong>⚠ This date is on HOLD</strong><br>
+            <strong>Name:</strong> {{ wedding.hold_name }}<br>
+            <strong>Notes:</strong> {{ wedding.hold_notes or "None" }}<br>
+            <strong>Created:</strong> {{ wedding.hold_created_at }}
 
-    {% set vendor_declined = (wedding.booking_status == "vendor_declined") %}
+            <form method="POST" action="/weddings/{{ wedding.id }}/remove_hold" class="mt-2">
+                <button class="btn btn-danger btn-sm">Remove Hold</button>
+            </form>
+        </div>
+        {% endif %}
 
-    {% if vendor_declined %}
-    <div class="alert alert-danger">
-        <strong>❌ Vendor Declined</strong><br>
-        At least one vendor has declined this wedding. Please review and reassign.
-    </div>
+        <!-- VENDOR STATUS BANNER -->
+        {% set vendor_confirmed = (
+            wedding.caterer_confirmed_at and
+            wedding.decorator_confirmed_at and
+            wedding.coordinator_confirmed_at and
+            wedding.staff_confirmed_at
+        ) %}
 
-    {% elif vendor_confirmed %}
-    <div class="alert alert-success">
-        <strong>✅ All Vendors Confirmed</strong><br>
-        Caterer, Decorator, Coordinator, and Staff have all confirmed availability.
-    </div>
+        {% if wedding.booking_status == "vendor_declined" %}
+        <div class="alert alert-danger">
+            ❌ Vendor Declined — review and reassign.
+        </div>
 
-    {% else %}
-    <div class="alert alert-warning">
-        <strong>⏳ Awaiting Vendor Confirmations</strong><br>
-        Some vendors have been notified but not yet confirmed.
-    </div>
-    {% endif %}
+        {% elif vendor_confirmed %}
+        <div class="alert alert-success">
+            ✅ All Vendors Confirmed — Caterer, Decorator, Coordinator, Staff.
+        </div>
 
-    <!-- MAIN GRID -->
-    <div class="hub-grid">
+        {% else %}
+        <div class="alert alert-warning">
+            ⏳ Awaiting Vendor Confirmations.
+        </div>
+        {% endif %}
 
         <!-- EVENT DETAILS -->
-        <div class="hub-section">
+        <div class="hub-card">
             <h4 class="section-title">🍽️ Event Details</h4>
 
             <p><strong>Event Type:</strong> {{ wedding.event_type or "-" }}</p>
@@ -179,14 +132,16 @@
             <p><strong>Other Information:</strong> {{ wedding.other_information or "None provided" }}</p>
             <p><strong>Menu Status:</strong> {{ wedding.menu_status or "Pending" }}</p>
 
-            <a href="/weddings/{{ wedding.id }}/menu" class="btn btn-warning btn-sm">Open Menu Page</a>
+            <a href="/weddings/{{ wedding.id }}/menu" class="btn btn-warning btn-sm">
+                Open Menu Page
+            </a>
         </div>
 
-        <!-- VENDOR STATUS -->
-        <div class="hub-section">
+        <!-- VENDOR STATUS TABLE -->
+        <div class="hub-card">
             <h4 class="section-title">📣 Vendor Status</h4>
 
-            <table class="table table-bordered table-sm vendor-table">
+            <table class="table table-bordered vendor-table">
                 <tr>
                     <th>Caterer</th>
                     <td>
@@ -194,9 +149,8 @@
                         <span class="badge bg-success">Confirmed: {{ wedding.caterer_confirmed_at or "—" }}</span>
                     </td>
                     <td>
-                        <a href="/weddings/{{ wedding.id }}/notify/caterer" class="btn btn-sm btn-outline-primary">
-                            Notify Caterer
-                        </a>
+                        <a href="/weddings/{{ wedding.id }}/notify/caterer"
+                           class="btn btn-outline-primary btn-sm">Notify</a>
                     </td>
                 </tr>
 
@@ -207,9 +161,8 @@
                         <span class="badge bg-success">Confirmed: {{ wedding.decorator_confirmed_at or "—" }}</span>
                     </td>
                     <td>
-                        <a href="/weddings/{{ wedding.id }}/notify/decorator" class="btn btn-sm btn-outline-primary">
-                            Notify Decorator
-                        </a>
+                        <a href="/weddings/{{ wedding.id }}/notify/decorator"
+                           class="btn btn-outline-primary btn-sm">Notify</a>
                     </td>
                 </tr>
 
@@ -220,9 +173,8 @@
                         <span class="badge bg-success">Confirmed: {{ wedding.coordinator_confirmed_at or "—" }}</span>
                     </td>
                     <td>
-                        <a href="/weddings/{{ wedding.id }}/notify/coordinator" class="btn btn-sm btn-outline-primary">
-                            Notify Coordinator
-                        </a>
+                        <a href="/weddings/{{ wedding.id }}/notify/coordinator"
+                           class="btn btn-outline-primary btn-sm">Notify</a>
                     </td>
                 </tr>
 
@@ -233,17 +185,14 @@
                         <span class="badge bg-success">Confirmed: {{ wedding.staff_confirmed_at or "—" }}</span>
                     </td>
                     <td>
-                        <a href="/weddings/{{ wedding.id }}/notify/staff" class="btn btn-sm btn-outline-primary">
-                            Notify Staff
-                        </a>
+                        <a href="/weddings/{{ wedding.id }}/notify/staff"
+                           class="btn btn-outline-primary btn-sm">Notify</a>
                     </td>
                 </tr>
             </table>
         </div>
 
     </div>
-
-</div>
 
 </body>
 </html>

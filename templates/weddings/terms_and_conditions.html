@@ -58,6 +58,8 @@
 
 </style>
 
+<form id="tc-form" method="POST" action="/weddings/terms_submit">
+
 <div class="event-details">
 
     <h2>Wedding & Client Details</h2>
@@ -100,6 +102,8 @@
         <label>Email</label>
         <input type="email" name="bg2_email" required>
     </div>
+
+    <!-- rest of your fields... -->
 
     <h3>Event Type</h3>
 
@@ -282,6 +286,12 @@
 </div>
 
 
+</div>
+
+
+
+<div class="tc-progress">
+    Step <span id="tc-step-number">1</span> of 17
 </div>
 
 
@@ -618,6 +628,8 @@
     <button id="tc-submit" style="display:none;">Submit</button>
 </div>
 
+</form>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const steps = document.querySelectorAll(".tc-step");
@@ -655,6 +667,12 @@ document.addEventListener("DOMContentLoaded", function () {
         updateUI();
     });
 
+    // ⭐ FIXED: submit handler must be inside this block
+    submitBtn.addEventListener("click", () => {
+        document.getElementById("tc-form").submit();
+    });
+
     updateUI();
 });
 </script>
+

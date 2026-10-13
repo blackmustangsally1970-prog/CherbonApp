@@ -2,118 +2,89 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Login</title>
+    <title>Staff Login</title>
 
-<style>
-    /* BASE LAYOUT */
-    body {
-        font-family: sans-serif;
-        padding: 20px;
-        margin: 0;
-        text-align: center;
-    }
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
-    h2 {
-        margin-bottom: 40px;
-        font-size: 70px;
-        font-weight: 900;
-    }
-
-    /* FORM CONTAINER */
-    form {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    /* GIANT INPUTS — SAME SIZE ON ALL DEVICES */
-    input[type="text"],
-    input[type="password"],
-    input[list] {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        padding: 80px;            /* huge tap area */
-        font-size: 70px;          /* giant text */
-        min-height: 220px;        /* forces physical size */
-        margin-bottom: 70px;
-        border: 8px solid #4a6bff;
-        border-radius: 30px;
-        box-sizing: border-box;
-        font-weight: 700;
-        -webkit-appearance: none;
-    }
-
-    /* GIANT LOGIN BUTTON */
-    button {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        padding: 80px;
-        font-size: 70px;
-        font-weight: 900;
-        background: #4a6bff;
-        color: white;
-        border: none;
-        border-radius: 30px;
-        cursor: pointer;
-        -webkit-appearance: none;
-    }
-
-    button:active {
-        background: #3a56d6;
-    }
-
-    /* DESKTOP OVERRIDE ONLY */
-    @media (min-width: 1100px) {
-        h2 {
-            font-size: 40px;
+    <style>
+        .login-card {
+            max-width: 450px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 35px;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
         }
 
-        input[type="text"],
-        input[type="password"],
-        input[list] {
-            width: 350px;
-            padding: 16px;
+        .login-title {
+            font-size: 32px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .form-control {
+            padding: 14px;
+            font-size: 18px;
+            border-radius: 10px;
+        }
+
+        .login-btn {
+            padding: 14px;
             font-size: 20px;
-            min-height: auto;
-            margin-bottom: 20px;
+            font-weight: 700;
+            border-radius: 10px;
         }
-
-        button {
-            width: 350px;
-            padding: 18px;
-            font-size: 22px;
-        }
-    }
-</style>
-
+    </style>
 </head>
-<body>
 
-<h2>Staff Login</h2>
+<body class="bg-light">
 
-<form method="POST" autocomplete="off">
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand">Staff Login</span>
+        </div>
+    </nav>
 
-    <input list="usernames" name="user" placeholder="Username" autocomplete="off" required>
+    <div class="login-card">
 
-    <datalist id="usernames">
-        <option value="steve">
-        <option value="trevor">
-        <option value="tamara">
-    </datalist>
+        <h2 class="login-title">Welcome</h2>
 
-    <input type="password" name="password" placeholder="Password" required>
+        <form method="POST" autocomplete="off">
 
-    {% if error %}
-        <div style="color:red; margin-top:10px; font-size:40px;">{{ error }}</div>
-    {% endif %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Username</label>
+                <input list="usernames" name="user" class="form-control"
+                       placeholder="Enter username" required>
+            </div>
 
-    <button type="submit">Login</button>
-</form>
+            <datalist id="usernames">
+                <option value="steve">
+                <option value="trevor">
+                <option value="tamara">
+            </datalist>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Password</label>
+                <input type="password" name="password" class="form-control"
+                       placeholder="Enter password" required>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger text-center">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary w-100 login-btn">
+                Login
+            </button>
+
+        </form>
+
+    </div>
 
 </body>
 </html>

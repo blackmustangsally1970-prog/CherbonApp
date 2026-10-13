@@ -1,102 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Current Weddings</title>
 
-
-    <title>Cherbon Waters – Wedding Dashboard</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        h1 { margin-bottom: 20px; }
-
-        .top-actions { margin-bottom: 20px; }
-        .btn {
-            display: inline-block;
-            padding: 6px 12px;
-            background: #007bff;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-right: 10px;
-            font-size: 14px;
+        .row-ceremony {
+            background-color: #ffe9cc;
         }
-        .btn:hover { background: #0056b3; }
+        .row-other {
+            background-color: #e8f3ff;
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
-        th { background: #f5f5f5; }
+        .status-approved::before {
+            content: "✔";
+            color: #008000;
+            font-size: 18px;
+        }
 
-        .status-hold { color: #c97a00; font-weight: 600; }
-        .status-approved { color: #008000; font-weight: 600; }
-        .status-pending_admin { color: #0066cc; font-weight: 600; }
-        .status-cancelled { color: #b00000; font-weight: 600; }
+        .status-pending_admin::before {
+            content: "✖";
+            color: #b00000;
+            font-size: 18px;
+        }
 
-        .hold-yes { color: #c97a00; font-weight: 600; }
-        .hold-no { color: #666; }
+        .hold-yes {
+            color: #c97a00;
+            font-weight: 600;
+        }
+        .hold-no {
+            color: #666;
+        }
     </style>
 </head>
 
-<body>
+<body class="bg-light">
 
-<h1>Cherbon Waters – Wedding Dashboard</h1>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand">Current Weddings</span>
 
-<div class="top-actions">
-    <a href="{{ url_for('hub.create_hold') }}" class="btn">Create Hold</a>
-    <a href="{{ url_for('hub.incoming_queue') }}" class="btn">Incoming T&C Submissions</a>
-    <a href="#" class="btn">Add Manual Booking</a>
-    <a href="{{ url_for('hub.archived_weddings') }}" class="btn btn-secondary">Archived Weddings</a>
-    <a href="{{ url_for('hub.postponed_weddings') }}" class="btn btn-warning">Postponed Weddings</a>
-</div>
+            <div>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.create_hold') }}">Create Hold</a>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.incoming_queue') }}">Incoming T&C</a>
+                <a class="btn btn-outline-light btn-sm" href="#">Add Manual Booking</a>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.archived_weddings') }}">Archived</a>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.postponed_weddings') }}">Postponed</a>
+            </div>
+        </div>
+    </nav>
 
-<table>
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Bride & Groom</th>
-            <th>Event Type</th>
-            <th>Guests</th>
-            <th>Status</th>
-            <th>Hold</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+    <div class="container">
 
-    <tbody>
-        {% for w in weddings %}
-        <tr>
-            <td>{{ w.wedding_date.strftime('%d/%m/%Y') }}</td>
-            <td>{{ w.start_time }}</td>
+        <table class="table table-hover table-bordered shadow-sm bg-white">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Bride & Groom</th>
+                    <th>Event Type</th>
+                    <th>Guests</th>
+                    <th>Status</th>
+                    <th>Hold</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
 
-            <td>
-                {{ w.bride_name or '' }} & {{ w.groom_name or '' }}
-            </td>
+            <tbody>
+                {% for w in weddings %}
+                <tr class="
+                    {% if 'ceremony' in (w.event_type or '').lower() %}
+                        row-ceremony
+                    {% else %}
+                        row-other
+                    {% endif %}
+                ">
+                    <td>{{ w.wedding_date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ w.start_time }}</td>
 
-            <td>{{ w.event_type or '-' }}</td>
+                    <td>{{ w.bride_name or '' }} & {{ w.groom_name or '' }}</td>
 
-            <td>{{ w.est_guests or '-' }}</td>
+                    <td>{{ w.event_type or '-' }}</td>
 
-            <td class="status-{{ (w.booking_status or '').lower() }}">
-                {{ w.booking_status or 'unknown' }}
-            </td>
+                    <td>{{ w.est_guests or '-' }}</td>
 
-            <td>
-                {% if w.is_hold %}
-                    <span class="hold-yes">YES ({{ w.hold_name or 'Hold' }})</span>
-                {% else %}
-                    <span class="hold-no">-</span>
-                {% endif %}
-            </td>
+                    <td class="status-{{ (w.booking_status or '').lower() }}"></td>
 
-            <td>
-                <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}" class="btn">
-                    Open
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                    <td>
+                        {% if w.is_hold %}
+                            <span class="hold-yes">YES ({{ w.hold_name or 'Hold' }})</span>
+                        {% else %}
+                            <span class="hold-no">-</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}"
+                           class="btn btn-primary btn-sm">
+                           Open
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
 
 </body>
 </html>

@@ -1,33 +1,68 @@
-<button class="back-btn" onclick="window.location.href='/employees'">
-    Employee Menu
-</button>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ acc.full_name }} – FY {{ fy }} Yearly Summary</title>
 
-<h1>{{ acc.full_name }} – FY {{ fy }} Yearly Summary</h1>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
 
-<a href="{{ url_for('admin_employee_yearly_summary_txt', acc_id=acc.id, fy=fy) }}"
-   class="menu-btn-small">
-    📄 Download TXT
-</a>
+<body class="bg-light">
 
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
 
-<table border="1" cellpadding="8" cellspacing="0">
-    <tr>
-        <th>Week</th>
-        <th>Dates</th>
-        <th>Total Work</th>
-        <th>Total Break</th>
-        <th>Net Hours</th>
-    </tr>
+            <span class="navbar-brand">
+                {{ acc.full_name }} – FY {{ fy }} Summary
+            </span>
 
-    {% for w in yearly_rows %}
-    <tr>
-        <td>WK{{ w.week_number }}</td>
-        <td>{{ w.start.strftime("%d %b") }} – {{ w.end.strftime("%d %b") }}</td>
-        <td>{{ w.work }}</td>
-        <td>{{ w.break }}</td>
-        <td>{{ w.net }}</td>
-    </tr>
-    {% endfor %}
-</table>
+            <div>
+                <button class="btn btn-outline-light btn-sm"
+                        onclick="window.location.href='/employees'">
+                    Employee Menu
+                </button>
 
-<h2>Total for FY: {{ yearly_total }}</h2>
+                <a href="{{ url_for('admin_employee_yearly_summary_txt', acc_id=acc.id, fy=fy) }}"
+                   class="btn btn-outline-light btn-sm">
+                    📄 Download TXT
+                </a>
+            </div>
+
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 900px;">
+
+        <table class="table table-hover table-bordered shadow-sm bg-white">
+            <thead class="table-dark">
+                <tr>
+                    <th>Week</th>
+                    <th>Dates</th>
+                    <th>Total Work</th>
+                    <th>Total Break</th>
+                    <th>Net Hours</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for w in yearly_rows %}
+                <tr>
+                    <td>WK{{ w.week_number }}</td>
+                    <td>{{ w.start.strftime("%d %b") }} – {{ w.end.strftime("%d %b") }}</td>
+                    <td>{{ w.work }}</td>
+                    <td>{{ w.break }}</td>
+                    <td>{{ w.net }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 class="mt-4 fw-bold">
+            Total for FY: {{ yearly_total }}
+        </h2>
+
+    </div>
+
+</body>
+</html>

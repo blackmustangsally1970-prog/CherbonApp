@@ -10049,9 +10049,9 @@ Cherbon Waters Admin
     def admin_employee_hours(acc_id):
         acc = Account.query.get_or_404(acc_id)
 
-        today = datetime.date.today()
-        start_of_week = today - datetime.timedelta(days=today.weekday())
-        end_of_week = start_of_week + datetime.timedelta(days=6)
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
 
         rows = (
             EmployeeHours.query
