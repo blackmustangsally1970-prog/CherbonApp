@@ -7,7 +7,7 @@
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
     <style>
-        /* Existing colours */
+        /* Existing row colours */
         .row-ceremony {
             background-color: #ffe9cc; /* light orange */
         }
@@ -15,12 +15,16 @@
             background-color: #e8f3ff; /* light blue */
         }
 
-        /* New colours */
+        /* New CO shading */
         .row-co {
             background-color: #e8f3ff !important; /* Ceremony Only = light blue */
         }
-        .row-ind {
-            background-color: #ffe9cc !important; /* IND service = light orange */
+
+        /* New TYPE = IND cell shading */
+        .type-ind {
+            background-color: #ffcc80 !important; /* mid orange */
+            font-weight: bold;
+            color: #8a4b00;
         }
 
         .status-approved::before {
@@ -105,8 +109,6 @@
                 <tr class="
                     {% if et_code == 'CO' %}
                         row-co
-                    {% elif type|lower == 'ind' %}
-                        row-ind
                     {% elif 'ceremony' in et %}
                         row-ceremony
                     {% else %}
@@ -133,7 +135,9 @@
                         {% endif %}
                     </td>
 
-                    <td>{{ type }}</td>
+                    <td class="{% if type|lower == 'ind' %}type-ind{% endif %}">
+                        {{ type }}
+                    </td>
 
                     <td>
                         <a href="{{ url_for('hub.wedding_hub', wedding_id=w.id) }}"
