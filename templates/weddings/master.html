@@ -7,24 +7,29 @@
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
     <style>
-        /* Existing row colours */
+        /* Row colours */
         .row-ceremony {
-            background-color: #ffe9cc; /* light orange */
+            background-color: #ffe9cc !important; /* light orange */
         }
         .row-other {
-            background-color: #e8f3ff; /* light blue */
+            background-color: #e8f3ff !important; /* light blue */
         }
-
-        /* New CO shading */
         .row-co {
             background-color: #e8f3ff !important; /* Ceremony Only = light blue */
         }
 
-        /* New TYPE = IND cell shading */
+        /* TYPE = IND cell shading */
         .type-ind {
             background-color: #ffcc80 !important; /* mid orange */
             font-weight: bold;
             color: #8a4b00;
+        }
+
+        /* Force Bootstrap to respect row colours */
+        .table tbody tr.row-co td,
+        .table tbody tr.row-ceremony td,
+        .table tbody tr.row-other td {
+            background-color: inherit !important;
         }
 
         .status-approved::before {
@@ -46,25 +51,6 @@
         .hold-no {
             color: #666;
         }
-
-.table tbody tr.row-co td {
-    background-color: #e8f3ff !important;
-}
-
-.table tbody tr.row-ceremony td {
-    background-color: #ffe9cc !important;
-}
-
-.table tbody tr.row-other td {
-    background-color: #e8f3ff !important;
-}
-
-.table tbody tr.row-ind td {
-    background-color: #ffcc80 !important;
-}
-
-
-
     </style>
 </head>
 
@@ -98,39 +84,40 @@
                     <th>Guests</th>
                     <th>Status</th>
                     <th>Hold</th>
-                    <th>TYPE</th> <!-- service column -->
+                    <th>TYPE</th>
                     <th>Actions</th>
                 </tr>
             </thead>
 
             <tbody>
-{% for w in weddings %}
 
-{% set et = (w.event_type or '').lower() %}
+            {% for w in weddings %}
 
-{% if 'ceremony & reception' in et %}
-    {% set et_code = 'CR' %}
-{% elif 'garden hire & reception' in et %}
-    {% set et_code = 'GHR' %}
-{% elif 'party' in et %}
-    {% set et_code = 'P' %}
-{% elif 'ceremony only' in et %}
-    {% set et_code = 'CO' %}
-{% else %}
-    {% set et_code = '-' %}
-{% endif %}
+                {% set et = (w.event_type or '').lower() %}
 
-{% set type = (w.service or '-') %}
+                {% if 'ceremony & reception' in et %}
+                    {% set et_code = 'CR' %}
+                {% elif 'garden hire & reception' in et %}
+                    {% set et_code = 'GHR' %}
+                {% elif 'party' in et %}
+                    {% set et_code = 'P' %}
+                {% elif 'ceremony only' in et %}
+                    {% set et_code = 'CO' %}
+                {% else %}
+                    {% set et_code = '-' %}
+                {% endif %}
 
-<tr class="
-    {% if et_code == 'CO' %}
-        row-co
-    {% elif 'ceremony' in et %}
-        row-ceremony
-    {% else %}
-        row-other
-    {% endif %}
-">
+                {% set type = (w.service or '-') %}
+
+                <tr class="
+                    {% if et_code == 'CO' %}
+                        row-co
+                    {% elif et_code in ['CR','GHR','P'] %}
+                        row-ceremony
+                    {% else %}
+                        row-other
+                    {% endif %}
+                ">
 
                     <td>{{ w.wedding_date.strftime('%d/%m/%Y') }}</td>
                     <td>{{ w.start_time }}</td>
@@ -164,7 +151,8 @@
 
                 </tr>
 
-                {% endfor %}
+            {% endfor %}
+
             </tbody>
         </table>
 
