@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request
-from weddings.models.appointments import AppointmentDay, AppointmentTime
+from weddings.models.appointment_day import AppointmentDay
+from weddings.models.appointment_time import AppointmentTime
+from weddings.models.appointments import Appointment
 
 public_bp = Blueprint("public", __name__)
 
