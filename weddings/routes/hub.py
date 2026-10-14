@@ -10,7 +10,7 @@ from weddings.models.appointment_time import AppointmentTime
 from weddings.models.appointment_blockout import AppointmentBlockout
 
 from weddings.models.wedding import Wedding
-from weddings.models.wedding_staff_assignment import WeddingStaffAssignment
+from weddings.models.staff_assignment import WeddingStaffAssignment
 from weddings.models.job_list_instance import JobListInstance
 from weddings.models.job_list_master import JobListMaster
 from weddings.models.wedding_timeline import WeddingTimeline
