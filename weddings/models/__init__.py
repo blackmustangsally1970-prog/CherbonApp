@@ -6,3 +6,4 @@ from .job_list_instance import JobListInstance
 from .caterer import Caterer
 from .timeline import WeddingTimeline
 from .detail_template import WeddingDetailLibrary
+from .appointments import Appointment
