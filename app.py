@@ -1532,6 +1532,11 @@ def create_app():
     from weddings.routes.wedding_list import wedding_list_bp
     app.register_blueprint(wedding_list_bp)
 
+
+    from weddings.routes.public import public_bp
+    app.register_blueprint(public_bp)
+
+
     # ⭐ THEN import models
     from weddings.models.wedding import Wedding
     from weddings.models.staff_assignment import WeddingStaffAssignment
@@ -1552,6 +1557,10 @@ def create_app():
         if path.startswith("/employeehours"):
             return
 
+        # ⭐ Allow public viewing appointments (MOST SECURE FIX)
+        if path.startswith("/appointments"):
+            return
+
         # Allow login + static files
         if request.endpoint in ["login", "static"]:
             return
@@ -1562,7 +1571,6 @@ def create_app():
 
         if current_user.role not in ["admin", "management"]:
             abort(403)
-
 
 
     from werkzeug.security import generate_password_hash, check_password_hash
