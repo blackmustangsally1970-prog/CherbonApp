@@ -1,0 +1,54 @@
+{% extends "index.html" %}
+{% block content %}
+
+<div class="container py-4">
+
+    <h3 class="mb-4">Viewing Appointments</h3>
+
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th style="width: 180px;">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for a in appointments %}
+            <tr>
+                <td>{{ a.name }}</td>
+                <td>{{ a.phone }}</td>
+                <td>{{ a.email }}</td>
+                <td>{{ a.day.strftime('%d/%m/%Y') }}</td>
+                <td>{{ a.time_label }}</td>
+                <td>
+                    <span class="badge bg-info">{{ a.status }}</span>
+                </td>
+                <td>
+
+                    {% if a.status == 'booked' %}
+                    <form method="POST" action="{{ url_for('hub.appointment_mark_viewed', appt_id=a.id) }}" class="d-inline">
+                        <button class="btn btn-sm btn-secondary">Mark Viewed</button>
+                    </form>
+                    {% endif %}
+
+                    {% if a.status in ['booked', 'viewed'] %}
+                    <form method="POST" action="{{ url_for('hub.appointment_send_followup', appt_id=a.id) }}" class="d-inline">
+                        <button class="btn btn-sm btn-primary">Send Follow‑Up</button>
+                    </form>
+                    {% endif %}
+
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

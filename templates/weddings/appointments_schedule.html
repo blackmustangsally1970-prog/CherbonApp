@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Viewing Appointment Schedule</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+
+<body class="bg-light">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand">📅 Viewing Appointment Schedule</span>
+
+            <div>
+                <a class="btn btn-outline-light btn-sm"
+                   href="{{ url_for('hub.weddings_master') }}">
+                   Back to Master
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px;">
+
+        <p class="text-muted mb-3">
+            Manage available viewing days, time slots, blockouts, and see booked appointments.
+        </p>
+
+        <!-- MAIN SCHEDULE TABLE -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+
+                <h5 class="mb-3">Viewing Availability</h5>
+
+                <table class="table table-hover table-bordered bg-white shadow-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 150px;">Date</th>
+                            <th style="width: 120px;">Status</th>
+                            <th>Time Slots</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for d in days %}
+                        <tr>
+                            <td>{{ d.day.strftime('%a %d %b %Y') }}</td>
+
+                            <td>
+                                <form method="POST"
+                                      action="{{ url_for('hub.appointments_toggle_day', day_id=d.id) }}"
+                                      class="d-inline">
+                                    {% if d.is_open %}
+                                        <button class="btn btn-success btn-sm">Open</button>
+                                    {% else %}
+                                        <button class="btn btn-secondary btn-sm">Closed</button>
+                                    {% endif %}
+                                </form>
+                            </td>
+
+                            <td>
+                                {% if d.is_open %}
+                                    <div class="d-flex flex-wrap gap-2">
+
+                                        {% for t in d.times %}
+
+                                            {% if t.booking %}
+                                                <!-- BOOKED SLOT -->
+                                                <div class="d-inline-block">
+                                                    <span class="badge bg-success">{{ t.time_label }}</span>
+                                                    <small class="ms-2">{{ t.booking.name }}</small>
+                                                </div>
+
+                                            {% else %}
+                                                <!-- AVAILABLE / UNAVAILABLE SLOT -->
+                                                <form method="POST"
+                                                      action="{{ url_for('hub.appointments_toggle_time', time_id=t.id) }}"
+                                                      class="d-inline">
+
+                                                    {% if t.is_available %}
+                                                        <button class="btn btn-outline-primary btn-sm">
+                                                            {{ t.time_label }}
+                                                        </button>
+                                                    {% else %}
+                                                        <button class="btn btn-outline-secondary btn-sm">
+                                                            {{ t.time_label }}
+                                                        </button>
+                                                    {% endif %}
+
+                                                </form>
+                                            {% endif %}
+
+                                        {% endfor %}
+
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">Closed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+
+            </div>
+        </div>
+
+        <!-- BLOCKOUT FORM -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="mb-3">Add Blockout Range</h5>
+
+                <form method="POST" action="{{ url_for('hub.appointments_blockout') }}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="end_date" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Reason (optional)</label>
+                            <input type="text" name="reason" class="form-control">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-warning mt-3">Add Blockout</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- EXISTING BLOCKOUTS -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="mb-3">Existing Blockouts</h5>
+
+                <ul class="list-group">
+                    {% for b in blockouts %}
+                    <li class="list-group-item">
+                        {{ b.start_date.strftime('%d/%m/%Y') }} – {{ b.end_date.strftime('%d/%m/%Y') }}
+                        {% if b.reason %}
+                            <br><small class="text-muted">{{ b.reason }}</small>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">No blockouts.</li>

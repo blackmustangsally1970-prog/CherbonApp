@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; }
+        h2 { margin-top: 30px; }
+        .section { margin-bottom: 25px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { margin: 0; }
+        .box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Cherbon Waters – Viewing Follow‑Up</h1>
+    <p>Thank you for visiting our venue.</p>
+</div>
+
+<div class="section">
+    <h2>Your Appointment Details</h2>
+    <div class="box">
+        <p><strong>Name:</strong> {{ appointment.name }}</p>
+        <p><strong>Date:</strong> {{ appointment.day.strftime('%d/%m/%Y') }}</p>
+        <p><strong>Time:</strong> {{ appointment.time_label }}</p>
+    </div>
+</div>
+
+<div class="section">
+    <h2>How to Book</h2>
+    <p>
+        To secure your wedding date, please contact our office or reply to this email.
+        We will prepare your booking agreement and deposit invoice.
+    </p>
+</div>
+
+<div class="section">
+    <h2>Indicative Quote</h2>
+    <p>
+        Pricing varies depending on guest numbers, catering selections, and optional extras.
+        We will provide a personalised quote once you confirm your preferred package.
+    </p>
+</div>
+
+<div class="section">
+    <h2>Preferred Vendors</h2>
+    <ul>
+        <li>Photographer – recommended partners available</li>
+        <li>Florist – trusted suppliers for bouquets + styling</li>
+        <li>DJ / MC – professional entertainment options</li>
+        <li>Catering – multiple menu packages available</li>
+    </ul>
+</div>
+
+</body>
+</html>

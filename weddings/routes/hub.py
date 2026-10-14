@@ -4,6 +4,11 @@ from datetime import datetime
 from extensions import db
 from auth.permissions import admin_required, is_coordinator, is_caterer
 
+from weddings.models.appointment import Appointment
+from weddings.models.appointment_day import AppointmentDay
+from weddings.models.appointment_time import AppointmentTime
+from weddings.models.appointment_blockout import AppointmentBlockout
+
 from weddings.models import (
     Wedding,
     WeddingStaffAssignment,
@@ -11,7 +16,8 @@ from weddings.models import (
     JobListMaster,
     WeddingTimeline,
     WeddingDetailLibrary,
-    Caterer
+    Caterer,
+    Appointment
 )
 
 from weddings.emailer import send_email
@@ -501,3 +507,223 @@ Cherbon Waters Management
     flash("Caterer notified.", "success")
     return redirect(url_for('hub.wedding_hub', wedding_id=wedding_id))
 
+
+# ---------------------------------------------------------
+# VIEWING APPOINTMENTS (PUBLIC + ADMIN)
+# ---------------------------------------------------------
+
+@hub_bp.route('/appointments', methods=['GET', 'POST'])
+def appointments_public():
+    if request.method == 'POST':
+        appt = Appointment(
+            name=request.form['name'],
+            email=request.form['email'],
+            phone=request.form['phone'],
+            day=request.form['day'],
+            time_label=request.form['time'],
+            notes=request.form.get('notes', '')
+        )
+
+        db.session.add(appt)
+        db.session.commit()
+
+        # Optional: SMS confirmation (ClickSend)
+        try:
+            send_sms(
+                appt.phone,
+                f"Hi {appt.name}, your Cherbon Waters appointment is booked for "
+                f"{appt.day} at {appt.time_label}."
+            )
+        except Exception as e:
+            print("SMS error:", e)
+
+        return render_template('weddings/appointments_thankyou.html')
+
+    return render_template('weddings/appointments_public.html')
+
+
+# ---------------------------------------------------------
+# ADMIN: LIST ALL APPOINTMENTS
+# ---------------------------------------------------------
+
+@hub_bp.route('/admin/appointments')
+@login_required
+def appointments_admin():
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appts = Appointment.query.order_by(
+        Appointment.day.asc(),
+        Appointment.time_label.asc()
+    ).all()
+
+    return render_template('weddings/appointments_admin.html', appointments=appts)
+
+
+# ---------------------------------------------------------
+# ADMIN: MARK VIEWED
+# ---------------------------------------------------------
+
+@hub_bp.route('/admin/appointments/<int:appt_id>/viewed', methods=['POST'])
+@login_required
+def appointment_mark_viewed(appt_id):
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appt = Appointment.query.get_or_404(appt_id)
+    appt.status = 'viewed'
+    db.session.commit()
+
+    flash("Appointment marked as viewed.", "info")
+    return redirect(url_for('hub.appointments_admin'))
+
+
+# ---------------------------------------------------------
+# ADMIN: SEND FOLLOW-UP PDF
+# ---------------------------------------------------------
+
+@hub_bp.route('/admin/appointments/<int:appt_id>/send_followup', methods=['POST'])
+@login_required
+def appointment_send_followup(appt_id):
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appt = Appointment.query.get_or_404(appt_id)
+
+    # Generate PDF using your existing WeasyPrint wrapper
+    pdf_bytes = render_pdf(
+        'weddings/appointments_followup_pdf.html',
+        appointment=appt
+    )
+
+    # Email it using your existing wedding emailer
+    send_email(
+        appt.email,
+        "Cherbon Waters – Viewing Follow‑Up",
+        "Thank you for visiting Cherbon Waters. Please find your follow‑up information attached.",
+        pdf_bytes
+    )
+
+    appt.status = 'quoted'
+    db.session.commit()
+
+    flash("Follow‑up PDF sent.", "success")
+    return redirect(url_for('hub.appointments_admin'))
+
+
+@hub_bp.route('/admin/appointments/schedule', methods=['GET', 'POST'])
+@login_required
+def appointments_schedule():
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    from datetime import date, timedelta
+
+    # Range: next 30 days
+    today = date.today()
+    end = today + timedelta(days=30)
+
+    days = AppointmentDay.query.filter(
+        AppointmentDay.day >= today,
+        AppointmentDay.day <= end
+    ).order_by(AppointmentDay.day.asc()).all()
+
+    # Ensure days exist for range
+    existing_dates = {d.day for d in days}
+    for i in range(31):
+        d = today + timedelta(days=i)
+        if d not in existing_dates:
+            new_day = AppointmentDay(day=d, is_open=False)
+            db.session.add(new_day)
+            days.append(new_day)
+    db.session.commit()
+
+    # Sort again after inserts
+    days = sorted(days, key=lambda d: d.day)
+
+    # Generate 45-min slots if none exist for open days
+    default_slots = [
+        "9:00 AM", "9:45 AM", "10:30 AM",
+        "11:15 AM", "12:00 PM", "12:45 PM",
+        "1:30 PM", "2:15 PM", "3:00 PM", "3:45 PM"
+    ]
+
+    for d in days:
+        if d.is_open and not d.times:
+            for label in default_slots:
+                db.session.add(AppointmentTime(day=d, time_label=label, is_available=True))
+    db.session.commit()
+
+    # Blockouts for display
+    blockouts = AppointmentBlockout.query.order_by(
+        AppointmentBlockout.start_date.asc()
+    ).all()
+
+    return render_template(
+        'weddings/appointments_schedule.html',
+        days=days,
+        blockouts=blockouts
+    )
+
+@hub_bp.route('/admin/appointments/day/<int:day_id>/toggle', methods=['POST'])
+@login_required
+def appointments_toggle_day(day_id):
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    d = AppointmentDay.query.get_or_404(day_id)
+    d.is_open = not d.is_open
+    db.session.commit()
+
+    flash("Day availability updated.", "info")
+    return redirect(url_for('hub.appointments_schedule'))
+
+
+@hub_bp.route('/admin/appointments/time/<int:time_id>/toggle', methods=['POST'])
+@login_required
+def appointments_toggle_time(time_id):
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    t = AppointmentTime.query.get_or_404(time_id)
+    t.is_available = not t.is_available
+    db.session.commit()
+
+    flash("Time slot updated.", "info")
+    return redirect(url_for('hub.appointments_schedule'))
+
+
+@hub_bp.route('/admin/appointments/blockout', methods=['POST'])
+@login_required
+def appointments_blockout():
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    from datetime import datetime
+
+    start = request.form['start_date']
+    end = request.form['end_date']
+    reason = request.form.get('reason', '')
+
+    start_date = datetime.strptime(start, "%Y-%m-%d").date()
+    end_date = datetime.strptime(end, "%Y-%m-%d").date()
+
+    b = AppointmentBlockout(
+        start_date=start_date,
+        end_date=end_date,
+        reason=reason
+    )
+    db.session.add(b)
+
+    # Mark days in range as closed
+    days = AppointmentDay.query.filter(
+        AppointmentDay.day >= start_date,
+        AppointmentDay.day <= end_date
+    ).all()
+    for d in days:
+        d.is_open = False
+
+    db.session.commit()
+
+    flash("Blockout range added.", "warning")
+    return redirect(url_for('hub.appointments_schedule'))

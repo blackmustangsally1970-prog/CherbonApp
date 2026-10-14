@@ -1,0 +1,128 @@
+{% extends "index.html" %}
+{% block content %}
+
+<style>
+    /* --- GLOBAL --- */
+    .step-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .floating-box {
+        border: 1px solid #ddd;
+        border-radius: 16px;
+        padding: 24px;
+        background: #fff;
+        transition: all 0.25s ease;
+    }
+    .floating-box:hover {
+        box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    }
+
+    /* --- PROGRESS BAR --- */
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 25px;
+    }
+    .progress-step {
+        flex: 1;
+        text-align: center;
+        font-weight: 600;
+        color: #bbb;
+    }
+    .progress-step.active {
+        color: #0d6efd;
+    }
+
+    /* --- SELECT TILES --- */
+    .select-tile {
+        border: 2px solid #e0e0e0;
+        border-radius: 14px;
+        padding: 18px;
+        text-align: center;
+        font-weight: 600;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        background: #fff;
+        user-select: none;
+    }
+    .select-tile:hover {
+        border-color: #0d6efd;
+        background: #f0f7ff;
+        transform: translateY(-2px);
+    }
+    .select-tile.selected {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+        box-shadow: 0 0 0 3px rgba(13,110,253,0.2);
+    }
+    .select-tile.disabled {
+        background: #f5f5f5;
+        color: #999;
+        cursor: not-allowed;
+        border-color: #ddd;
+    }
+
+    /* --- SUMMARY BOX --- */
+    .summary-box {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border-left: 4px solid #0d6efd;
+    }
+</style>
+
+<div class="container py-5" style="max-width: 700px;">
+
+    <h2 class="text-center mb-4 fw-bold">Viewing Appointment</h2>
+
+    <!-- PROGRESS BAR -->
+    <div class="progress-steps">
+        <div class="progress-step {% if not selected_day %}active{% endif %}">Date</div>
+        <div class="progress-step {% if selected_day and not selected_time %}active{% endif %}">Time</div>
+        <div class="progress-step {% if selected_time %}active{% endif %}">Details</div>
+    </div>
+
+    <!-- SUMMARY BOX -->
+    {% if selected_day or selected_time %}
+    <div class="summary-box">
+        <strong>Your Selection:</strong><br>
+        {% if selected_day %}
+            📅 {{ selected_day.strftime('%a %d %b %Y') }}<br>
+        {% endif %}
+        {% if selected_time %}
+            ⏰ {{ selected_time }}<br>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- STEP 1: DATE -->
+    <div class="floating-box mb-4">
+        <div class="step-title mb-3">Choose a Date</div>
+
+        <div class="row g-3">
+            {% for d in days %}
+            <div class="col-6">
+                {% if d.is_open %}
+                    <div class="select-tile {% if selected_day == d.day %}selected{% endif %}"
+                         onclick="goDay('{{ d.day }}')">
+                        {{ d.day.strftime('%a %d %b') }}
+                    </div>
+                {% else %}
+                    <div class="select-tile disabled">
+                        {{ d.day.strftime('%a %d %b') }}
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if selected_day %}
+    <!-- STEP 2: TIME -->
+    <div class="floating-box mb-4">
+        <div class="step-title mb-3">Choose a Time</div>
+
+        <div class="row g-3">
+            {% for t in times %}
