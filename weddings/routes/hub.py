@@ -9,16 +9,13 @@ from weddings.models.appointment_day import AppointmentDay
 from weddings.models.appointment_time import AppointmentTime
 from weddings.models.appointment_blockout import AppointmentBlockout
 
-from weddings.models import (
-    Wedding,
-    WeddingStaffAssignment,
-    JobListInstance,
-    JobListMaster,
-    WeddingTimeline,
-    WeddingDetailLibrary,
-    Caterer,
-    Appointment
-)
+from weddings.models.wedding import Wedding
+from weddings.models.wedding_staff_assignment import WeddingStaffAssignment
+from weddings.models.job_list_instance import JobListInstance
+from weddings.models.job_list_master import JobListMaster
+from weddings.models.wedding_timeline import WeddingTimeline
+from weddings.models.wedding_detail_library import WeddingDetailLibrary
+from weddings.models.caterer import Caterer
 
 from weddings.emailer import send_email
 
