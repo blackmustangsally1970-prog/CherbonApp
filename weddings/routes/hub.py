@@ -13,8 +13,8 @@ from weddings.models.wedding import Wedding
 from weddings.models.staff_assignment import WeddingStaffAssignment
 from weddings.models.job_list_instance import JobListInstance
 from weddings.models.job_list_master import JobListMaster
-from weddings.models.wedding_timeline import WeddingTimeline
-from weddings.models.wedding_detail_library import WeddingDetailLibrary
+from weddings.models.timeline import WeddingTimeline
+from weddings.models.detail_template import WeddingDetailLibrary
 from weddings.models.caterer import Caterer
 
 from weddings.emailer import send_email
