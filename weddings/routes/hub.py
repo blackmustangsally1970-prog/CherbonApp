@@ -4,7 +4,7 @@ from datetime import datetime
 from extensions import db
 from auth.permissions import admin_required, is_coordinator, is_caterer
 
-from weddings.models.appointment import Appointment
+from weddings.models.appointments import Appointment
 from weddings.models.appointment_day import AppointmentDay
 from weddings.models.appointment_time import AppointmentTime
 from weddings.models.appointment_blockout import AppointmentBlockout
