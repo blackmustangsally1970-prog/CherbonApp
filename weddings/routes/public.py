@@ -1,5 +1,10 @@
 from flask import Blueprint, render_template, request
-from CherbonApp.models import Appointment, db
+
+# Correct imports — your models live in weddings/models
+from weddings.models.appointment import Appointment
+from extensions import db
+
+# Your SMS module *is* inside CherbonApp, so this import is correct
 from CherbonApp.sms import send_sms
 
 public_bp = Blueprint('public', __name__)
