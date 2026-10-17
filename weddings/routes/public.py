@@ -5,7 +5,7 @@ from weddings.models.appointments import Appointment
 from extensions import db
 
 # Your SMS module *is* inside CherbonApp, so this import is correct
-from CherbonApp.sms import send_sms
+from app import send_sms
 
 public_bp = Blueprint('public', __name__)
 
