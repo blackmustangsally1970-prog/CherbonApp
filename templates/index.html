@@ -148,110 +148,113 @@
 </div>
 
 
-<!-- ⭐ MAIN MENU -->
 <ul class="menu">
 
-  <li>
-    <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
-  </li>
+{% if current_user.role == 'maintenance' %}
 
-  <li>
-    <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
-  </li>
+    <!-- ⭐ MAINTENANCE-ONLY MENU -->
+    <li>
+        <a href="{{ url_for('maintenance_dashboard') }}" class="menu-btn">🛠 Maintenance Dashboard</a>
+    </li>
 
-  <li>
-    <a href="{{ url_for('courses_menu') }}" class="menu-btn">Courses</a>
-  </li>
+    <li>
+        <a href="{{ url_for('upload_receipt') }}" class="menu-btn">📸 Upload Receipt (Photo)</a>
+    </li>
 
-  <li>
-    <a href="{{ url_for('add_client_page') }}" class="menu-btn">➕ Add New Client</a>
-  </li>
+    <li>
+        <a href="{{ url_for('upload_receipt_file') }}" class="menu-btn">📁 Upload Receipt (File)</a>
+    </li>
 
-  <li>
-    <a href="{{ url_for('enquiries_home') }}" class="menu-btn">📨 Enquiries</a>
-  </li>
+{% else %}
 
-  <li>
-    <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
-  </li>
+    <!-- ⭐ NORMAL MENU FOR ALL OTHER ROLES -->
+    <li>
+        <a href="{{ url_for('lessons_by_date') }}" class="menu-btn">📅 View Lessons by Date</a>
+    </li>
 
+    <li>
+        <a href="{{ url_for('client_view') }}" class="menu-btn">👤 Client View</a>
+    </li>
 
+    <li>
+        <a href="{{ url_for('courses_menu') }}" class="menu-btn">Courses</a>
+    </li>
 
-  <!-- ⭐ WEDDINGS MENU -->
-{% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
-  <li>
-      <a href="/weddings" class="menu-btn">💒 Weddings</a>
-  </li>
+    <li>
+        <a href="{{ url_for('add_client_page') }}" class="menu-btn">➕ Add New Client</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('enquiries_home') }}" class="menu-btn">📨 Enquiries</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('notifications') }}" class="menu-btn">📥 Disclaimers</a>
+    </li>
+
+    {% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
+    <li>
+        <a href="/weddings" class="menu-btn">💒 Weddings</a>
+    </li>
+    {% endif %}
+
+    <li>
+        <a href="/wedding/dashboard" class="menu-btn">🗂 Wedding Dashboard</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('gift_vouchers') }}" class="menu-btn">🎁 Gift Vouchers</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠 Debug Tools</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('employees_home') }}" class="menu-btn">🧑‍🤝‍🧑 Employees</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('daily_summary') }}" class="menu-btn">📊 Daily Summaries</a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('admin_users') }}" class="menu-btn">👤 Manage Users</a>
+    </li>
+
+    <li class="has-submenu">
+        <a class="menu-btn submenu-toggle">🧾 Receipts</a>
+
+        <ul class="submenu">
+            <li>
+                <a href="{{ url_for('upload_receipt') }}" class="submenu-btn">📸 Take Picture</a>
+            </li>
+
+            <li>
+                <a href="{{ url_for('upload_receipt_file') }}" class="submenu-btn">📁 Upload File</a>
+            </li>
+
+            <li>
+                <a href="{{ url_for('receipt_review') }}" class="submenu-btn">👀 Review Receipts</a>
+            </li>
+
+            <li>
+                <a href="{{ url_for('receipt_recall') }}" class="submenu-btn">📂 Recall / Archive</a>
+            </li>
+        </ul>
+    </li>
+
 {% endif %}
-  <!--  ⭐ END WEDDINGS MENU -->
-
-<li>
-    <a href="/wedding/dashboard" class="menu-btn">🗂 Wedding Dashboard</a>
-</li>
-
-
-<!-- ⭐ NEW WEDDING MENU BUTTONS
-<li>
-    <a href="/wedding/config" class="menu-btn">💒 Wedding PL Config</a>
-</li> 
-
-<li>
-    <a href="/wedding/pl/input" class="menu-btn">📊 Wedding PL Viewer</a>
-</li>  -->
-
-  <li>
-    <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">💸 Minus Balances</a>
-  </li>
-
-  <li>
-    <a href="{{ url_for('gift_vouchers') }}" class="menu-btn">🎁 Gift Vouchers</a>
-  </li>
-
-  <li>
-    <a href="{{ url_for('other_tools') }}" class="menu-btn">🧰 Other Tools</a>
-  </li>
-
-  <li>
-    <a href="{{ url_for('debug_page') }}" class="menu-btn">🛠️ Debug Tools</a>
-  </li>
-
-  <li>
-    <a href="{{ url_for('employees_home') }}" class="menu-btn">🧑‍🤝‍🧑 Employees</a>
-  </li>
-
-  <li>
-    <a href="{{ url_for('daily_summary') }}" class="menu-btn">📊 Daily Summaries</a>
-  </li>
-
-  <!-- ⭐ FIXED BUTTON -->
-  <li>
-      <a href="{{ url_for('admin_users') }}" class="menu-btn">👤 Manage Users</a>
-  </li>
-
-  <li class="has-submenu">
-      <a class="menu-btn submenu-toggle">🧾 Receipts</a>
-
-      <ul class="submenu">
-          <li>
-              <a href="{{ url_for('upload_receipt') }}" class="submenu-btn">📸 Take Picture</a>
-          </li>
-
-          <li>
-              <a href="{{ url_for('upload_receipt_file') }}" class="submenu-btn">📁 Upload File</a>
-          </li>
-
-          <li>
-              <a href="{{ url_for('receipt_review') }}" class="submenu-btn">👀 Review Receipts</a>
-          </li>
-
-          <li>
-              <a href="{{ url_for('receipt_recall') }}" class="submenu-btn">📂 Recall / Archive</a>
-          </li>
-      </ul>
-  </li>
 
 </ul>
-
 
 
 <!-- ⭐ QUOTE SCRIPT -->

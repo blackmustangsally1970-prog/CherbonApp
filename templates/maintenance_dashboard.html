@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Maintenance Dashboard</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 18px;
+            background: #f7f9fc;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+            font-size: 36px;
+            font-weight: 900;
+            color: #001a66;
+            text-align: center;
+        }
+
+        ul.menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        ul.menu > li {
+            margin-bottom: 26px;
+        }
+
+        /* SUPER MASSIVE iPhone menu buttons */
+        .menu-btn {
+            display: block;
+            width: 100%;
+            background: #dce6ff;
+            border: 4px solid #4a6bff;
+            padding: 42px 30px;
+            border-radius: 22px;
+            font-size: 36px;
+            font-weight: 900;
+            color: #001a66;
+            text-decoration: none;
+            text-align: center;
+            box-sizing: border-box;
+            letter-spacing: 1px;
+            line-height: 1.35;
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+
+        .menu-btn:hover {
+            background: #c7d6ff;
+            transform: scale(1.04);
+            text-decoration: none;
+        }
+
+        /* Desktop override (just in case) */
+        @media (min-width: 800px) {
+            .menu-btn {
+                padding: 22px 20px !important;
+                font-size: 22px !important;
+                border-radius: 12px !important;
+                margin-bottom: 18px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🛠 Maintenance</h1>
+
+<ul class="menu">
+
+    <li>
+        <a href="{{ url_for('upload_receipt') }}" class="menu-btn">
+            📸 Upload Receipt<br>(Take Photo)
+        </a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('upload_receipt_file') }}" class="menu-btn">
+            📁 Upload Receipt<br>(Choose File)
+        </a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('receipt_recall') }}" class="menu-btn">
+            📂 Receipt Recall / Archive
+        </a>
+    </li>
+
+</ul>
+
+</body>
+</html>

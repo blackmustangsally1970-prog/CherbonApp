@@ -17,7 +17,6 @@ def appointments_public():
     if selected_day:
         times = AppointmentTime.query.filter_by(day=selected_day).order_by(AppointmentTime.time_label.asc()).all()
 
-    # ⭐ THIS MUST EXIST
     return render_template(
         "weddings/appointments_public.html",
         days=days,
