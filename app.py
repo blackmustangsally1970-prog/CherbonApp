@@ -1556,7 +1556,7 @@ def create_app():
         if path.startswith("/employeehours"):
             return
 
-        # ⭐ Allow public viewing appointments (MOST SECURE FIX)
+        # Allow public viewing appointments
         if path.startswith("/appointments"):
             return
 
@@ -1564,7 +1564,7 @@ def create_app():
         if request.endpoint in ["login", "static"]:
             return
 
-        # ⭐ Allow maintenance to ONLY access upload_receipt
+        # ⭐ Allow maintenance to ONLY access upload_receipt AFTER login
         if current_user.is_authenticated and current_user.role == "maintenance":
             if request.endpoint == "upload_receipt":
                 return
@@ -1576,7 +1576,6 @@ def create_app():
 
         if current_user.role not in ["admin", "management"]:
             abort(403)
-
 
     from werkzeug.security import generate_password_hash, check_password_hash
 
