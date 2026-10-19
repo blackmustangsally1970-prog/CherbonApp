@@ -1532,9 +1532,8 @@ def create_app():
     from weddings.routes.wedding_list import wedding_list_bp
     app.register_blueprint(wedding_list_bp)
 
-
     from weddings.routes.public import public_bp
-    app.register_blueprint(public_bp)
+    app.register_blueprint(public_bp, url_prefix="/weddings")
 
 
     # ⭐ THEN import models
