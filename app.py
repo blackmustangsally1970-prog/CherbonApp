@@ -1564,6 +1564,12 @@ def create_app():
         if request.endpoint in ["login", "static"]:
             return
 
+        # ⭐ Allow maintenance to ONLY access upload_receipt
+        if current_user.is_authenticated and current_user.role == "maintenance":
+            if request.endpoint == "upload_receipt":
+                return
+            abort(403)
+
         # Everything else requires admin/management login
         if not current_user.is_authenticated:
             return redirect(url_for("login"))
