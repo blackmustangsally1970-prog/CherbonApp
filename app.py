@@ -1570,7 +1570,7 @@ def create_app():
                 return
             abort(403)
 
-        # Everything else requires admin/management login
+        # ⭐ Everything else requires admin/management login
         if not current_user.is_authenticated:
             return redirect(url_for("login"))
 
