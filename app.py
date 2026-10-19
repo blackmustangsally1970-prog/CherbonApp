@@ -2394,6 +2394,63 @@ def create_app():
 
         return {"status": "success"}
 
+
+    @app.route("/upload_receipt", methods=["GET", "POST"])
+    def upload_receipt():
+
+        allowed_roles = ["admin", "management", "maintenance"]
+        if current_user.role not in allowed_roles:
+            return "Access denied", 403
+
+        if request.method == "POST":
+            file = request.files["photo"]
+            filename = secure_filename(file.filename)
+
+            # Save uploaded image/PDF
+            save_path = os.path.join("static/receipts/raw", filename)
+            file.save(save_path)
+
+            # --- OCR PROCESSING ---
+            text = extract_text(save_path)
+            parsed = parse_receipt(text)
+            # -----------------------
+
+            receipt = Receipt(
+                staff_id=current_user.id,
+                image_path=f"receipts/raw/{filename}",
+                notes=request.form.get("notes", ""),
+                category=request.form.get("category"),
+                account=request.form.get("account"),
+
+                # Auto‑filled OCR fields
+                company=parsed.get("company"),
+                invoice_number=parsed.get("invoice_number"),
+                abn=parsed.get("abn"),
+                total=parsed.get("total"),
+                gst=parsed.get("gst"),
+                subtotal=parsed.get("subtotal"),
+                invoice_date=parse_any_date(parsed.get("date"))
+            )
+
+            db.session.add(receipt)
+            db.session.commit()
+
+            # --- THUMBNAIL GENERATION ---
+            thumb_dir = os.path.join("static/receipts/thumbnails")
+            os.makedirs(thumb_dir, exist_ok=True)
+
+            thumb_path = os.path.join(thumb_dir, f"{receipt.id}.jpg")
+            create_thumbnail(save_path, thumb_path)
+
+            receipt.thumbnail_path = f"receipts/thumbnails/{receipt.id}.jpg"
+            db.session.commit()
+            # ----------------------------
+
+            flash("Receipt uploaded, OCR processed, thumbnail created.", "success")
+            return redirect(url_for("upload_receipt"))
+
+        return render_template("upload_receipt.html")
+
     @app.route("/upload_receipt_file", methods=["GET", "POST"])
     def upload_receipt_file():
 
@@ -2445,57 +2502,6 @@ def create_app():
 
         return render_template("upload_receipt_file.html")
 
-    @app.route("/upload_receipt_file", methods=["GET", "POST"])
-    def upload_receipt_file():
-        if request.method == "POST":
-            file = request.files.get("file")
-            notes = request.form.get("notes", "")
-
-            if not file:
-                return "No file", 400
-
-            filename = secure_filename(file.filename)
-            save_path = os.path.join("static/receipts/raw", filename)
-            file.save(save_path)
-
-            # --- OCR PROCESSING ---
-            text = extract_text(save_path)
-            parsed = parse_receipt(text)
-            # -----------------------
-
-            r = Receipt(
-                staff_id=current_user.id,
-                image_path=f"receipts/raw/{filename}",
-                notes=notes,
-
-                # Auto‑filled OCR fields
-                company=parsed.get("company"),
-                invoice_number=parsed.get("invoice_number"),
-                abn=parsed.get("abn"),
-                total=parsed.get("total"),
-                gst=parsed.get("gst"),
-                subtotal=parsed.get("subtotal"),
-                invoice_date=parse_any_date(parsed.get("date"))
-            )
-
-            db.session.add(r)
-            db.session.commit()
-
-            # --- THUMBNAIL GENERATION ---
-            thumb_dir = os.path.join("static/receipts/thumbnails")
-            os.makedirs(thumb_dir, exist_ok=True)
-
-            thumb_path = os.path.join(thumb_dir, f"{r.id}.jpg")
-            create_thumbnail(save_path, thumb_path)
-
-            r.thumbnail_path = f"receipts/thumbnails/{r.id}.jpg"
-            db.session.commit()
-            # ----------------------------
-
-            flash("File uploaded, OCR processed, thumbnail created.", "success")
-            return redirect(url_for("upload_receipt_file"))
-
-        return render_template("upload_receipt_file.html")
 
 
 
