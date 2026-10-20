@@ -10162,8 +10162,8 @@ Cherbon Waters Admin
         )
 
         flash(f"SMS sent to {emp.phone}", "success")
-        return redirect(url_for("admin_employee_hours"))
 
+        return redirect(url_for("admin_employee_hours", acc_id=acc_id))
 
 
     @app.route("/employeehours/day", methods=["GET", "POST"])
