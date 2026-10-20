@@ -1564,10 +1564,16 @@ def create_app():
         if path.startswith("/login") or path.startswith("/static"):
             return
 
-        # ⭐ Allow maintenance to ONLY access upload_receipt AFTER login
+        # ⭐ Maintenance users
         if current_user.is_authenticated and current_user.role == "maintenance":
-            if path.startswith("/upload_receipt"):
+            if (
+                path.startswith("/maintenance")
+                or path.startswith("/upload_receipt")
+                or path.startswith("/upload_receipt_file")
+                or path.startswith("/receipt_recall")
+            ):
                 return
+
             abort(403)
 
         # Everything else requires admin/management login
@@ -1669,8 +1675,6 @@ def create_app():
 
         flash("User activated.", "success")
         return redirect(url_for("admin_users"))
-
-
 
 
 
@@ -2069,11 +2073,21 @@ def create_app():
                 # --- NEW SYSTEM (Flask-Login) ---
                 login_user(user)
 
-                return redirect(url_for("dashboard"))
+                if user.role == "maintenance":
+                    return redirect(url_for("maintenance_dashboard"))
 
+                return redirect(url_for("dashboard"))
             return render_template("login.html", error="Invalid username or password")
 
         return render_template("login.html")
+
+    @app.route("/maintenance")
+    @login_required
+    def maintenance_dashboard():
+        if current_user.role != "maintenance":
+            abort(403)
+
+        return render_template("maintenance_dashboard.html")
 
     @app.route("/superlookup", methods=["GET", "POST"])
     def superlookup():
