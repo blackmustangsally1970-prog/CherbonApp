@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
         reader.onload = function (e) {
 
             EXIF.getData(file, function () {
-                const orientation = EXIF.getTag(this, "Orientation");
+                const orientation = EXIF.getTag(this, "Orientation") || 1;
 
                 const img = new Image();
                 img.onload = function () {
@@ -269,6 +269,12 @@ document.addEventListener("DOMContentLoaded", function () {
         spinner.style.display = "block";
 
         const formData = new FormData();
+
+        if (!finalBlob) {
+            alert("Photo processing failed. Please retake the photo.");
+            spinner.style.display = "none";
+            return;
+        }
         formData.append("photo", finalBlob, "receipt.jpg");
         formData.append("notes", form.querySelector("textarea").value);
         formData.append("category", document.getElementById("category").value);
