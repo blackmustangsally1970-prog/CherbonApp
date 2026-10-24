@@ -69,7 +69,9 @@
                     <th>Bride & Groom</th>
                     <th>Event</th>
                     <th>Pax</th>
+                    {#
                     <th>Status</th>
+                    #} 
                     <th>Hold</th>
                     <th>Type</th>
                     <th>Actions</th>
@@ -98,7 +100,7 @@
 
                 <tr class="{% if et_code == 'CO' %}row-co{% endif %}">
 
-                    <td>{{ w.wedding_date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ w.wedding_date.strftime('%a %d-%m-%y') }}</td>
                     <td>{{ w.start_time }}</td>
 
                     <td>{{ w.bride_name or '' }} & {{ w.groom_name or '' }}</td>
@@ -106,9 +108,9 @@
                     <td>{{ et_code }}</td>
 
                     <td>{{ w.est_guests or '-' }}</td>
-
+                    {#
                     <td class="status-{{ (w.booking_status or '').lower() }}"></td>
-
+                    #}
                     <td>
                         {% if w.is_hold %}
                             <span class="hold-yes">YES ({{ w.hold_name or 'Hold' }})</span>
