@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Current Weddings</title>
 
     <link rel="stylesheet"
@@ -100,7 +101,9 @@
 
                 <tr class="{% if et_code == 'CO' %}row-co{% endif %}">
 
-                    <td>{{ w.wedding_date.strftime('%a %d-%m-%y') }}</td>
+                    <td class="text-nowrap">
+                        {{ w.wedding_date.strftime('%a %d-%m-%y') }}   
+                    </td>
                     <td>{{ w.start_time }}</td>
 
                     <td>{{ w.bride_name or '' }} & {{ w.groom_name or '' }}</td>
