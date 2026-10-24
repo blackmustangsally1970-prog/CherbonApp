@@ -1576,6 +1576,15 @@ def create_app():
 
             abort(403)
 
+        # ⭐ Coordinator users
+        if current_user.is_authenticated and current_user.role == "coordinator":
+            if (
+                path.startswith("/coordinator")
+            ):
+                return
+
+            abort(403)
+
         # Everything else requires admin/management login
         if not current_user.is_authenticated:
             return redirect(url_for("login"))
@@ -2076,7 +2085,11 @@ def create_app():
                 if user.role == "maintenance":
                     return redirect(url_for("maintenance_dashboard"))
 
+                if user.role == "coordinator":
+                    return redirect(url_for("coordinator_dashboard"))
+
                 return redirect(url_for("dashboard"))
+
             return render_template("login.html", error="Invalid username or password")
 
         return render_template("login.html")
@@ -2088,6 +2101,14 @@ def create_app():
             abort(403)
 
         return render_template("maintenance_dashboard.html")
+
+    @app.route("/coordinator")
+    @login_required
+    def coordinator_dashboard():
+        if current_user.role != "coordinator":
+            abort(403)
+
+        return render_template("weddings/coordinator_dashboard.html")
 
     @app.route("/superlookup", methods=["GET", "POST"])
     def superlookup():
