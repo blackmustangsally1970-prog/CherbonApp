@@ -45,20 +45,64 @@
 <body class="bg-light">
 
     <!-- NAVBAR -->
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container-fluid">
-            <span class="navbar-brand">Current Weddings</span>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
 
-            <div>
-                <a class="btn btn-outline-light btn-sm" href="{{ url_for('dashboard') }}">Main Menu</a>
-                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.create_hold') }}">Create Hold</a>
-                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.incoming_queue') }}">Incoming T&C</a>
-                <a class="btn btn-outline-light btn-sm" href="#">Add Manual Booking</a>
-                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.archived_weddings') }}">Archived</a>
-                <a class="btn btn-outline-light btn-sm" href="{{ url_for('hub.postponed_weddings') }}">Postponed</a>
+        <span class="navbar-brand">Current Weddings</span>
+
+        <!-- Mobile Hamburger -->
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#weddingNavbar"
+                aria-controls="weddingNavbar"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Menu Items -->
+        <div class="collapse navbar-collapse" id="weddingNavbar">
+
+            <div class="ms-auto d-flex flex-column flex-lg-row gap-2">
+
+                <a class="btn btn-outline-light btn-sm"
+                   href="{{ url_for('dashboard') }}">
+                    Main Menu
+                </a>
+
+                <a class="btn btn-outline-light btn-sm"
+                   href="{{ url_for('hub.create_hold') }}">
+                    Create Hold
+                </a>
+
+                <a class="btn btn-outline-light btn-sm"
+                   href="{{ url_for('hub.incoming_queue') }}">
+                    Incoming T&C
+                </a>
+
+                <a class="btn btn-outline-light btn-sm"
+                   href="#">
+                    Add Manual Booking
+                </a>
+
+                <a class="btn btn-outline-light btn-sm"
+                   href="{{ url_for('hub.archived_weddings') }}">
+                    Archived
+                </a>
+
+                <a class="btn btn-outline-light btn-sm"
+                   href="{{ url_for('hub.postponed_weddings') }}">
+                    Postponed
+                </a>
+
             </div>
+
         </div>
-    </nav>
+
+    </div>
+</nav>
 
     <div class="container">
 
