@@ -39,6 +39,35 @@
         .hold-no {
             color: #666;
         }
+
+.nav-main {
+    background: #343a40;
+    color: white !important;
+}
+
+.nav-hold {
+    background: #198754;
+    color: white !important;
+}
+
+.nav-incoming {
+    background: #fd7e14;
+    color: white !important;
+}
+
+.nav-manual {
+    background: #0d6efd;
+    color: white !important;
+}
+
+.nav-archive,
+.nav-postponed {
+    background: #6c757d;
+    color: white !important;
+}
+
+
+
     </style>
 </head>
 
@@ -67,32 +96,32 @@
 
             <div class="ms-auto d-flex flex-column flex-lg-row gap-2">
 
-                <a class="btn btn-outline-light btn-sm"
+                <a class="btn btn-sm nav-main"
                    href="{{ url_for('dashboard') }}">
                     Main Menu
                 </a>
 
-                <a class="btn btn-outline-light btn-sm"
+                <a class="btn btn-sm nav-hold"
                    href="{{ url_for('hub.create_hold') }}">
                     Create Hold
                 </a>
 
-                <a class="btn btn-outline-light btn-sm"
+                <a class="btn btn-sm nav-incoming"
                    href="{{ url_for('hub.incoming_queue') }}">
                     Incoming T&C
                 </a>
 
-                <a class="btn btn-outline-light btn-sm"
+                <a class="btn btn-sm nav-manual"
                    href="#">
                     Add Manual Booking
                 </a>
 
-                <a class="btn btn-outline-light btn-sm"
+                <a class="btn btn-sm nav-archive"
                    href="{{ url_for('hub.archived_weddings') }}">
                     Archived
                 </a>
 
-                <a class="btn btn-outline-light btn-sm"
+                <a class="btn btn-sm nav-postponed"
                    href="{{ url_for('hub.postponed_weddings') }}">
                     Postponed
                 </a>
