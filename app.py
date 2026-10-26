@@ -5408,7 +5408,7 @@ def create_app():
             final_balance = rows[-1]["running_balance"] if rows else 0
 
             # GST = 11% of payments
-            gst_amount = total_payments * 0.11
+            gst_amount = round(total_payments / 11, 2) if total_payments else 0
 
             html = render_template(
                 'client_statement_pdf.html',
