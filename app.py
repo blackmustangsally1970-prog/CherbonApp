@@ -97,7 +97,7 @@ from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 from pdf2image import convert_from_path
 from markupsafe import Markup, escape
-from sqlalchemy import func, text
+from sqlalchemy import func, text, or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy import extract
 import pytesseract
@@ -2195,6 +2195,31 @@ def create_app():
             abort(403)
 
         return render_template("user_dashboards.html")
+
+    @app.route("/caterer_weddings")
+    @login_required
+    def caterer_weddings():
+
+        allowed_roles = ["admin", "management", "caterer"]
+
+        if current_user.role not in allowed_roles:
+            abort(403)
+
+        weddings = Wedding.query.filter(
+            Wedding.booking_status == "approved",
+            or_(
+                Wedding.event_type == "Ceremony & Reception",
+                Wedding.event_type == "Garden Hire & Reception"
+            ),
+            Wedding.service != "Indian"
+        ).order_by(
+            Wedding.wedding_date.asc()
+        ).all()
+
+        return render_template(
+            "weddings/caterer_weddings.html",
+            weddings=weddings
+        )
 
     @app.route("/superlookup", methods=["GET", "POST"])
     def superlookup():
