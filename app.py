@@ -2217,7 +2217,7 @@ def create_app():
         ).all()
 
         return render_template(
-            "weddings/caterer_weddings.html",
+            "weddings/master.html",
             weddings=weddings
         )
 
