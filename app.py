@@ -2134,14 +2134,21 @@ def create_app():
     @app.route("/decorator")
     @login_required
     def decorator_dashboard():
-        if current_user.role != "decorator":
+
+        allowed_roles = ["admin", "management", "decorator"]
+
+        if current_user.role not in allowed_roles:
             abort(403)
 
         return render_template("weddings/decorator_dashboard.html")
+
     @app.route("/caterer")
     @login_required
     def caterer_dashboard():
-        if current_user.role != "caterer":
+
+        allowed_roles = ["admin", "management", "caterer"]
+
+        if current_user.role not in allowed_roles:
             abort(403)
 
         return render_template("weddings/caterer_dashboard.html")
@@ -2149,16 +2156,21 @@ def create_app():
     @app.route("/waitstaff")
     @login_required
     def waitstaff_dashboard():
-        if current_user.role != "waitstaff":
+
+        allowed_roles = ["admin", "management", "waitstaff"]
+
+        if current_user.role not in allowed_roles:
             abort(403)
 
         return render_template("weddings/waitstaff_dashboard.html")
 
-
     @app.route("/maintenance")
     @login_required
     def maintenance_dashboard():
-        if current_user.role != "maintenance":
+
+        allowed_roles = ["admin", "management", "maintenance"]
+
+        if current_user.role not in allowed_roles:
             abort(403)
 
         return render_template("maintenance_dashboard.html")
@@ -2166,10 +2178,23 @@ def create_app():
     @app.route("/coordinator")
     @login_required
     def coordinator_dashboard():
-        if current_user.role != "coordinator":
+
+        allowed_roles = ["admin", "management", "coordinator"]
+
+        if current_user.role not in allowed_roles:
             abort(403)
 
         return render_template("weddings/coordinator_dashboard.html")
+
+
+    @app.route("/user_dashboards")
+    @login_required
+    def user_dashboards():
+
+        if current_user.role not in ["admin", "management"]:
+            abort(403)
+
+        return render_template("user_dashboards.html")
 
     @app.route("/superlookup", methods=["GET", "POST"])
     def superlookup():
