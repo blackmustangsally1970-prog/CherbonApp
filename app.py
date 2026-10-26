@@ -1585,6 +1585,34 @@ def create_app():
 
             abort(403)
 
+        # ⭐ Wait Staff users
+        if current_user.is_authenticated and current_user.role == "waitstaff":
+            if (
+                path.startswith("/waitstaff")
+            ):
+                return
+
+            abort(403)
+
+        # ⭐ Caterer users
+        if current_user.is_authenticated and current_user.role == "caterer":
+            if (
+                path.startswith("/caterer")
+            ):
+                return
+
+            abort(403)
+
+        # ⭐ Decorator users
+        if current_user.is_authenticated and current_user.role == "decorator":
+            if (
+                path.startswith("/decorator")
+            ):
+                return
+
+            abort(403)
+
+
         # Everything else requires admin/management login
         if not current_user.is_authenticated:
             return redirect(url_for("login"))
@@ -2088,11 +2116,44 @@ def create_app():
                 if user.role == "coordinator":
                     return redirect(url_for("coordinator_dashboard"))
 
-                return redirect(url_for("dashboard"))
+                if user.role == "waitstaff":
+                    return redirect(url_for("waitstaff_dashboard"))
 
+                if user.role == "caterer":
+                    return redirect(url_for("caterer_dashboard"))
+
+                if user.role == "decorator":
+                    return redirect(url_for("decorator_dashboard"))
+
+                return redirect(url_for("dashboard"))
             return render_template("login.html", error="Invalid username or password")
 
         return render_template("login.html")
+
+
+    @app.route("/decorator")
+    @login_required
+    def decorator_dashboard():
+        if current_user.role != "decorator":
+            abort(403)
+
+        return render_template("weddings/decorator_dashboard.html")
+    @app.route("/caterer")
+    @login_required
+    def caterer_dashboard():
+        if current_user.role != "caterer":
+            abort(403)
+
+        return render_template("weddings/caterer_dashboard.html")
+
+    @app.route("/waitstaff")
+    @login_required
+    def waitstaff_dashboard():
+        if current_user.role != "waitstaff":
+            abort(403)
+
+        return render_template("weddings/waitstaff_dashboard.html")
+
 
     @app.route("/maintenance")
     @login_required
