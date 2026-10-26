@@ -2211,7 +2211,7 @@ def create_app():
                 Wedding.event_type == "Ceremony & Reception",
                 Wedding.event_type == "Garden Hire & Reception"
             ),
-            func.upper(Wedding.service) != "IND"
+            func.upper(Wedding.service).notin_(["IND", "SP"])
         ).order_by(
             Wedding.wedding_date.asc()
         ).all()
