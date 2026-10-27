@@ -7997,6 +7997,13 @@ def create_app():
                 if payment_raw is not None and payment_raw.strip() != "":
                     try:
                         lesson.payment = float(payment_raw)
+
+                        if lesson.payment > 0:
+                            log_payment_received(
+                                lesson.client,
+                                lesson.payment
+                            )
+
                     except ValueError:
                         pass
                 else:
