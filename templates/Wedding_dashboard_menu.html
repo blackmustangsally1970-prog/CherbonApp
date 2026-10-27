@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Wedding Dashboard</title>
+    <title>Wedding P&L</title>
 
     <style>
         body {
@@ -66,27 +66,32 @@
 
 <ul class="menu">
 
+    <li>
+        <a href="{{ url_for('dashboard') }}" class="menu-btn">
+            ← Main Menu
+        </a>
+    </li>
+
 {% if current_user.role in ['admin', 'management', 'manager', 'coordinator'] %}
-<li>
-    <a href="/weddings" class="menu-btn">
-        💒 Weddings
-    </a>
-</li>
+    <li>
+        <a href="/weddings" class="menu-btn">
+            💒 Weddings
+        </a>
+    </li>
 {% endif %}
 
-<li>
-    <a href="/wedding/dashboard" class="menu-btn">
-        🗂 Wedding Dashboard
-    </a>
-</li>
+    <li>
+        <a href="/wedding/dashboard" class="menu-btn">
+            🗂 Wedding Dashboard
+        </a>
+    </li>
 
-<li>
-    <a href="{{ url_for('user_dashboards') }}" class="menu-btn">
-        🎛 Wedding User Dashboards
-    </a>
-</li>
+    <li>
+        <a href="{{ url_for('user_dashboards') }}" class="menu-btn">
+            🎛 Wedding User Dashboards
+        </a>
+    </li>
 
 </ul>
 
-</body>
 </html>

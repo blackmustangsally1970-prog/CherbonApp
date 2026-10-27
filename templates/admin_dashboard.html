@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+
     <title>Admin Dashboard</title>
 
     <style>
@@ -100,6 +101,13 @@
 <h1>🛠 Admin Dashboard</h1>
 
 <ul class="menu">
+
+    <li>
+        <a href="{{ url_for('dashboard') }}" class="menu-btn">
+            ← Main Menu
+        </a>
+    </li>
+
 
     <li>
         <a href="{{ url_for('minus_balances_page') }}" class="menu-btn">
