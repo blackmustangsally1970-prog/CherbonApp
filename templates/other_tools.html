@@ -8,52 +8,28 @@
     h1 { margin-bottom: 20px; }
 
 
-.menu-btn-small {
+.action-btn {
     display: inline-block;
-    background: #eee;
-    border: 1px solid #aaa;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #0645AD;
+    padding: 12px 20px;
+    margin: 0 8px 12px 0;
+    background: linear-gradient(135deg, #2a7ae2, #1f5fc4);
+    color: #fff;
     text-decoration: none;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-    margin-right: 12px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transition: all 0.15s ease;
 }
 
-.menu-btn-small:hover {
-    background: #ddd;
+.action-btn:hover {
+    background: linear-gradient(135deg, #3a89ef, #2a7ae2);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.20);
+    color: #fff;
     text-decoration: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
-
-
-
-    .menu-btn {
-      display: block;
-      width: 100%;
-      background: #dce6ff;
-      border: 4px solid #4a6bff;
-      padding: 40px 28px;
-      border-radius: 18px;
-      font-size: 34px;
-      font-weight: 900;
-      color: #001a66;
-      text-decoration: none;
-      text-align: center;
-      box-sizing: border-box;
-      margin-bottom: 28px;
-      letter-spacing: 1px;
-      line-height: 1.35;
-      transition: background 0.2s ease, transform 0.1s ease;
-    }
-
-    .menu-btn:hover {
-      background: #c7d6ff;
-      transform: scale(1.04);
-      text-decoration: none;
-    }
-
     @media (min-width: 800px) {
       .menu-btn {
         padding: 20px 18px !important;
@@ -89,9 +65,17 @@
   {% endif %}
 {% endwith %}
 
-<a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
-<a href="{{ url_for('lessons_by_date') }}" class="menu-btn-small">📅 View Lessons by Date</a>
+<a href="{{ url_for('dashboard') }}" class="action-btn">
+    ← Main Menu
+</a>
 
+<a href="{{ url_for('admin_dashboard') }}" class="action-btn">
+    ← Admin Menu
+</a>
+
+<a href="{{ url_for('lessons_by_date') }}" class="action-btn">
+    📅 View Lessons by Date
+</a>
 
 <h1>Other Tools</h1>
 

@@ -7,21 +7,28 @@
     <style>
         body { font-family: sans-serif; margin: 20px; }
 
-        .menu-btn-small {
-            display: inline-block;
-            background: #eee;
-            border: 1px solid #aaa;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #0645AD;
-            text-decoration: none;
-            margin-right: 12px;
-        }
-        .menu-btn-small:hover {
-            background: #ddd;
-        }
+.action-btn {
+    display: inline-block;
+    padding: 12px 20px;
+    margin: 0 8px 12px 0;
+    background: linear-gradient(135deg, #2a7ae2, #1f5fc4);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transition: all 0.15s ease;
+}
 
+.action-btn:hover {
+    background: linear-gradient(135deg, #3a89ef, #2a7ae2);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.20);
+    color: #fff;
+    text-decoration: none;
+}
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
         th { background: #f2f2f2; }
@@ -32,10 +39,18 @@
 
 <body>
 
-<div style="margin-bottom:12px;">
-    <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
-    <a href="{{ url_for('other_tools') }}" class="menu-btn-small">← Other Tools</a>
-</div>
+<a href="{{ url_for('dashboard') }}" class="action-btn">
+    ← Main Menu
+</a>
+
+<a href="{{ url_for('admin_dashboard') }}" class="action-btn">
+    ← Admin Menu
+</a>
+
+<a href="{{ url_for('lessons_by_date') }}" class="action-btn">
+    📅 View Lessons by Date
+</a>
+
 
 <h1>Manage Horses</h1>
 

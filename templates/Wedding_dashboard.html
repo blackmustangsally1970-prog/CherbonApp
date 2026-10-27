@@ -1,9 +1,6 @@
 <div class="container mt-4">
 
     <!-- BACK TO MAIN MENU -->
-    <div class="back-btn-container no-print mb-3">
-        <a href="{{ url_for('dashboard') }}" class="back-btn">← Back to Menu</a>
-    </div>
 
     <h2>Wedding P&L Dashboard</h2>
 
@@ -47,6 +44,8 @@
     </style>
 
     <div class="mt-4" style="max-width:500px; margin:auto;">
+
+        <a href="{{ url_for('wedding_dashboard_menu') }}" class="back-btn">← Wedding Menu</a>
 
         <a href="/wedding/config" class="menu-btn">💒 Expenses Config</a>
 
