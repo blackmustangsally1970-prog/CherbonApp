@@ -8013,13 +8013,6 @@ def create_app():
                 if price_raw is not None and price_raw.strip() != "":
                     try:
                         lesson.price_pl = float(price_raw)
-
-                    if lesson.payment > 0:
-                        log_payment_received(
-                            lesson.client,
-                            lesson.payment
-                       )
-
                     except ValueError:
                         pass
                 else:
