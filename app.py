@@ -2186,6 +2186,20 @@ def create_app():
 
         return render_template("weddings/coordinator_dashboard.html")
 
+    @app.route("/equestrian-dashboard")
+    @login_required
+    def equestrian_dashboard():
+        return render_template("equestrian_dashboard.html")
+
+    @app.route("/wedding-dashboard-menu")
+    @login_required
+    def wedding_dashboard_menu():
+        return render_template("Wedding_dashboard_menu.html")
+
+    @app.route("/admin-dashboard")
+    @login_required
+    def admin_dashboard():
+        return render_template("admin_dashboard.html")
 
     @app.route("/user_dashboards")
     @login_required
