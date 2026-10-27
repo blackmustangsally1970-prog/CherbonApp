@@ -177,6 +177,28 @@ def get_static_teacher_time():
 # HELPERS
 # -------------------------
 
+
+
+def log_payment_received(client_name, amount):
+    from datetime import datetime
+
+    try:
+        log_date = datetime.now().strftime("%Y-%m-%d")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        log_path = os.path.join(
+            LOG_ROOT,
+            f"payments_{log_date}.log"
+        )
+
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(
+                f"{timestamp} | {client_name} | ${float(amount):.2f}\n"
+            )
+
+    except Exception as e:
+        print(f"[PAYMENT LOG ERROR] {e}")
+
 def get_price_for(wedding_type, guest_count):
     rows = WeddingPricing.query.filter_by(wedding_type=wedding_type).all()
     for r in rows:
@@ -282,6 +304,8 @@ def parse_any_date(d):
 
     # If nothing matched, return None instead of exploding
     return None
+
+
 
 
 def parse_receipt(text):
@@ -7982,6 +8006,13 @@ def create_app():
                 if price_raw is not None and price_raw.strip() != "":
                     try:
                         lesson.price_pl = float(price_raw)
+
+                    if lesson.payment > 0:
+                        log_payment_received(
+                            lesson.client,
+                            lesson.payment
+                       )
+
                     except ValueError:
                         pass
                 else:
@@ -8194,6 +8225,31 @@ def create_app():
 
         return render_template("admin_logs.html", logs=logs)
 
+
+    @app.route('/admin/payment_logs')
+    @login_required
+    def view_payment_logs():
+        logs = []
+
+        try:
+            for fname in sorted(os.listdir(LOG_ROOT), reverse=True):
+
+                if fname.startswith("payments_") and fname.endswith(".log"):
+
+                    path = os.path.join(LOG_ROOT, fname)
+
+                    with open(path, "r", encoding="utf-8") as f:
+                        logs.append((fname, f.read()))
+
+        except Exception as e:
+            logs.append(
+                ("Error", f"Failed to read payment logs: {e}")
+            )
+
+        return render_template(
+            "admin_logs.html",
+            logs=logs
+        )
 
 
 
