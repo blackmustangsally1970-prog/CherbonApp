@@ -11,44 +11,43 @@
       padding: 20px;
     }
 
-    /* SMALL BLUE BUTTON (same as General Enquiries) */
-    .menu-btn-small {
-        display:inline-block;
-        padding:10px 15px;
-        background:#007bff;
-        color:white;
-        border-radius:6px;
-        text-decoration:none;
-        margin-right:10px;
-        font-size:16px;
-        font-weight:bold;
-    }
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
 
-    /* MASSIVE iPhone menu buttons (same as main menu) */
-    .menu-btn {
-      display: block;
-      width: 100%;
-      background: #dce6ff;
-      border: 4px solid #4a6bff;
-      padding: 40px 28px;
-      border-radius: 18px;
-      font-size: 34px;
-      font-weight: 900;
-      color: #001a66;
-      text-decoration: none;
-      text-align: center;
-      box-sizing: border-box;
-      margin-bottom: 28px;
-      letter-spacing: 1px;
-      line-height: 1.35;
-      transition: background 0.2s ease, transform 0.1s ease;
-    }
+        .menu {
+            list-style: none;
+            padding: 0;
+            max-width: 700px;
+            margin: auto;
+        }
 
-    .menu-btn:hover {
-      background: #c7d6ff;
-      transform: scale(1.04);
-      text-decoration: none;
-    }
+        .menu li {
+            margin-bottom: 18px;
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 24px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 24px;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
+        }
+
+        .menu-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
 
     /* Desktop override */
     @media (min-width: 800px) {
@@ -66,14 +65,24 @@
 <body>
 
   <!-- SMALL MAIN MENU BUTTON -->
-  <div style="margin-bottom:12px;">
-      <a href="{{ url_for('dashboard') }}" class="menu-btn-small">← Main Menu</a>
-  </div>
 
   <h1>📨 Enquiries</h1>
 
+
+
+
+
+
   <!-- BIG CHERBON BUTTONS -->
   <ul class="menu">
+
+
+    <li>
+      <a href="{{ url_for('equestrian_dashboard') }}" class="menu-btn">
+        ← Equestrian Menu
+      </a>
+    </li>
+
 
     <li>
       <a href="{{ url_for('trailride_enquiries') }}" class="menu-btn">

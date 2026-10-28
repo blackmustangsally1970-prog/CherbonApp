@@ -3,82 +3,217 @@
 <head>
   <meta charset="utf-8">
   <title>Debug & Admin Tools</title>
-  <style>
-    body { font-family: sans-serif; margin: 0; }
+<style>
 
-    /* Top link area */
-    .top-nav {
-      padding: 12px;
-    }
-    .top-nav a {
-      color: #0077cc;
-      text-decoration: none;
-    }
-    .top-nav a:hover { text-decoration: underline; }
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    margin: 20px;
+    color: #333;
+}
 
-    header { padding: 10px 12px; }
-    header h3 { margin: 0; }
+h1 {
+    text-align: center;
+    color: #0d47a1;
+    margin-bottom: 25px;
+}
 
-    /* Vertical link list */
-    nav { padding: 12px; }
-    nav a {
-      display: block;
-      color: #0077cc;
-      text-decoration: none;
-      margin: 8px 0;
-    }
-    nav a:hover { text-decoration: underline; }
+main {
+    max-width: 900px;
+    margin: 0 auto;
+}
 
-    main { padding: 12px; }
-    .hidden-form { display: none; }
+.hidden-form {
+    display: none;
+}
 
-    /* Admin cleanup block */
-    .admin-box {
-      margin-top: 25px;
-      padding: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #fafafa;
+.menu {
+    list-style: none;
+    padding: 0;
+    margin: 0 auto;
+    max-width: 700px;
+}
+
+.menu li {
+    margin-bottom: 18px;
+}
+
+.menu-btn {
+    display: block;
+    width: 100%;
+    padding: 24px;
+    background: #dce6ff;
+    border: 3px solid #4a6bff;
+    border-radius: 16px;
+    text-decoration: none;
+    text-align: center;
+    color: #002060;
+    font-size: 24px;
+    font-weight: 700;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
+}
+
+.menu-btn:hover {
+    background: #cddcff;
+    transform: translateY(-2px);
+}
+
+.card {
+    max-width: 700px;
+    margin: 30px auto 0 auto;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.card h3 {
+    margin-top: 0;
+}
+
+.flash-container {
+    max-width: 700px;
+    margin: 0 auto 20px auto;
+}
+
+.last-run {
+    max-width: 700px;
+    margin: 0 auto 20px auto;
+    color: #666;
+    font-size: 13px;
+}
+
+.danger-card {
+    border: 2px solid #c00;
+    background: #fff5f5;
+}
+
+.danger-title {
+    color: #b30000;
+}
+
+.danger-btn {
+    background: #c00 !important;
+    border-color: #900 !important;
+    color: #fff !important;
+}
+
+.danger-btn:hover {
+    background: #a00000 !important;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    padding-top: 80px;
+}
+
+.modal-box {
+    width: 90%;
+    max-width: 420px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.4);
+    box-sizing: border-box;
+}
+
+.modal-box h2 {
+    margin-top: 0;
+    color: #b30000;
+}
+
+.modal-box input[type="text"],
+.modal-box input[type="password"] {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    text-align: right;
+}
+
+.modal-actions button {
+    margin-left: 8px;
+}
+
+.nuke-submit {
+    background: #c00;
+    color: #fff;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+
+    body {
+        margin: 15px;
     }
-    .admin-box h3 {
-      margin-top: 0;
+
+    .menu-btn {
+        font-size: 20px;
+        padding: 20px;
     }
-    .admin-box .button-disabled {
-      display: inline-block;
-      padding: 8px 14px;
-      background: #999;
-      color: #fff;
-      border-radius: 4px;
-      text-decoration: none;
-      pointer-events: none;
-      opacity: 0.55;
+
+    .card {
+        padding: 16px;
     }
-  </style>
-</head>
+}
+
+</style></head>
 
 <body>
 
   <!-- Admin menu link at the very top -->
-  <div class="top-nav">
-    <a href="{{ url_for('dashboard') }}">← Equestrian Admin Menu</a>
-  </div>
 
-  <header>
-    <h3>Debug & Admin Tools</h3>
-  </header>
+<ul class="menu">
 
-  <!-- Vertical links -->
+    <li>
+        <a href="{{ url_for('dashboard') }}" class="menu-btn">
+            ← Menu
+        </a>
+    </li>
 
-<nav>
-    <a href="#" id="reindex-link">Reindex Tables</a>
-    <a href="{{ url_for('view_admin_logs') }}">View Admin Logs</a>
-<a href="{{ url_for('view_payment_logs') }}">
-    View Payment Logs
-</a>
-    <a href="{{ url_for('view_disclaimer_logs') }}">View Disclaimer Logs</a>
-    <a href="{{ url_for('view_sms_logs') }}">View SMS Logs</a>
-</nav>
+    <li>
+        <a href="#" id="reindex-link" class="menu-btn">
+            🔄 Reindex Tables
+        </a>
+    </li>
 
+    <li>
+        <a href="{{ url_for('view_admin_logs') }}" class="menu-btn">
+            📖 View Lesson Logs
+        </a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('view_payment_logs') }}" class="menu-btn">
+            💵 View Payment Logs
+        </a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('view_disclaimer_logs') }}" class="menu-btn">
+            📄 View Disclaimer Logs
+        </a>
+    </li>
+
+    <li>
+        <a href="{{ url_for('view_sms_logs') }}" class="menu-btn">
+            📱 View SMS Logs
+        </a>
+    </li>
+
+</ul>
 
 
   <!-- Hidden POST form for Reindex Tables -->
@@ -108,7 +243,7 @@
     {% endif %}
 
     <!-- NEW: Admin Cleanup Section -->
-    <div class="admin-box">
+    <div class="card">
       <h3>Cleanup: Incoming Submissions</h3>
       <p>
         This tool will remove <strong>processed</strong> incoming submissions older than
@@ -120,57 +255,114 @@
 </a>
     </div>
 
-    <!-- NEW: AWS Backup Nuclear Delete -->
-    <div class="admin-box" style="margin-top:25px; border-color:#c00; background:#fff5f5;">
-      <h3 style="color:#b30000;">AWS Backup Destruction</h3>
-      <p>
-        This will permanently delete <strong>ALL</strong> AWS RDS backups, snapshots, and PITR logs.
-        This action is <strong>irreversible</strong>. Only proceed if you have a verified offline backup.
-      </p>
 
-      <a href="#" onclick="openNukeModal()" class="menu-btn" style="background:#c00; color:#fff;">
-        ☢️ DELETE ALL AWS BACKUPS / SNAPSHOTS / PITR
-      </a>
-    </div>
 
-    <!-- Nuke Modal -->
-    <div id="nukeModal" style="
-        display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-        background:rgba(0,0,0,0.6); z-index:9999; padding-top:80px;
+<div class="card" style="border:2px solid #c00; background:#fff5f5;">
+
+    <h3 style="margin-top:0; color:#b30000;">
+        ☢️ AWS Backup Destruction
+    </h3>
+
+    <p>
+        This will permanently delete <strong>ALL</strong> AWS RDS backups,
+        snapshots and PITR logs.
+    </p>
+
+    <p>
+        This action is <strong>irreversible</strong>.
+        Only proceed if you have a verified offline backup.
+    </p>
+
+    <a href="#"
+       onclick="openNukeModal(); return false;"
+       class="menu-btn"
+       style="
+            background:#c00;
+            border-color:#900;
+            color:white;
+       ">
+       ☢️ DELETE ALL AWS BACKUPS / SNAPSHOTS / PITR
+    </a>
+
+</div>
+
+<!-- Nuke Modal -->
+<div id="nukeModal" style="
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    z-index:9999;
+    padding-top:80px;
+">
+
+    <div style="
+        background:#fff;
+        width:90%;
+        max-width:420px;
+        margin:0 auto;
+        padding:20px;
+        border-radius:8px;
+        box-shadow:0 0 12px rgba(0,0,0,0.4);
     ">
-      <div style="
-          background:#fff; width:420px; margin:0 auto; padding:20px;
-          border-radius:8px; box-shadow:0 0 12px rgba(0,0,0,0.4);
-      ">
-        <h2 style="margin-top:0; color:#b30000;">ARE YOU ABSOLUTELY SURE?</h2>
 
-        <p>This will permanently delete <strong>all AWS backups</strong>. This cannot be undone.</p>
+        <h2 style="margin-top:0; color:#b30000;">
+            ARE YOU ABSOLUTELY SURE?
+        </h2>
 
-        <p>Type <strong>DELETE EVERYTHING FOREVER</strong> to continue:</p>
-        <input id="confirmPhrase" type="text" style="width:100%; margin-bottom:10px;">
+        <p>
+            This will permanently delete
+            <strong>all AWS backups</strong>.
+            This cannot be undone.
+        </p>
+
+        <p>
+            Type <strong>DELETE EVERYTHING FOREVER</strong> to continue:
+        </p>
+
+        <input id="confirmPhrase"
+               type="text"
+               style="width:100%; margin-bottom:10px;">
 
         <p>Re-enter your admin password:</p>
-        <input id="adminPassword" type="password" style="width:100%; margin-bottom:10px;">
+
+        <input id="adminPassword"
+               type="password"
+               style="width:100%; margin-bottom:10px;">
 
         <label style="display:block; margin-bottom:10px;">
-          <input type="checkbox" id="finalAck">
-          I understand this will permanently remove all AWS historical states.
+            <input type="checkbox" id="finalAck">
+            I understand this will permanently remove all AWS historical states.
         </label>
 
-        <p id="countdownText" style="font-weight:bold; margin-bottom:10px;"></p>
+        <p id="countdownText"
+           style="font-weight:bold; margin-bottom:10px;">
+        </p>
 
         <div style="text-align:right;">
-          <button onclick="closeNukeModal()">Cancel</button>
-          <button id="nukeSubmitBtn" disabled
-                  onclick="submitNukeRequest()"
-                  style="background:#c00; color:#fff; padding:6px 12px; border-radius:4px;">
-            PERMANENTLY DELETE AWS BACKUPS
-          </button>
+            <button onclick="closeNukeModal()">
+                Cancel
+            </button>
+
+            <button id="nukeSubmitBtn"
+                    disabled
+                    onclick="submitNukeRequest()"
+                    style="
+                        background:#c00;
+                        color:#fff;
+                        padding:6px 12px;
+                        border-radius:4px;
+                    ">
+                PERMANENTLY DELETE AWS BACKUPS
+            </button>
         </div>
-      </div>
+
     </div>
 
-
+</div>
 
 
   </main>
