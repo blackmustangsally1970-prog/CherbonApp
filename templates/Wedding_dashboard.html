@@ -1,64 +1,103 @@
-<div class="container mt-4">
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- BACK TO MAIN MENU -->
-
-    <h2>Wedding P&L Dashboard</h2>
-
+    <title>Wedding P&L</title>
 
     <style>
-        /* SUPER MASSIVE iPhone menu buttons (same as main menu) */
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
+
+        .menu {
+            list-style: none;
+            padding: 0;
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .menu li {
+            margin-bottom: 18px;
+        }
+
         .menu-btn {
             display: block;
             width: 100%;
+            padding: 24px;
             background: #dce6ff;
-            border: 4px solid #4a6bff;
-            padding: 40px 28px;
-            border-radius: 18px;
-            font-size: 34px;
-            font-weight: 900;
-            color: #001a66;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
             text-decoration: none;
             text-align: center;
+            color: #002060;
+            font-size: 24px;
+            font-weight: 700;
             box-sizing: border-box;
-            margin-bottom: 28px;
-            letter-spacing: 1px;
-            line-height: 1.35;
-            transition: background 0.2s ease, transform 0.1s ease;
+            transition: all 0.15s ease;
         }
 
         .menu-btn:hover {
-            background: #c7d6ff;
-            transform: scale(1.04);
-            text-decoration: none;
+            background: #cddcff;
+            transform: translateY(-2px);
         }
 
-        /* Desktop override */
-        @media (min-width: 800px) {
+        @media (max-width: 768px) {
             .menu-btn {
-                padding: 20px 18px !important;
-                font-size: 20px !important;
-                border-radius: 10px !important;
-                margin-bottom: 16px !important;
+                font-size: 20px;
+                padding: 20px;
             }
         }
     </style>
+</head>
 
-    <div class="mt-4" style="max-width:500px; margin:auto;">
+<body>
 
-        <a href="{{ url_for('wedding_dashboard_menu') }}" class="back-btn">← Wedding Menu</a>
+<h1>💒 Wedding Profit & Loss</h1>
 
-        <a href="/wedding/config" class="menu-btn">💒 Expenses Config</a>
+<ul class="menu">
 
-        <a href="/wedding/pl/summary" class="menu-btn">📊 P&L Summary Table</a>
+    <li>
+        <a href="{{ url_for('wedding_dashboard') }}" class="menu-btn">
+            ← Wedding Menu
+        </a>
+    </li>
 
-        <a href="/wedding/pricing" class="menu-btn">💰 Wedding Pricing</a>
+{% if current_user.role in ['admin', 'management'] %}
+    <li>
+        <a href="/wedding/config" class="menu-btn">
+            💒 Expenses
+        </a>
+    </li>
+{% endif %}
 
-        <a href="/waitstaff/pricing" class="menu-btn">🧑‍🍳 Wait Staff Pricing</a>
+    <li>
+        <a href="/wedding/pl/summary" class="menu-btn">
+            📊 Wedding P&L Summary Table
+        </a>
+    </li>
 
-        <a href="/wedding/types" class="menu-btn">📘 Wedding Types - coming </a>
+    <li>
+        <a href="/wedding/pricing" class="menu-btn">
+            💰 Wedding Pricing
+        </a>
+    </li>
 
-        <a href="/wedding/reports" class="menu-btn">📈 Reports - coming </a>
+    <li>
+        <a href="/waitstaff/pricing" class="menu-btn">
+            🧑‍🍳 Waitstaff Pricing
+        </a>
+    </li>
 
-    </div>
+</ul>
 
-</div>
+</html>
