@@ -196,15 +196,16 @@
 
         <label><strong>Enter phone number</strong></label>
 
-        <input
-            type="text"
-            name="phone"
-            value="{{ number }}"
-            placeholder="Enter phone number..."
-            required
-            class="phone-input"
-        >
-
+<input
+    type="tel"
+    name="phone"
+    value="{{ number }}"
+    placeholder="Enter phone number..."
+    inputmode="numeric"
+    autocomplete="tel"
+    required
+    class="phone-input"
+>
         <button type="submit" class="search-btn">
             🔍 Search
         </button>
