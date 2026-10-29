@@ -2,21 +2,123 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Super Lookup</title>
 
     <style>
-        body { font-family: sans-serif; padding: 20px; }
 
-        .menu-btn-small {
-            display: inline-block;
-            background: #eee;
-            border: 1px solid #aaa;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #0645AD;
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .top-nav {
+            margin-bottom: 25px;
+        }
+
+        .nav-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 12px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
             text-decoration: none;
-            margin-right: 12px;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
+        }
+
+        .nav-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
+
+        .search-input {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 24px;
+            padding: 18px;
+            border: 2px solid #4a6bff;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background: white;
+        }
+
+        .search-btn {
+            width: 100%;
+            padding: 18px;
+            background: #4a6bff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .search-btn:hover {
+            background: #3557f5;
+        }
+
+        .matches-heading {
+            text-align: center;
+            color: #0d47a1;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .result-card {
+            margin-top: 20px;
+            background: white;
+            border-radius: 18px;
+            padding: 24px;
+            border: 2px solid #dce6ff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .result-row {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            font-size: 22px;
+            color: #222;
+            word-break: break-word;
         }
 
         .hl {
@@ -25,73 +127,135 @@
             border-radius: 3px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        @media (max-width: 768px) {
+
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            .search-input {
+                font-size: 26px;
+                padding: 20px;
+            }
+
+            .search-btn {
+                font-size: 24px;
+            }
+
+            .value {
+                font-size: 24px;
+            }
+
+            .result-card {
+                padding: 20px;
+            }
         }
 
-        th, td {
-            padding: 8px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background: #f0f0f0;
-            text-align: left;
-        }
-
-        .result-box {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: #fafafa;
-        }
     </style>
 </head>
 
 <body>
 
-<a href="{{ url_for('other_tools') }}" class="menu-btn-small">← Other Tools</a>
-<a href="{{ url_for('dashboard') }}" class="menu-btn-small">🏠 Main Menu</a>
+<div class="container">
 
-<h1>Super Lookup</h1>
+    <div class="top-nav">
 
-<form method="POST" action="{{ url_for('superlookup') }}">
-    <label>Search any name, guardian, email, or phone:</label><br>
-    <input type="text" name="q" value="{{ q }}" style="width:300px;">
-    <button>Search</button>
-</form>
+        <a href="{{ url_for('other_tools') }}" class="nav-btn">
+            ← Other Tools
+        </a>
 
-{% if results %}
-<div class="result-box">
-    <h3>Matches ({{ results|length }})</h3>
+        <a href="{{ url_for('dashboard') }}" class="nav-btn">
+            🏠 Main Menu
+        </a>
 
-    <table>
-        <tr>
-            <th>Name</th>
-            <th>Mobile</th>
-            <th>Guardian</th>
-            <th>Email</th>
-        </tr>
+    </div>
 
-        {% for r in results %}
-        <tr>
-            <td>{{ r.name|safe }}</td>
-            <td>{{ r.mobile|safe }}</td>
-            <td>{{ r.guardian|safe }}</td>
-            <td>{{ r.email|safe }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <h1>🔎 Super Lookup</h1>
+
+    <form method="POST" action="{{ url_for('superlookup') }}">
+
+        <label>
+            <strong>Search any name, guardian, email or phone</strong>
+        </label>
+
+        <input
+            type="search"
+            name="q"
+            value="{{ q }}"
+            placeholder="Name, mobile, guardian, email..."
+            class="search-input"
+            autofocus
+        >
+
+        <button type="submit" class="search-btn">
+            🔍 Search
+        </button>
+
+    </form>
+
+    {% if results %}
+
+    <h2 class="matches-heading">
+        ✅ {{ results|length }} Match(es) Found
+    </h2>
+
+    {% for r in results %}
+
+    <div class="result-card">
+
+        <div class="result-row">
+            <span class="label">👤 Client</span>
+            <div class="value">
+                {{ r.name|safe }}
+            </div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">📱 Mobile</span>
+            <div class="value">
+                {{ r.mobile|safe }}
+            </div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">👨‍👩‍👧 Guardian</span>
+            <div class="value">
+                {{ r.guardian|safe }}
+            </div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">📧 Email</span>
+            <div class="value">
+                {{ r.email|safe }}
+            </div>
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+    {% elif q %}
+
+    <div class="result-card">
+
+        <h3 style="text-align:center;color:#0d47a1;">
+            ❌ No Matches Found
+        </h3>
+
+        <div class="value" style="text-align:center;">
+            {{ q }}
+        </div>
+
+    </div>
+
+    {% endif %}
+
 </div>
-
-{% elif q %}
-<div class="result-box">
-    <p>No matches found for <strong>{{ q }}</strong>.</p>
-</div>
-{% endif %}
 
 </body>
 </html>
