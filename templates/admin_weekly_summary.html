@@ -1,260 +1,429 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Cache-Control" content="no-store" />
-    <title>Weekly Summary — Admin</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Cache-Control" content="no-store">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Weekly Summary</title>
 
     <style>
+
         body {
             font-family: Arial, sans-serif;
-            background:#f5f5f5;
-            padding:40px;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 15px;
         }
 
-        h2 {
-            font-size:32px;
-            margin-bottom:25px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .week-range {
-            font-size:20px;
-            margin-bottom:30px;
-            color:#444;
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
         }
 
-        table {
-            width:100%;
-            border-collapse:collapse;
-            margin-bottom:40px;
-            background:white;
-            box-shadow:0 3px 10px rgba(0,0,0,0.15);
+        .nav-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 20px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
         }
 
-        th, td {
-            padding:10px;
-            border:1px solid #ddd;
-            text-align:center;
+        .nav-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
         }
 
-        th {
-            background:#eee;
-            font-weight:bold;
+        .filter-card {
+            background: white;
+            border: 2px solid #dce6ff;
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         }
 
-        .emp-name {
-            font-size:24px;
-            font-weight:bold;
-            margin-top:40px;
-            margin-bottom:10px;
-            cursor:pointer;
-            padding:10px;
-            background:#fff;
-            border-radius:8px;
-            box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        label {
+            display: block;
+            font-weight: bold;
+            color: #0d47a1;
+            margin-bottom: 5px;
         }
 
-        .emp-name:hover {
-            background:#f0f0f0;
+        select {
+            width: 100%;
+            padding: 14px;
+            font-size: 18px;
+            border: 2px solid #4a6bff;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
         }
 
-        .emp-table {
-            display:none;
-            margin-bottom:40px;
+        .week-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .back-btn {
-            padding:18px;
-            background:#777;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-size:22px;
-            width:260px;
-            cursor:pointer;
-            margin-bottom:30px;
-        }
-
-        .back-btn:hover {
-            background:#555;
-        }
-
-        /* ⭐ WEEK NAV BUTTONS */
         .week-nav-btn {
-            padding:6px 12px;
-            font-size:20px;
-            margin-left:10px;
-            cursor:pointer;
-            background:#ddd;
-            border:1px solid #bbb;
-            border-radius:6px;
+            flex: 1;
+            padding: 14px;
+            font-size: 18px;
+            background: #4a6bff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
         }
 
         .week-nav-btn:hover {
-            background:#ccc;
+            background: #3557f5;
         }
 
-        /* ⭐ EDIT BUTTON */
-        .edit-small-btn {
-            padding:6px 12px;
-            background:#2a7ae2;
-            color:white;
-            border:none;
-            border-radius:6px;
-            cursor:pointer;
-            font-size:16px;
+        .search-btn {
+            width: 100%;
+            padding: 18px;
+            background: #4a6bff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        .edit-small-btn:hover {
-            background:#1f5fb4;
+        .search-btn:hover {
+            background: #3557f5;
         }
+
+        .week-range {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0d47a1;
+        }
+
+        .employee-card {
+            background: white;
+            border: 2px solid #dce6ff;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .employee-header {
+            padding: 20px;
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+
+        .employee-header:hover {
+            background: #f8fbff;
+        }
+
+        .employee-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d47a1;
+        }
+
+        .employee-total {
+            margin-top: 6px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .emp-table-wrapper {
+            display: none;
+            overflow-x: auto;
+            padding: 0 15px 15px 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #dce6ff;
+            color: #002060;
+            padding: 12px;
+            text-align: center;
+        }
+
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .edit-btn {
+            padding: 8px 14px;
+            background: #4a6bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .edit-btn:hover {
+            background: #3557f5;
+        }
+
+        .late-submit {
+            background: #ffe5e5;
+        }
+
+        .sunday-row {
+            background: #d4f8d4;
+        }
+
+        @media (max-width:768px) {
+
+            h1 {
+                font-size: 30px;
+            }
+
+            .employee-name {
+                font-size: 22px;
+            }
+
+            .employee-total {
+                font-size: 18px;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th,
+            td {
+                white-space: nowrap;
+            }
+        }
+
     </style>
+
 </head>
 
 <body>
 
-<button class="back-btn" onclick="window.location.href='/employees'">
-    Employee Menu
-</button>
+<div class="container">
 
-<h2>Weekly Summary</h2>
+    <a href="/employees" class="nav-btn">
+        👥 Employee Menu
+    </a>
 
-<!-- FY + WEEK SELECTOR -->
-<form method="get" style="margin-bottom:25px;">
-    <label>Financial Year:</label>
-    <select name="fy">
-        {% for y in fy_years %}
-            <option value="{{ y }}" {% if y == fy %}selected{% endif %}>
-                {{ y }}–{{ y+1 }}
-            </option>
-        {% endfor %}
-    </select>
+    <h1>📊 Weekly Summary</h1>
 
-    <label style="margin-left:20px;">Week:</label>
+    <div class="filter-card">
 
-    <!-- ⬅️ PREVIOUS WEEK -->
-    <button type="button" class="week-nav-btn" onclick="changeWeek(-1)">⬅️</button>
+        <form method="get">
 
-    <select name="week" id="week-select">
-        {% for w in weeks %}
-            <option value="{{ w.week_number }}" {% if w.week_number == selected_week %}selected{% endif %}>
-                WK{{ w.week_number }} ({{ w.start.strftime("%d/%m/%y") }} – {{ w.end.strftime("%d/%m/%y") }})
-            </option>
-        {% endfor %}
-    </select>
+            <label>Financial Year</label>
 
-    <!-- ➡️ NEXT WEEK -->
-    <button type="button" class="week-nav-btn" onclick="changeWeek(1)">➡️</button>
+            <select name="fy">
+                {% for y in fy_years %}
+                    <option value="{{ y }}" {% if y == fy %}selected{% endif %}>
+                        {{ y }}–{{ y+1 }}
+                    </option>
+                {% endfor %}
+            </select>
 
-    <button type="submit">Go</button>
-</form>
+            <label>Week</label>
 
-<!-- WEEK RANGE DISPLAY -->
-<div class="week-range">
-    {{ start_of_week.strftime('%A %d %B %Y') }} → {{ end_of_week.strftime('%A %d %B %Y') }}
-</div>
+            <div class="week-buttons">
 
-<!-- EMPLOYEE TABLES -->
-{% for item in summary %}
+                <button type="button"
+                        class="week-nav-btn"
+                        onclick="changeWeek(-1)">
+                    ⬅ Previous
+                </button>
 
-    {% set weekly_total = item.week_rows[-1].running_total.total_seconds() / 3600
-        if item.week_rows and item.week_rows[-1].running_total else 0 %}
+                <button type="button"
+                        class="week-nav-btn"
+                        onclick="changeWeek(1)">
+                    Next ➡
+                </button>
 
-    <div class="emp-name" onclick="toggleTable('tbl{{ item.acc.id }}')">
-        {{ item.acc.full_name }} — {{ "%.2f"|format(weekly_total) }} hrs
+            </div>
+
+            <select name="week" id="week-select">
+                {% for w in weeks %}
+                    <option value="{{ w.week_number }}"
+                        {% if w.week_number == selected_week %}selected{% endif %}>
+                        WK{{ w.week_number }}
+                        ({{ w.start.strftime("%d/%m/%y") }}
+                        -
+                        {{ w.end.strftime("%d/%m/%y") }})
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="search-btn">
+                📅 Load Week
+            </button>
+
+        </form>
+
+        <div class="week-range">
+            {{ start_of_week.strftime('%A %d %B %Y') }}
+            →
+            {{ end_of_week.strftime('%A %d %B %Y') }}
+        </div>
+
     </div>
 
-<table id="tbl{{ item.acc.id }}" class="emp-table">
-    <tr>
-        <th>Date</th>
-        <th>Start</th>
-        <th>Break Start</th>
-        <th>Break End</th>
-        <th>Finish</th>
-        <th>Day Total</th>
-        <th>Running Total</th>
-        <th>Finish Submitted</th>
-        <th>Edit</th>
-    </tr>
+    {% for item in summary %}
 
-    {% for d in item.week_rows %}
-        <tr {% if d.date.weekday() == 6 %} style="background:#d4f8d4;" {% endif %}>
-            <td>{{ d.date.strftime("%a %d/%m") }}</td>
+        {% set weekly_total = item.week_rows[-1].running_total.total_seconds() / 3600
+            if item.week_rows and item.week_rows[-1].running_total else 0 %}
 
-            <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
-            <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
-            <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
-            <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
+        <div class="employee-card">
 
-            <td>
-                {% if d.net %}
-                    {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
-                {% endif %}
-            </td>
+            <div class="employee-header"
+                 onclick="toggleTable('tbl{{ item.acc.id }}')">
 
-            <td>
-                {% if d.running_total %}
-                    {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
-                {% endif %}
-            </td>
+                <div class="employee-name">
+                    👤 {{ item.acc.full_name }}
+                </div>
 
-            {% set submitted = d.row.submitted_at if d.row else None %}
-            {% set finish = d.row.sign_out if d.row else None %}
+                <div class="employee-total">
+                    {{ "%.2f"|format(weekly_total) }} hrs
+                </div>
 
-            {% if submitted and finish %}
-                {% set submitted_naive = submitted.replace(tzinfo=None) %}
-                {% set finish_naive = finish.replace(tzinfo=None) %}
-                {% set delay = (submitted_naive - finish_naive).total_seconds() %}
-            {% else %}
-                {% set delay = 0 %}
-            {% endif %}
+            </div>
 
-            <td {% if delay > 14400 %} style="background:#ffe5e5;" {% endif %}>
-                {% if submitted %}
-                    {{ submitted.strftime("%a %d/%m %I:%M %p") }}
-                {% endif %}
-            </td>
+            <div id="tbl{{ item.acc.id }}" class="emp-table-wrapper">
 
-            <!-- ⭐ EDIT BUTTON (GUARDED + CORRECT ROUTE) -->
-            <td>
-                {% if d.row %}
-                    <button class="edit-small-btn" type="button"
-                        onclick="window.location.href='/admin/employees/hours/{{ d.row.id }}/edit'">
-                        Edit
-                    </button>
-                {% else %}
-                    <span style="color:#888;">—</span>
-                {% endif %}
-            </td>
+                <table>
 
-        </tr>
+                    <tr>
+                        <th>Date</th>
+                        <th>Start</th>
+                        <th>Break Start</th>
+                        <th>Break End</th>
+                        <th>Finish</th>
+                        <th>Day Total</th>
+                        <th>Running</th>
+                        <th>Submitted</th>
+                        <th>Edit</th>
+                    </tr>
+
+                    {% for d in item.week_rows %}
+
+                    {% set submitted = d.row.submitted_at if d.row else None %}
+                    {% set finish = d.row.sign_out if d.row else None %}
+
+                    {% if submitted and finish %}
+                        {% set submitted_naive = submitted.replace(tzinfo=None) %}
+                        {% set finish_naive = finish.replace(tzinfo=None) %}
+                        {% set delay = (submitted_naive - finish_naive).total_seconds() %}
+                    {% else %}
+                        {% set delay = 0 %}
+                    {% endif %}
+
+                    <tr {% if d.date.weekday() == 6 %}class="sunday-row"{% endif %}>
+
+                        <td>{{ d.date.strftime("%a %d/%m") }}</td>
+
+                        <td>{{ d.row.sign_in.strftime("%I:%M %p") if d.row and d.row.sign_in else "" }}</td>
+                        <td>{{ d.row.break_start.strftime("%I:%M %p") if d.row and d.row.break_start else "" }}</td>
+                        <td>{{ d.row.break_end.strftime("%I:%M %p") if d.row and d.row.break_end else "" }}</td>
+                        <td>{{ d.row.sign_out.strftime("%I:%M %p") if d.row and d.row.sign_out else "" }}</td>
+
+                        <td>
+                            {% if d.net %}
+                                {{ "%.2f"|format(d.net.total_seconds() / 3600) }}
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if d.running_total %}
+                                {{ "%.2f"|format(d.running_total.total_seconds() / 3600) }}
+                            {% endif %}
+                        </td>
+
+                        <td {% if delay > 14400 %}class="late-submit"{% endif %}>
+                            {% if submitted %}
+                                {{ submitted.strftime("%a %d/%m %I:%M %p") }}
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if d.row %}
+                                <button class="edit-btn"
+                                        type="button"
+                                        onclick="window.location.href='/admin/employees/hours/{{ d.row.id }}/edit'">
+                                    Edit
+                                </button>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </table>
+
+            </div>
+
+        </div>
+
     {% endfor %}
-</table>
 
-{% endfor %}
+</div>
 
 <script>
+
 function toggleTable(id) {
+
     const tbl = document.getElementById(id);
-    tbl.style.display = (tbl.style.display === "none" || tbl.style.display === "") 
-        ? "block" 
+
+    tbl.style.display =
+        (tbl.style.display === "none" || tbl.style.display === "")
+        ? "block"
         : "none";
 }
 
 function changeWeek(offset) {
+
     const weekSelect = document.getElementById("week-select");
+
     let current = parseInt(weekSelect.value);
     let next = current + offset;
 
     const max = {{ weeks|length }};
+
     if (next < 1) next = 1;
     if (next > max) next = max;
 
     weekSelect.value = next;
 
-    // ⭐ PRESERVE FY WHEN SUBMITTING
-    const fySelect = document.querySelector('select[name="fy"]');
-    fySelect.form.submit();
+    weekSelect.form.submit();
 }
+
 </script>
 
 </body>

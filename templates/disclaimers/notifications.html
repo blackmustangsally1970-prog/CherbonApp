@@ -2,128 +2,205 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Incoming Submissions</title>
 
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        h1 { margin-bottom: 20px; }
 
-        table {
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .top-nav {
+            margin-bottom: 25px;
+        }
+
+        .nav-btn {
+            display: block;
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+            padding: 18px;
+            margin-bottom: 12px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
         }
 
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            text-align: left;
+        .nav-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
         }
 
-        a.button {
-            padding: 6px 12px;
-            background: #0645AD;
+        h1 {
+            color: #0d47a1;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .action-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 12px;
+            background: #4a6bff;
             color: white;
             text-decoration: none;
-            border-radius: 4px;
+            text-align: center;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: 0.2s ease;
         }
 
-        a.button:hover {
-            background: #003f8a;
+        .action-btn:hover {
+            background: #3557f5;
         }
 
-        /* Back button styling */
-        .back-btn-container {
-            margin: 10px 0 15px 0;
+        .submission-card {
+            margin-top: 15px;
+            background: white;
+            border-radius: 18px;
+            padding: 24px;
+            border: 2px solid #dce6ff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         }
 
-        .back-btn {
-            display: inline-block;
-            font-size: 18px;
-            padding: 8px 14px;
-            background: #f0f0f0;
-            border-radius: 6px;
-            text-decoration: none;
-            color: #000;
-            border: 1px solid #ccc;
+        .submission-id {
+            font-size: 13px;
+            font-weight: bold;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
         }
 
-        .back-btn:hover {
-            background: #e4e4e4;
+        .submission-name {
+            font-size: 24px;
+            color: #222;
+            font-weight: 600;
         }
 
-        @media (max-width: 600px) {
-            .back-btn {
-                font-size: 20px;
-                padding: 10px 16px;
+        .count-card {
+            background: white;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #dce6ff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .count-number {
+            font-size: 42px;
+            font-weight: bold;
+            color: #0d47a1;
+        }
+
+        .count-label {
+            color: #666;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            .submission-name {
+                font-size: 22px;
+            }
+
+            .action-btn {
+                font-size: 24px;
+            }
+
+            .count-number {
+                font-size: 48px;
             }
         }
+
     </style>
 </head>
 
 <body>
 
-    <div class="back-btn-container no-print">
-        <a href="{{ url_for('dashboard') }}" class="back-btn">← Back to Eq Menu</a>
+<div class="container">
+
+    <div class="top-nav">
+
+        <a href="{{ url_for('equestrian_dashboard') }}" class="nav-btn">
+            ← Equestrian Menu
+        </a>
+
+        <a href="{{ url_for('dashboard') }}" class="nav-btn">
+            🏠 Main Menu
+        </a>
+
     </div>
 
-    <h1>Incoming Submissions</h1>
+    <h1>🐴 Incoming Submissions</h1>
 
-<p>
-    <a class="button" href="{{ url_for('fetch_jotform_submissions') }}">
-        🔄 Fetch New Disclaimers
+    <a href="{{ url_for('fetch_jotform_submissions') }}"
+       class="action-btn">
+       🔄 Fetch New Disclaimers
     </a>
-<p>
-    <a class="button" href="{{ url_for('process_all_pending') }}">
-        ⚡ Process All Pending
+
+    <a href="{{ url_for('process_all_pending') }}"
+       class="action-btn">
+       ⚡ Process All Pending
     </a>
-</p>
 
-
-<!--
-<p>
-    <a class="button" href="{{ url_for('clear_processed') }}">
-        🧹 Clear Processed Submissions
-    </a>
-</p>
--->
-
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Name(s)</th>
-        <th>Received</th>
-        <th>Status</th>
-<!--    <th>Action</th> -->
-    </tr>
+    <div class="count-card">
+        <div class="count-number">{{ rows|length }}</div>
+        <div class="count-label">Incoming Submission(s)</div>
+    </div>
 
     {% for row in rows %}
-    <tr>
-        <td>{{ row.id }}</td>
-        <td>{{ row.display_names }}</td>
-        <td>{{ row.received_at }}</td>
-        <td>{{ 'Processed' if row.processed else 'Pending' }}</td>
-<!--
-        <td>
-            <a class="button"
-               href="{{ url_for('process_notification', webhook_id=row.id) }}">
-                Process
-            </a>
-        </td>
--->
-    </tr>
+
+    <div class="submission-card">
+
+        <div class="submission-id">
+            Submission #{{ row.id }}
+        </div>
+
+        <div class="submission-name">
+            {{ row.display_names }}
+        </div>
+
+    </div>
+
     {% endfor %}
-</table>
+
+</div>
 
 <script>
 window.addEventListener("message", (event) => {
     if (event.data === "closeConflictModal") {
-        // Close your modal here
-        $('#conflictModal').modal('hide');   // Bootstrap example
-        // or whatever your modal uses
+        if (typeof $ !== "undefined") {
+            $('#conflictModal').modal('hide');
+        }
     }
 });
-
 </script>
 
 </body>

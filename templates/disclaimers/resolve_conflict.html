@@ -2,181 +2,416 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Resolve Conflict</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Resolve Rider Conflict</title>
 
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        h1 { margin-bottom: 20px; }
 
-        table {
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .top-nav {
+            margin-bottom: 25px;
+        }
+
+        .nav-btn {
+            display: block;
             width: 100%;
-            border-collapse: collapse;
+            padding: 18px;
+            margin-bottom: 12px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
+        }
+
+        .nav-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            color: #0d47a1;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .result-card {
+            margin-top: 20px;
+            background: white;
+            border-radius: 18px;
+            padding: 24px;
+            border: 2px solid #dce6ff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .result-card h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #0d47a1;
             margin-bottom: 20px;
         }
 
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            text-align: left;
+        .result-row {
+            padding: 14px 0;
+            border-bottom: 1px solid #eee;
         }
 
-        .section-title {
-            font-size: 1.2em;
-            margin-top: 30px;
-            margin-bottom: 10px;
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            display: block;
+            font-size: 12px;
             font-weight: bold;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
         }
 
-        .button {
-            padding: 8px 14px;
-            background: #0645AD;
+        .value {
+            font-size: 22px;
+            color: #222;
+            word-break: break-word;
+        }
+
+        .section-heading {
+            text-align: center;
+            color: #0d47a1;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .submission-card {
+            margin-top: 15px;
+            background: white;
+            border-radius: 18px;
+            padding: 24px;
+            border: 2px solid #dce6ff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .submission-id {
+            font-size: 13px;
+            font-weight: bold;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .submission-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 15px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 10px;
+            background: #4a6bff;
             color: white;
-            border-radius: 4px;
-            margin-right: 6px;
             border: none;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: #3557f5;
+        }
+
+        .danger-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 10px;
+            background: #c62828;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
             cursor: pointer;
         }
 
-        .button:hover {
-            background: #003f8a;
+        .danger-btn:hover {
+            background: #a61f1f;
         }
 
-        .danger {
-            background: #b30000;
+        .danger-card {
+            margin-top: 25px;
+            background: #fff5f5;
+            border: 2px solid #ffcdd2;
+            border-radius: 18px;
+            padding: 24px;
         }
 
-        .danger:hover {
-            background: #7a0000;
+        @media (max-width: 768px) {
+
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            .value {
+                font-size: 24px;
+            }
+
+            .submission-name {
+                font-size: 22px;
+            }
+
+            .action-btn,
+            .danger-btn {
+                font-size: 24px;
+            }
         }
 
-        .match-block {
-            border: 1px solid #ccc;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 6px;
-        }
     </style>
 </head>
+
 <body>
 
-    <h1>Resolve Rider Conflict</h1>
+<div class="container">
 
-    <p>
-        Submission ID: <strong>{{ submission.id }}</strong><br>
-        Rider Index: <strong>{{ rider_index }}</strong>
-    </p>
+    <div class="top-nav">
 
-    <div class="section-title">Incoming Rider</div>
+        <a href="{{ url_for('notifications') }}" class="nav-btn">
+            📋 Disclaimer Menu
+        </a>
 
-    <table>
-        <tr><th>Name</th><td>{{ rider.name }}</td></tr>
-        <tr><th>Age</th><td>{{ rider.age }}</td></tr>
-        <tr><th>Email</th><td>{{ email }}</td></tr>
-        <tr><th>Mobile</th><td>{{ mobile }}</td></tr>
-        <tr><th>Guardian</th><td>{{ guardian }}</td></tr>
-        <tr><th>Height</th><td>{{ rider.height_cm }}</td></tr>
-        <tr><th>Weight</th><td>{{ rider.weight_kg }}</td></tr>
-        <tr><th>Disclaimer</th><td>{{ disclaimer }}</td></tr>
-    </table>
+        <a href="{{ url_for('equestrian_dashboard') }}" class="nav-btn">
+            ← Equestrian Menu
+        </a>
 
-    <div class="section-title">Matching Existing Clients</div>
+        <a href="{{ url_for('dashboard') }}" class="nav-btn">
+            🏠 Main Menu
+        </a>
 
-    {% if matches %}
-        {% for m in matches %}
-            <div class="match-block">
-                <strong>{{ m.full_name }}</strong><br>
+    </div>
 
-                {% if invite_mode %}
-                    Height: {{ m.height_cm }}<br>
-                    Weight: {{ m.weight_kg }}<br><br>
-                {% else %}
-                    Age: {{ m.age }}<br>
-                    Email: {{ m.email_primary }}<br>
-                    Mobile: {{ m.mobile }}<br>
-                    Guardian: {{ m.guardian_name }}<br>
-                    Disclaimer: {{ m.disclaimer }}<br>
+    <h1>⚠ Resolve Rider Conflict</h1>
 
-                    Last Lesson:
-                    {% if m.last_lesson_date %}
-                        {{ m.last_lesson_date.strftime('%d %b %Y') }}
-                    {% else %}
-                        None recorded
-                    {% endif %}
-                    <br><br>
-                {% endif %}
+    <div class="result-card">
 
-                <!-- USE EXISTING -->
-                <form method="post"
-                      action="{{ url_for('finalize_conflict',
-                                         submission_id=submission.id,
-                                         rider_index=rider_index) }}"
-                      style="display:inline;">
-                    <input type="hidden" name="client_id" value="{{ m.client_id }}">
-                    <button type="submit" class="button" name="choice" value="use_existing">
-                        ✔ Use This Client
-                    </button>
-                </form>
+        <h3>📥 Incoming Rider</h3>
 
-                {% if not invite_mode %}
-                <!-- OVERWRITE -->
-                <form method="post"
-                      action="{{ url_for('finalize_conflict',
-                                         submission_id=submission.id,
-                                         rider_index=rider_index) }}"
-                      style="display:inline;">
-                    <input type="hidden" name="client_id" value="{{ m.client_id }}">
-                    <button type="submit" class="button danger" name="choice" value="overwrite">
-                        ⚠ Overwrite This Client
-                    </button>
-                </form>
-                {% endif %}
+        <div class="result-row">
+            <span class="label">Name</span>
+            <div class="value">{{ rider.name }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Age</span>
+            <div class="value">{{ rider.age }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Email</span>
+            <div class="value">{{ email }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Mobile</span>
+            <div class="value">{{ mobile }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Guardian</span>
+            <div class="value">{{ guardian }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Height</span>
+            <div class="value">{{ rider.height_cm }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Weight</span>
+            <div class="value">{{ rider.weight_kg }}</div>
+        </div>
+
+    </div>
+
+    <h2 class="section-heading">👥 Possible Matches</h2>
+
+    {% for m in matches %}
+
+    <div class="submission-card">
+
+        <div class="submission-id">
+            Possible Match
+        </div>
+
+        <div class="submission-name">
+            {{ m.full_name }}
+        </div>
+
+        {% if invite_mode %}
+
+            <div class="result-row">
+                <span class="label">Height</span>
+                <div class="value">{{ m.height_cm }}</div>
             </div>
-        {% endfor %}
-    {% else %}
-        <p>No existing clients matched — this should not happen if you reached this page.</p>
-    {% endif %}
 
-    <div class="section-title">Or Create New</div>
+            <div class="result-row">
+                <span class="label">Weight</span>
+                <div class="value">{{ m.weight_kg }}</div>
+            </div>
 
-    <!-- CREATE NEW -->
+        {% else %}
+
+            <div class="result-row">
+                <span class="label">Age</span>
+                <div class="value">{{ m.age }}</div>
+            </div>
+
+            <div class="result-row">
+                <span class="label">Email</span>
+                <div class="value">{{ m.email_primary }}</div>
+            </div>
+
+            <div class="result-row">
+                <span class="label">Mobile</span>
+                <div class="value">{{ m.mobile }}</div>
+            </div>
+
+            <div class="result-row">
+                <span class="label">Guardian</span>
+                <div class="value">{{ m.guardian_name }}</div>
+            </div>
+
+        {% endif %}
+
+        <form method="post"
+              action="{{ url_for('finalize_conflict',
+                                 submission_id=submission.id,
+                                 rider_index=rider_index) }}">
+
+            <input type="hidden"
+                   name="client_id"
+                   value="{{ m.client_id }}">
+
+            <button class="action-btn"
+                    name="choice"
+                    value="use_existing">
+                ✅ Use This Client
+            </button>
+
+        </form>
+
+        {% if not invite_mode %}
+
+        <form method="post"
+              action="{{ url_for('finalize_conflict',
+                                 submission_id=submission.id,
+                                 rider_index=rider_index) }}">
+
+            <input type="hidden"
+                   name="client_id"
+                   value="{{ m.client_id }}">
+
+            <button class="danger-btn"
+                    name="choice"
+                    value="overwrite">
+                ⚠ Overwrite This Client
+            </button>
+
+        </form>
+
+        {% endif %}
+
+    </div>
+
+    {% endfor %}
+
+    <h2 class="section-heading">➕ Create New Rider</h2>
+
     <form method="post"
           action="{{ url_for('finalize_conflict',
                              submission_id=submission.id,
                              rider_index=rider_index) }}">
-        <button type="submit" class="button" name="choice" value="new">
+
+        <button class="action-btn"
+                name="choice"
+                value="new">
             ➕ Create New Client
         </button>
 
-        <button type="submit" class="button" name="choice" value="new_same_name">
+        <button class="action-btn"
+                name="choice"
+                value="new_same_name">
             ➕ Create New (Same Name)
         </button>
+
     </form>
 
-    <!-- IGNORE -->
-    <form method="post"
-          action="{{ url_for('finalize_conflict',
-                             submission_id=submission.id,
-                             rider_index=rider_index) }}">
-        <button type="submit" name="choice" value="ignore" class="button danger">
-            Ignore this submission (do not append)
-        </button>
-    </form>
+    <div class="danger-card">
+
+        <h3 style="text-align:center;color:#c62828;">
+            🚨 Danger Zone
+        </h3>
+
+        <form method="post"
+              action="{{ url_for('finalize_conflict',
+                                 submission_id=submission.id,
+                                 rider_index=rider_index) }}">
+
+            <button class="danger-btn"
+                    name="choice"
+                    value="ignore">
+                Ignore Submission
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+
     document.querySelectorAll("form").forEach(form => {
+
         form.addEventListener("submit", () => {
 
-            // 1️⃣ Tell parent to close the conflict modal
             window.parent.postMessage("closeConflictModal", "*");
 
-            // 2️⃣ Then navigate parent to finalize_notification
             setTimeout(() => {
                 window.parent.location.href =
                     "{{ url_for('finalize_notification', webhook_id=submission.id) }}";
             }, 150);
+
         });
+
     });
+
 });
 </script>
 

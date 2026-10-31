@@ -46,7 +46,8 @@ def safe_decode_payload(raw):
 
 
 def build_conflict_context(submission_row, rider_index):
-    from models import Client
+    from models import Client, Lesson
+
     """
     Build all data needed to render the conflict page.
     Returns a dict with rider, guardian, mobile, email, disclaimer, matches.
@@ -68,17 +69,37 @@ def build_conflict_context(submission_row, rider_index):
 
     rider = all_riders[rider_index - 1]
 
-    guardian   = parsed.get("guardian")
-    mobile     = ''.join(filter(str.isdigit, parsed.get("mobile") or ""))
-    email      = parsed.get("email")
+    guardian = parsed.get("guardian")
+    mobile = ''.join(filter(str.isdigit, parsed.get("mobile") or ""))
+    email = parsed.get("email")
     disclaimer = parsed.get("disclaimer")
 
     # Convert matches into Client objects
     match_objects = []
+
     for m in rider.get("matches", []):
+
         client_id, full_name, mobile_m, email_m, jot_id = m
+
         client = Client.query.get(client_id)
+
         if client:
+
+            # Get most recent lesson for this client
+            last_lesson = (
+                Lesson.query
+                .filter(Lesson.client == client.full_name)
+                .order_by(Lesson.lesson_date.desc())
+                .first()
+            )
+
+            # Attach temporary attribute for the template
+            client.last_lesson_date = (
+                last_lesson.lesson_date
+                if last_lesson and last_lesson.lesson_date
+                else None
+            )
+
             match_objects.append(client)
 
     return {
