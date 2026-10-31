@@ -2,93 +2,99 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Courses Menu</title>
 
-    <style>
+<style>
+
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f7fb;
+        margin: 0;
+        padding: 15px;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    h1 {
+        color: #0d47a1;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .nav-btn {
+        display: block;
+        width: 100%;
+        padding: 18px;
+        margin-bottom: 12px;
+        background: #dce6ff;
+        border: 3px solid #4a6bff;
+        border-radius: 16px;
+        text-decoration: none;
+        text-align: center;
+        color: #002060;
+        font-size: 20px;
+        font-weight: 700;
+        box-sizing: border-box;
+        transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+        background: #cddcff;
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+
         body {
-            font-family: sans-serif;
-            padding: 20px;
+            padding: 12px;
         }
 
-        h2 {
-            margin-bottom: 20px;
+        h1 {
+            font-size: 30px;
         }
 
-        ul.menu {
-            list-style: none;
-            padding: 0;
+        .nav-btn {
+            font-size: 24px;
+            padding: 22px;
         }
+    }
 
-        ul.menu > li {
-            margin-bottom: 16px;
-        }
-
-        /* SUPER MASSIVE iPhone menu buttons */
-        .menu-btn {
-            display: block;
-            width: 100%;
-            background: #dce6ff;
-            border: 4px solid #4a6bff;
-            padding: 40px 28px;
-            border-radius: 18px;
-            font-size: 34px;
-            font-weight: 900;
-            color: #001a66;
-            text-decoration: none;
-            text-align: center;
-            box-sizing: border-box;
-            margin-bottom: 28px;
-            letter-spacing: 1px;
-            line-height: 1.35;
-            transition: background 0.2s ease, transform 0.1s ease;
-        }
-
-        .menu-btn:hover {
-            background: #c7d6ff;
-            transform: scale(1.04);
-            text-decoration: none;
-        }
-
-        /* Desktop override */
-        @media (min-width: 800px) {
-            .menu-btn {
-                padding: 20px 18px !important;
-                font-size: 20px !important;
-                border-radius: 10px !important;
-                margin-bottom: 16px !important;
-            }
-        }
-    </style>
-</head>
+</style></head>
 
 <body>
 
-<h2>Courses</h2>
+<div class="container">
 
-<ul class="menu">
+    <h1>📘 Courses Menu</h1>
 
-    <li>
-        <a href="{{ url_for('equestrian_dashboard') }}" class="menu-btn">← Equestrian Menu</a>
-    </li>
+    <a href="{{ url_for('equestrian_dashboard') }}" class="nav-btn">
+        ← Equestrian Menu
+    </a>
 
-    <li>
-        <a href="{{ url_for('course_form_submissions') }}" class="menu-btn">📥 Course Submissions</a>
+    <a href="{{ url_for('dashboard') }}" class="nav-btn">
+        🏠 Main Menu
+    </a>
 
-    </li>
+    <a href="{{ url_for('course_form_submissions') }}" class="nav-btn">
+        📥 Course Submissions
+    </a>
 
-    <li>
-        <a href="{{ url_for('course_reference') }}" class="menu-btn">📘 Course Reference Table</a>
-    </li>
+    <a href="{{ url_for('course_reference') }}" class="nav-btn">
+        📘 Course Reference Table
+    </a>
 
-    <li>
-        <a href="{{ url_for('pricing_setup') }}" class="menu-btn">💲 Pricing Setup</a>
-    </li>
+    <a href="{{ url_for('pricing_setup') }}" class="nav-btn">
+        💲 Pricing Setup
+    </a>
 
-    <li>
-        <a href="{{ url_for('terms') }}" class="menu-btn">📅 Term Setup</a>
-    </li>
+    <a href="{{ url_for('terms') }}" class="nav-btn">
+        📅 Term Setup
+    </a>
 
-</ul>
-
+</div>
 </body>
 </html>

@@ -139,17 +139,25 @@
             background: #f8fbff;
         }
 
-        .employee-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #0d47a1;
-        }
+.employee-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
 
-        .employee-total {
-            margin-top: 6px;
-            font-size: 20px;
-            color: #333;
-        }
+.employee-name {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0d47a1;
+}
+
+.employee-total {
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+}
 
         .emp-table-wrapper {
             display: none;
@@ -303,14 +311,15 @@
             <div class="employee-header"
                  onclick="toggleTable('tbl{{ item.acc.id }}')">
 
-                <div class="employee-name">
-                    👤 {{ item.acc.full_name }}
-                </div>
+<div class="employee-summary">
+    <span class="employee-name">
+        👤 {{ item.acc.full_name }}
+    </span>
 
-                <div class="employee-total">
-                    {{ "%.2f"|format(weekly_total) }} hrs
-                </div>
-
+    <span class="employee-total">
+        {{ "%.2f"|format(weekly_total) }} hrs
+    </span>
+</div>
             </div>
 
             <div id="tbl{{ item.acc.id }}" class="emp-table-wrapper">
