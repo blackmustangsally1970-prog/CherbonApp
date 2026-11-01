@@ -525,22 +525,13 @@ def appointments_public():
         db.session.add(appt)
         db.session.commit()
 
-        # Optional: SMS confirmation (ClickSend)
-        try:
-            send_sms(
-                appt.phone,
-                f"Hi {appt.name}, your Cherbon Waters appointment is booked for "
-                f"{appt.day} at {appt.time_label}."
-            )
-        except Exception as e:
-            print("SMS error:", e)
+        return render_template(
+            'weddings/appointments_thankyou.html'
+        )
 
-        return render_template('weddings/appointments_thankyou.html')
-
-    return """
-    <h1>HELLO STEVE</h1>
-    <p>Appointments route works.</p>
-    """    
+    return render_template(
+        'weddings/appointments_public.html'
+    )
 
 # ---------------------------------------------------------
 # ADMIN: LIST ALL APPOINTMENTS
