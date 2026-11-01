@@ -8,6 +8,7 @@ from weddings.models.appointments import Appointment
 from weddings.models.appointment_day import AppointmentDay
 from weddings.models.appointment_time import AppointmentTime
 from weddings.models.appointment_blockout import AppointmentBlockout
+from weddings.models.appointment_slot import AppointmentSlot
 
 from weddings.models.wedding import Wedding
 from weddings.models.staff_assignment import WeddingStaffAssignment
