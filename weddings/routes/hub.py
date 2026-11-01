@@ -537,8 +537,10 @@ def appointments_public():
 
         return render_template('weddings/appointments_thankyou.html')
 
-    return render_template('weddings/appointments_public.html')
-
+    return """
+    <h1>HELLO STEVE</h1>
+    <p>Appointments route works.</p>
+    """    
 
 # ---------------------------------------------------------
 # ADMIN: LIST ALL APPOINTMENTS
