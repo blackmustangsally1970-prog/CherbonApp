@@ -512,8 +512,6 @@ Cherbon Waters Management
 @hub_bp.route('/appointments', methods=['GET', 'POST'])
 def appointments_public():
 
-    return "HUB APPOINTMENTS HIT"
-
     if request.method == 'POST':
         appt = Appointment(
             name=request.form['name'],
