@@ -1,187 +1,340 @@
 <!doctype html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Gift Voucher Submissions</title>
-    <link rel="stylesheet" href="/static/bootstrap.min.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Gift Voucher Submissions</title>
 
 <style>
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    margin: 0;
+    padding: 15px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+h1 {
+    color: #0d47a1;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.section-title {
+    color: #0d47a1;
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
+.nav-btn {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    margin-bottom: 12px;
+    background: #dce6ff;
+    border: 3px solid #4a6bff;
+    border-radius: 16px;
+    text-decoration: none;
+    text-align: center;
+    color: #002060;
+    font-size: 20px;
+    font-weight: 700;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
+}
+
+.nav-btn:hover {
+    background: #cddcff;
+    transform: translateY(-2px);
+}
+
+.section-box {
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    border: 2px solid #dce6ff;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: #dce6ff;
+    color: #002060;
+    padding: 12px;
+    text-align: left;
+    font-weight: 700;
+}
+
+.data-table td {
+    padding: 12px;
+    border-top: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 2px;
+    background: #dce6ff;
+    border: 2px solid #4a6bff;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #002060;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.action-btn:hover {
+    background: #cddcff;
+}
+
+.empty-msg {
+    color: #666;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+
     body {
-        padding: 20px;
-        background: #f0f4f8;
+        padding: 12px;
     }
 
-    h2, h3 {
-        color: #003366;
-        margin-top: 10px;
-        margin-bottom: 20px;
+    h1 {
+        font-size: 30px;
     }
 
-    /* Excel-style grid */
-    table.excel-grid {
-        width: 100%;
-        border-collapse: collapse !important;
-        background: white;
-        font-size: 15px;
+    .nav-btn {
+        font-size: 24px;
+        padding: 22px;
     }
 
-    table.excel-grid th,
-    table.excel-grid td {
-        border: 1px solid #b5c7d8 !important;
-        padding: 8px 10px;
-        vertical-align: middle;
+    .data-table {
+        min-width: 900px;
     }
+}
 
-    /* Light blue header */
-    table.excel-grid thead th {
-        background-color: #d9ecff;
-        color: #003366;
-        font-weight: bold;
-        border: 1px solid #9bb8d1 !important;
-    }
-
-    /* Section container */
-    .section-box {
-        width: 100%;
-        background: #ffffff;
-        padding: 20px;
-        border-radius: 6px;
-        border: 1px solid #d0d7de;
-        margin-bottom: 40px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
 </style>
 </head>
 
 <body>
 
-<div style="margin-bottom:12px;" class="no-print" id="top-controls">
-    <a href="{{ url_for('dashboard') }}" class="menu-btn">← Main Menu</a>
+<div class="container">
 
-    <button type="button" class="menu-btn" onclick="recalcAllLessons()">
-        Recalc All Lessons
-    </button>
-</div>
+    <h1>🎁 Gift Voucher Submissions</h1>
 
-
-
-<h2>Gift Voucher Submissions</h2>
-
-<div style="margin-bottom: 20px;">
-    <a href="{{ url_for('fetch_gift_vouchers') }}" class="btn btn-primary btn-lg">
-        Fetch New Submissions
+    <a href="{{ url_for('dashboard') }}" class="nav-btn">
+        🏠 Main Menu
     </a>
-</div>
 
-<!-- UNPROCESSED -->
-<div class="section-box">
-    <h3>Unprocessed</h3>
+    <a href="{{ url_for('fetch_gift_vouchers') }}" class="nav-btn">
+        🔄 Fetch New Submissions
+    </a>
 
-    {% if unprocessed %}
-        <table class="excel-grid">
-            <thead>
-                <tr>
-                    <th>Purchaser</th>
-                    <th>Recipient</th>
-                    <th>Voucher No.</th>
-                    <th>Amount</th>
-                    <th>Submitted</th>
-                    <th style="width: 180px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for v in unprocessed %}
-                <tr>
-                    <td>{{ v.purchaser_name }}</td>
-                    <td>{{ v.recipient_name }}</td>
-                    <td>{{ v.voucher_number }}</td>
-                    <td>{{ v.amount_payable }}</td>
-                    <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                    <td>
-                        <a href="{{ url_for('gift_voucher_view', id=v.id) }}" class="btn btn-primary btn-sm">View</a>
-                        <a href="{{ url_for('gift_voucher_process', id=v.id) }}" class="btn btn-success btn-sm">Process</a>
-                        <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}" class="btn btn-warning btn-sm">Ignore</a>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No unprocessed vouchers.</p>
-    {% endif %}
-</div>
+    <div class="section-box">
 
-<!-- PROCESSED -->
-<div class="section-box">
-    <h3>Processed</h3>
+        <h2 class="section-title">
+            📥 Unprocessed ({{ unprocessed|length }})
+        </h2>
 
-    {% if processed %}
-        <table class="excel-grid">
-            <thead>
-                <tr>
-                    <th>Purchaser</th>
-                    <th>Recipient</th>
-                    <th>Voucher No.</th>
-                    <th>Amount</th>
-                    <th>Processed At</th>
-                    <th style="width: 120px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for v in processed %}
-                <tr>
-                    <td>{{ v.purchaser_name }}</td>
-                    <td>{{ v.recipient_name }}</td>
-                    <td>{{ v.voucher_number }}</td>
-                    <td>{{ v.amount_payable }}</td>
-                    <td>{{ v.processed_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                    <td>
-                        <a href="{{ url_for('gift_voucher_view', id=v.id) }}" class="btn btn-primary btn-sm">View</a>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No processed vouchers.</p>
-    {% endif %}
-</div>
+        {% if unprocessed %}
 
-<!-- IGNORED -->
-<div class="section-box">
-    <h3>Ignored</h3>
+        <div class="table-wrapper">
 
-    {% if ignored %}
-        <table class="excel-grid">
-            <thead>
-                <tr>
-                    <th>Purchaser</th>
-                    <th>Recipient</th>
-                    <th>Voucher No.</th>
-                    <th>Amount</th>
-                    <th>Submitted</th>
-                    <th style="width: 160px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for v in ignored %}
-                <tr>
-                    <td>{{ v.purchaser_name }}</td>
-                    <td>{{ v.recipient_name }}</td>
-                    <td>{{ v.voucher_number }}</td>
-                    <td>{{ v.amount_payable }}</td>
-                    <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                    <td>
-                        <a href="{{ url_for('gift_voucher_view', id=v.id) }}" class="btn btn-primary btn-sm">View</a>
-                        <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}" class="btn btn-secondary btn-sm">Unignore</a>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No ignored vouchers.</p>
-    {% endif %}
+            <table class="data-table">
+
+                <thead>
+                    <tr>
+                        <th>Purchaser</th>
+                        <th>Recipient</th>
+                        <th>Voucher</th>
+                        <th>Amount</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for v in unprocessed %}
+                    <tr>
+                        <td>{{ v.purchaser_name }}</td>
+                        <td>{{ v.recipient_name }}</td>
+                        <td>{{ v.voucher_number }}</td>
+                        <td>${{ v.amount_payable }}</td>
+                        <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                        <td>
+
+                            <a href="{{ url_for('gift_voucher_view', id=v.id) }}"
+                               class="action-btn">
+                               View
+                            </a>
+
+                            <a href="{{ url_for('gift_voucher_process', id=v.id) }}"
+                               class="action-btn">
+                               Process
+                            </a>
+
+                            <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}"
+                               class="action-btn">
+                               Ignore
+                            </a>
+
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <p class="empty-msg">
+                No unprocessed vouchers.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+    <div class="section-box">
+
+        <h2 class="section-title">
+            ✅ Processed ({{ processed|length }})
+        </h2>
+
+        {% if processed %}
+
+        <div class="table-wrapper">
+
+            <table class="data-table">
+
+                <thead>
+                    <tr>
+                        <th>Purchaser</th>
+                        <th>Recipient</th>
+                        <th>Voucher</th>
+                        <th>Amount</th>
+                        <th>Processed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for v in processed %}
+                    <tr>
+                        <td>{{ v.purchaser_name }}</td>
+                        <td>{{ v.recipient_name }}</td>
+                        <td>{{ v.voucher_number }}</td>
+                        <td>${{ v.amount_payable }}</td>
+                        <td>{{ v.processed_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                        <td>
+                            <a href="{{ url_for('gift_voucher_view', id=v.id) }}"
+                               class="action-btn">
+                               View
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <p class="empty-msg">
+                No processed vouchers.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+    <div class="section-box">
+
+        <h2 class="section-title">
+            🚫 Ignored ({{ ignored|length }})
+        </h2>
+
+        {% if ignored %}
+
+        <div class="table-wrapper">
+
+            <table class="data-table">
+
+                <thead>
+                    <tr>
+                        <th>Purchaser</th>
+                        <th>Recipient</th>
+                        <th>Voucher</th>
+                        <th>Amount</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for v in ignored %}
+                    <tr>
+                        <td>{{ v.purchaser_name }}</td>
+                        <td>{{ v.recipient_name }}</td>
+                        <td>{{ v.voucher_number }}</td>
+                        <td>${{ v.amount_payable }}</td>
+                        <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                        <td>
+
+                            <a href="{{ url_for('gift_voucher_view', id=v.id) }}"
+                               class="action-btn">
+                               View
+                            </a>
+
+                            <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}"
+                               class="action-btn">
+                               Unignore
+                            </a>
+
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <p class="empty-msg">
+                No ignored vouchers.
+            </p>
+
+        {% endif %}
+
+    </div>
+
 </div>
 
 </body>

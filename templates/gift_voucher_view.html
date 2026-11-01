@@ -2,55 +2,224 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Gift Voucher Details</title>
-    <link rel="stylesheet" href="/static/bootstrap.min.css">
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #0d47a1;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .nav-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 12px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
+        }
+
+        .nav-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
+
+        .result-card {
+            margin-top: 20px;
+            background: white;
+            border-radius: 18px;
+            padding: 24px;
+            border: 2px solid #dce6ff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .result-card h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #0d47a1;
+        }
+
+        .result-row {
+            padding: 14px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-size: 22px;
+            color: #222;
+            word-break: break-word;
+        }
+
+        .action-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin-top: 12px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
+
+        .danger-btn {
+            border-color: #dc3545;
+            background: #ffe5e8;
+            color: #8b0000;
+        }
+
+        .danger-btn:hover {
+            background: #ffd6db;
+        }
+
+        @media (max-width: 768px) {
+
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            .value {
+                font-size: 24px;
+            }
+
+            .nav-btn,
+            .action-btn {
+                font-size: 24px;
+                padding: 22px;
+            }
+        }
+
+    </style>
 </head>
 
-<body style="padding:20px;">
+<body>
 
-<h2>Gift Voucher Details</h2>
+<div class="container">
 
-<div style="margin-bottom: 20px;">
-    <a href="{{ url_for('gift_vouchers') }}" class="btn btn-secondary btn-lg">
-        Back to List
+    <h1>🎁 Gift Voucher Details</h1>
+
+    <a href="{{ url_for('gift_vouchers') }}" class="nav-btn">
+        ← Gift Voucher List
     </a>
-</div>
 
-<table class="table table-bordered" style="max-width:600px;">
-    <tr>
-        <th>Purchaser</th>
-        <td>{{ v.purchaser_name }}</td>
-    </tr>
-    <tr>
-        <th>Recipient</th>
-        <td>{{ v.recipient_name }}</td>
-    </tr>
-    <tr>
-        <th>Voucher Number</th>
-        <td>{{ v.voucher_number }}</td>
-    </tr>
-    <tr>
-        <th>Amount Payable</th>
-        <td>{{ v.amount_payable }}</td>
-    </tr>
-    <tr>
-        <th>Submitted</th>
-        <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-    </tr>
-</table>
+    <a href="{{ url_for('dashboard') }}" class="nav-btn">
+        🏠 Main Menu
+    </a>
 
-<div style="margin-top:20px;">
+    <div class="result-card">
+
+        <h3>🎁 Voucher Information</h3>
+
+        <div class="result-row">
+            <span class="label">Purchaser</span>
+            <div class="value">{{ v.purchaser_name }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Recipient</span>
+            <div class="value">{{ v.recipient_name }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Voucher Number</span>
+            <div class="value">{{ v.voucher_number }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Amount</span>
+            <div class="value">${{ v.amount_payable }}</div>
+        </div>
+
+        <div class="result-row">
+            <span class="label">Submitted</span>
+            <div class="value">
+                {{ v.created_at.strftime("%d/%m/%Y %H:%M") }}
+            </div>
+        </div>
+
+    </div>
+
     {% if not v.processed %}
-        <a href="{{ url_for('gift_voucher_process', id=v.id) }}" class="btn btn-success btn-lg">Process</a>
+    <a href="{{ url_for('gift_voucher_process', id=v.id) }}"
+       class="action-btn">
+        ✅ Process Voucher
+    </a>
     {% endif %}
 
-    <a href="{{ url_for('gift_voucher_edit', id=v.id) }}" class="btn btn-info btn-lg">Edit</a>
+    <a href="{{ url_for('gift_voucher_edit', id=v.id) }}"
+       class="action-btn">
+        ✏️ Edit Voucher
+    </a>
 
     {% if not v.ignored %}
-        <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}" class="btn btn-warning btn-lg">Ignore</a>
+
+    <a href="{{ url_for('gift_voucher_ignore', id=v.id) }}"
+       class="action-btn danger-btn">
+        🚫 Ignore Voucher
+    </a>
+
     {% else %}
-        <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}" class="btn btn-secondary btn-lg">Unignore</a>
+
+    <a href="{{ url_for('gift_voucher_unignore', id=v.id) }}"
+       class="action-btn">
+        ♻️ Unignore Voucher
+    </a>
+
     {% endif %}
+
 </div>
 
 </body>
