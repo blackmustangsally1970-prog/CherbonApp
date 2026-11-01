@@ -1576,12 +1576,15 @@ def create_app():
     def protect_admin_and_management():
         path = request.path
 
+        print(f"PATH={path}")
+
         # Employee PIN login system stays separate
         if path.startswith("/employeehours"):
             return
 
         # Allow public viewing appointments
         if path.startswith("/weddings/appointments"):
+            print("PUBLIC APPOINTMENT EXEMPTION HIT")
             return
 
         # ⭐ Allow login + static files (endpoint is unreliable here)
