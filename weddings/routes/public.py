@@ -7,6 +7,8 @@ public_bp = Blueprint("public", __name__)
 
 @public_bp.route("/appointments", methods=["GET", "POST"])
 def appointments_public():
+
+    return "WEDDING APPOINTMENTS ROUTE HIT"
     # Load days + times
     days = AppointmentDay.query.order_by(AppointmentDay.day.asc()).all()
 
