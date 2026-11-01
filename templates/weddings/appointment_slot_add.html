@@ -33,12 +33,32 @@
                 Time
             </label>
 
-<input
-    type="time"
+<select
     name="appointment_time"
-    class="form-control"
-    step="900"
+    class="form-select"
     required>
+
+    <option value="">Select Time</option>
+
+    {% for hour in range(6, 19) %}
+        <option value="{{ '%02d:00' % hour }}">
+            {{ '%02d:00' % hour }}
+        </option>
+
+        <option value="{{ '%02d:15' % hour }}">
+            {{ '%02d:15' % hour }}
+        </option>
+
+        <option value="{{ '%02d:30' % hour }}">
+            {{ '%02d:30' % hour }}
+        </option>
+
+        <option value="{{ '%02d:45' % hour }}">
+            {{ '%02d:45' % hour }}
+        </option>
+    {% endfor %}
+
+</select>
 
         </div>
 
