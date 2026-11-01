@@ -624,6 +624,42 @@ def appointment_send_followup(appt_id):
     return redirect(url_for('hub.appointments_admin'))
 
 
+# ---------------------------------------------------------
+# ADMIN: ADD SLOT
+# ---------------------------------------------------------
+
+@hub_bp.route('/admin/slots/add', methods=['GET', 'POST'])
+@login_required
+def appointment_slot_add():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    if request.method == 'POST':
+
+        slot = AppointmentSlot(
+            appointment_date=datetime.strptime(
+                request.form['appointment_date'],
+                '%Y-%m-%d'
+            ).date(),
+
+            appointment_time=request.form['appointment_time'],
+
+            is_available=('is_available' in request.form)
+        )
+
+        db.session.add(slot)
+        db.session.commit()
+
+        flash("Appointment slot created.", "success")
+
+        return redirect(url_for('hub.appointment_slots'))
+
+    return render_template(
+        'weddings/appointment_slot_add.html'
+    )
+
+
 @hub_bp.route('/admin/appointments/schedule', methods=['GET', 'POST'])
 @login_required
 def appointments_schedule():
