@@ -175,7 +175,7 @@ h1 {
                         <td>{{ v.purchaser_name }}</td>
                         <td>{{ v.recipient_name }}</td>
                         <td>{{ v.voucher_number }}</td>
-                        <td>${{ v.amount_payable }}</td>
+                        <td>{{ v.amount_payable }}</td>
                         <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
                         <td>
 
@@ -244,7 +244,7 @@ h1 {
                         <td>{{ v.purchaser_name }}</td>
                         <td>{{ v.recipient_name }}</td>
                         <td>{{ v.voucher_number }}</td>
-                        <td>${{ v.amount_payable }}</td>
+                        <td>{{ v.amount_payable }}</td>
                         <td>{{ v.processed_at.strftime("%d/%m/%Y %H:%M") }}</td>
                         <td>
                             <a href="{{ url_for('gift_voucher_view', id=v.id) }}"
@@ -301,7 +301,7 @@ h1 {
                         <td>{{ v.purchaser_name }}</td>
                         <td>{{ v.recipient_name }}</td>
                         <td>{{ v.voucher_number }}</td>
-                        <td>${{ v.amount_payable }}</td>
+                        <td>{{ v.amount_payable }}</td>
                         <td>{{ v.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
                         <td>
 
