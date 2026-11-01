@@ -1,5 +1,19 @@
-{% extends "index.html" %}
-{% block content %}
+<!doctype html>
+<html>
+<head>
+    <title>Appointments</title>
+</head>
+<body>
+
+<h1>Appointment Test</h1>
+
+{% for d in days %}
+    {{ d.day }}
+{% endfor %}
+
+</body>
+</html>
+
 
 <style>
     /* --- GLOBAL --- */
@@ -187,5 +201,3 @@
     {% endif %}
 
 </div>  <!-- end container -->
-{% endblock %}
-
