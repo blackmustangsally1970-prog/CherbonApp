@@ -182,6 +182,27 @@ def cancel_wedding(wedding_id):
 
 
 # ---------------------------------------------------------
+# ADMIN: SLOT DASHBOARD
+# ---------------------------------------------------------
+
+@hub_bp.route('/admin/slots')
+@login_required
+def appointment_slots():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    slots = AppointmentSlot.query.order_by(
+        AppointmentSlot.appointment_date.asc(),
+        AppointmentSlot.appointment_time.asc()
+    ).all()
+
+    return render_template(
+        'weddings/appointment_slots.html',
+        slots=slots
+    )
+
+# ---------------------------------------------------------
 # REMOVE HOLD (ADMIN ONLY)
 # ---------------------------------------------------------
 @hub_bp.route('/<int:wedding_id>/remove_hold', methods=['POST'])
