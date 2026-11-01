@@ -1,124 +1,154 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <title>Appointment Test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cherbon Waters Wedding Appointment</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f4f6f9;
+            font-family: system-ui, sans-serif;
+        }
+
+        .page-wrap {
+            max-width: 760px;
+            margin: 40px auto;
+            padding: 0 15px;
+        }
+
+        .hero-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.08);
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .floating-box {
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            padding: 24px;
+            background: #fff;
+            margin-bottom: 20px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            color: #b0b0b0;
+            font-weight: 600;
+        }
+
+        .progress-step.active {
+            color: #0d6efd;
+        }
+
+        .select-tile {
+            border: 2px solid #ddd;
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all .2s;
+            font-weight: 600;
+        }
+
+        .select-tile:hover {
+            border-color: #0d6efd;
+            background: #eef5ff;
+        }
+
+        .select-tile.selected {
+            border-color: #0d6efd;
+            background: #e8f1ff;
+        }
+
+        .select-tile.disabled {
+            background: #f3f3f3;
+            color: #999;
+            border-color: #ddd;
+            cursor: not-allowed;
+        }
+
+        .summary-box {
+            background: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
+
 <body>
 
-<div style="background:yellow;padding:20px;">
-    APPOINTMENT PAGE TEST
-</div>
+<div class="page-wrap">
 
-</body>
-</html>
-
-
-<style>
-    /* --- GLOBAL --- */
-    .step-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-    }
-    .floating-box {
-        border: 1px solid #ddd;
-        border-radius: 16px;
-        padding: 24px;
-        background: #fff;
-        transition: all 0.25s ease;
-    }
-    .floating-box:hover {
-        box-shadow: 0 4px 18px rgba(0,0,0,0.08);
-    }
-
-    /* --- PROGRESS BAR --- */
-    .progress-steps {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 25px;
-    }
-    .progress-step {
-        flex: 1;
-        text-align: center;
-        font-weight: 600;
-        color: #bbb;
-    }
-    .progress-step.active {
-        color: #0d6efd;
-    }
-
-    /* --- SELECT TILES --- */
-    .select-tile {
-        border: 2px solid #e0e0e0;
-        border-radius: 14px;
-        padding: 18px;
-        text-align: center;
-        font-weight: 600;
-        transition: all 0.25s ease;
-        cursor: pointer;
-        background: #fff;
-        user-select: none;
-    }
-    .select-tile:hover {
-        border-color: #0d6efd;
-        background: #f0f7ff;
-        transform: translateY(-2px);
-    }
-    .select-tile.selected {
-        border-color: #0d6efd;
-        background: #e7f1ff;
-        box-shadow: 0 0 0 3px rgba(13,110,253,0.2);
-    }
-    .select-tile.disabled {
-        background: #f5f5f5;
-        color: #999;
-        cursor: not-allowed;
-        border-color: #ddd;
-    }
-
-    /* --- SUMMARY BOX --- */
-    .summary-box {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 20px;
-        border-left: 4px solid #0d6efd;
-    }
-</style>
-
-<div class="container py-5" style="max-width: 700px;">
-
-    <h2 class="text-center mb-4 fw-bold">Viewing Appointment</h2>
-
-    <!-- PROGRESS BAR -->
-    <div class="progress-steps">
-        <div class="progress-step {% if not selected_day %}active{% endif %}">Date</div>
-        <div class="progress-step {% if selected_day and not selected_time %}active{% endif %}">Time</div>
-        <div class="progress-step {% if selected_time %}active{% endif %}">Details</div>
+    <div class="hero-card text-center">
+        <h1 class="mb-2">💒 Wedding Appointment</h1>
+        <p class="text-muted mb-0">
+            Select a date and time to arrange your wedding viewing at Cherbon Waters.
+        </p>
     </div>
 
-    <!-- SUMMARY BOX -->
+    <div class="progress-steps">
+        <div class="progress-step {% if not selected_day %}active{% endif %}">
+            Date
+        </div>
+
+        <div class="progress-step {% if selected_day and not selected_time %}active{% endif %}">
+            Time
+        </div>
+
+        <div class="progress-step {% if selected_time %}active{% endif %}">
+            Details
+        </div>
+    </div>
+
     {% if selected_day or selected_time %}
     <div class="summary-box">
-        <strong>Your Selection:</strong><br>
+        <strong>Your Selection</strong><br>
+
         {% if selected_day %}
             📅 {{ selected_day.strftime('%a %d %b %Y') }}<br>
         {% endif %}
+
         {% if selected_time %}
-            ⏰ {{ selected_time }}<br>
+            ⏰ {{ selected_time }}
         {% endif %}
     </div>
     {% endif %}
 
-    <!-- STEP 1: DATE -->
-    <div class="floating-box mb-4">
-        <div class="step-title mb-3">Choose a Date</div>
+    <div class="floating-box">
+
+        <div class="step-title mb-3">
+            Choose a Date
+        </div>
 
         <div class="row g-3">
+
             {% for d in days %}
-            <div class="col-6">
+            <div class="col-md-6">
+
                 {% if d.is_open %}
-                    <div class="select-tile {% if selected_day == d.day %}selected{% endif %}"
-                         onclick="goDay('{{ d.day }}')">
+                    <div
+                        class="select-tile {% if selected_day == d.day %}selected{% endif %}"
+                        onclick="goDay('{{ d.day }}')">
                         {{ d.day.strftime('%a %d %b') }}
                     </div>
                 {% else %}
@@ -126,76 +156,102 @@
                         {{ d.day.strftime('%a %d %b') }}
                     </div>
                 {% endif %}
+
             </div>
             {% endfor %}
+
         </div>
+
     </div>
 
     {% if selected_day %}
-    <!-- STEP 2: TIME -->
-    <div class="floating-box mb-4">
-        <div class="step-title mb-3">Choose a Time</div>
+    <div class="floating-box">
+
+        <div class="step-title mb-3">
+            Choose a Time
+        </div>
 
         <div class="row g-3">
-{% for t in times %}
-    <div class="col-6">
 
-        {% if t.booking %}
-            <div class="select-tile disabled">
-                {{ t.time_label }}<br>
-                <small>Booked</small>
-            </div>
+            {% for t in times %}
+            <div class="col-md-6">
 
-        {% elif t.is_available %}
-            <div class="select-tile {% if selected_time == t.time_label %}selected{% endif %}"
-                 onclick="goTime('{{ t.time_label }}')">
-                {{ t.time_label }}
-            </div>
+                {% if t.booking %}
+                    <div class="select-tile disabled">
+                        {{ t.time_label }}<br>
+                        <small>Booked</small>
+                    </div>
 
-        {% else %}
-            <div class="select-tile disabled">
-                {{ t.time_label }}
+                {% elif t.is_available %}
+                    <div
+                        class="select-tile {% if selected_time == t.time_label %}selected{% endif %}"
+                        onclick="goTime('{{ t.time_label }}')">
+                        {{ t.time_label }}
+                    </div>
+
+                {% else %}
+                    <div class="select-tile disabled">
+                        {{ t.time_label }}
+                    </div>
+                {% endif %}
+
             </div>
-        {% endif %}
+            {% endfor %}
+
+        </div>
 
     </div>
-{% endfor %}
-
-        </div>  <!-- end row g-3 -->
-    </div>      <!-- end floating-box -->
     {% endif %}
 
     {% if selected_time %}
-    <!-- STEP 3: DETAILS -->
-    <div class="floating-box shadow-sm">
-        <div class="step-title mb-3">Your Details</div>
+    <div class="floating-box">
 
-        <form method="POST" class="mt-3">
+        <div class="step-title mb-3">
+            Your Details
+        </div>
+
+        <form method="POST">
 
             <input type="hidden" name="day" value="{{ selected_day }}">
             <input type="hidden" name="time" value="{{ selected_time }}">
 
             <div class="form-floating mb-3">
-                <input type="text" name="name" class="form-control" id="nameInput" required>
+                <input type="text" class="form-control" name="name" id="nameInput" required>
                 <label for="nameInput">Your Name</label>
             </div>
 
             <div class="form-floating mb-3">
-                <input type="email" name="email" class="form-control" id="emailInput" required>
-                <label for="emailInput">Email</label>
+                <input type="email" class="form-control" name="email" id="emailInput" required>
+                <label for="emailInput">Email Address</label>
             </div>
 
             <div class="form-floating mb-3">
-                <input type="text" name="phone" class="form-control" id="phoneInput" required>
+                <input type="text" class="form-control" name="phone" id="phoneInput" required>
                 <label for="phoneInput">Mobile Number</label>
             </div>
 
-            <button class="btn btn-success w-100 py-3 fs-5 fw-semibold">
+            <button class="btn btn-success w-100 py-3">
                 Confirm Appointment
             </button>
 
         </form>
+
     </div>
     {% endif %}
 
-</div>  <!-- end container -->
+</div>
+
+<script>
+function goDay(day) {
+    window.location = "?day=" + encodeURIComponent(day);
+}
+
+function goTime(time) {
+    const params = new URLSearchParams(window.location.search);
+    params.set("time", time);
+    window.location = "?" + params.toString();
+}
+</script>
+
+</body>
+</html>
