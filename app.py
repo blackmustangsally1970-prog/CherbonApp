@@ -1581,7 +1581,7 @@ def create_app():
             return
 
         # Allow public viewing appointments
-        if path.startswith("/appointments"):
+        if path.startswith("/weddings/appointments"):
             return
 
         # ⭐ Allow login + static files (endpoint is unreliable here)
