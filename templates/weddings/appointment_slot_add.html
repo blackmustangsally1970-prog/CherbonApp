@@ -19,11 +19,13 @@
                 Date
             </label>
 
-            <input
-                type="date"
-                name="appointment_date"
-                class="form-control"
-                required>
+<input
+    type="date"
+    name="appointment_date"
+    class="form-control"
+    value="{{ today }}"
+    required>
+
         </div>
 
         <div class="mb-3">
@@ -31,12 +33,13 @@
                 Time
             </label>
 
-            <input
-                type="text"
-                name="appointment_time"
-                class="form-control"
-                placeholder="8:00 AM"
-                required>
+<input
+    type="time"
+    name="appointment_time"
+    class="form-control"
+    step="900"
+    required>
+
         </div>
 
         <div class="form-check mb-4">

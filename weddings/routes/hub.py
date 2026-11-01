@@ -656,7 +656,8 @@ def appointment_slot_add():
         return redirect(url_for('hub.appointment_slots'))
 
     return render_template(
-        'weddings/appointment_slot_add.html'
+        'weddings/appointment_slot_add.html',
+        today=date.today().isoformat()
     )
 
 
