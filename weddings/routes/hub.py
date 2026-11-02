@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
 from flask_login import login_required, current_user
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from extensions import db
 from auth.permissions import admin_required, is_coordinator, is_caterer
 
@@ -208,7 +208,9 @@ def appointment_slots():
     if current_user.role not in ['admin', 'management']:
         abort(403)
 
-    slots = AppointmentSlot.query.order_by(
+    slots = AppointmentSlot.query.filter(
+        AppointmentSlot.appointment_date >= date.today()
+    ).order_by(
         AppointmentSlot.appointment_date.asc(),
         AppointmentSlot.appointment_time.asc()
     ).all()
@@ -550,17 +552,32 @@ Cherbon Waters Management
 @hub_bp.route('/appointments', methods=['GET'])
 def appointments_public():
 
-    slots = AppointmentSlot.query.filter_by(
-        is_available=True
+    notice_cutoff = datetime.now() + timedelta(hours=15)
+
+    all_slots = AppointmentSlot.query.filter(
+        AppointmentSlot.is_available == True
     ).order_by(
         AppointmentSlot.appointment_date.asc(),
         AppointmentSlot.appointment_time.asc()
     ).all()
 
+    slots = []
+
+    for slot in all_slots:
+
+        slot_dt = datetime.strptime(
+            f"{slot.appointment_date} {slot.appointment_time}",
+            "%Y-%m-%d %H:%M"
+        )
+
+        if slot_dt >= notice_cutoff:
+            slots.append(slot)
+
     return render_template(
         'weddings/appointments_public.html',
         slots=slots
     )
+
 # ---------------------------------------------------------
 # ADMIN: LIST ALL APPOINTMENTS
 # ---------------------------------------------------------
