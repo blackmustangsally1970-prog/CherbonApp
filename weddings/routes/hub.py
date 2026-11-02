@@ -547,30 +547,20 @@ Cherbon Waters Management
 # VIEWING APPOINTMENTS (PUBLIC + ADMIN)
 # ---------------------------------------------------------
 
-@hub_bp.route('/appointments', methods=['GET', 'POST'])
+@hub_bp.route('/appointments', methods=['GET'])
 def appointments_public():
 
-    if request.method == 'POST':
-        appt = Appointment(
-            name=request.form['name'],
-            email=request.form['email'],
-            phone=request.form['phone'],
-            day=request.form['day'],
-            time_label=request.form['time'],
-            notes=request.form.get('notes', '')
-        )
-
-        db.session.add(appt)
-        db.session.commit()
-
-        return render_template(
-            'weddings/appointments_thankyou.html'
-        )
+    slots = AppointmentSlot.query.filter_by(
+        is_available=True
+    ).order_by(
+        AppointmentSlot.appointment_date.asc(),
+        AppointmentSlot.appointment_time.asc()
+    ).all()
 
     return render_template(
-        'weddings/appointments_public.html'
+        'weddings/appointments_public.html',
+        slots=slots
     )
-
 # ---------------------------------------------------------
 # ADMIN: LIST ALL APPOINTMENTS
 # ---------------------------------------------------------
