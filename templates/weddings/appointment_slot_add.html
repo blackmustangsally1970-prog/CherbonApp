@@ -1,80 +1,149 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Add Appointment Slot</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
+
+        .form-card {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid #ddd;
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
+            margin-bottom: 25px;
+        }
+
+        .menu-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .checkbox-wrap {
+            margin-bottom: 25px;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 18px;
+            border: 0;
+            border-radius: 16px;
+            background: #28a745;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background: #218838;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="container mt-4" style="max-width:600px;">
+<h1>➕ Add Appointment Slot</h1>
 
-    <h1>💒 Add Appointment Slot</h1>
+<div class="form-card">
+
+    <a href="{{ url_for('hub.appointments_dashboard') }}"
+       class="menu-btn">
+        ← Appointments Dashboard
+    </a>
 
     <form method="POST">
 
-        <div class="mb-3">
-            <label class="form-label">
-                Date
-            </label>
+        <label>Date</label>
 
-<input
-    type="date"
-    name="appointment_date"
-    class="form-control"
-    value="{{ today }}"
-    required>
+        <input
+            type="date"
+            name="appointment_date"
+            value="{{ today }}"
+            required>
 
-        </div>
+        <label>Time</label>
 
-        <div class="mb-3">
-            <label class="form-label">
-                Time
-            </label>
+        <select
+            name="appointment_time"
+            required>
 
-<select
-    name="appointment_time"
-    class="form-select"
-    required>
+            <option value="">Select Time</option>
 
-    <option value="">Select Time</option>
+            {% for hour in range(6, 19) %}
+                {% for minute in [0, 15, 30, 45] %}
 
-    {% for hour in range(6, 19) %}
-        {% for minute in [0, 15, 30, 45] %}
+                    <option value="{{ '%02d:%02d' % (hour, minute) }}">
+                        {{ ((hour - 1) % 12) + 1 }}:{{ '%02d' % minute }} {{ 'AM' if hour < 12 else 'PM' }}
+                    </option>
 
-            <option value="{{ '%02d:%02d' % (hour, minute) }}">
-                {{ ((hour - 1) % 12) + 1 }}:{{ '%02d' % minute }} {{ 'AM' if hour < 12 else 'PM' }}
-            </option>
+                {% endfor %}
+            {% endfor %}
 
-        {% endfor %}
-    {% endfor %}
+        </select>
 
-</select>
+        <div class="checkbox-wrap">
 
-        </div>
-
-        <div class="form-check mb-4">
             <input
-                class="form-check-input"
                 type="checkbox"
                 name="is_available"
                 checked>
 
-            <label class="form-check-label">
-                Available
-            </label>
+            Available
+
         </div>
 
-        <button class="btn btn-success">
-            Save Slot
+        <button class="save-btn">
+            💾 Save Appointment Slot
         </button>
-
-        <a href="{{ url_for('hub.appointment_slots') }}"
-           class="btn btn-secondary">
-
-            Cancel
-        </a>
 
     </form>
 
