@@ -783,3 +783,46 @@ def appointments_blockout():
 
     flash("Blockout range added.", "warning")
     return redirect(url_for('hub.appointments_schedule'))
+
+
+@hub_bp.route('/appointments/book/<int:slot_id>',
+              methods=['GET', 'POST'])
+def book_viewing(slot_id):
+
+    slot = AppointmentSlot.query.get_or_404(slot_id)
+
+    if request.method == 'POST':
+
+        appt = Appointment(
+            name=request.form['name'],
+            email=request.form['email'],
+            phone=request.form['phone'],
+            day=slot.appointment_date,
+            time_label=slot.appointment_time
+        )
+
+        db.session.add(appt)
+
+        slot.is_available = False
+
+        db.session.commit()
+
+        try:
+            send_sms(
+                appt.phone,
+                f"Hi {appt.name}, your wedding viewing is confirmed "
+                f"for {slot.appointment_date.strftime('%d/%m/%Y')} "
+                f"at {slot.appointment_time}."
+            )
+        except Exception as e:
+            print(e)
+
+        return render_template(
+            'weddings/appointments_thankyou.html',
+            appointment=appt
+        )
+
+    return render_template(
+        'weddings/book_viewing.html',
+        slot=slot
+    )

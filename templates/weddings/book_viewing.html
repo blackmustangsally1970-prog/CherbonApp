@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Confirm Wedding Viewing</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .appointment-box {
+            background: #eef4ff;
+            border: 2px solid #4a6bff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .appointment-date {
+            font-size: 24px;
+            font-weight: 700;
+            color: #002060;
+        }
+
+        .appointment-time {
+            font-size: 20px;
+            color: #555;
+            margin-top: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        .form-control:focus {
+            border-color: #4a6bff;
+            outline: none;
+        }
+
+        .confirm-btn {
+            width: 100%;
+            border: 0;
+            border-radius: 14px;
+            padding: 18px;
+            background: #28a745;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+
+        .confirm-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .note {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 18px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>💒 Confirm Wedding Viewing</h1>
+
+        <p class="intro">
+            You're almost done. Tell us a few details and we'll reserve your viewing appointment.
+        </p>
+
+        <div class="appointment-box">
+
+            <div class="appointment-date">
+                📅 {{ slot.appointment_date.strftime('%A %d %B') }}
+            </div>
+
+            <div class="appointment-time">
+                🕒 {{ slot.appointment_time }}
+            </div>
+
+        </div>
+
+        <form method="POST">
+
+            <div class="form-group">
+                <label class="form-label">
+                    Your Name
+                </label>
+
+                <input
+                    type="text"
+                    name="name"
+                    class="form-control"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    name="email"
+                    class="form-control"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Mobile Number
+                </label>
+
+                <input
+                    type="text"
+                    name="phone"
+                    class="form-control"
+                    placeholder="04xx xxx xxx"
+                    required>
+            </div>
+
+            <button type="submit" class="confirm-btn">
+                ✅ CONFIRM APPOINTMENT
+            </button>
+
+        </form>
+
+        <div class="note">
+            An SMS confirmation will be sent once your booking is confirmed.
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -45,6 +45,14 @@
             transform: translateY(-2px);
         }
 
+        .slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
         .slot-date {
             font-size: 22px;
             font-weight: 700;
@@ -54,34 +62,46 @@
         .slot-time {
             font-size: 18px;
             color: #555;
-            margin-top: 6px;
+            margin-top: 10px;
         }
 
         .book-btn {
             display: inline-block;
-            margin-top: 14px;
-            padding: 12px 22px;
+            padding: 12px 24px;
             background: #28a745;
             color: white;
             text-decoration: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 700;
+            letter-spacing: .5px;
+            white-space: nowrap;
         }
 
         .book-btn:hover {
             background: #218838;
         }
+
+        .no-slots {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            color: #666;
+        }
     </style>
 
 </head>
-<body>
 
-    <h1>💒 Available Wedding Viewings</h1>
+<body>
 
     <p class="intro">
         Choose a viewing time that suits you and we'll show you around
         beautiful Cherbon Waters.
     </p>
+
+    {% if slots %}
 
     <div class="slots">
 
@@ -89,23 +109,39 @@
 
         <div class="slot-card">
 
-            <div class="slot-date">
-                📅 {{ slot.appointment_date.strftime('%A %d %B %Y') }}
+            <div class="slot-header">
+
+                <div class="slot-date">
+                    📅 {{ slot.appointment_date.strftime('%A %d %B') }}
+                </div>
+
+<a href="{{ url_for('hub.book_viewing', slot_id=slot.id) }}"
+   class="book-btn">
+    BOOK VIEWING
+</a>
             </div>
 
             <div class="slot-time">
                 🕒 {{ slot.appointment_time }}
             </div>
 
-            <a href="#" class="book-btn">
-                Book This Viewing
-            </a>
-
         </div>
 
         {% endfor %}
 
     </div>
+
+    {% else %}
+
+    <div class="no-slots">
+        <h3>No viewing appointments currently available.</h3>
+
+        <p>
+            Please check back soon or contact Cherbon Waters directly.
+        </p>
+    </div>
+
+    {% endif %}
 
 </body>
 </html>
