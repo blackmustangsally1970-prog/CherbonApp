@@ -129,9 +129,17 @@
                 📅 {{ slot.appointment_date.strftime('%A %d %B') }}
             </div>
 
-            <div class="appointment-time">
-                🕒 {{ slot.appointment_time }}
-            </div>
+<div class="appointment-time">
+
+    {% set h = slot.appointment_time.split(':')[0]|int %}
+    {% set m = slot.appointment_time.split(':')[1]|int %}
+
+    🕒 {{ ((h - 1) % 12) + 1 }}:{{ '%02d' % m }}
+    {{ 'AM' if h < 12 else 'PM' }}
+
+</div>
+
+
 
         </div>
 
