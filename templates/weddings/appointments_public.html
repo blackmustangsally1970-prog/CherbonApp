@@ -1,20 +1,111 @@
 <!doctype html>
 <html>
 <head>
-    <title>Wedding Viewings</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Cherbon Waters Wedding Viewings</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 30px auto;
+            color: #555;
+        }
+
+        .slots {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .slot-card {
+            background: white;
+            border: 2px solid #dce6ff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 18px;
+            transition: all 0.15s ease;
+        }
+
+        .slot-card:hover {
+            border-color: #4a6bff;
+            transform: translateY(-2px);
+        }
+
+        .slot-date {
+            font-size: 22px;
+            font-weight: 700;
+            color: #002060;
+        }
+
+        .slot-time {
+            font-size: 18px;
+            color: #555;
+            margin-top: 6px;
+        }
+
+        .book-btn {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 12px 22px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .book-btn:hover {
+            background: #218838;
+        }
+    </style>
+
 </head>
 <body>
 
-<h1>Available Wedding Viewings</h1>
+    <h1>💒 Available Wedding Viewings</h1>
 
-{% for slot in slots %}
-
-    <p>
-        {{ slot.appointment_date }}
-        {{ slot.appointment_time }}
+    <p class="intro">
+        Choose a viewing time that suits you and we'll show you around
+        beautiful Cherbon Waters.
     </p>
 
-{% endfor %}
+    <div class="slots">
+
+        {% for slot in slots %}
+
+        <div class="slot-card">
+
+            <div class="slot-date">
+                📅 {{ slot.appointment_date.strftime('%A %d %B %Y') }}
+            </div>
+
+            <div class="slot-time">
+                🕒 {{ slot.appointment_time }}
+            </div>
+
+            <a href="#" class="book-btn">
+                Book This Viewing
+            </a>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
 
 </body>
 </html>
