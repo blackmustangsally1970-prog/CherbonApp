@@ -72,6 +72,22 @@ def postponed_weddings():
     return render_template('weddings/postponed.html', weddings=postponed)
 
 
+# ---------------------------------------------------------
+# APPOINTMENTS DASHBOARD
+# ---------------------------------------------------------
+
+@hub_bp.route('/admin/appointments-dashboard')
+@login_required
+def appointments_dashboard():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    return render_template(
+        'weddings/appointments_dashboard.html'
+    )
+
+
 @hub_bp.route('/<int:wedding_id>/postpone', methods=['POST'])
 @login_required
 def postpone_wedding(wedding_id):
