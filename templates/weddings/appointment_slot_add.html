@@ -41,21 +41,13 @@
     <option value="">Select Time</option>
 
     {% for hour in range(6, 19) %}
-        <option value="{{ '%02d:00' % hour }}">
-            {{ '%02d:00' % hour }}
-        </option>
+        {% for minute in [0, 15, 30, 45] %}
 
-        <option value="{{ '%02d:15' % hour }}">
-            {{ '%02d:15' % hour }}
-        </option>
+            <option value="{{ '%02d:%02d' % (hour, minute) }}">
+                {{ ((hour - 1) % 12) + 1 }}:{{ '%02d' % minute }} {{ 'AM' if hour < 12 else 'PM' }}
+            </option>
 
-        <option value="{{ '%02d:30' % hour }}">
-            {{ '%02d:30' % hour }}
-        </option>
-
-        <option value="{{ '%02d:45' % hour }}">
-            {{ '%02d:45' % hour }}
-        </option>
+        {% endfor %}
     {% endfor %}
 
 </select>
