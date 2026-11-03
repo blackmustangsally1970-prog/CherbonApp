@@ -4,6 +4,7 @@ from datetime import datetime, date, timedelta
 from extensions import db
 from auth.permissions import admin_required, is_coordinator, is_caterer
 
+from utils.sms import send_sms
 from weddings.models.appointments import Appointment
 from weddings.models.appointment_day import AppointmentDay
 from weddings.models.appointment_time import AppointmentTime
@@ -17,8 +18,8 @@ from weddings.models.job_list_master import JobListMaster
 from weddings.models.timeline import WeddingTimeline
 from weddings.models.detail_template import WeddingDetailLibrary
 from weddings.models.caterer import Caterer
-
 from weddings.emailer import send_email
+
 
 hub_bp = Blueprint('hub', __name__, url_prefix='/weddings')
 
@@ -808,6 +809,18 @@ def book_viewing(slot_id):
 
     slot = AppointmentSlot.query.get_or_404(slot_id)
 
+    # Stop double-bookings
+    if not slot.is_available:
+
+        flash(
+            "Sorry, this viewing appointment is no longer available.",
+            "warning"
+        )
+
+        return redirect(
+            url_for('hub.appointments_public')
+        )
+
     if request.method == 'POST':
 
         appt = Appointment(
@@ -832,7 +845,7 @@ def book_viewing(slot_id):
                 f"at {slot.appointment_time}."
             )
         except Exception as e:
-            print(e)
+            print(f"SMS FAILED: {e}")
 
         return render_template(
             'weddings/appointments_thankyou.html',

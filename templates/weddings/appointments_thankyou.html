@@ -1,26 +1,149 @@
-{% extends "index.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<div class="container py-5 text-center">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
+    <title>Appointment Confirmed</title>
 
-            <div class="card shadow-sm">
-                <div class="card-body p-5">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
 
-                    <h3 class="mb-3">Thank You!</h3>
-                    <p class="text-muted mb-4">
-                        Your appointment request has been received.  
-                        A confirmation SMS has been sent to your mobile.
-                    </p>
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
 
-                    <a href="/" class="btn btn-primary px-4">Return to Home</a>
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 35px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.08);
+            text-align: center;
+        }
 
-                </div>
+        h1 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .intro {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 25px;
+        }
+
+        .appointment-box {
+            background: #eef4ff;
+            border: 2px solid #4a6bff;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .appointment-date {
+            font-size: 24px;
+            font-weight: 700;
+            color: #002060;
+            margin-bottom: 10px;
+        }
+
+        .appointment-time {
+            font-size: 20px;
+            color: #555;
+        }
+
+        .message {
+            line-height: 1.7;
+            color: #444;
+            margin-bottom: 25px;
+        }
+
+        .home-btn {
+            display: inline-block;
+            padding: 16px 28px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #002060;
+            font-weight: 700;
+            transition: all .15s ease;
+        }
+
+        .home-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
+
+        .sms-note {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>✅ Viewing Confirmed</h1>
+
+        <p class="intro">
+            Thank you for booking a wedding viewing at Cherbon Waters.
+        </p>
+
+        <div class="appointment-box">
+
+            <div class="appointment-date">
+                📅 {{ appointment.day.strftime('%A %d %B') }}
+            </div>
+
+            <div class="appointment-time">
+
+                {% set h = appointment.time_label.split(':')[0]|int %}
+                {% set m = appointment.time_label.split(':')[1]|int %}
+
+                🕒 {{ ((h - 1) % 12) + 1 }}:{{ '%02d' % m }}
+                {{ 'AM' if h < 12 else 'PM' }}
+
             </div>
 
         </div>
+
+        <div class="message">
+
+            We look forward to meeting you and showing you around
+            beautiful Cherbon Waters.
+
+            <br><br>
+
+            If you need to change your appointment, please contact us
+            as soon as possible.
+
+        </div>
+
+        <a href="/"
+           class="home-btn">
+
+            🏠 Return to Cherbon Waters
+
+        </a>
+
+        <div class="sms-note">
+            A confirmation SMS will be sent shortly.
+        </div>
+
     </div>
+
 </div>
 
-{% endblock %}
+</body>
+</html>
