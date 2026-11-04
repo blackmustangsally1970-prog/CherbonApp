@@ -5433,6 +5433,16 @@ def create_app():
         )
         db.session.add(log)
 
+        if (
+            field == "payment" and
+            float(new_value or 0) > 0 and
+            float(old_value or 0) != float(new_value or 0)
+        ):
+            log_payment_received(
+                lesson.client,
+                float(new_value)
+            )
+
         db.session.commit()
 
         return "ok"
@@ -7999,14 +8009,20 @@ def create_app():
                 # PAYMENT (FIX ZERO BUG)
                 if payment_raw is not None and payment_raw.strip() != "":
                     try:
-                        lesson.payment = float(payment_raw)
+                        old_payment = float(lesson.payment or 0.0)
 
-                        if lesson.payment > 0:
+                        new_payment = float(payment_raw)
+
+                        lesson.payment = new_payment
+
+                        if (
+                            new_payment > 0 and
+                            old_payment != new_payment
+                        ):
                             log_payment_received(
                                 lesson.client,
-                                lesson.payment
+                                new_payment
                             )
-
                     except ValueError:
                         pass
                 else:
