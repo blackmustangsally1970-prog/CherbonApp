@@ -862,6 +862,6 @@ def book_viewing(slot_id):
         )
 
     return render_template(
-        'weddings/appointment_booking_form.html',
+        'weddings/book_viewing.html',
         slot=slot
     )
