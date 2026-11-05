@@ -809,7 +809,6 @@ def book_viewing(slot_id):
 
     slot = AppointmentSlot.query.get_or_404(slot_id)
 
-    # Stop double-bookings
     if not slot.is_available:
 
         flash(
@@ -861,3 +860,8 @@ def book_viewing(slot_id):
             'weddings/appointments_thankyou.html',
             appointment=appt
         )
+
+    return render_template(
+        'weddings/appointment_booking_form.html',
+        slot=slot
+    )
