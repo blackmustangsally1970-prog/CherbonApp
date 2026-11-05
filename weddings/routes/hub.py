@@ -838,21 +838,26 @@ def book_viewing(slot_id):
         db.session.commit()
 
         try:
+
+            h, m = map(int, slot.appointment_time.split(':'))
+
+            formatted_time = (
+                f"{((h - 1) % 12) + 1}:{m:02d} "
+                f"{'AM' if h < 12 else 'PM'}"
+            )
+
             send_sms(
                 appt.phone,
-                f"Hi {appt.name}, your wedding viewing is confirmed "
+                f"Hi {appt.name}, your Cherbon Waters viewing is confirmed "
                 f"for {slot.appointment_date.strftime('%d/%m/%Y')} "
-                f"at {slot.appointment_time}."
+                f"at {formatted_time}."
             )
+
         except Exception as e:
+
             print(f"SMS FAILED: {e}")
 
         return render_template(
             'weddings/appointments_thankyou.html',
             appointment=appt
         )
-
-    return render_template(
-        'weddings/book_viewing.html',
-        slot=slot
-    )
