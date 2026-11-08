@@ -1,12 +1,36 @@
 <!DOCTYPE html>
 <html>
 
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Viewing Appointments</title>
 </head>
+
+
+<style>
+.appointment-card {
+    background: white;
+    border-radius: 18px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.08);
+}
+
+.appointment-card h3 {
+    margin-top: 0;
+    color: #0d47a1;
+}
+
+.appointment-card p {
+    margin: 8px 0;
+    color: #444;
+}
+</style>
+
+
 
 <body>
 
@@ -15,50 +39,25 @@
 
     <h3 class="mb-4">Viewing Appointments</h3>
 
-    <table class="table table-striped table-hover align-middle">
-        <thead class="table-dark">
-            <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th style="width: 180px;">Actions</th>
-            </tr>
-        </thead>
+{% for a in appointments %}
 
-        <tbody>
-            {% for a in appointments %}
-            <tr>
-                <td>{{ a.name }}</td>
-                <td>{{ a.phone }}</td>
-                <td>{{ a.email }}</td>
-                <td>{{ a.day.strftime('%d/%m/%Y') }}</td>
-                <td>{{ a.time_label }}</td>
-                <td>
-                    <span class="badge bg-info">{{ a.status }}</span>
-                </td>
-                <td>
+<div class="appointment-card">
 
-                    {% if a.status == 'booked' %}
-                    <form method="POST" action="{{ url_for('hub.appointment_mark_viewed', appt_id=a.id) }}" class="d-inline">
-                        <button class="btn btn-sm btn-secondary">Mark Viewed</button>
-                    </form>
-                    {% endif %}
+    <h3>{{ a.name }}</h3>
 
-                    {% if a.status in ['booked', 'viewed'] %}
-                    <form method="POST" action="{{ url_for('hub.appointment_send_followup', appt_id=a.id) }}" class="d-inline">
-                        <button class="btn btn-sm btn-primary">Send Follow‑Up</button>
-                    </form>
-                    {% endif %}
+    <p>📅 {{ a.day.strftime('%d/%m/%Y') }}</p>
 
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <p>🕒 {{ a.time_label }}</p>
 
+    <p>📱 {{ a.phone }}</p>
+
+    <p>📧 {{ a.email }}</p>
+
+    <p>Status: {{ a.status }}</p>
+
+</div>
+
+{% endfor %}
 </div>
 
 </body>
