@@ -921,3 +921,32 @@ def appointments_pipeline():
         'weddings/appointments_pipeline.html',
         appointments=appts
     )
+
+@hub_bp.route(
+    '/admin/appointments/<int:appt_id>/send_reminder',
+    methods=['POST']
+)
+@login_required
+def appointment_send_reminder(appt_id):
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appt = Appointment.query.get_or_404(appt_id)
+
+    send_sms(
+        appt.phone,
+        f"Hi {appt.name}, just checking in following your "
+        f"Cherbon Waters viewing. If you'd like to discuss "
+        f"available dates, pricing or next steps, please "
+        f"contact Jenny on 0405 184 280."
+    )
+
+    flash(
+        "Reminder SMS sent.",
+        "success"
+    )
+
+    return redirect(
+        url_for('hub.appointments_pipeline')
+    )
