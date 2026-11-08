@@ -619,34 +619,34 @@ def appointment_mark_viewed(appt_id):
 # ADMIN: SEND FOLLOW-UP PDF
 # ---------------------------------------------------------
 
-@hub_bp.route('/admin/appointments/<int:appt_id>/send_followup', methods=['POST'])
+@hub_bp.route('/admin/appointments/<int:appt_id>/send_followup',
+              methods=['POST'])
 @login_required
 def appointment_send_followup(appt_id):
+
     if current_user.role not in ['admin', 'management']:
         abort(403)
 
     appt = Appointment.query.get_or_404(appt_id)
 
-    # Generate PDF using your existing WeasyPrint wrapper
-    pdf_bytes = render_pdf(
-        'weddings/appointments_followup_pdf.html',
-        appointment=appt
+    send_sms(
+        appt.phone,
+        f"Hi {appt.name}, thanks for visiting Cherbon Waters. "
+        f"For wedding packages, available dates or questions, "
+        f"please call Jenny on 0405 184 280."
     )
-
-    # Email it using your existing wedding emailer
-    send_email(
-        appt.email,
-        "Cherbon Waters – Viewing Follow‑Up",
-        "Thank you for visiting Cherbon Waters. Please find your follow‑up information attached.",
-        pdf_bytes
-    )
-
     appt.status = 'quoted'
+
     db.session.commit()
 
-    flash("Follow‑up PDF sent.", "success")
-    return redirect(url_for('hub.appointments_admin'))
+    flash(
+        "Follow-up SMS sent.",
+        "success"
+    )
 
+    return redirect(
+        url_for('hub.appointments_admin')
+    )
 
 # ---------------------------------------------------------
 # ADMIN: ADD SLOT

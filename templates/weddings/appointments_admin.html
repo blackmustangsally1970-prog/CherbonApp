@@ -111,6 +111,19 @@
         🔵 VIEWED
     </span>
 
+<form method="POST"
+      action="{{ url_for('hub.appointment_send_followup',
+                         appt_id=a.id) }}">
+
+    <button type="submit" class="action-btn">
+        📄 Send Follow-Up SMS
+    </button>
+
+</form>
+
+
+
+
     {% elif a.status == 'quoted' %}
     <span class="status status-quoted">
         🟣 QUOTED
