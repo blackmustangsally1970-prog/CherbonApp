@@ -57,6 +57,22 @@
     color: #383d41;
 }
 
+.action-btn {
+    width: 100%;
+    margin-top: 15px;
+    padding: 14px;
+    border: 0;
+    border-radius: 12px;
+    background: #4a6bff;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.action-btn:hover {
+    background: #3451d1;
+}
 
 </style>
 
@@ -107,6 +123,20 @@
     {% endif %}
 
 </p>
+
+{% if a.status == 'booked' %}
+
+<form method="POST"
+      action="{{ url_for('hub.appointment_mark_viewed', appt_id=a.id) }}">
+
+    <button type="submit" class="action-btn">
+        ✅ Mark Viewed
+    </button>
+
+</form>
+
+{% endif %}
+
 
 </div>
 
