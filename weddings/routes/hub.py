@@ -589,7 +589,12 @@ def appointments_admin():
     if current_user.role not in ['admin', 'management']:
         abort(403)
 
-    appts = Appointment.query.order_by(
+    appts = Appointment.query.filter(
+        Appointment.status.in_([
+            'booked',
+            'viewed'
+        ])
+    ).order_by(
         Appointment.day.asc(),
         Appointment.time_label.asc()
     ).all()
@@ -893,4 +898,25 @@ def appointment_save_notes(appt_id):
 
     return redirect(
         url_for('hub.appointments_admin')
+    )
+
+@hub_bp.route('/admin/appointments/pipeline')
+@login_required
+def appointments_pipeline():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appts = Appointment.query.filter(
+        Appointment.status.in_([
+            'quoted',
+            'closed'
+        ])
+    ).order_by(
+        Appointment.created_at.desc()
+    ).all()
+
+    return render_template(
+        'weddings/appointments_pipeline.html',
+        appointments=appts
     )

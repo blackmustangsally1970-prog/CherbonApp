@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Viewing Appointments</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            transition: all 0.15s ease;
+        }
+
+        .menu-btn:hover {
+            background: #cddcff;
+            transform: translateY(-2px);
+        }
+
+        .appointment-card {
+            background: white;
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.08);
+        }
+
+        .appointment-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #0d47a1;
+        }
+
+        .appointment-card p {
+            margin: 8px 0;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .status-booked {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-viewed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-quoted {
+            background: #e2d9f3;
+            color: #4b286d;
+        }
+
+        .status-closed {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .staff-note {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f4f7fb;
+            border-left: 4px solid #4a6bff;
+            border-radius: 8px;
+        }
+
+        .action-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 14px;
+            border: 0;
+            border-radius: 12px;
+            background: #4a6bff;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn:hover {
+            background: #3451d1;
+        }
+
+        @media (max-width: 768px) {
+
+            body {
+                margin: 15px;
+            }
+
+            .appointment-card {
+                padding: 20px;
+            }
+
+            .menu-btn {
+                font-size: 18px;
+                padding: 18px;
+            }
+
+            .action-btn {
+                font-size: 15px;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📈 Wedding Lead Pipeline</h1>
+
+    <a href="{{ url_for('hub.appointments_dashboard') }}"
+       class="menu-btn">
+        ← Back to Appointments Dashboard
+    </a>
+
+    {% for a in appointments %}
+
+    <div class="appointment-card">
+
+        <h3>👤 {{ a.name }}</h3>
+
+        <p>📅 {{ a.day.strftime('%d/%m/%Y') }}</p>
+
+        <p>🕒 {{ a.time_label }}</p>
+
+        <p>📱 {{ a.phone }}</p>
+
+        <p>📧 {{ a.email }}</p>
+
+        <p>
+
+            {% if a.status == 'booked' %}
+
+                <span class="status status-booked">
+                    🟢 BOOKED
+                </span>
+
+            {% elif a.status == 'viewed' %}
+
+                <span class="status status-viewed">
+                    🔵 VIEWED
+                </span>
+
+            {% elif a.status == 'quoted' %}
+
+                <span class="status status-quoted">
+                    🟣 QUOTED
+                </span>
+
+            {% else %}
+
+                <span class="status status-closed">
+                    ⚫ CLOSED
+                </span>
+
+            {% endif %}
+
+        </p>
+
+        {% if a.staff_notes %}
+
+        <div class="staff-note">
+            📝 {{ a.staff_notes }}
+        </div>
+
+        {% endif %}
+
+<form method="POST"
+      action="{{ url_for('hub.appointment_save_notes',
+                         appt_id=a.id) }}">
+
+    <textarea
+        name="staff_notes"
+        rows="4"
+        style="
+            width:100%;
+            margin-top:15px;
+            padding:12px;
+            border-radius:12px;
+            border:1px solid #ccc;
+            box-sizing:border-box;
+            resize:vertical;
+        "
+    >{{ a.staff_notes or '' }}</textarea>
+
+    <button type="submit" class="action-btn">
+        💾 Save Notes
+    </button>
+
+</form>
+
+        {% if a.status == 'booked' %}
+
+        <form method="POST"
+              action="{{ url_for('hub.appointment_mark_viewed',
+                                 appt_id=a.id) }}">
+
+            <button type="submit" class="action-btn">
+                ✅ Mark Viewed
+            </button>
+
+        </form>
+
+        {% endif %}
+
+        {% if a.status == 'viewed' %}
+
+        <form method="POST"
+              action="{{ url_for('hub.appointment_send_followup',
+                                 appt_id=a.id) }}">
+
+            <button type="submit" class="action-btn">
+                📄 Send Follow-Up SMS
+            </button>
+
+        </form>
+
+        {% endif %}
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+</body>
+
+</html>
