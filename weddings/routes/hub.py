@@ -897,6 +897,7 @@ def appointment_save_notes(appt_id):
     )
 
     return redirect(
+        request.referrer or
         url_for('hub.appointments_admin')
     )
 

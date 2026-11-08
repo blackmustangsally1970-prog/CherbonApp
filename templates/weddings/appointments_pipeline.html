@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Viewing Appointments</title>
+    <title>Wedding Lead Pipeline</title>
 
     <style>
 
@@ -76,16 +76,6 @@
             font-weight: bold;
         }
 
-        .status-booked {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-viewed {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
         .status-quoted {
             background: #e2d9f3;
             color: #4b286d;
@@ -102,6 +92,17 @@
             background: #f4f7fb;
             border-left: 4px solid #4a6bff;
             border-radius: 8px;
+        }
+
+        .notes-box {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
         }
 
         .action-btn {
@@ -154,7 +155,9 @@
 
     <a href="{{ url_for('hub.appointments_dashboard') }}"
        class="menu-btn">
+
         ← Back to Appointments Dashboard
+
     </a>
 
     {% for a in appointments %}
@@ -173,19 +176,7 @@
 
         <p>
 
-            {% if a.status == 'booked' %}
-
-                <span class="status status-booked">
-                    🟢 BOOKED
-                </span>
-
-            {% elif a.status == 'viewed' %}
-
-                <span class="status status-viewed">
-                    🔵 VIEWED
-                </span>
-
-            {% elif a.status == 'quoted' %}
+            {% if a.status == 'quoted' %}
 
                 <span class="status status-quoted">
                     🟣 QUOTED
@@ -209,57 +200,35 @@
 
         {% endif %}
 
-<form method="POST"
-      action="{{ url_for('hub.appointment_save_notes',
-                         appt_id=a.id) }}">
-
-    <textarea
-        name="staff_notes"
-        rows="4"
-        style="
-            width:100%;
-            margin-top:15px;
-            padding:12px;
-            border-radius:12px;
-            border:1px solid #ccc;
-            box-sizing:border-box;
-            resize:vertical;
-        "
-    >{{ a.staff_notes or '' }}</textarea>
-
-    <button type="submit" class="action-btn">
-        💾 Save Notes
-    </button>
-
-</form>
-
-        {% if a.status == 'booked' %}
+        {% if a.status == 'quoted' %}
 
         <form method="POST"
-              action="{{ url_for('hub.appointment_mark_viewed',
+              action="{{ url_for('hub.appointment_send_reminder',
                                  appt_id=a.id) }}">
 
             <button type="submit" class="action-btn">
-                ✅ Mark Viewed
+                📱 Send Reminder SMS
             </button>
 
         </form>
 
         {% endif %}
 
-        {% if a.status == 'viewed' %}
-
         <form method="POST"
-              action="{{ url_for('hub.appointment_send_followup',
+              action="{{ url_for('hub.appointment_save_notes',
                                  appt_id=a.id) }}">
 
+            <textarea
+                name="staff_notes"
+                rows="4"
+                class="notes-box"
+            >{{ a.staff_notes or '' }}</textarea>
+
             <button type="submit" class="action-btn">
-                📄 Send Follow-Up SMS
+                💾 Save Notes
             </button>
 
         </form>
-
-        {% endif %}
 
     </div>
 
