@@ -23,6 +23,9 @@ class Appointment(db.Model):
     # Optional notes from the client
     notes = db.Column(db.Text)
 
+    # Internal staff notes
+    staff_notes = db.Column(db.Text)
+
     # Workflow status
     # booked → viewed → quoted → closed
     status = db.Column(db.String(40), default="booked")
