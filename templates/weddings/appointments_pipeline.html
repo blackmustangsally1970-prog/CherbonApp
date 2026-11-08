@@ -200,19 +200,6 @@
 
         {% endif %}
 
-        {% if a.status == 'quoted' %}
-
-        <form method="POST"
-              action="{{ url_for('hub.appointment_send_reminder',
-                                 appt_id=a.id) }}">
-
-            <button type="submit" class="action-btn">
-                📱 Send Reminder SMS
-            </button>
-
-        </form>
-
-        {% endif %}
 
         <form method="POST"
               action="{{ url_for('hub.appointment_save_notes',
@@ -229,6 +216,24 @@
             </button>
 
         </form>
+
+
+        {% if a.status == 'quoted' %}
+
+        <form method="POST"
+              action="{{ url_for('hub.appointment_send_reminder',
+                                 appt_id=a.id) }}">
+
+            <button type="submit" class="action-btn">
+                📱 Send Reminder SMS
+            </button>
+
+        </form>
+
+        {% endif %}
+
+
+
 
     </div>
 
