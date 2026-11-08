@@ -209,6 +209,30 @@
 
         {% endif %}
 
+<form method="POST"
+      action="{{ url_for('hub.appointment_save_notes',
+                         appt_id=a.id) }}">
+
+    <textarea
+        name="staff_notes"
+        rows="4"
+        style="
+            width:100%;
+            margin-top:15px;
+            padding:12px;
+            border-radius:12px;
+            border:1px solid #ccc;
+            box-sizing:border-box;
+            resize:vertical;
+        "
+    >{{ a.staff_notes or '' }}</textarea>
+
+    <button type="submit" class="action-btn">
+        💾 Save Notes
+    </button>
+
+</form>
+
         {% if a.status == 'booked' %}
 
         <form method="POST"

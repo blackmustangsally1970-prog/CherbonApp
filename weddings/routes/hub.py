@@ -865,3 +865,32 @@ def book_viewing(slot_id):
         'weddings/book_viewing.html',
         slot=slot
     )
+
+
+@hub_bp.route(
+    '/admin/appointments/<int:appt_id>/notes',
+    methods=['POST']
+)
+@login_required
+def appointment_save_notes(appt_id):
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appt = Appointment.query.get_or_404(appt_id)
+
+    appt.staff_notes = request.form.get(
+        'staff_notes',
+        ''
+    )
+
+    db.session.commit()
+
+    flash(
+        "Staff notes saved.",
+        "success"
+    )
+
+    return redirect(
+        url_for('hub.appointments_admin')
+    )
