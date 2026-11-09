@@ -22,14 +22,14 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: auto;
         }
 
         .menu-btn {
             display: block;
             width: 100%;
-            padding: 20px;
+            padding: 18px;
             background: #dce6ff;
             border: 3px solid #4a6bff;
             border-radius: 16px;
@@ -38,41 +38,40 @@
             color: #002060;
             font-size: 20px;
             font-weight: 700;
-            box-sizing: border-box;
             margin-bottom: 20px;
-            transition: all 0.15s ease;
+            box-sizing: border-box;
         }
 
-        .menu-btn:hover {
-            background: #cddcff;
-            transform: translateY(-2px);
+        .pipeline-row {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.05);
         }
 
-.appointment-card {
-    background: white;
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,.06);
-}
+        .top-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
 
-.appointment-card h3 {
-    margin: 0 0 8px 0;
-    color: #0d47a1;
-    font-size: 18px;
-}
+        .lead-name {
+            color: #0d47a1;
+            font-size: 18px;
+        }
 
-.appointment-card p {
-    margin: 3px 0;
-    color: #444;
-    line-height: 1.3;
-}
+        .lead-details {
+            margin-top: 6px;
+            color: #444;
+            font-size: 14px;
+        }
 
         .status {
-            display: inline-block;
-            padding: 8px 14px;
+            padding: 6px 12px;
             border-radius: 999px;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
         }
 
@@ -86,61 +85,63 @@
             color: #383d41;
         }
 
-        .staff-note {
+        .actions {
+            display: flex;
+            gap: 8px;
             margin-top: 8px;
-            padding: 8px;
-            background: #f4f7fb;
-            border-left: 4px solid #4a6bff;
-            border-radius: 8px;
-        }
-
-        .notes-box {
-            width: 100%;
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            resize: vertical;
-            font-family: inherit;
+            flex-wrap: wrap;
         }
 
         .action-btn {
-            width: 100%;
-            margin-top: 8px;
-            padding: 10px;
             border: 0;
-            border-radius: 12px;
+            border-radius: 8px;
             background: #4a6bff;
             color: white;
-            font-size: 16px;
+            padding: 8px 12px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.15s ease;
         }
 
         .action-btn:hover {
             background: #3451d1;
         }
 
+        .close-select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .notes-box {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .reason {
+            margin-top: 4px;
+            color: #666;
+            font-size: 13px;
+        }
+
         @media (max-width: 768px) {
 
-            body {
-                margin: 15px;
+            .top-line {
+                display: block;
             }
 
-            .appointment-card {
-                padding: 20px;
+            .actions {
+                flex-direction: column;
             }
 
-            .menu-btn {
-                font-size: 18px;
-                padding: 18px;
+            .action-btn,
+            .close-select {
+                width: 100%;
             }
 
-            .action-btn {
-                font-size: 15px;
-            }
         }
 
     </style>
@@ -162,44 +163,122 @@
 
     {% for a in appointments %}
 
-    <div class="appointment-card">
+    <div class="pipeline-row">
 
-        <h3>👤 {{ a.name }}</h3>
+        <div class="top-line">
 
-        <p>📅 {{ a.day.strftime('%d/%m/%Y') }}</p>
+            <div class="lead-name">
+                👤 {{ a.name }}
+            </div>
 
-        <p>🕒 {{ a.time_label }}</p>
+            <div>
 
-        <p>📱 {{ a.phone }}</p>
+                {% if a.status == 'quoted' %}
 
-        <p>📧 {{ a.email }}</p>
+                    <span class="status status-quoted">
+                        🟣 QUOTED
+                    </span>
 
-        <p>
+                {% else %}
 
-            {% if a.status == 'quoted' %}
+                    <span class="status status-closed">
+                        ⚫ CLOSED
+                    </span>
 
-                <span class="status status-quoted">
-                    🟣 QUOTED
-                </span>
+                {% endif %}
 
-            {% else %}
+            </div>
 
-                <span class="status status-closed">
-                    ⚫ CLOSED
-                </span>
+        </div>
 
-            {% endif %}
+        <div class="lead-details">
 
-        </p>
+            📱 {{ a.phone }}
+            &nbsp; | &nbsp;
 
-        {% if a.staff_notes %}
+            📧 {{ a.email }}
+            &nbsp; | &nbsp;
 
-        <div class="staff-note">
-            📝 {{ a.staff_notes }}
+            📅 {{ a.day.strftime('%d/%m/%Y') }}
+            &nbsp; | &nbsp;
+
+            🕒 {{ a.time_label }}
+
+        </div>
+
+        {% if a.close_reason %}
+
+        <div class="reason">
+            <strong>Reason:</strong> {{ a.close_reason }}
         </div>
 
         {% endif %}
 
+        {% if a.status == 'quoted' %}
+
+        <div class="actions">
+
+            <form method="POST"
+                  action="{{ url_for('hub.appointment_send_reminder',
+                                     appt_id=a.id) }}">
+
+                <button type="submit" class="action-btn">
+                    📱 Reminder SMS
+                </button>
+
+            </form>
+
+            <form method="POST"
+                  action="{{ url_for('hub.appointment_close',
+                                     appt_id=a.id) }}">
+
+                <select name="close_reason"
+                        class="close-select"
+                        required>
+
+                    <option value="">
+                        Close Reason
+                    </option>
+
+                    <option value="Booked at Cherbon">
+                        Booked at Cherbon
+                    </option>
+
+                    <option value="Another Venue">
+                        Another Venue
+                    </option>
+
+                    <option value="Budget">
+                        Budget
+                    </option>
+
+                    <option value="Date Unavailable">
+                        Date Unavailable
+                    </option>
+
+                    <option value="No Response">
+                        No Response
+                    </option>
+
+                    <option value="Wedding Postponed">
+                        Wedding Postponed
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
+
+                </select>
+
+                <button type="submit" class="action-btn">
+                    ⚫ Close Lead
+                </button>
+
+            </form>
+
+        </div>
+
+        {% endif %}
 
         <form method="POST"
               action="{{ url_for('hub.appointment_save_notes',
@@ -207,85 +286,17 @@
 
             <textarea
                 name="staff_notes"
-                rows="4"
+                rows="2"
                 class="notes-box"
+                placeholder="Notes..."
             >{{ a.staff_notes or '' }}</textarea>
 
-            <button type="submit" class="action-btn">
+            <button type="submit"
+                    class="action-btn">
                 💾 Save Notes
             </button>
 
         </form>
-
-
-        {% if a.status == 'quoted' %}
-
-        <form method="POST"
-              action="{{ url_for('hub.appointment_send_reminder',
-                                 appt_id=a.id) }}">
-
-            <button type="submit" class="action-btn">
-                📱 Send Reminder SMS
-            </button>
-
-        </form>
-
-        {% endif %}
-
-{% if a.status == 'quoted' %}
-
-<form method="POST"
-      action="{{ url_for('hub.appointment_close',
-                         appt_id=a.id) }}">
-
-    <select
-        name="close_reason"
-        class="notes-box"
-        required>
-
-        <option value="">
-            Select Close Reason
-        </option>
-
-        <option value="Booked at Cherbon">
-            ✅ Booked at Cherbon
-        </option>
-
-        <option value="Another Venue">
-            ❌ Another Venue
-        </option>
-
-        <option value="Budget">
-            ❌ Budget
-        </option>
-
-        <option value="Date Unavailable">
-            ❌ Date Unavailable
-        </option>
-
-        <option value="No Response">
-            ❌ No Response
-        </option>
-
-        <option value="Wedding Postponed">
-            ❌ Wedding Postponed
-        </option>
-
-        <option value="Other">
-            ❌ Other
-        </option>
-
-    </select>
-
-    <button type="submit"
-            class="action-btn">
-        ⚫ Close Lead
-    </button>
-
-</form>
-
-{% endif %}
-
 
     </div>
 
