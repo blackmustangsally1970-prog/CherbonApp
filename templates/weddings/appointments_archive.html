@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Lead Archive</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .archive-row {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.05);
+        }
+
+        .top-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .lead-name {
+            color: #0d47a1;
+            font-size: 18px;
+        }
+
+        .lead-details {
+            margin-top: 6px;
+            color: #444;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-closed {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .reason {
+            margin-top: 6px;
+            margin-bottom: 6px;
+            color: #444;
+            font-size: 14px;
+        }
+
+        .notes-box {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .action-btn {
+            border: 0;
+            border-radius: 8px;
+            background: #4a6bff;
+            color: white;
+            padding: 8px 12px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .action-btn:hover {
+            background: #3451d1;
+        }
+
+        @media (max-width: 768px) {
+
+            .top-line {
+                display: block;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📊 Lead Archive</h1>
+
+    <a href="{{ url_for('hub.appointments_dashboard') }}"
+       class="menu-btn">
+
+        ← Back to Appointments Dashboard
+
+    </a>
+
+    {% for a in appointments %}
+
+    <div class="archive-row">
+
+        <div class="top-line">
+
+            <div class="lead-name">
+                👤 {{ a.name }}
+            </div>
+
+            <span class="status status-closed">
+                ⚫ CLOSED
+            </span>
+
+        </div>
+
+        <div class="lead-details">
+
+            📱 {{ a.phone }}
+            &nbsp; | &nbsp;
+
+            📧 {{ a.email }}
+            &nbsp; | &nbsp;
+
+            📅 {{ a.day.strftime('%d/%m/%Y') }}
+            &nbsp; | &nbsp;
+
+            🕒 {{ a.time_label }}
+
+        </div>
+
+        {% if a.close_reason %}
+
+        <div class="reason">
+            <strong>Outcome:</strong>
+            {{ a.close_reason }}
+        </div>
+
+        {% endif %}
+
+        <form method="POST"
+              action="{{ url_for('hub.appointment_save_notes',
+                                 appt_id=a.id) }}">
+
+            <textarea
+                name="staff_notes"
+                rows="2"
+                class="notes-box"
+                placeholder="Notes..."
+            >{{ a.staff_notes or '' }}</textarea>
+
+            <button type="submit"
+                    class="action-btn">
+
+                💾 Save Notes
+
+            </button>
+
+        </form>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+</body>
+
+</html>

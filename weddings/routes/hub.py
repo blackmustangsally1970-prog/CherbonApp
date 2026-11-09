@@ -919,10 +919,7 @@ def appointments_pipeline():
         abort(403)
 
     appts = Appointment.query.filter(
-        Appointment.status.in_([
-            'quoted',
-            'closed'
-        ])
+        Appointment.status == 'quoted'
     ).order_by(
         Appointment.created_at.desc()
     ).all()
@@ -931,6 +928,25 @@ def appointments_pipeline():
         'weddings/appointments_pipeline.html',
         appointments=appts
     )
+
+@hub_bp.route('/admin/appointments/archive')
+@login_required
+def appointments_archive():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appts = Appointment.query.filter(
+        Appointment.status == 'closed'
+    ).order_by(
+        Appointment.created_at.desc()
+    ).all()
+
+    return render_template(
+        'weddings/appointments_archive.html',
+        appointments=appts
+    )
+
 
 @hub_bp.route(
     '/admin/appointments/<int:appt_id>/send_reminder',
@@ -990,3 +1006,4 @@ def appointment_close(appt_id):
     return redirect(
         url_for('hub.appointments_pipeline')
     )
+
