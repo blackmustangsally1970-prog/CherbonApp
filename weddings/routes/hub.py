@@ -960,3 +960,33 @@ def appointment_send_reminder(appt_id):
     return redirect(
         url_for('hub.appointments_pipeline')
     )
+
+@hub_bp.route(
+    '/admin/appointments/<int:appt_id>/close',
+    methods=['POST']
+)
+@login_required
+def appointment_close(appt_id):
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appt = Appointment.query.get_or_404(appt_id)
+
+    appt.status = 'closed'
+
+    appt.close_reason = request.form.get(
+        'close_reason',
+        'Other'
+    )
+
+    db.session.commit()
+
+    flash(
+        "Lead closed.",
+        "success"
+    )
+
+    return redirect(
+        url_for('hub.appointments_pipeline')
+    )

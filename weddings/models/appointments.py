@@ -29,3 +29,7 @@ class Appointment(db.Model):
     # Workflow status
     # booked → viewed → quoted → closed
     status = db.Column(db.String(40), default="booked")
+
+    close_reason = db.Column(
+        db.String(100)
+    )

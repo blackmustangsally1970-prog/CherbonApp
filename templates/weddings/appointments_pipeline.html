@@ -232,7 +232,59 @@
 
         {% endif %}
 
+{% if a.status == 'quoted' %}
 
+<form method="POST"
+      action="{{ url_for('hub.appointment_close',
+                         appt_id=a.id) }}">
+
+    <select
+        name="close_reason"
+        class="notes-box"
+        required>
+
+        <option value="">
+            Select Close Reason
+        </option>
+
+        <option value="Booked at Cherbon">
+            ✅ Booked at Cherbon
+        </option>
+
+        <option value="Another Venue">
+            ❌ Another Venue
+        </option>
+
+        <option value="Budget">
+            ❌ Budget
+        </option>
+
+        <option value="Date Unavailable">
+            ❌ Date Unavailable
+        </option>
+
+        <option value="No Response">
+            ❌ No Response
+        </option>
+
+        <option value="Wedding Postponed">
+            ❌ Wedding Postponed
+        </option>
+
+        <option value="Other">
+            ❌ Other
+        </option>
+
+    </select>
+
+    <button type="submit"
+            class="action-btn">
+        ⚫ Close Lead
+    </button>
+
+</form>
+
+{% endif %}
 
 
     </div>
