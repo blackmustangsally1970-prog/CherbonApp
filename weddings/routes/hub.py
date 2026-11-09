@@ -84,8 +84,18 @@ def appointments_dashboard():
     if current_user.role not in ['admin', 'management']:
         abort(403)
 
+    bookings_count = Appointment.query.filter(
+        Appointment.status == 'booked'
+    ).count()
+
+    pipeline_count = Appointment.query.filter(
+        Appointment.status == 'quoted'
+    ).count()
+
     return render_template(
-        'weddings/appointments_dashboard.html'
+        'weddings/appointments_dashboard.html',
+        bookings_count=bookings_count,
+        pipeline_count=pipeline_count
     )
 
 

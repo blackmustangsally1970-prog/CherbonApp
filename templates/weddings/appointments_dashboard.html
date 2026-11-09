@@ -51,20 +51,26 @@
             transform: translateY(-2px);
         }
 
-        .coming-soon {
-            margin-top: 30px;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #ddd;
-        }
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    margin-left: 10px;
+    border-radius: 999px;
+    background: #ff3b30;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
 
-        .coming-soon h3 {
-            margin-top: 0;
-        }
+.pipeline-badge {
+    background: #7a36ff;
+}
+
+
 
         @media (max-width: 768px) {
             .menu-btn {
@@ -99,15 +105,29 @@
         </a>
     </li>
 
-    <li>
-        <a href="{{ url_for('hub.appointments_admin') }}" class="menu-btn">
-            👥 View Bookings
-        </a>
-    </li>
+<li>
+    <a href="{{ url_for('hub.appointments_admin') }}" class="menu-btn">
+        👥 View Bookings
+
+        {% if bookings_count > 0 %}
+        <span class="badge">
+            {{ bookings_count }}
+        </span>
+        {% endif %}
+
+    </a>
+</li>
 
 <li>
     <a href="{{ url_for('hub.appointments_pipeline') }}" class="menu-btn">
         📈 Lead Pipeline
+
+        {% if pipeline_count > 0 %}
+        <span class="badge pipeline-badge">
+            {{ pipeline_count }}
+        </span>
+        {% endif %}
+
     </a>
 </li>
 
