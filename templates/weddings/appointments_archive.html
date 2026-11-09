@@ -180,29 +180,14 @@
 
         {% endif %}
 
-        <form method="POST"
-              action="{{ url_for('hub.appointment_save_notes',
-                                 appt_id=a.id) }}">
+{% if a.staff_notes %}
 
-            <textarea
-                name="staff_notes"
-                rows="2"
-                class="notes-box"
-                placeholder="Notes..."
-            >{{ a.staff_notes or '' }}</textarea>
+<div class="reason">
+    <strong>Notes:</strong>
+    {{ a.staff_notes }}
+</div>
 
-            <button type="submit"
-                    class="action-btn">
-
-                💾 Save Notes
-
-            </button>
-
-        </form>
-
-    </div>
-
-    {% endfor %}
+{% endif %}
 
 </div>
 
