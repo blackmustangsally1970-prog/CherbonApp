@@ -1081,7 +1081,6 @@ def appointment_template_delete(template_id):
         url_for('hub.appointment_templates')
     )
 
-
 @hub_bp.route('/appointments-v2')
 def appointments_public_v2():
 
@@ -1113,6 +1112,14 @@ def appointments_public_v2():
             ).first()
 
             if blocked:
+                continue
+
+            booking = Appointment.query.filter_by(
+                day=current_day,
+                time_label=template.appointment_time
+            ).first()
+
+            if booking:
                 continue
 
             generated_slots.append(
