@@ -1107,6 +1107,14 @@ def appointments_public_v2():
             if current_day.weekday() != template.weekday:
                 continue
 
+            blocked = AppointmentBlockout.query.filter(
+                AppointmentBlockout.start_date <= current_day,
+                AppointmentBlockout.end_date >= current_day
+            ).first()
+
+            if blocked:
+                continue
+
             generated_slots.append(
                 {
                     "day": current_day,
