@@ -1124,9 +1124,9 @@ def appointments_public_v2():
 
             generated_slots.append(
                 {
-                    "day": current_day,
-                    "time": template.appointment_time,
-                    "source": "template"
+                    "id": 0,
+                    "appointment_date": current_day,
+                    "appointment_time": template.appointment_time
                 }
             )
 
@@ -1136,3 +1136,4 @@ def appointments_public_v2():
         'weddings/appointments_public_v2.html',
         slots=generated_slots
     )
+
