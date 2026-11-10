@@ -1009,9 +1009,3 @@ def appointment_close(appt_id):
         url_for('hub.appointments_pipeline')
     )
 
-@hub_bp.route('/viewing-pack')
-def viewing_pack():
-
-    return render_template(
-        'weddings/viewing_pack.html'
-    )
