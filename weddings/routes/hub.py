@@ -650,7 +650,7 @@ def appointment_send_followup(appt_id):
         f"Ready for the next step?\n\n"
         f"View our Wedding Information Portal, T&Cs and "
         f"booking information here:\n\n"
-        f"https://cherbonapp.click/viewing-pack"
+        f"https://cherbonapp.click/weddings/viewing-pack"
     )
     appt.status = 'quoted'
 
