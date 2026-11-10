@@ -1082,3 +1082,39 @@ def appointment_template_delete(template_id):
     )
 
 
+@hub_bp.route('/appointments-v2')
+def appointments_public_v2():
+
+    templates = AppointmentTemplate.query.filter_by(
+        is_active=True
+    ).order_by(
+        AppointmentTemplate.weekday,
+        AppointmentTemplate.appointment_time
+    ).all()
+
+    today = date.today()
+
+    end_date = today + timedelta(days=28)
+
+    generated_slots = []
+
+    current_day = today
+
+    while current_day <= end_date:
+
+        for template in templates:
+
+            if current_day.weekday() != template.weekday:
+                continue
+
+            generated_slots.append(
+                {
+                    "day": current_day,
+                    "time": template.appointment_time,
+                    "source": "template"
+                }
+            )
+
+        current_day += timedelta(days=1)
+
+    return str(generated_slots)
