@@ -1,0 +1,11 @@
+<h1>Appointments V2</h1>
+
+{% for slot in slots %}
+
+<p>
+    {{ slot.day.strftime('%d/%m/%Y') }}
+    -
+    {{ slot.time }}
+</p>
+
+{% endfor %}

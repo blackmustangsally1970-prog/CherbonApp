@@ -1117,4 +1117,7 @@ def appointments_public_v2():
 
         current_day += timedelta(days=1)
 
-    return str(generated_slots)
+    return render_template(
+        'weddings/appointments_public_v2.html',
+        slots=generated_slots
+    )
