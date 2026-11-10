@@ -646,9 +646,11 @@ def appointment_send_followup(appt_id):
 
     send_sms(
         appt.phone,
-        f"Hi {appt.name}, thanks for visiting Cherbon Waters. "
-        f"For wedding packages, available dates or questions, "
-        f"please call Jenny on 0405 184 280."
+        f"Hi {appt.name}, thanks for visiting Cherbon Waters.\n\n"
+        f"Ready for the next step?\n\n"
+        f"View our Wedding Information Portal, T&Cs and "
+        f"booking information here:\n\n"
+        f"https://cherbonapp.click/viewing-pack"
     )
     appt.status = 'quoted'
 
@@ -1007,3 +1009,9 @@ def appointment_close(appt_id):
         url_for('hub.appointments_pipeline')
     )
 
+@hub_bp.route('/viewing-pack')
+def viewing_pack():
+
+    return render_template(
+        'weddings/viewing_pack.html'
+    )
