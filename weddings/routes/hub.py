@@ -1010,3 +1010,75 @@ def appointment_close(appt_id):
         url_for('hub.appointments_pipeline')
     )
 
+@hub_bp.route('/admin/appointment-templates')
+@login_required
+def appointment_templates():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    templates = AppointmentTemplate.query.order_by(
+        AppointmentTemplate.weekday.asc(),
+        AppointmentTemplate.appointment_time.asc()
+    ).all()
+
+    return render_template(
+        'weddings/appointment_templates.html',
+        templates=templates
+    )
+
+@hub_bp.route(
+    '/admin/appointment-templates/add',
+    methods=['POST']
+)
+@login_required
+def appointment_template_add():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    t = AppointmentTemplate(
+        weekday=int(request.form['weekday']),
+        appointment_time=request.form['appointment_time']
+    )
+
+    db.session.add(t)
+    db.session.commit()
+
+    flash(
+        "Template added.",
+        "success"
+    )
+
+    return redirect(
+        url_for('hub.appointment_templates')
+    )
+
+@hub_bp.route(
+    '/admin/appointment-templates/<int:template_id>/delete',
+    methods=['POST']
+)
+@login_required
+def appointment_template_delete(template_id):
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    t = AppointmentTemplate.query.get_or_404(
+        template_id
+    )
+
+    db.session.delete(t)
+
+    db.session.commit()
+
+    flash(
+        "Template deleted.",
+        "info"
+    )
+
+    return redirect(
+        url_for('hub.appointment_templates')
+    )
+
+
