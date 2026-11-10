@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Viewing Templates</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+        }
+
+        .template-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .template-row:last-child {
+            border-bottom: none;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .delete-btn:hover {
+            background: #bb2d3b;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        select,
+        input[type="time"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 16px;
+            background: #28a745;
+            color: white;
+            border: 0;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 768px) {
+
+            .template-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .delete-btn {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📅 Viewing Templates</h1>
+
+    <a href="{{ url_for('hub.appointments_dashboard') }}"
+       class="menu-btn">
+
+        ← Appointments Dashboard
+
+    </a>
+
+    <div class="card">
+
+        <h2>➕ Add Template</h2>
+
+        <form method="POST"
+              action="{{ url_for(
+                    'hub.appointment_template_add'
+              ) }}">
+
+            <label>
+                Day
+            </label>
+
+            <select name="weekday" required>
+
+                <option value="0">Monday</option>
+                <option value="1">Tuesday</option>
+                <option value="2">Wednesday</option>
+                <option value="3">Thursday</option>
+                <option value="4">Friday</option>
+                <option value="5">Saturday</option>
+                <option value="6">Sunday</option>
+
+            </select>
+
+            <label>
+                Time
+            </label>
+
+            <input
+                type="time"
+                name="appointment_time"
+                required>
+
+            <button
+                type="submit"
+                class="save-btn">
+
+                ➕ Add Template
+
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Current Templates</h2>
+
+        {% if templates %}
+
+            {% set days = {
+                0:'Monday',
+                1:'Tuesday',
+                2:'Wednesday',
+                3:'Thursday',
+                4:'Friday',
+                5:'Saturday',
+                6:'Sunday'
+            } %}
+
+            {% for t in templates %}
+
+            <div class="template-row">
+
+                <div>
+
+                    <strong>
+                        {{ days[t.weekday] }}
+                    </strong>
+
+                    —
+
+                    {{ t.appointment_time }}
+
+                </div>
+
+                <form method="POST"
+                      action="{{ url_for(
+                          'hub.appointment_template_delete',
+                          template_id=t.id
+                      ) }}">
+
+                    <button
+                        type="submit"
+                        class="delete-btn">
+
+                        🗑 Delete
+
+                    </button>
+
+                </form>
+
+            </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>
+                No templates have been created yet.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
