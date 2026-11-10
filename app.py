@@ -1582,9 +1582,13 @@ def create_app():
         if path.startswith("/employeehours"):
             return
 
-        # Allow public viewing appointments
-        if path.startswith("/weddings/appointments"):
-            print("PUBLIC APPOINTMENT EXEMPTION HIT")
+        # Public wedding pages
+        public_wedding_paths = [
+            "/weddings/appointments",
+            "/weddings/viewing-pack",
+        ]
+
+        if any(path.startswith(p) for p in public_wedding_paths):
             return
 
         # ⭐ Allow login + static files (endpoint is unreliable here)
