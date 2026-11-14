@@ -246,10 +246,11 @@
 
         <h2>Date Range Blockouts</h2>
 
-        {% if date_blockouts %}
+{% if date_blockouts %}
+
+    {% for b in date_blockouts %}
 
 <div class="row">
-
     <strong>
         {{ b.start_date.strftime('%d/%m/%Y') }}
     </strong>
