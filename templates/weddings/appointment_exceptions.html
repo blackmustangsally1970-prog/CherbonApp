@@ -1,15 +1,155 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Appointment Exceptions</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Availability Exceptions</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 25px;
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: #dce6ff;
+            border: 3px solid #4a6bff;
+            border-radius: 16px;
+            text-decoration: none;
+            text-align: center;
+            color: #002060;
+            font-size: 20px;
+            font-weight: 700;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+        }
+
+        .row {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+    </style>
+
 </head>
+
 <body>
 
-<h1>🚫 Appointment Exceptions</h1>
+<div class="container">
 
-<p>
-    Page works.
-</p>
+    <h1>🚫 Availability Exceptions</h1>
+
+    <a href="{{ url_for('hub.appointments_dashboard') }}"
+       class="menu-btn">
+
+        ← Appointments Dashboard
+
+    </a>
+
+    <div class="card">
+
+        <h2>Date Range Blockouts</h2>
+
+        {% if date_blockouts %}
+
+            {% for b in date_blockouts %}
+
+                <div class="row">
+
+                    <strong>
+                        {{ b.start_date.strftime('%d/%m/%Y') }}
+                    </strong>
+
+                    →
+
+                    <strong>
+                        {{ b.end_date.strftime('%d/%m/%Y') }}
+                    </strong>
+
+                    <br>
+
+                    {{ b.reason or 'No reason provided' }}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No date blockouts.</p>
+
+        {% endif %}
+
+    </div>
+
+    <div class="card">
+
+        <h2>Time Blockouts</h2>
+
+        {% if time_blockouts %}
+
+            {% for b in time_blockouts %}
+
+                <div class="row">
+
+                    <strong>
+                        {{ b.appointment_date.strftime('%d/%m/%Y') }}
+                    </strong>
+
+                    -
+
+                    <strong>
+                        {{ b.appointment_time }}
+                    </strong>
+
+                    <br>
+
+                    {{ b.reason or 'No reason provided' }}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No time blockouts.</p>
+
+        {% endif %}
+
+    </div>
+
+</div>
 
 </body>
+
 </html>
