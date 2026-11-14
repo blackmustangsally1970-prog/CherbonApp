@@ -1036,6 +1036,8 @@ def appointments_public_v2():
 
     end_date = today + timedelta(days=28)
 
+    notice_cutoff = datetime.now() + timedelta(hours=15)
+
     generated_slots = []
 
     current_day = today
@@ -1063,6 +1065,17 @@ def appointments_public_v2():
             if booking:
                 continue
 
+            slot_dt = datetime.combine(
+                current_day,
+                datetime.strptime(
+                    template.appointment_time,
+                    "%H:%M"
+                ).time()
+            )
+
+            if slot_dt < notice_cutoff:
+                continue
+
             generated_slots.append(
                 {
                     "id": 0,
@@ -1077,7 +1090,6 @@ def appointments_public_v2():
         'weddings/appointments_public_v2.html',
         slots=generated_slots
     )
-
 
 
 @hub_bp.route('/appointments/book/<int:slot_id>',
