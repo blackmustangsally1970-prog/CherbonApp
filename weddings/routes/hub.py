@@ -1244,3 +1244,15 @@ def book_viewing_v2():
         appointment_date=appointment_date,
         appointment_time=appointment_time
     )
+
+
+@hub_bp.route('/admin/appointment-exceptions')
+@login_required
+def appointment_exceptions():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    return "Appointment Exceptions Page"
+
+
