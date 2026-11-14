@@ -267,11 +267,14 @@
 
     <br><br>
 
-    <form method="POST"
-          action="{{ url_for(
-                'hub.appointment_date_blockout_delete',
-                blockout_id=b.id
-          ) }}">
+<form method="POST"
+      action="{{ url_for(
+            'hub.appointment_date_blockout_delete',
+            blockout_id=b.id
+      ) }}"
+      onsubmit="return confirm(
+          'Delete this date blockout?'
+      );">
 
         <button
             type="submit"
@@ -308,28 +311,56 @@
 
         {% if time_blockouts %}
 
-            {% for b in time_blockouts %}
+{% for b in time_blockouts %}
 
-                <div class="row">
+    <div class="row">
 
-                    <strong>
-                        {{ b.appointment_date.strftime('%d/%m/%Y') }}
-                    </strong>
+        <strong>
+            {{ b.appointment_date.strftime('%d/%m/%Y') }}
+        </strong>
 
-                    -
+        -
 
-                    <strong>
-                        {{ b.appointment_time }}
-                    </strong>
+        <strong>
+            {{ b.appointment_time }}
+        </strong>
 
-                    <br>
+        <br>
 
-                    {{ b.reason or 'No reason provided' }}
+        {{ b.reason or 'No reason provided' }}
 
-                </div>
+        <br><br>
 
-            {% endfor %}
+        <form method="POST"
+              action="{{ url_for(
+                    'hub.appointment_time_blockout_delete',
+                    blockout_id=b.id
+              ) }}"
+              onsubmit="return confirm(
+                  'Delete this time blockout?'
+              );">
 
+            <button
+                type="submit"
+                style="
+                    background:#dc3545;
+                    color:white;
+                    border:0;
+                    border-radius:8px;
+                    padding:10px 15px;
+                    cursor:pointer;
+                    font-weight:bold;
+                ">
+
+                🗑 Delete
+
+            </button>
+
+        </form>
+
+    </div>
+
+{% endfor %}
         {% else %}
 
             <p>No time blockouts.</p>
