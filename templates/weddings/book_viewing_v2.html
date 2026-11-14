@@ -146,7 +146,7 @@
 
 <div style="margin-bottom:15px;">
 
-    <a href="{{ url_for('hub.appointments_public') }}"
+    <a href="{{ url_for('hub.appointments_public_v2') }}"
        class="back-btn">
 
         ← Choose A Different Viewing Time
@@ -165,16 +165,16 @@
         <div class="appointment-box">
 
             <div class="appointment-date">
-                📅 {{ slot.appointment_date.strftime('%A %d %B') }}
+                📅 {{ appointment_date.strftime('%A %d %B') }}
             </div>
 
 <div class="appointment-time">
 
-    {% set h = slot.appointment_time.split(':')[0]|int %}
-    {% set m = slot.appointment_time.split(':')[1]|int %}
+{% set h = appointment_time.split(':')[0]|int %}
+{% set m = appointment_time.split(':')[1]|int %}
 
-    🕒 {{ ((h - 1) % 12) + 1 }}:{{ '%02d' % m }}
-    {{ 'AM' if h < 12 else 'PM' }}
+🕒 {{ ((h - 1) % 12) + 1 }}:{{ '%02d' % m }}
+{{ 'AM' if h < 12 else 'PM' }}
 
 </div>
 
