@@ -120,11 +120,15 @@
                     📅 {{ slot.appointment_date.strftime('%A %d %B') }}
                 </div>
 
-<a href="{{ url_for('hub.book_viewing', slot_id=slot.id) }}"
-   class="book-btn">
-    BOOK VIEWING
+<a href="{{ url_for(
+        'hub.book_viewing_v2',
+        appointment_date=slot.appointment_date,
+        appointment_time=slot.appointment_time
+    ) }}"
+   class="book-btn">    BOOK VIEWING
 </a>
-            </div>
+
+</div>
 
 <div class="slot-time">
 

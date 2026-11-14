@@ -10929,8 +10929,9 @@ Cherbon Waters Admin
 
             db.session.add(acc)
             db.session.commit()
+            # Add
             flash("Employee added.", "success")
-            return redirect(url_for("admin_employee_hours"))
+            return redirect(url_for("admin_employee_hours_list"))
 
         return render_template("admin_employee_add.html")
 
@@ -10946,8 +10947,9 @@ Cherbon Waters Admin
             acc.active = True if request.form.get("active") == "on" else False
 
             db.session.commit()
-            flash("Employee updated.", "success")
-            return redirect(url_for("admin_employee_hours"))
+            # Add
+            flash("Employee added.", "success")
+            return redirect(url_for("admin_employee_hours_list"))
 
         return render_template("admin_employee_edit.html", acc=acc)
 
@@ -10962,9 +10964,9 @@ Cherbon Waters Admin
 
         db.session.commit()
 
+        # Delete
         flash("Employee deactivated.", "info")
-        return redirect(url_for("admin_employee_hours"))
-
+        return redirect(url_for("admin_employee_hours_list"))
 
     @app.route("/employeehours/week")
     def employee_week_view():

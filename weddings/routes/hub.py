@@ -139,7 +139,7 @@ def archived_weddings():
 # CREATE HOLD (ADMIN ONLY)
 # ---------------------------------------------------------
 @hub_bp.route('/create_hold', methods=['GET', 'POST'])
-@admin_required
+@login_required
 def create_hold():
 
     if request.method == 'POST':
@@ -236,7 +236,7 @@ def appointment_slots():
 # REMOVE HOLD (ADMIN ONLY)
 # ---------------------------------------------------------
 @hub_bp.route('/<int:wedding_id>/remove_hold', methods=['POST'])
-@admin_required
+@login_required
 def remove_hold(wedding_id):
 
     w = Wedding.query.get_or_404(wedding_id)
@@ -262,7 +262,7 @@ def remove_hold(wedding_id):
 # INCOMING T&C QUEUE (ADMIN ONLY)
 # ---------------------------------------------------------
 @hub_bp.route('/incoming')
-@admin_required
+@login_required
 def incoming_queue():
 
     incoming = Wedding.query.filter(
@@ -279,7 +279,7 @@ def incoming_queue():
 # APPROVE BOOKING
 # ---------------------------------------------------------
 @hub_bp.route('/incoming/<int:wedding_id>/approve', methods=['POST'])
-@admin_required
+@login_required
 def approve_booking(wedding_id):
 
     w = Wedding.query.get_or_404(wedding_id)
@@ -308,7 +308,7 @@ def approve_booking(wedding_id):
 # REJECT BOOKING
 # ---------------------------------------------------------
 @hub_bp.route('/incoming/<int:wedding_id>/reject', methods=['POST'])
-@admin_required
+@login_required
 def reject_booking(wedding_id):
 
     w = Wedding.query.get_or_404(wedding_id)
@@ -326,7 +326,7 @@ def reject_booking(wedding_id):
 # NOTIFY DECORATOR
 # ---------------------------------------------------------
 @hub_bp.route('/<int:wedding_id>/notify/decorator')
-@admin_required
+@login_required
 def notify_decorator(wedding_id):
 
     w = Wedding.query.get_or_404(wedding_id)
@@ -345,7 +345,7 @@ def notify_decorator(wedding_id):
 # NOTIFY COORDINATOR
 # ---------------------------------------------------------
 @hub_bp.route('/<int:wedding_id>/notify/coordinator')
-@admin_required
+@login_required
 def notify_coordinator(wedding_id):
 
     w = Wedding.query.get_or_404(wedding_id)
@@ -364,7 +364,7 @@ def notify_coordinator(wedding_id):
 # NOTIFY STAFF
 # ---------------------------------------------------------
 @hub_bp.route('/<int:wedding_id>/notify/staff')
-@admin_required
+@login_required
 def notify_staff(wedding_id):
 
     w = Wedding.query.get_or_404(wedding_id)
@@ -518,7 +518,7 @@ def decline_staff(wedding_id):
 # ---------------------------------------------------------
 
 @hub_bp.route('/<int:wedding_id>/notify/caterer')
-@admin_required
+@login_required
 def notify_caterer(wedding_id):
 
     w = Wedding.query.get_or_404(wedding_id)
@@ -557,38 +557,6 @@ Cherbon Waters Management
     return redirect(url_for('hub.wedding_hub', wedding_id=wedding_id))
 
 
-# ---------------------------------------------------------
-# VIEWING APPOINTMENTS (PUBLIC + ADMIN)
-# ---------------------------------------------------------
-
-@hub_bp.route('/appointments', methods=['GET'])
-def appointments_public():
-
-    notice_cutoff = datetime.now() + timedelta(hours=15)
-
-    all_slots = AppointmentSlot.query.filter(
-        AppointmentSlot.is_available == True
-    ).order_by(
-        AppointmentSlot.appointment_date.asc(),
-        AppointmentSlot.appointment_time.asc()
-    ).all()
-
-    slots = []
-
-    for slot in all_slots:
-
-        slot_dt = datetime.strptime(
-            f"{slot.appointment_date} {slot.appointment_time}",
-            "%Y-%m-%d %H:%M"
-        )
-
-        if slot_dt >= notice_cutoff:
-            slots.append(slot)
-
-    return render_template(
-        'weddings/appointments_public.html',
-        slots=slots
-    )
 
 # ---------------------------------------------------------
 # ADMIN: LIST ALL APPOINTMENTS
@@ -821,68 +789,6 @@ def appointments_blockout():
     return redirect(url_for('hub.appointments_schedule'))
 
 
-@hub_bp.route('/appointments/book/<int:slot_id>',
-              methods=['GET', 'POST'])
-def book_viewing(slot_id):
-
-    slot = AppointmentSlot.query.get_or_404(slot_id)
-
-    if not slot.is_available:
-
-        flash(
-            "Sorry, this viewing appointment is no longer available.",
-            "warning"
-        )
-
-        return redirect(
-            url_for('hub.appointments_public')
-        )
-
-    if request.method == 'POST':
-
-        appt = Appointment(
-            name=request.form['name'],
-            email=request.form['email'],
-            phone=request.form['phone'],
-            day=slot.appointment_date,
-            time_label=slot.appointment_time
-        )
-
-        db.session.add(appt)
-
-        slot.is_available = False
-
-        db.session.commit()
-
-        try:
-
-            h, m = map(int, slot.appointment_time.split(':'))
-
-            formatted_time = (
-                f"{((h - 1) % 12) + 1}:{m:02d} "
-                f"{'AM' if h < 12 else 'PM'}"
-            )
-
-            send_sms(
-                appt.phone,
-                f"Hi {appt.name}, your Cherbon Waters viewing is confirmed "
-                f"for {slot.appointment_date.strftime('%d/%m/%Y')} "
-                f"at {formatted_time}."
-            )
-
-        except Exception as e:
-
-            print(f"SMS FAILED: {e}")
-
-        return render_template(
-            'weddings/appointments_thankyou.html',
-            appointment=appt
-        )
-
-    return render_template(
-        'weddings/book_viewing.html',
-        slot=slot
-    )
 
 
 @hub_bp.route(
@@ -1081,6 +987,41 @@ def appointment_template_delete(template_id):
         url_for('hub.appointment_templates')
     )
 
+
+# ---------------------------------------------------------
+# VIEWING APPOINTMENTS (PUBLIC + ADMIN)
+# ---------------------------------------------------------
+
+@hub_bp.route('/appointments', methods=['GET'])
+def appointments_public():
+
+    notice_cutoff = datetime.now() + timedelta(hours=15)
+
+    all_slots = AppointmentSlot.query.filter(
+        AppointmentSlot.is_available == True
+    ).order_by(
+        AppointmentSlot.appointment_date.asc(),
+        AppointmentSlot.appointment_time.asc()
+    ).all()
+
+    slots = []
+
+    for slot in all_slots:
+
+        slot_dt = datetime.strptime(
+            f"{slot.appointment_date} {slot.appointment_time}",
+            "%Y-%m-%d %H:%M"
+        )
+
+        if slot_dt >= notice_cutoff:
+            slots.append(slot)
+
+    return render_template(
+        'weddings/appointments_public.html',
+        slots=slots
+    )
+
+
 @hub_bp.route('/appointments-v2')
 def appointments_public_v2():
 
@@ -1137,3 +1078,147 @@ def appointments_public_v2():
         slots=generated_slots
     )
 
+
+
+@hub_bp.route('/appointments/book/<int:slot_id>',
+              methods=['GET', 'POST'])
+def book_viewing(slot_id):
+
+    slot = AppointmentSlot.query.get_or_404(slot_id)
+
+    if not slot.is_available:
+
+        flash(
+            "Sorry, this viewing appointment is no longer available.",
+            "warning"
+        )
+
+        return redirect(
+            url_for('hub.appointments_public')
+        )
+
+    if request.method == 'POST':
+
+        appt = Appointment(
+            name=request.form['name'],
+            email=request.form['email'],
+            phone=request.form['phone'],
+            day=slot.appointment_date,
+            time_label=slot.appointment_time
+        )
+
+        db.session.add(appt)
+
+        slot.is_available = False
+
+        db.session.commit()
+
+        try:
+
+            h, m = map(int, slot.appointment_time.split(':'))
+
+            formatted_time = (
+                f"{((h - 1) % 12) + 1}:{m:02d} "
+                f"{'AM' if h < 12 else 'PM'}"
+            )
+
+            send_sms(
+                appt.phone,
+                f"Hi {appt.name}, your Cherbon Waters viewing is confirmed "
+                f"for {slot.appointment_date.strftime('%d/%m/%Y')} "
+                f"at {formatted_time}."
+            )
+
+        except Exception as e:
+
+            print(f"SMS FAILED: {e}")
+
+        return render_template(
+            'weddings/appointments_thankyou.html',
+            appointment=appt
+        )
+
+    return render_template(
+        'weddings/book_viewing.html',
+        slot=slot
+    )
+
+
+@hub_bp.route(
+    '/appointments/book-v2',
+    methods=['GET', 'POST']
+)
+def book_viewing_v2():
+
+    appointment_date = datetime.strptime(
+        request.args['appointment_date'],
+        '%Y-%m-%d'
+    ).date()
+
+    appointment_time = request.args[
+        'appointment_time'
+    ]
+
+    existing = Appointment.query.filter_by(
+        day=appointment_date,
+        time_label=appointment_time
+    ).first()
+
+    if existing:
+
+        flash(
+            "Sorry, this viewing appointment is no longer available.",
+            "warning"
+        )
+
+        return redirect(
+            url_for('hub.appointments_public_v2')
+        )
+
+    if request.method == 'POST':
+
+        appt = Appointment(
+            name=request.form['name'],
+            email=request.form['email'],
+            phone=request.form['phone'],
+            day=appointment_date,
+            time_label=appointment_time
+        )
+
+        db.session.add(appt)
+        db.session.commit()
+
+        try:
+
+            h, m = map(
+                int,
+                appointment_time.split(':')
+            )
+
+            formatted_time = (
+                f"{((h - 1) % 12) + 1}:{m:02d} "
+                f"{'AM' if h < 12 else 'PM'}"
+            )
+
+            send_sms(
+                appt.phone,
+                f"Hi {appt.name}, your Cherbon Waters "
+                f"viewing is confirmed for "
+                f"{appointment_date.strftime('%d/%m/%Y')} "
+                f"at {formatted_time}."
+            )
+
+        except Exception as e:
+
+            print(f"SMS FAILED: {e}")
+
+        return render_template(
+            'weddings/appointments_thankyou.html',
+            appointment=appt
+        )
+
+    return render_template(
+        'weddings/book_viewing_v2.html',
+        appointment_date=appointment_date,
+        appointment_time=appointment_time
+    )
