@@ -76,6 +76,89 @@
 
     </a>
 
+<div class="card">
+
+    <h2>➕ Add Date Range Blockout</h2>
+
+    <form method="POST"
+          action="{{ url_for(
+                'hub.appointment_date_blockout_add'
+          ) }}">
+
+        <p>
+
+            <strong>Start Date</strong>
+
+        </p>
+
+        <input
+            type="date"
+            name="start_date"
+            required
+            style="
+                width:100%;
+                padding:12px;
+                box-sizing:border-box;
+                margin-bottom:15px;
+            ">
+
+        <p>
+
+            <strong>End Date</strong>
+
+        </p>
+
+        <input
+            type="date"
+            name="end_date"
+            required
+            style="
+                width:100%;
+                padding:12px;
+                box-sizing:border-box;
+                margin-bottom:15px;
+            ">
+
+        <p>
+
+            <strong>Reason</strong>
+
+        </p>
+
+        <input
+            type="text"
+            name="reason"
+            placeholder="Christmas Closure"
+            style="
+                width:100%;
+                padding:12px;
+                box-sizing:border-box;
+                margin-bottom:15px;
+            ">
+
+        <button
+            type="submit"
+            style="
+                width:100%;
+                padding:16px;
+                border:0;
+                border-radius:12px;
+                background:#dc3545;
+                color:white;
+                font-size:18px;
+                font-weight:bold;
+                cursor:pointer;
+            ">
+
+            🚫 Add Date Blockout
+
+        </button>
+
+    </form>
+
+</div>
+
+
     <div class="card">
 
         <h2>Date Range Blockouts</h2>

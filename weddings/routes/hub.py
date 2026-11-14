@@ -1267,3 +1267,43 @@ def appointment_exceptions():
         date_blockouts=date_blockouts,
         time_blockouts=time_blockouts
     )
+
+
+@hub_bp.route(
+    '/admin/appointment-exceptions/date-blockout',
+    methods=['POST']
+)
+@login_required
+def appointment_date_blockout_add():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    start_date = datetime.strptime(
+        request.form['start_date'],
+        '%Y-%m-%d'
+    ).date()
+
+    end_date = datetime.strptime(
+        request.form['end_date'],
+        '%Y-%m-%d'
+    ).date()
+
+    blockout = AppointmentBlockout(
+        start_date=start_date,
+        end_date=end_date,
+        reason=request.form.get('reason', '')
+    )
+
+    db.session.add(blockout)
+
+    db.session.commit()
+
+    flash(
+        "Date blockout added.",
+        "success"
+    )
+
+    return redirect(
+        url_for('hub.appointment_exceptions')
+    )
