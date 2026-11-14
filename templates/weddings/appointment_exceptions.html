@@ -159,6 +159,89 @@
 </div>
 
 
+<div class="card">
+
+    <h2>➕ Add Time Blockout</h2>
+
+    <form method="POST"
+          action="{{ url_for(
+                'hub.appointment_time_blockout_add'
+          ) }}">
+
+        <p>
+
+            <strong>Date</strong>
+
+        </p>
+
+        <input
+            type="date"
+            name="appointment_date"
+            required
+            style="
+                width:100%;
+                padding:12px;
+                box-sizing:border-box;
+                margin-bottom:15px;
+            ">
+
+        <p>
+
+            <strong>Time</strong>
+
+        </p>
+
+        <input
+            type="time"
+            name="appointment_time"
+            required
+            style="
+                width:100%;
+                padding:12px;
+                box-sizing:border-box;
+                margin-bottom:15px;
+            ">
+
+        <p>
+
+            <strong>Reason</strong>
+
+        </p>
+
+        <input
+            type="text"
+            name="reason"
+            placeholder="Private Appointment"
+            style="
+                width:100%;
+                padding:12px;
+                box-sizing:border-box;
+                margin-bottom:15px;
+            ">
+
+        <button
+            type="submit"
+            style="
+                width:100%;
+                padding:16px;
+                border:0;
+                border-radius:12px;
+                background:#dc3545;
+                color:white;
+                font-size:18px;
+                font-weight:bold;
+                cursor:pointer;
+            ">
+
+            🚫 Add Time Blockout
+
+        </button>
+
+    </form>
+
+</div>
+
+
     <div class="card">
 
         <h2>Date Range Blockouts</h2>

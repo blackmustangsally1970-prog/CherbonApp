@@ -1307,3 +1307,38 @@ def appointment_date_blockout_add():
     return redirect(
         url_for('hub.appointment_exceptions')
     )
+
+@hub_bp.route(
+    '/admin/appointment-exceptions/time-blockout',
+    methods=['POST']
+)
+@login_required
+def appointment_time_blockout_add():
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    appointment_date = datetime.strptime(
+        request.form['appointment_date'],
+        '%Y-%m-%d'
+    ).date()
+
+    blockout = AppointmentSlotBlockout(
+        appointment_date=appointment_date,
+        appointment_time=request.form['appointment_time'],
+        reason=request.form.get('reason', '')
+    )
+
+    db.session.add(blockout)
+
+    db.session.commit()
+
+    flash(
+        "Time blockout added.",
+        "success"
+    )
+
+    return redirect(
+        url_for('hub.appointment_exceptions')
+    )
+
