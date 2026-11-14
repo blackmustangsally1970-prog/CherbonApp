@@ -1342,3 +1342,30 @@ def appointment_time_blockout_add():
         url_for('hub.appointment_exceptions')
     )
 
+@hub_bp.route(
+    '/admin/appointment-exceptions/date-blockout/<int:blockout_id>/delete',
+    methods=['POST']
+)
+@login_required
+def appointment_date_blockout_delete(blockout_id):
+
+    if current_user.role not in ['admin', 'management']:
+        abort(403)
+
+    blockout = AppointmentBlockout.query.get_or_404(
+        blockout_id
+    )
+
+    db.session.delete(blockout)
+
+    db.session.commit()
+
+    flash(
+        "Date blockout deleted.",
+        "success"
+    )
+
+    return redirect(
+        url_for('hub.appointment_exceptions')
+    )
+

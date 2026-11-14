@@ -248,26 +248,49 @@
 
         {% if date_blockouts %}
 
-            {% for b in date_blockouts %}
+<div class="row">
 
-                <div class="row">
+    <strong>
+        {{ b.start_date.strftime('%d/%m/%Y') }}
+    </strong>
 
-                    <strong>
-                        {{ b.start_date.strftime('%d/%m/%Y') }}
-                    </strong>
+    →
 
-                    →
+    <strong>
+        {{ b.end_date.strftime('%d/%m/%Y') }}
+    </strong>
 
-                    <strong>
-                        {{ b.end_date.strftime('%d/%m/%Y') }}
-                    </strong>
+    <br>
 
-                    <br>
+    {{ b.reason or 'No reason provided' }}
 
-                    {{ b.reason or 'No reason provided' }}
+    <br><br>
 
-                </div>
+    <form method="POST"
+          action="{{ url_for(
+                'hub.appointment_date_blockout_delete',
+                blockout_id=b.id
+          ) }}">
 
+        <button
+            type="submit"
+            style="
+                background:#dc3545;
+                color:white;
+                border:0;
+                border-radius:8px;
+                padding:10px 15px;
+                cursor:pointer;
+                font-weight:bold;
+            ">
+
+            🗑 Delete
+
+        </button>
+
+    </form>
+
+</div>
             {% endfor %}
 
         {% else %}
