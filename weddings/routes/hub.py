@@ -11,6 +11,9 @@ from weddings.models.appointment_time import AppointmentTime
 from weddings.models.appointment_blockout import AppointmentBlockout
 from weddings.models.appointment_slot import AppointmentSlot
 from weddings.models.appointment_template import AppointmentTemplate
+from weddings.models.appointment_slot_blockout import AppointmentSlotBlockout
+
+
 
 from weddings.models.wedding import Wedding
 from weddings.models.staff_assignment import WeddingStaffAssignment
@@ -1057,6 +1060,14 @@ def appointments_public_v2():
             if blocked:
                 continue
 
+            slot_blocked = AppointmentSlotBlockout.query.filter_by(
+                appointment_date=current_day,
+                appointment_time=template.appointment_time
+            ).first()
+
+            if slot_blocked:
+                continue
+
             booking = Appointment.query.filter_by(
                 day=current_day,
                 time_label=template.appointment_time
@@ -1090,7 +1101,6 @@ def appointments_public_v2():
         'weddings/appointments_public_v2.html',
         slots=generated_slots
     )
-
 
 @hub_bp.route('/appointments/book/<int:slot_id>',
               methods=['GET', 'POST'])
