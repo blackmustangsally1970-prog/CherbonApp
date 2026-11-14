@@ -1253,6 +1253,7 @@ def appointment_exceptions():
     if current_user.role not in ['admin', 'management']:
         abort(403)
 
-    return "Appointment Exceptions Page"
-
+    return render_template(
+        'weddings/appointment_exceptions.html'
+    )
 
