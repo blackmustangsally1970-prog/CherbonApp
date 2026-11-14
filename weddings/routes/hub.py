@@ -11,7 +11,7 @@ from weddings.models.appointment_time import AppointmentTime
 from weddings.models.appointment_blockout import AppointmentBlockout
 from weddings.models.appointment_slot import AppointmentSlot
 from weddings.models.appointment_template import AppointmentTemplate
-from weddings.models.appointment_slot_blockout import AppointmentSlotBlockout
+from weddings.models.appointment_slot_blockouts import AppointmentSlotBlockout
 
 
 
