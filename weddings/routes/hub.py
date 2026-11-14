@@ -1253,7 +1253,17 @@ def appointment_exceptions():
     if current_user.role not in ['admin', 'management']:
         abort(403)
 
-    return render_template(
-        'weddings/appointment_exceptions.html'
-    )
+    date_blockouts = AppointmentBlockout.query.order_by(
+        AppointmentBlockout.start_date.asc()
+    ).all()
 
+    time_blockouts = AppointmentSlotBlockout.query.order_by(
+        AppointmentSlotBlockout.appointment_date.asc(),
+        AppointmentSlotBlockout.appointment_time.asc()
+    ).all()
+
+    return render_template(
+        'weddings/appointment_exceptions.html',
+        date_blockouts=date_blockouts,
+        time_blockouts=time_blockouts
+    )
