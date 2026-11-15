@@ -1582,9 +1582,14 @@ def create_app():
         if path.startswith("/employeehours"):
             return
 
+        # Public root page
+        if path == "/":
+            return
+
         # Public wedding pages
         public_wedding_paths = [
             "/weddings/appointments",
+            "/weddings/appointments-v2",
             "/weddings/viewing-pack",
         ]
 
