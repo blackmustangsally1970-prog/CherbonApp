@@ -4695,7 +4695,13 @@ def create_app():
 
     @app.route('/')
     def index():
-        return redirect(url_for("login"))
+
+        if current_user.is_authenticated:
+            return redirect(url_for("dashboard"))
+
+        return redirect(
+            url_for("hub.appointments_public_v2")
+        )
 
     @app.route('/dashboard')
     @login_required
