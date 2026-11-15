@@ -1042,8 +1042,13 @@ def appointments_public_v2():
     notice_cutoff = datetime.now() + timedelta(hours=15)
 
     generated_slots = []
+    generated_keys = set()
 
     current_day = today
+
+    # --------------------------------------------------
+    # TEMPLATE GENERATED SLOTS
+    # --------------------------------------------------
 
     while current_day <= end_date:
 
@@ -1087,6 +1092,14 @@ def appointments_public_v2():
             if slot_dt < notice_cutoff:
                 continue
 
+            slot_key = (
+                current_day,
+                template.appointment_time
+            )
+
+            if slot_key in generated_keys:
+                continue
+
             generated_slots.append(
                 {
                     "id": 0,
@@ -1095,13 +1108,89 @@ def appointments_public_v2():
                 }
             )
 
+            generated_keys.add(slot_key)
+
         current_day += timedelta(days=1)
+
+    # --------------------------------------------------
+    # MANUAL EXTRA VIEWING SLOTS
+    # --------------------------------------------------
+
+    extra_slots = AppointmentSlot.query.filter(
+        AppointmentSlot.is_available == True,
+        AppointmentSlot.appointment_date >= today
+    ).all()
+
+    for slot in extra_slots:
+
+        blocked = AppointmentBlockout.query.filter(
+            AppointmentBlockout.start_date <= slot.appointment_date,
+            AppointmentBlockout.end_date >= slot.appointment_date
+        ).first()
+
+        if blocked:
+            continue
+
+        slot_blocked = AppointmentSlotBlockout.query.filter_by(
+            appointment_date=slot.appointment_date,
+            appointment_time=slot.appointment_time
+        ).first()
+
+        if slot_blocked:
+            continue
+
+        booking = Appointment.query.filter_by(
+            day=slot.appointment_date,
+            time_label=slot.appointment_time
+        ).first()
+
+        if booking:
+            continue
+
+        slot_dt = datetime.combine(
+            slot.appointment_date,
+            datetime.strptime(
+                slot.appointment_time,
+                "%H:%M"
+            ).time()
+        )
+
+        if slot_dt < notice_cutoff:
+            continue
+
+        slot_key = (
+            slot.appointment_date,
+            slot.appointment_time
+        )
+
+        if slot_key in generated_keys:
+            continue
+
+        generated_slots.append(
+            {
+                "id": slot.id,
+                "appointment_date": slot.appointment_date,
+                "appointment_time": slot.appointment_time
+            }
+        )
+
+        generated_keys.add(slot_key)
+
+    # --------------------------------------------------
+    # SORT EVERYTHING
+    # --------------------------------------------------
+
+    generated_slots.sort(
+        key=lambda s: (
+            s["appointment_date"],
+            s["appointment_time"]
+        )
+    )
 
     return render_template(
         'weddings/appointments_public_v2.html',
         slots=generated_slots
     )
-
 @hub_bp.route('/appointments/book/<int:slot_id>',
               methods=['GET', 'POST'])
 def book_viewing(slot_id):
