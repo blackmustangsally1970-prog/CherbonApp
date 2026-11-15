@@ -95,20 +95,12 @@
 
 
 <li>
-    <a href="{{ url_for('hub.appointment_templates') }}" class="menu-btn">
-        🔁 Viewing Templates
-    </a>
-</li>
+    <a href="{{ url_for('hub.appointments_public_v2') }}"
+       class="menu-btn"
+       target="_blank">
 
-<li>
-    <a href="{{ url_for('hub.appointment_exceptions') }}" class="menu-btn">
-        🚫 Availability Exceptions
-    </a>
-</li>
+        👀 View Public Availability
 
-<li>
-    <a href="{{ url_for('hub.appointment_slot_add') }}" class="menu-btn">
-        ➕ Extra Viewing Time
     </a>
 </li>
 
@@ -124,6 +116,30 @@
 
     </a>
 </li>
+
+
+
+
+<li>
+    <a href="{{ url_for('hub.appointment_templates') }}" class="menu-btn">
+        🔁 Fixed day/time templates
+    </a>
+</li>
+
+
+<li>
+    <a href="{{ url_for('hub.appointment_slot_add') }}" class="menu-btn">
+        ➕ Extra Viewing day/times
+    </a>
+</li>
+
+<li>
+    <a href="{{ url_for('hub.appointment_exceptions') }}" class="menu-btn">
+        🚫 Availability Exceptions
+    </a>
+</li>
+
+
 
 <li>
     <a href="{{ url_for('hub.appointments_pipeline') }}" class="menu-btn">
