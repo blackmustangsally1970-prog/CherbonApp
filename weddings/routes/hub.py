@@ -1488,7 +1488,7 @@ def appointment_time_blockout_delete(blockout_id):
     )
 
 
-@hub_bp.route('/weddings/terms-and-conditions')
+@hub_bp.route('/terms-and-conditions')
 def terms_and_conditions():
 
     return "T&C ROUTE WORKING"
