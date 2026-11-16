@@ -1495,3 +1495,4 @@ def terms_and_conditions():
         'weddings/terms_and_conditions.html',
         today=date.today().isoformat()
     )
+
