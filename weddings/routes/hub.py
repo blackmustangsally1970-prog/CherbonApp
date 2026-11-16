@@ -1,3 +1,4 @@
+
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
@@ -1487,9 +1488,10 @@ def appointment_time_blockout_delete(blockout_id):
     )
 
 
-@hub_bp.route('/terms-and-conditions')
+@hub_bp.route('/weddings/terms-and-conditions')
 def terms_and_conditions():
 
     return render_template(
-        'weddings/terms_and_conditions.html'
+        'weddings/terms_and_conditions.html',
+        today=date.today().isoformat()
     )

@@ -12,6 +12,82 @@
 
     <style>
 
+
+.agreement-card {
+    margin-top: 25px;
+    background: #eef5ff;
+    border: 1px solid #cfdff7;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.agreement-card h2 {
+    color: #0d47a1;
+    margin-bottom: 15px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.checkbox-row input[type="checkbox"] {
+    margin-top: 4px;
+    transform: scale(1.2);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.submit-btn {
+    background: #0d47a1;
+    color: white;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+
+.submit-btn:hover {
+    background: #08367d;
+}
+
+@media (min-width: 768px) {
+
+    .signature-row {
+        display: flex;
+        gap: 20px;
+    }
+
+    .signature-row .form-group {
+        flex: 1;
+    }
+
+    .submit-btn {
+        width: auto;
+    }
+
+}
+
         * {
             margin: 0;
             padding: 0;
@@ -427,6 +503,98 @@
 
     </div> <!-- end spread -->
 
+
+<div class="agreement-card">
+
+    <h2>Agreement</h2>
+
+    <p style="margin-bottom:20px;">
+        Please confirm you have read and agree to the
+        Cherbon Waters Terms & Conditions.
+    </p>
+
+    <div class="checkbox-row">
+        <input
+            type="checkbox"
+            id="agree_terms"
+            name="agree_terms"
+            required>
+
+        <label for="agree_terms">
+            I have read and agree to the Cherbon Waters
+            Terms & Conditions.
+        </label>
+    </div>
+
+    <div class="checkbox-row">
+        <input
+            type="checkbox"
+            id="authority_confirm"
+            name="authority_confirm"
+            required>
+
+        <label for="authority_confirm">
+            I confirm I have authority to accept these
+            Terms & Conditions on behalf of all booking
+            parties.
+        </label>
+    </div>
+
+    <div class="signature-row">
+
+        <div class="form-group">
+            <label for="full_name">
+                Full Name
+            </label>
+
+            <input
+                type="text"
+                id="full_name"
+                name="full_name"
+                class="form-control"
+                required>
+        </div>
+
+<div class="form-group">
+    <label for="acceptance_date">
+        Date
+    </label>
+
+    <input
+        type="date"
+        id="acceptance_date"
+        name="acceptance_date"
+        class="form-control"
+        value="{{ today }}"
+        required>
+</div>
+
+    </div>
+
+    <div class="form-group">
+        <label for="electronic_signature">
+            Electronic Signature
+        </label>
+
+        <input
+            type="text"
+            id="electronic_signature"
+            name="electronic_signature"
+            class="form-control"
+            placeholder="Type your full name"
+            required>
+    </div>
+
+    <button type="submit" class="submit-btn">
+
+        Accept Terms & Continue
+
+    </button>
+
+</div>
+
+
+
     <div class="actions">
 
     </div>
@@ -441,6 +609,10 @@
     </div> <!-- end card -->
 
 </div> <!-- end container -->
+
+
+
+
 
 </body>
 </html>
