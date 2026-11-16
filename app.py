@@ -1591,6 +1591,7 @@ def create_app():
             "/weddings/appointments",
             "/weddings/appointments-v2",
             "/weddings/viewing-pack",
+            "/weddings/terms-and-conditions",
         ]
 
         if any(path.startswith(p) for p in public_wedding_paths):
