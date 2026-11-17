@@ -1289,6 +1289,9 @@ def book_viewing_v2():
 
     if request.method == 'POST':
 
+        if request.form.get('website'):
+            abort(400)
+
         appt = Appointment(
             name=request.form['name'],
             email=request.form['email'],
