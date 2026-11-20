@@ -7,3 +7,8 @@ from .caterer import Caterer
 from .timeline import WeddingTimeline
 from .detail_template import WeddingDetailLibrary
 from .appointments import Appointment
+from .wedding_inspirations import (
+    InspirationCategory,
+    InspirationItem,
+    InspirationPhoto
+)
