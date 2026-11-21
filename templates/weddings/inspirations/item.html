@@ -11,24 +11,29 @@
 
 <h2>Photos</h2>
 
-<ul>
 {% for photo in item.photos %}
 
-    <div>
+<div style="margin-bottom:20px;">
 
-        <img
-            src="{{ url_for(
-                'static',
-                filename='uploads/inspirations/' ~ photo.filename
-            ) }}"
-            style="max-width:600px;"
+    <img
+        src="{{ url_for(
+            'static',
+            filename='uploads/inspirations/' ~ photo.filename
+        ) }}"
+        style="
+            max-width:600px;
+            border-radius:8px;
+        "
+    >
 
-        >
+    <br>
 
-        <br>
+    {{ photo.caption }}
 
-        {{ photo.caption }}
+</div>
 
-    </div>
+{% else %}
 
-{% endfor %}</ul>
+<p>No photos found.</p>
+
+{% endfor %}
