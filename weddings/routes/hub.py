@@ -1552,3 +1552,20 @@ def inspiration_item(item_id):
         'weddings/inspirations/item.html',
         item=item
     )
+
+@hub_bp.route('/inspirations/admin')
+@login_required
+def inspirations_admin():
+
+    categories = (
+        InspirationCategory.query
+        .order_by(
+            InspirationCategory.display_order
+        )
+        .all()
+    )
+
+    return render_template(
+        'weddings/inspirations/admin.html',
+        categories=categories
+    )

@@ -1,0 +1,21 @@
+<h1>Wedding Inspirations Admin</h1>
+
+{% for category in categories %}
+
+    <h2>{{ category.name }}</h2>
+
+    <ul>
+
+    {% for item in category.items %}
+
+        <li>
+
+            {{ item.title }}
+
+        </li>
+
+    {% endfor %}
+
+    </ul>
+
+{% endfor %}
