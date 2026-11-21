@@ -13,7 +13,7 @@ from weddings.models.appointment_blockout import AppointmentBlockout
 from weddings.models.appointment_slot import AppointmentSlot
 from weddings.models.appointment_template import AppointmentTemplate
 from weddings.models.appointment_slot_blockouts import AppointmentSlotBlockout
-
+from weddings.models import InspirationCategory
 
 
 from weddings.models.wedding import Wedding
@@ -1499,3 +1499,26 @@ def terms_and_conditions():
         today=date.today().isoformat()
     )
 
+
+
+# ---------------------------------------------------------
+# WEDDING INSPIRATIONS
+# ---------------------------------------------------------
+
+@hub_bp.route('/inspirations')
+@login_required
+def inspirations():
+
+    categories = (
+        InspirationCategory.query
+        .filter_by(active=True)
+        .order_by(
+            InspirationCategory.display_order
+        )
+        .all()
+    )
+
+    return render_template(
+        'weddings/inspirations/index.html',
+        categories=categories
+    )

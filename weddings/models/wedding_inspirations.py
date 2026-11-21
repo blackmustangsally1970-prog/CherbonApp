@@ -1,5 +1,5 @@
-from app import db
 from datetime import datetime
+from extensions import db
 
 class InspirationCategory(db.Model):
     __tablename__ = 'inspiration_categories'
