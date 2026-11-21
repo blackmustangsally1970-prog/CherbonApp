@@ -1,0 +1,25 @@
+<h1>{{ category.name }}</h1>
+
+<ul>
+{% for item in category.items %}
+
+    <li>
+
+        <strong>{{ item.title }}</strong>
+
+        <br>
+
+        ${{ item.price_from }}
+
+        <br>
+
+        {{ item.short_description }}
+
+    </li>
+
+{% else %}
+
+    <li>No inspiration items found.</li>
+
+{% endfor %}
+</ul>

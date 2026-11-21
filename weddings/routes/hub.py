@@ -1522,3 +1522,17 @@ def inspirations():
         'weddings/inspirations/index.html',
         categories=categories
     )
+
+
+@hub_bp.route('/inspirations/category/<int:category_id>')
+@login_required
+def inspiration_category(category_id):
+
+    category = InspirationCategory.query.get_or_404(
+        category_id
+    )
+
+    return render_template(
+        'weddings/inspirations/category.html',
+        category=category
+    )

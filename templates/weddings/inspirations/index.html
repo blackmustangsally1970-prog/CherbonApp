@@ -2,6 +2,10 @@
 
 <ul>
 {% for category in categories %}
-    <li>{{ category.name }}</li>
+    <li>
+        <a href="/weddings/inspirations/category/{{ category.id }}">
+            {{ category.name }}
+        </a>
+    </li>
 {% endfor %}
 </ul>
