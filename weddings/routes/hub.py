@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
@@ -27,6 +26,10 @@ from weddings.models.timeline import WeddingTimeline
 from weddings.models.detail_template import WeddingDetailLibrary
 from weddings.models.caterer import Caterer
 from weddings.emailer import send_email
+
+from werkzeug.utils import secure_filename
+import os
+
 
 
 hub_bp = Blueprint('hub', __name__, url_prefix='/weddings')
@@ -1583,4 +1586,57 @@ def inspiration_edit(item_id):
     return render_template(
         'weddings/inspirations/edit_item.html',
         item=item
+    )
+
+@hub_bp.route(
+    '/inspirations/item/<int:item_id>/upload',
+    methods=['POST']
+)
+@login_required
+def inspiration_upload(item_id):
+
+    item = InspirationItem.query.get_or_404(item_id)
+
+    file = request.files.get('photo')
+
+    if not file:
+        flash('No file selected', 'danger')
+        return redirect(request.referrer)
+
+    filename = secure_filename(file.filename)
+
+    upload_folder = os.path.join(
+        'static',
+        'uploads',
+        'inspirations'
+    )
+
+    os.makedirs(upload_folder, exist_ok=True)
+
+    file.save(
+        os.path.join(
+            upload_folder,
+            filename
+        )
+    )
+
+    photo = InspirationPhoto(
+        inspiration_id=item.id,
+        filename=filename,
+        caption=request.form.get('caption')
+    )
+
+    db.session.add(photo)
+    db.session.commit()
+
+    flash(
+        'Photo uploaded successfully',
+        'success'
+    )
+
+    return redirect(
+        url_for(
+            'hub.inspiration_edit',
+            item_id=item.id
+        )
     )
