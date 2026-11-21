@@ -13,8 +13,11 @@ from weddings.models.appointment_blockout import AppointmentBlockout
 from weddings.models.appointment_slot import AppointmentSlot
 from weddings.models.appointment_template import AppointmentTemplate
 from weddings.models.appointment_slot_blockouts import AppointmentSlotBlockout
-from weddings.models import InspirationCategory
-
+from weddings.models import (
+    InspirationCategory,
+    InspirationItem,
+    InspirationPhoto
+)
 
 from weddings.models.wedding import Wedding
 from weddings.models.staff_assignment import WeddingStaffAssignment
