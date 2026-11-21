@@ -13,8 +13,22 @@
 
 <ul>
 {% for photo in item.photos %}
-    <li>{{ photo.filename }}</li>
-{% else %}
-    <li>No photos found.</li>
-{% endfor %}
-</ul>
+
+    <div>
+
+        <img
+            src="{{ url_for(
+                'static',
+                filename='uploads/inspirations/' ~ photo.filename
+            ) }}"
+            style="max-width:600px;"
+
+        >
+
+        <br>
+
+        {{ photo.caption }}
+
+    </div>
+
+{% endfor %}</ul>
