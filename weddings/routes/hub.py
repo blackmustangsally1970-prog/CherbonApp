@@ -1569,3 +1569,18 @@ def inspirations_admin():
         'weddings/inspirations/admin.html',
         categories=categories
     )
+
+@hub_bp.route(
+    '/inspirations/item/<int:item_id>/edit'
+)
+@login_required
+def inspiration_edit(item_id):
+
+    item = InspirationItem.query.get_or_404(
+        item_id
+    )
+
+    return render_template(
+        'weddings/inspirations/edit_item.html',
+        item=item
+    )

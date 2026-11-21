@@ -1,0 +1,64 @@
+<h1>{{ item.title }}</h1>
+
+<p>
+Price:
+${{ item.price_from }}
+</p>
+
+<p>
+{{ item.short_description }}
+</p>
+
+<h2>Current Photos</h2>
+
+<ul>
+
+{% for photo in item.photos %}
+
+    <li>
+
+        {{ photo.filename }}
+
+    </li>
+
+{% else %}
+
+    <li>No photos uploaded.</li>
+
+{% endfor %}
+
+</ul>
+
+<hr>
+
+<h2>Upload New Photo</h2>
+
+<form
+    method="POST"
+    enctype="multipart/form-data"
+    action="/weddings/inspirations/item/{{ item.id }}/upload"
+>
+
+    <input
+        type="file"
+        name="photo"
+        required
+    >
+
+    <br><br>
+
+    <input
+        type="text"
+        name="caption"
+        placeholder="Photo caption"
+    >
+
+    <br><br>
+
+    <button type="submit">
+
+        Upload Photo
+
+    </button>
+
+</form>
