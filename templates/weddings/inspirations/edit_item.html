@@ -19,13 +19,27 @@ ${{ item.price_from }}
 
         {{ photo.filename }}
 
+        <form
+            method="POST"
+            action="/weddings/inspirations/photo/{{ photo.id }}/delete"
+            style="display:inline;"
+        >
+
+            <button
+                type="submit"
+                onclick="return confirm(
+                    'Delete this photo?'
+                );"
+            >
+                Delete
+            </button>
+
+        </form>
+
     </li>
 
-{% else %}
-
-    <li>No photos uploaded.</li>
-
 {% endfor %}
+
 
 </ul>
 
