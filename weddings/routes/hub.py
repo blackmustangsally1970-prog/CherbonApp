@@ -1669,3 +1669,10 @@ def inspiration_photo_delete(photo_id):
         )
     )
 
+@hub_bp.route('/inspirations/dashboard')
+@login_required
+def inspirations_dashboard():
+
+    return render_template(
+        'weddings/inspirations/dashboard.html'
+    )
