@@ -1640,3 +1640,32 @@ def inspiration_upload(item_id):
             item_id=item.id
         )
     )
+
+@hub_bp.route(
+    '/inspirations/photo/<int:photo_id>/delete',
+    methods=['POST']
+)
+@login_required
+def inspiration_photo_delete(photo_id):
+
+    photo = InspirationPhoto.query.get_or_404(
+        photo_id
+    )
+
+    item_id = photo.inspiration_id
+
+    db.session.delete(photo)
+    db.session.commit()
+
+    flash(
+        'Photo deleted.',
+        'success'
+    )
+
+    return redirect(
+        url_for(
+            'hub.inspiration_edit',
+            item_id=item_id
+        )
+    )
+
