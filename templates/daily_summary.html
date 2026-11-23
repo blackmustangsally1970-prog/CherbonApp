@@ -8,7 +8,8 @@
 <style>
 
 :root {
-    --control-width: 850px;
+    --button-width: 850px;
+    --dropdown-width: 250px;
 }
 
 .fy-select {
@@ -16,16 +17,15 @@
     display: inline-block;
 }
 
-
-.fy-select,
-.menu-btn {
-    width: var(--control-width);
+.fy-select {
+    width: var(--dropdown-width);
+    display: inline-block;
     box-sizing: border-box;
 }
 
 .menu-btn {
-    width: var(--control-width);
-    display: block;
+    width: var(--button-width);
+    box-sizing: border-box;
     text-align: center;
 }
 
