@@ -7,15 +7,27 @@
 
 <style>
 
+:root {
+    --control-width: 200px;
+}
+
+.fy-select {
+    width: var(--control-width);
+    display: inline-block;
+}
+
+.menu-btn {
+    width: var(--control-width);
+    display: block;
+    text-align: center;
+}
+
 .top-nav {
     margin-bottom: 20px;
 }
 
 .top-nav .menu-btn {
-    display: block;
-    width: 100%;
     margin-bottom: 10px;
-    text-align: center;
 }
 
 
@@ -35,19 +47,20 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
-    .menu-btn {
-        display: inline-block;
-        padding: 14px 22px;
-        background: #dce6ff;
-        border: 3px solid #4a6bff;
-        border-radius: 12px;
-        text-decoration: none;
-        color: #002060;
-        font-size: 16px;
-        font-weight: 700;
-        margin-right: 10px;
-        transition: all .15s ease;
-    }
+.menu-btn {
+    width: var(--control-width);
+    display: block;
+    padding: 14px 22px;
+    background: #dce6ff;
+    border: 3px solid #4a6bff;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #002060;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    transition: all .15s ease;
+}
 
     .menu-btn:hover {
         background: #cddcff;
@@ -225,11 +238,10 @@
                 Financial Year:
             </label>
 
-            <select
-                name="fy"
-                id="fy"
-                class="form-select form-select-sm"
-                style="width: 200px; display: inline-block;">
+<select
+    name="fy"
+    id="fy"
+    class="form-select form-select-sm fy-select">
 
                 {% for y in fy_years %}
                     <option
